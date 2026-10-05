@@ -60,6 +60,16 @@ static func standard_text(a: Athlete, meet: Dictionary) -> String:
 	return text + " Not reached yet, but you may enter one event without it."
 
 
+## "Entry fee 18 €" (known) or "Entry fee ~12 €" (estimate for that level).
+static func fee_text(meet: Dictionary) -> String:
+	if meet.has("fee"):
+		return "Entry fee %d €" % int(meet.fee)
+	var fees: Dictionary = Data.competitions.get("fees", {})
+	if fees.has(meet.level):
+		return "Entry fee ~%d €" % int(fees[meet.level])
+	return ""
+
+
 static func coach_recommends(a: Athlete, meet: Dictionary, today: Dictionary) -> bool:
 	return meet.get("coach", false) and can_enter(a, meet, today).ok
 

@@ -1,5 +1,9 @@
 {
  "_note": "Competition calendar for the first season (Nov 2026 – Oct 2027). Big meets use real dates from SUL's Arvokilpailukalenteri 2027 (preliminary, 12.5.2026) and kilpailukalenteri.fi. Entries with \"estimated\": true are small meets with believable but made-up dates (the real ones aren't published centrally) - correct them freely. Later seasons repeat this list 52 weeks later as estimates. city \"@club\" = your club's town, \"@district\" = a meet somewhere in your district. ages = age-class range (age class = competition year - birth year). coach = the club coach suggests it. watch = big event shown for atmosphere, not enterable.",
+ "fees": {
+  "_note": "Entry fee per event in euros, used later by the money system. Per-meet \"fee\" = known real fee; these level defaults are estimates.",
+  "local": 12, "district": 12, "national": 18, "international": 25
+ },
  "levels": {
   "local": "Local meet",
   "district": "District",
@@ -25,7 +29,7 @@
   {"id": "piirihuipentuma", "name": "Piirin nuorten mestaruuskilpailut", "description": "District youth championships (piirihuipentuma) for 9–15-year-olds.", "date": "2027-07-10", "days": 2, "city": "@district", "level": "district", "ages": [9, 15], "events": ["800m"], "estimated": true, "coach": true},
   {"id": "iltakisat_heinakuu", "name": "Iltakisat", "description": "Weekday evening meet at your club.", "date": "2027-07-20", "city": "@club", "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true},
   {"id": "kalevan_kisat", "name": "Kalevan kisat", "description": "The senior Finnish Championships.", "date": "2027-07-30", "days": 3, "city": "Pori", "level": "elite", "ages": [16, 99], "events": ["800m"], "watch": true},
-  {"id": "sm_14_15", "name": "Nuorten SM-kilpailut (M/N14-15)", "description": "National championships for 14–15-year-olds: the highlight of the summer.", "date": "2027-08-06", "days": 3, "city": "Kauhava", "level": "national", "ages": [14, 15], "events": ["800m"], "coach": true, "standard": "sm_14_15"},
+  {"id": "sm_14_15", "name": "Nuorten SM-kilpailut (M/N14-15)", "description": "National championships for 14–15-year-olds: the highlight of the summer.", "date": "2027-08-06", "days": 3, "city": "Kauhava", "level": "national", "ages": [14, 15], "events": ["800m"], "coach": true, "standard": "sm_14_15", "fee": 18, "_fee_note": "2026 SM 14-15 Mikkeli: 18 EUR per event, late entry 108 EUR"},
   {"id": "sm_16_17", "name": "Nuorten SM-kilpailut (M/N16-17)", "description": "National championships for 16–17-year-olds.", "date": "2027-08-06", "days": 3, "city": "Oulu", "level": "national", "ages": [16, 17], "events": ["800m"], "coach": true},
   {"id": "seuracup_2", "name": "Pohjola Seuracup, piirikisa II", "description": "Club team competition: your result scores points for your club.", "date": "2027-08-17", "city": "@district", "level": "district", "ages": [11, 17], "events": ["800m"], "estimated": true, "coach": true, "team": true},
   {"id": "ruotsi_ottelu", "name": "Ruotsi-ottelu", "description": "Finland vs Sweden athletics international.", "date": "2027-08-21", "days": 2, "city": "Stockholm", "level": "elite", "ages": [16, 99], "events": ["800m"], "watch": true},

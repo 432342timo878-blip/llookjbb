@@ -14,7 +14,7 @@ Build in layers: every milestone ends with something playable.
 - [x] Finnish youth calendar (2026–27 season with real big-meet dates; later seasons estimated)
 - [ ] 800m race simulation with in-race decisions (quick + detailed mode)
 - [ ] Results, PBs, simple rankings
-- [ ] Save / load
+- [x] Save / load (weekly autosave + snapshot saves, Continue / Load Career in the main menu)
 - [ ] Basic sleek UI (desktop + mobile layout)
 
 ## M2 — Depth on the slice

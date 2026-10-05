@@ -17,6 +17,24 @@ func start_career(new_athlete: Athlete) -> void:
 	training_plan = Training.coach_plan()
 	entries = []
 	last_report = {}
+	SaveGame.save(SaveGame.AUTOSAVE)
+
+
+func to_dict() -> Dictionary:
+	return {"athlete": athlete.to_dict(), "date": date, "training_plan": training_plan, "entries": entries}
+
+
+func from_dict(d: Dictionary) -> void:
+	athlete = Athlete.from_dict(d.athlete)
+	date = int_date(d.date)
+	training_plan = d.training_plan
+	entries = d.entries
+	last_report = {}
+
+
+## JSON turns every number into a float; dates must be ints again.
+static func int_date(d: Dictionary) -> Dictionary:
+	return {"year": int(d.year), "month": int(d.month), "day": int(d.day)}
 
 
 func enter(meet_key: String) -> void:
@@ -41,6 +59,7 @@ func advance_week() -> Dictionary:
 	var races := Calendar.races_in_week(entries, date)
 	last_report = Training.simulate_week(athlete, training_plan, date, races)
 	date = add_days(date, 7)
+	SaveGame.save(SaveGame.AUTOSAVE)
 	return last_report
 
 

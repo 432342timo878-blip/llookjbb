@@ -16,6 +16,8 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	# Keep the tour's saves away from the player's real saves (loaded here: autoloads exist now).
+	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
 	await _frames(10)
 	await _shot("0_main_menu")
 	var main := current_scene
@@ -66,6 +68,24 @@ func _run() -> void:
 	hub._show("overview")
 	await _frames(5)
 	await _shot("10_overview_after_10_weeks")
+
+	# Save, go back to the menu, load the snapshot again.
+	var saves = load("res://scripts/core/save_game.gd")
+	var slot: String = saves.save_snapshot()
+	var router = main.get_node("/root/Router")
+	router.go("main_menu")
+	await _frames(5)
+	await _shot("11_main_menu_with_save")
+	router.go("load_game")
+	await _frames(5)
+	await _shot("12_load_game")
+	game.date = game.START_DATE.duplicate()   # scramble, then load to prove it restores
+	saves.load_slot(slot)
+	print("loaded date ", game.date, " athlete ", game.athlete.full_name(), " entries ", game.entries.size())
+	router.go("career_hub")
+	await _frames(5)
+	await _shot("13_hub_after_load")
+	saves.delete(slot)
 	quit()
 
 

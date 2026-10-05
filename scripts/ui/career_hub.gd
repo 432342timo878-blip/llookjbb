@@ -21,6 +21,15 @@ func _ready() -> void:
 	cont.pressed.connect(_on_continue)
 	%MenuButton.add_sibling(cont)
 	%MenuButton.get_parent().move_child(cont, %MenuButton.get_index())
+	var save := UIKit.button("Save", false, 110)
+	save.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	save.tooltip_text = "Make a save you can always come back to (the game also autosaves every week)"
+	save.pressed.connect(func():
+		SaveGame.save_snapshot()
+		save.text = "Saved ✓"
+		get_tree().create_timer(1.5).timeout.connect(func(): save.text = "Save"))
+	%MenuButton.add_sibling(save)
+	%MenuButton.get_parent().move_child(save, %MenuButton.get_index())
 
 	var bar := UIKit.hbox(8)
 	var group := ButtonGroup.new()
@@ -301,6 +310,9 @@ func _meet_row(a: Athlete, m: Dictionary) -> HBoxContainer:
 		details.append("Indoor")
 	if m.get("estimated", false):
 		details.append("Estimated date")
+	var fee := Calendar.fee_text(m)
+	if fee != "" and not m.get("watch", false):
+		details.append(fee)
 	info.add_child(UIKit.wrapped(" · ".join(details), "MutedLabel"))
 	if m.has("description"):
 		info.add_child(UIKit.wrapped(m.description, "MutedLabel"))

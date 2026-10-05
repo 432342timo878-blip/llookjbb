@@ -72,4 +72,6 @@ static func from_dict(d: Dictionary) -> Athlete:
 	var a := Athlete.new()
 	for key in d:
 		a.set(key, d[key])
+	if not a.birth_date.is_empty():
+		a.birth_date = Game.int_date(a.birth_date)
 	return a
