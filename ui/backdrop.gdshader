@@ -9,7 +9,7 @@ uniform sampler2D photo : source_color, filter_linear_mipmap, repeat_disable;
 uniform bool has_photo = false;
 uniform vec2 photo_size = vec2(1.0, 1.0);
 uniform vec2 rect_size = vec2(1280.0, 720.0);
-uniform float photo_strength : hint_range(0.0, 1.0) = 0.30;
+uniform float photo_strength : hint_range(0.0, 1.0) = 0.42;
 uniform float blur_lod : hint_range(0.0, 6.0) = 3.5;
 
 void fragment() {
