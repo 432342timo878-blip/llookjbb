@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.2 — 2026-10-05. Living document: updated after each design discussion.
+Version 0.3 — 2026-10-05. Living document: updated after each design discussion.
 
 ## 1. Vision
 
@@ -37,14 +37,42 @@ and other events happening at the same time around your own event.
 | D20 | World | Starts from a real-world 2026 snapshot (real athletes, PBs, records, calendar), then fully simulated forward: AI athletes train, improve, decline, retire; new fictional talents appear; records can fall. |
 | D21 | Start year | 2026. |
 | D22 | First playable version | 800m, Finnish youth career, 1–2 seasons. See `docs/ROADMAP.md`. |
+| D23 | Gender | Player chooses male or female athlete; affects age classes (P/T), competitions and rivals. |
+| D24 | Attributes | Shown as numbers on a 1–20 scale (Football Manager style). Event groups get their own extra attributes (e.g. throws). Hidden attributes stay hidden. See 4.1. |
+| D25 | Training | Start with ready-made sessions placed into days; later a full custom session editor; a hired coach can build plans from focus areas. |
+| D26 | 800m decisions | Race plan, break from lanes (100m), halfway split, responding to moves, kick timing, home straight. |
+| D27 | Language | English UI for now (text kept translatable for Finnish later). |
+| D28 | Visual style | Dark mode, Football Manager-inspired: dense but clean data screens, panels, tables. |
 
-## 3. Open questions (round 2)
+## 3. M1 proposals (Claude's defaults — change anytime)
 
-See chat; answers will be merged into sections below.
+- **Character creation:** gender → name, hometown, club → main event (800m in M1) → background questions
+  (e.g. other sports as a kid, family's sporting background, school ambition) which shape starting attributes and hidden traits →
+  allocate a small pool of points.
+- **Season (Finnish youth):** indoor season Jan–Mar, outdoor May–Sep; club/regional meets, district championships,
+  national age-group championships, team competitions. *Exact competition names, age classes and dates to be verified before building the calendar data.*
+- **Time:** week-by-week in M1; day-by-day comes in M2.
 
-## 4. Systems (to be designed)
+## 4. Systems
 
-- 4.1 Athlete model (attributes, potential, physiology)
+### 4.1 Athlete model
+
+All visible attributes 1–20. Event groups add their own attributes as events are added.
+
+**Physical (all athletes):** speed, acceleration, speed endurance, aerobic capacity, lactate threshold, running economy,
+strength, power (explosiveness), mobility, durability (resistance to training load).
+
+**Body:** height, weight, age, biological maturation stage (early/average/late developer).
+
+**Technical:** running technique, starts. Later per group: hurdling, jumping technique, throwing technique (per implement), pole vault technique, etc.
+
+**Mental:** race tactics, composure (big-race nerves), determination, competitiveness, pain tolerance, consistency, professionalism.
+
+**Hidden (never shown as numbers, only hinted via tests and coach reports):** talent ceiling (potential), trainability,
+recovery rate, injury proneness, maturation timing, ambition.
+
+### Other systems (to be designed)
+
 - 4.2 Training & progression
 - 4.3 Competition simulation & in-event decisions
 - 4.4 Season calendar & competition structure

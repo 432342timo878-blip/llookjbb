@@ -2,7 +2,7 @@
 
 In-depth career mode track and field (yleisurheilu) game, built in Godot together with the user.
 
-**Status:** design phase — round 3 (designing M1: 800m youth season). No code yet. Milestones: `docs/ROADMAP.md`.
+**Status:** design phase — design for M1 mostly done; next step M0 (Godot project setup). No code yet. Milestones: `docs/ROADMAP.md`.
 **Design doc:** `docs/GDD.md` — the source of truth for all design decisions. Read it before design or code work.
 
 **User:** no programming experience — explain how to run/test things in plain steps; Claude writes all code.
