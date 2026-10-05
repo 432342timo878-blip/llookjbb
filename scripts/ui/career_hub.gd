@@ -30,13 +30,17 @@ func _ready() -> void:
 	_show_pending_event()
 
 
-## Debug builds only: F8 arms a test stop event for the end of the next played day (see DevEvents).
+## Debug builds only: T arms a test stop event for the end of the next played day (see DevEvents).
+## (Not an F key: when the game runs from the editor, F7/F8 pause/stop the game.)
 func _unhandled_key_input(event: InputEvent) -> void:
-	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_F8:
+	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_T:
 		var dev := Game.get_system("dev") as DevEvents
 		if dev:
 			dev.armed = true
-			print("Test stop event armed: it comes at the end of the next played day.")
+			_date_label.text = "Test event ready ✓"
+			get_tree().create_timer(1.5).timeout.connect(func():
+				if is_instance_valid(_date_label):
+					_refresh_header())
 
 
 ## Header, tab bar, scrolling content. Rebuilt when the window switches between wide and phone layout.

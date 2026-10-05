@@ -1,7 +1,7 @@
 class_name DevEvents
 extends GameSystem
 ## Debug builds only (running from the Godot editor): a test system for the stop-event flow, until the
-## health system has real ones. Press F8 in the career hub to arm it: at the end of the next played day it
+## health system has real ones. Press T in the career hub to arm it: at the end of the next played day it
 ## posts a stop event (so Play week stops there), and the answer becomes a day change for tomorrow,
 ## just like a real system would do it.
 
@@ -18,7 +18,7 @@ func on_day_end(_ctx: Dictionary) -> void:
 		return
 	armed = false
 	Game.post_event(id, "Test: heavy legs",
-			"This is a test event (F8). Your legs feel heavy after today's training. What do you do tomorrow?", [
+			"This is a test event (T key). Your legs feel heavy after today's training. What do you do tomorrow?", [
 				{"id": "keep", "label": "Keep going", "detail": "Train as planned."},
 				{"id": "easy", "label": "Take it easy", "detail": "Tomorrow's sessions at Easy intensity."},
 				{"id": "rest", "label": "Rest day", "detail": "No training tomorrow."},

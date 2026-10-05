@@ -24,7 +24,7 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       `advance_week()` (stops on stop events); `Game.date` = today; day loop with system slots, event format,
       day log; day changes with "changed by"; intensity (`data/health.json`); save version 2 (v1 saves still load),
       autosave daily. UI: just the Next day / Play week buttons + a simple stop-event panel. *(Opus)*
-      Done: training balance bit-for-bit unchanged; checks in `tools/day_engine_check.gd`; F8 test stop event in debug builds.
+      Done: training balance bit-for-bit unchanged; checks in `tools/day_engine_check.gd`; T key = test stop event in debug builds.
 - [ ] **2. Week strip & day editor UI:** week strip (PC + phone), day editor (side panel / bottom sheet) on top of the
       `WeekSim` day-change API, Today card, Report day log (`Game.day_log`); update `layout_check.gd` and the
       screenshot tour. *(Sonnet)*
