@@ -183,11 +183,11 @@ func _draw_field_events() -> void:
 	var arc_half := asin(2.0 / 8.0)
 	draw_arc(_px(jav_center), 8.0 * _k, -arc_half, arc_half, 12, Color.WHITE, maxf(0.15 * _k, 1.5), true)
 	# Distances are measured from the inside of the arc, i.e. 8m from its centre.
-	_draw_throwing_sector(jav_center, 0.0, 28.96, 8.0, [30, 40, 50, 60, 70, 80], -1)
+	_draw_throwing_sector(jav_center, 0.0, 28.96, 8.0, [40, 50, 60, 70, 80], -1)
 
-		# Right D: hammer/discus cage at the edge of the grass, throwing down the pitch.
+		# Right D: hammer/discus cage at the edge of the grass. Its sector isn't drawn: a real
+	# field only has the sector of the event currently being thrown marked out.
 	var cage := Vector2(grass.end.x + 6.0, 0.0)
-	_draw_throwing_sector(cage, PI, 34.92, 0.0, [20, 30, 40, 50, 60, 70, 80], -1)
 	draw_circle(_px(cage), 1.25 * _k, Color("#9aa1b2"))
 	draw_arc(_px(cage), 3.8 * _k, PI + deg_to_rad(38.0), PI * 3.0 - deg_to_rad(38.0), 32,
 			Color("#202430"), maxf(0.45 * _k, 2.0), true)
