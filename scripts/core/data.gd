@@ -8,6 +8,7 @@ var clubs: Array = []                  # data/clubs.json
 var hometowns: Array = []              # data/hometowns.json
 var background_questions: Array = []   # data/background_questions.json
 var names: Dictionary = {}             # data/names_fi.json
+var training: Dictionary = {}          # data/training.json: sessions, season rules, coach plan
 
 
 func _ready() -> void:
@@ -22,6 +23,7 @@ func _ready() -> void:
 	hometowns.sort()
 	background_questions = _load("res://data/background_questions.json").get("questions", [])
 	names = _load("res://data/names_fi.json")
+	training = _load("res://data/training.json")
 
 
 func get_event(id: String) -> Dictionary:
@@ -30,6 +32,10 @@ func get_event(id: String) -> Dictionary:
 
 func get_club(id: String) -> Dictionary:
 	return _find(clubs, id)
+
+
+func get_session(id: String) -> Dictionary:
+	return _find(training.get("sessions", []), id)
 
 
 ## Attribute definitions of one category ("physical", "technical", "mental", "hidden").

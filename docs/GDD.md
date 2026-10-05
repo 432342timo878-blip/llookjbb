@@ -81,9 +81,30 @@ recovery rate, injury proneness, maturation timing, ambition.
 
 Starting levels: physical 4–7, technical 3–6, mental 5–9 before background effects; potential 13–18 (hidden).
 
+### 4.2 Training & progression (first version built)
+
+Decisions (user, 2026-10-05): attributes shown as whole numbers with green/red **trend arrows** (FM style, no decimals);
+the **club coach gives a starter plan** that the player can edit; the **plan repeats every week** until changed.
+
+- **Plan:** Mon–Sun, up to 2 ready-made sessions per day, empty day = rest. Sessions in `data/training.json`
+  (easy run, long run, fartlek, tempo, 800 m intervals, speed & strides, hill sprints, start practice, club group session,
+  strength & core, running drills, mobility, cross-country skiing Dec–Mar).
+- **Season & facilities:** outdoor tracks are closed Nov–Apr. Without an indoor hall or a sports class (`training_base` from
+  character creation), track sessions are done on roads/snow at 70 % effect.
+- **Fatigue (0–100):** simulated day by day. Each day a share of fatigue fades (better with recovery rate and professionalism,
+  more on rest days) and session load is added (less with high durability). Fresh < 25, Normal < 45, Tired < 65, Exhausted.
+  Above 35 sessions lose effect, down to 10 % at 100.
+- **Progression (weekly):** each session gives stimulus to some attributes; gain = rate × diminishing-returns curve
+  (minimum effective dose, then flattening) × trainability × headroom to the hidden potential. Untrained physical attributes
+  slowly fade; puberty adds natural growth to strength/power/speed (more for late developers).
+- **Feedback:** weekly report (sessions, load, fatigue, notes, attributes that moved a whole point) and the plan screen
+  shows expected fatigue after a few weeks and a training-focus chart.
+- **Tuning** (`tools/training_balance.gd`, 1 year from age 14): coach plan → fatigue ~23, key attributes +1.5–3.5;
+  2 easy runs a week → little progress; 12 sessions a week → tired (~58) and only somewhat better in the trained areas.
+  Overtraining will become properly risky once injuries exist (M2).
+
 ### Other systems (to be designed)
 
-- 4.2 Training & progression
 - 4.3 Competition simulation & in-event decisions
 - 4.4 Season calendar & competition structure
 - 4.5 Injuries, health, nutrition, sleep

@@ -75,14 +75,23 @@ static func attr_color(value: float) -> Color:
 	return Palette.ATTR_POOR
 
 
-## One "Name ........ 12" row as used in attribute panels.
-static func attr_row(attr_name: String, value: float) -> HBoxContainer:
+## One "Name ........ ↑ 12" row as used in attribute panels. `trend`: -1, 0 or +1 (arrow).
+static func attr_row(attr_name: String, value: float, trend := 0) -> HBoxContainer:
 	var row := hbox(8)
 	var name_label := label(attr_name)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name_label)
+	row.add_child(trend_arrow(trend))
 	row.add_child(attr_value_label(value))
 	return row
+
+
+static func trend_arrow(trend: int) -> Label:
+	var l := label("↑" if trend > 0 else ("↓" if trend < 0 else ""))
+	l.add_theme_color_override("font_color", Palette.ATTR_EXCELLENT if trend > 0 else Palette.ATTR_POOR)
+	l.custom_minimum_size = Vector2(14, 0)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return l
 
 
 static func attr_value_label(value: float) -> Label:

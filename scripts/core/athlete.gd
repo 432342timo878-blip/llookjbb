@@ -23,6 +23,9 @@ var training_base := "outdoor_track"   # where they train; ids from background_q
 var attributes := {}            # attribute id -> float, visible and hidden
 var personal_bests := {}        # event id -> mark (seconds or metres)
 
+var fatigue := 0.0              # 0 (fresh) – 100 (exhausted)
+var recent_change := {}         # attribute id -> recent trend (decaying sum of weekly changes), for the arrows
+
 
 func full_name() -> String:
 	return "%s %s" % [first_name, last_name]
@@ -51,7 +54,18 @@ func to_dict() -> Dictionary:
 		"main_event": main_event, "height_cm": height_cm, "weight_kg": weight_kg,
 		"maturation": maturation, "school_level": school_level, "training_base": training_base,
 		"attributes": attributes, "personal_bests": personal_bests,
+		"fatigue": fatigue, "recent_change": recent_change,
 	}
+
+
+## -1, 0 or +1: which way the attribute has been moving lately (shown as an arrow).
+func trend(id: String) -> int:
+	var c: float = recent_change.get(id, 0.0)
+	if c >= 0.04:
+		return 1
+	if c <= -0.04:
+		return -1
+	return 0
 
 
 static func from_dict(d: Dictionary) -> Athlete:

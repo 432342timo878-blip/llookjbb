@@ -40,6 +40,20 @@ func _run() -> void:
 	wizard._on_next()
 	await _frames(5)
 	await _shot("6_career_hub")
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	hub._show("training")
+	await _frames(5)
+	await _shot("7_training")
+	hub.get_node("Margin/Column/Scroll").scroll_vertical = 640
+	await _frames(5)
+	await _shot("7b_training_summary")
+	for i in 4:
+		hub._on_continue()
+	await _frames(5)
+	await _shot("8_week_report")
+	hub._show("overview")
+	await _frames(5)
+	await _shot("9_overview_after_4_weeks")
 	quit()
 
 

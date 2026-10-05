@@ -10,7 +10,7 @@ Build in layers: every milestone ends with something playable.
 - [x] Athlete model (attributes, hidden potential, maturation) — growth over time comes with training
 - [x] Character creation (identity, club, event, 5 background questions, 12 attribute points, summary)
 - [x] Career hub with FM-style athlete profile (placeholder for the main game screen)
-- [ ] Weekly training plan → attribute progression, fatigue
+- [x] Weekly training plan → attribute progression, fatigue (first version; tune once races exist)
 - [ ] Finnish youth calendar (simplified, 1–2 seasons)
 - [ ] 800m race simulation with in-race decisions (quick + detailed mode)
 - [ ] Results, PBs, simple rankings
