@@ -78,6 +78,47 @@
    ]
   },
   {
+   "id": "introduced_by",
+   "question": "Who got you into athletics?",
+   "answers": [
+    {
+     "text": "A PE teacher spotted you",
+     "detail": "You won the school cross-country run without really trying.",
+     "effects": {"potential": 1, "ambition": 1, "aerobic_capacity": 0.5}
+    },
+    {
+     "text": "Friends from school",
+     "detail": "You came along because they did, and stayed for the fun.",
+     "effects": {"composure": 1, "consistency": 1, "ambition": -0.5}
+    },
+    {
+     "text": "Your parents signed you up",
+     "detail": "It wasn't your idea at first, but the routine stuck.",
+     "effects": {"professionalism": 1.5, "durability": 0.5, "determination": -0.5}
+    },
+    {
+     "text": "A coach from your old sport",
+     "detail": "They said your legs were wasted in that sport.",
+     "effects": {"potential": 0.5, "determination": 1, "running_technique": 0.5}
+    },
+    {
+     "text": "Watching the stars on TV",
+     "detail": "The Olympics and World Championships lit a fire in you.",
+     "effects": {"ambition": 2, "competitiveness": 0.5}
+    },
+    {
+     "text": "The Finland–Sweden athletics international",
+     "detail": "A packed stadium and blue-and-white flags. You were hooked.",
+     "effects": {"ambition": 1.5, "competitiveness": 1, "composure": 0.5}
+    },
+    {
+     "text": "Nobody, it was your own idea",
+     "detail": "You turned up at the track one day and asked to join.",
+     "effects": {"determination": 1.5, "ambition": 1}
+    }
+   ]
+  },
+  {
    "id": "family",
    "question": "What is your family's sporting background?",
    "answers": [
@@ -110,6 +151,48 @@
      "text": "They think sport is a waste of time",
      "detail": "You'll have to prove them wrong.",
      "effects": {"ambition": 2.5, "determination": 2, "professionalism": -1, "composure": -0.5}
+    }
+   ]
+  },
+  {
+   "id": "training_base",
+   "question": "Where do you usually train?",
+   "answers": [
+    {
+     "text": "A big club with an indoor hall",
+     "detail": "Track sessions all year round, even in January.",
+     "training_base": "indoor_hall",
+     "effects": {"running_technique": 1, "starts": 1, "speed": 0.5, "professionalism": 0.5}
+    },
+    {
+     "text": "A sports class at school",
+     "detail": "Training is built into your school week (urheiluluokka).",
+     "training_base": "sports_class",
+     "effects": {"running_technique": 1, "professionalism": 1, "mobility": 0.5, "recovery_rate": -0.5}
+    },
+    {
+     "text": "A small-town outdoor track",
+     "detail": "Snow covers the track half the year, so winters mean roads and ski trails.",
+     "training_base": "outdoor_track",
+     "effects": {"aerobic_capacity": 1, "durability": 1, "determination": 1, "speed": -0.5, "running_technique": -0.5}
+    },
+    {
+     "text": "Forest trails and gravel roads",
+     "detail": "Soft ground, hills and long easy runs.",
+     "training_base": "trails",
+     "effects": {"aerobic_capacity": 1, "running_economy": 1, "durability": 0.5, "speed": -1}
+    },
+    {
+     "text": "On my own around the neighbourhood",
+     "detail": "Nobody to correct your form, but nobody has to push you either.",
+     "training_base": "on_own",
+     "effects": {"determination": 1.5, "aerobic_capacity": 0.5, "running_technique": -1, "race_tactics": -0.5}
+    },
+    {
+     "text": "Nowhere yet",
+     "detail": "You're about to start regular training for the first time.",
+     "training_base": "none",
+     "effects": {"trainability": 1, "race_tactics": -0.5}
     }
    ]
   },

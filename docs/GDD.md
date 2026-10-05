@@ -75,7 +75,7 @@ recovery rate, injury proneness, maturation timing, ambition.
 
 1. Identity: gender, first/last name (random Finnish name option), hometown, club (hometown clubs listed first). `data/clubs.json` holds 122 real clubs, sourced from SUL's Tähtiseurat list and Finnish Wikipedia's athletics-club category. The original 11 were confirmed by the user, and Vammalan seudun Voima was added at the user's request. Every club's town is also selectable as a hometown.
 2. Main event (all events shown; only 800 m playable in M1).
-3. Background questions (`data/background_questions.json`): previous sport, family background, physical development (sets maturation: early/average/late), handling pressure, school level. Each answer adjusts visible and hidden attributes. The user asked for a wide range of answers, including weak starting points. Example: "Never really exercised" gives low physical stats but very high trainability.
+3. Background questions (`data/background_questions.json`): previous sport, who got you into athletics, family background, where you train (saved as `training_base`, e.g. indoor hall vs outdoor-only track, for the training system), physical development (sets maturation: early/average/late), handling pressure, school level. Each answer adjusts visible and hidden attributes. The user asked for a wide range of answers, including weak starting points. Example: "Never really exercised" gives low physical stats but very high trainability.
 4. 12 attribute points, max +3 per attribute.
 5. Summary → career starts on 2 Nov 2026 (start of the Finnish training year), athlete born Jan–Oct 2012 (age 14).
 
@@ -99,6 +99,7 @@ Starting levels: physical 4–7, technical 3–6, mental 5–9 before background
 
 - 2D stadium view during meets: track, crowd, simultaneous events.
 - Modern, sleek, responsive UI (desktop + mobile).
+- **Idea (user, for later):** the plain dark UI feels generic. Use athlete photos as screen backgrounds, darkened and/or blurred behind the panels so they never hurt readability. Could vary per screen or event (e.g. an 800 m pack on the career hub). Needs a set of good, properly licensed photos (e.g. Wikimedia Commons) or the user's own. Try it in a "UI polish" pass, starting with the main menu and character creation.
 
 ## 6. Data
 

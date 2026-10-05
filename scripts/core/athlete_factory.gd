@@ -54,6 +54,8 @@ static func _apply_answer(a: Athlete, answer: Dictionary) -> void:
 		a.maturation = answer.maturation
 	if answer.has("school"):
 		a.school_level = answer.school
+	if answer.has("training_base"):
+		a.training_base = answer.training_base
 
 
 ## Height/weight of a 14-year-old, shifted by how early they matured.

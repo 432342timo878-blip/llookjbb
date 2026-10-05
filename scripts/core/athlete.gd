@@ -18,6 +18,7 @@ var height_cm := 0.0
 var weight_kg := 0.0
 var maturation := "average"     # "early" | "average" | "late"
 var school_level := "medium"    # "high" | "medium" | "low"
+var training_base := "outdoor_track"   # where they train; ids from background_questions.json
 
 var attributes := {}            # attribute id -> float, visible and hidden
 var personal_bests := {}        # event id -> mark (seconds or metres)
@@ -48,7 +49,7 @@ func to_dict() -> Dictionary:
 		"first_name": first_name, "last_name": last_name, "gender": gender,
 		"birth_date": birth_date, "hometown": hometown, "club_id": club_id,
 		"main_event": main_event, "height_cm": height_cm, "weight_kg": weight_kg,
-		"maturation": maturation, "school_level": school_level,
+		"maturation": maturation, "school_level": school_level, "training_base": training_base,
 		"attributes": attributes, "personal_bests": personal_bests,
 	}
 
