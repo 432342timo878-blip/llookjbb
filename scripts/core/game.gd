@@ -93,7 +93,7 @@ func _continue_week() -> bool:
 		return true
 	last_report = _week.finish()
 	_week = null
-	Rivals.train_week(rivals)
+	Rivals.train_week(rivals, athlete.gender, date)
 	date = add_days(date, 7)
 	SaveGame.save(SaveGame.AUTOSAVE)
 	return false
@@ -112,8 +112,8 @@ func _record(rd: RaceDay) -> void:
 	for res in rd.all_results:
 		for row in res:
 			var rival: Dictionary = row.get("rival", {})
-			if not rival.is_empty() and (float(rival.pb) == 0.0 or row.time < float(rival.pb)):
-				rival.pb = row.time
+			if not rival.is_empty():
+				Rivals.record_time(rival, row.time, rd.meet.date)
 
 
 static func add_days(d: Dictionary, days: int) -> Dictionary:

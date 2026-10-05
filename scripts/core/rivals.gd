@@ -36,11 +36,30 @@ static func generate(a: Athlete, rng: RandomNumberGenerator) -> Array:
 
 
 ## One week of training for every rival (similar growth model to the player's: slows near the ceiling).
-static func train_week(pool: Array) -> void:
+## They also race elsewhere: each week a rival may run an 800 m of their own (more often in summer),
+## which feeds their season best for the rankings.
+static func train_week(pool: Array, gender: String, monday: Dictionary) -> void:
+	var chances: Array = Data.races.rivals.race_chance_by_month
+	var chance := float(chances[int(monday.month) - 1])
 	for r in pool:
 		var headroom := clampf((float(r.ceiling) - float(r.ability)) / 5.0, 0.05, 1.0)
 		r.ability = float(r.ability) + 0.055 * float(r.trainability) * headroom * randf_range(0.4, 1.6)
 		r.speed = float(r.speed) + 0.03 * randf()
+		if randf() < chance:
+			# Even-effort time plus a usually-slower bad-day factor; consistent runners vary less.
+			var spread := 0.02 - float(r.consistency) * 0.0007
+			var factor := maxf(1.0 + randfn(0.008, spread), 0.99)
+			record_time(r, RacePerformance.time_for(float(r.ability), gender) * factor, monday)
+
+
+## Updates a rival's PB and season best (SB counts only for the season it was run in).
+static func record_time(r: Dictionary, time: float, date: Dictionary) -> void:
+	if float(r.pb) == 0.0 or time < float(r.pb):
+		r.pb = time
+	var season := Rankings.season_of(date)
+	if int(r.get("sb_season", -1)) != season or time < float(r.get("sb", 0.0)):
+		r.sb = time
+		r.sb_season = season
 
 
 ## Opponents for a race at a meet of this level.

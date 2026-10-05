@@ -20,7 +20,8 @@
  "rivals": {
   "_note": "Fictional rivals of the player's age and gender (real youth athletes are minors, so they're not used). Ability at career start ~ N(mean, sd).",
   "count": 150, "ability_mean": 7.2, "ability_sd": 2.0, "ability_min": 3.0, "ability_max": 13.5,
-  "ceiling_mean": 13.0, "ceiling_sd": 2.5
+  "ceiling_mean": 13.0, "ceiling_sd": 2.5,
+  "race_chance_by_month": [0.08, 0.10, 0.10, 0.12, 0.25, 0.30, 0.25, 0.30, 0.25, 0.10, 0.06, 0.06]
  },
  "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2}
 }

@@ -2,7 +2,7 @@
 
 In-depth career mode track and field (yleisurheilu) game, built in Godot together with the user.
 
-**Status:** M1 in progress — character creation, weekly training, season calendar, save/load and the 800m race simulation are done. Next: simple rankings, then UI polish (desktop + mobile). Youth opponents stay fictional (minors); real athletes only at senior level. Milestones: `docs/ROADMAP.md`.
+**Status:** M1 in progress — character creation, weekly training, season calendar, save/load, the 800m race simulation and season rankings are done. Next: UI polish (desktop + mobile). Youth opponents stay fictional (minors); real athletes only at senior level. Milestones: `docs/ROADMAP.md`.
 **Design doc:** `docs/GDD.md` — the source of truth for all design decisions. Read it before design or code work.
 
 **User:** no programming experience — explain how to run/test things in plain steps; Claude writes all code.
@@ -21,6 +21,7 @@ In-depth career mode track and field (yleisurheilu) game, built in Godot togethe
 - `Calendar` (`scripts/core/calendar.gd`): dated meets from `data/competitions.json` (keys `id@year`), eligibility, standards; `Game.entries` holds entered meet keys; races in a week are passed to `Training.simulate_week` (report `races` has meet + fatigue at race time, ready for the race sim). Tune with `tools/training_balance.gd`.
 - On the user's Windows PC: Godot is at `C:\Users\timo8\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` (run the tour without xvfb). Git CLI isn't on PATH: use GitHub Desktop's `%LOCALAPPDATA%\GitHubDesktop\app-*\resources\app\git\cmd\git.exe` to commit; pushing needs the user's login, so ask them to press "Push origin" in GitHub Desktop. Run Godot via `Start-Process ... -RedirectStandardOutput` with a timeout (piped output can hang).
 - Races: `Game.advance_week()` plays the week with `WeekSim` (`scripts/core/week_sim.gd`) and returns true when it stops on a race day; then `Game.race_day` (`RaceDay`: field from `Rivals`, heats/final) is run by the race screen (`scripts/ui/race_screen.gd`) and `Game.finish_race()` continues the week. `Race` (`scripts/core/race.gd`) is the step engine (outdoor 400 m or indoor 200 m geometry); `RacePerformance` maps attributes → ability → time (`data/races.json`). Dots are drawn by `scripts/ui/race_runners_view.gd`. Tune with `tools/race_balance.gd`.
+- `Rankings` (`scripts/core/rankings.gd`): season = 1 Nov–31 Oct; `season_list` ranks the player + rivals by season best (`sb`/`sb_season` on each rival). `Rivals.train_week` also lets rivals race on their own (chance per month in `data/races.json`). Career hub "Rankings" tab. Check with `tools/rankings_check.gd`.
 - `SaveGame` (`scripts/core/save_game.gd`): JSON slots in `user://saves/` (autosave every week + snapshots from the Save button); `Game.to_dict/from_dict`. JSON makes numbers floats, so dates go through `Game.int_date`. Dev tools must set `SaveGame.DIR` to another folder so they never overwrite the user's saves (the tour uses `user://tour_saves/`).
 - `-s` tool scripts can't use autoload names (`Data`, `Game`) or classes that use them at compile time: `load()` those scripts inside the running tree instead.
 - Visuals: the user cares about realism; get reference images/specs before drawing real-world things (stadium layout etc.) instead of guessing.

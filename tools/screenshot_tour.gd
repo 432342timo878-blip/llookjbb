@@ -95,6 +95,9 @@ func _run() -> void:
 	hub._show("overview")
 	await _frames(5)
 	await _shot("14_overview_with_pb")
+	hub._show("rankings")
+	await _frames(5)
+	await _shot("14b_rankings")
 
 	# Save, go back to the menu, load the snapshot again.
 	var saves = load("res://scripts/core/save_game.gd")

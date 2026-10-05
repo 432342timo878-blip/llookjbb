@@ -14,7 +14,7 @@ Build in layers: every milestone ends with something playable.
 - [x] Finnish youth calendar (2026–27 season with real big-meet dates; later seasons estimated)
 - [x] 800m race simulation with in-race decisions (quick + detailed mode), indoor + outdoor tracks
 - [x] Results and PBs (fictional youth rivals with their own PBs)
-- [ ] Simple rankings (season list of your age class)
+- [x] Simple rankings (season list of your age class; season = 1 Nov – 31 Oct, rivals also race on their own)
 - [x] Save / load (weekly autosave + snapshot saves, Continue / Load Career in the main menu)
 - [ ] Basic sleek UI (desktop + mobile layout)
 

@@ -1,6 +1,10 @@
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
 ; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -9,8 +13,8 @@ config_version=5
 config/name="Track & Field Career"
 config/description="In-depth track and field (yleisurheilu) career simulation."
 run/main_scene="res://scenes/main.tscn"
-config/icon="res://icon.svg"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
 
 [autoload]
 

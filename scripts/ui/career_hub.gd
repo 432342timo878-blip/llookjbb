@@ -3,7 +3,7 @@ extends Control
 ## "Continue" plays one week of training.
 
 const MONTHS := ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-const VIEWS := [["overview", "Overview"], ["training", "Training"], ["calendar", "Calendar"], ["report", "Last week"]]
+const VIEWS := [["overview", "Overview"], ["training", "Training"], ["calendar", "Calendar"], ["rankings", "Rankings"], ["report", "Last week"]]
 const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
 		"September", "October", "November", "December"]
 
@@ -76,6 +76,7 @@ func _show(view: String) -> void:
 		"overview": _build_profile(Game.athlete)
 		"training": _build_training()
 		"calendar": _build_calendar()
+		"rankings": _build_rankings()
 		"report": _build_report(Game.last_report)
 
 
@@ -355,6 +356,68 @@ func _meet_row(a: Athlete, m: Dictionary) -> HBoxContainer:
 			refresh.call())
 		refresh.call()
 		row.add_child(b)
+	return row
+
+
+# --- Rankings ---------------------------------------------------------------------------
+
+const RANKING_TOP := 25
+
+func _build_rankings() -> void:
+	var a := Game.athlete
+	var season := Rankings.season_of(Game.date)
+	var event_name: String = Data.get_event(a.main_event).name
+	_content.add_child(UIKit.label("%s %s · season %s" % [
+			Calendar.age_class(a, Game.date.year), event_name, Rankings.season_label(season)], "HeadingLabel"))
+	_content.add_child(UIKit.wrapped(
+			"Season bests (1 Nov – 31 Oct), indoor and outdoor together. Rivals race on their own too, so the list "
+			+ "fills up as the season goes on."))
+
+	var rows := Rankings.season_list(a, Game.rivals, season)
+	var box := UIKit.vbox(6)
+	var mine := 0
+	for r in rows:
+		if r.is_player:
+			mine = r.rank
+	if mine == 0:
+		box.add_child(UIKit.wrapped("You have no %s time this season yet. Enter a race in the Calendar." % event_name))
+	else:
+		box.add_child(UIKit.wrapped("You're ranked %d of %d." % [mine, rows.size()]))
+	box.add_child(UIKit.label(" "))
+	box.add_child(_ranking_header())
+	for r in rows:
+		if r.rank <= RANKING_TOP or r.is_player:
+			if r.rank == RANKING_TOP + 1 or (r.rank > RANKING_TOP + 1 and r.is_player):
+				box.add_child(UIKit.label("…", "MutedLabel"))
+			box.add_child(_ranking_row(r))
+	if rows.is_empty():
+		box.add_child(UIKit.wrapped("No results this season yet."))
+	_content.add_child(UIKit.panel(box, 16))
+
+
+func _ranking_header() -> HBoxContainer:
+	var row := UIKit.hbox(10)
+	for c in [["#", 50], ["ATHLETE", 260], ["CLUB", 0], ["SB", 90]]:
+		var l := UIKit.label(c[0], "CaptionLabel")
+		l.custom_minimum_size.x = c[1]
+		if c[1] == 0:
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(l)
+	return row
+
+
+func _ranking_row(r: Dictionary) -> HBoxContainer:
+	var row := UIKit.hbox(10)
+	var cells := [[str(r.rank), 50], [r.name, 260], [r.club, 0], [Calendar.format_time(r.time), 90]]
+	for c in cells:
+		var l := UIKit.label(c[0], "" if r.is_player else "MutedLabel")
+		l.custom_minimum_size.x = c[1]
+		if c[1] == 0:
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.clip_text = true
+		if r.is_player:
+			l.add_theme_color_override("font_color", Palette.ACCENT)
+		row.add_child(l)
 	return row
 
 
