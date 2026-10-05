@@ -3,8 +3,8 @@
 Build in layers: every milestone ends with something playable.
 
 ## M0 — Project setup
-- [ ] Godot 4 project, folder structure, runs on PC
-- [ ] User setup: Godot + GitHub Desktop installed, can pull and press Play
+- [x] Godot 4 project, folder structure, dark theme, main menu, data loading
+- [x] User setup: Godot + GitHub Desktop installed, can pull and press Play
 
 ## M1 — Vertical slice: "800m youth season"
 - [ ] Athlete model (attributes, hidden potential, growth/maturation)

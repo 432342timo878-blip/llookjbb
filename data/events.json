@@ -1,0 +1,402 @@
+{
+ "_note": "Senior event list. Youth implement weights/hurdle heights come later per age class.",
+ "events": [
+  {
+   "id": "60m",
+   "name": "60 m",
+   "group": "sprints",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": false
+  },
+  {
+   "id": "100m",
+   "name": "100 m",
+   "group": "sprints",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "200m",
+   "name": "200 m",
+   "group": "sprints",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "400m",
+   "name": "400 m",
+   "group": "sprints",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "800m",
+   "name": "800 m",
+   "group": "middle_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "1500m",
+   "name": "1500 m",
+   "group": "middle_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "mile",
+   "name": "Mile",
+   "group": "middle_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "3000m",
+   "name": "3000 m",
+   "group": "long_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "5000m",
+   "name": "5000 m",
+   "group": "long_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "10000m",
+   "name": "10,000 m",
+   "group": "long_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "3000msc",
+   "name": "3000 m steeplechase",
+   "group": "long_distance",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "60mh",
+   "name": "60 m hurdles",
+   "group": "hurdles",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": false
+  },
+  {
+   "id": "100mh",
+   "name": "100 m hurdles",
+   "group": "hurdles",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "110mh",
+   "name": "110 m hurdles",
+   "group": "hurdles",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "400mh",
+   "name": "400 m hurdles",
+   "group": "hurdles",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "hj",
+   "name": "High jump",
+   "group": "jumps",
+   "kind": "field",
+   "unit": "height",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "pv",
+   "name": "Pole vault",
+   "group": "jumps",
+   "kind": "field",
+   "unit": "height",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "lj",
+   "name": "Long jump",
+   "group": "jumps",
+   "kind": "field",
+   "unit": "distance",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "tj",
+   "name": "Triple jump",
+   "group": "jumps",
+   "kind": "field",
+   "unit": "distance",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "sp",
+   "name": "Shot put",
+   "group": "throws",
+   "kind": "field",
+   "unit": "distance",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": true
+  },
+  {
+   "id": "dt",
+   "name": "Discus throw",
+   "group": "throws",
+   "kind": "field",
+   "unit": "distance",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "ht",
+   "name": "Hammer throw",
+   "group": "throws",
+   "kind": "field",
+   "unit": "distance",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "jt",
+   "name": "Javelin throw",
+   "group": "throws",
+   "kind": "field",
+   "unit": "distance",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "pen",
+   "name": "Pentathlon",
+   "group": "combined",
+   "kind": "combined",
+   "unit": "points",
+   "genders": [
+    "female"
+   ],
+   "indoor": true,
+   "outdoor": false
+  },
+  {
+   "id": "hep_indoor",
+   "name": "Heptathlon (indoor)",
+   "group": "combined",
+   "kind": "combined",
+   "unit": "points",
+   "genders": [
+    "male"
+   ],
+   "indoor": true,
+   "outdoor": false
+  },
+  {
+   "id": "hep",
+   "name": "Heptathlon",
+   "group": "combined",
+   "kind": "combined",
+   "unit": "points",
+   "genders": [
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "dec",
+   "name": "Decathlon",
+   "group": "combined",
+   "kind": "combined",
+   "unit": "points",
+   "genders": [
+    "male"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "hm",
+   "name": "Half marathon",
+   "group": "road",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "mar",
+   "name": "Marathon",
+   "group": "road",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "20kmw",
+   "name": "20 km race walk",
+   "group": "race_walk",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  },
+  {
+   "id": "35kmw",
+   "name": "35 km race walk",
+   "group": "race_walk",
+   "kind": "track",
+   "unit": "time",
+   "genders": [
+    "male",
+    "female"
+   ],
+   "indoor": false,
+   "outdoor": true
+  }
+ ]
+}

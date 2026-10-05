@@ -1,0 +1,180 @@
+{
+ "_note": "Visible attributes use a 1-20 scale. Event-group attributes (throws etc.) get added later.",
+ "attributes": [
+  {
+   "id": "speed",
+   "name": "Speed",
+   "category": "physical",
+   "hidden": false,
+   "description": "Maximum sprinting velocity."
+  },
+  {
+   "id": "acceleration",
+   "name": "Acceleration",
+   "category": "physical",
+   "hidden": false,
+   "description": "How quickly top speed is reached."
+  },
+  {
+   "id": "speed_endurance",
+   "name": "Speed endurance",
+   "category": "physical",
+   "hidden": false,
+   "description": "Holding near-top speed as the race goes on."
+  },
+  {
+   "id": "aerobic_capacity",
+   "name": "Aerobic capacity",
+   "category": "physical",
+   "hidden": false,
+   "description": "Size of the aerobic engine (VO2max)."
+  },
+  {
+   "id": "lactate_threshold",
+   "name": "Lactate threshold",
+   "category": "physical",
+   "hidden": false,
+   "description": "Fastest pace sustainable without rapid fatigue."
+  },
+  {
+   "id": "running_economy",
+   "name": "Running economy",
+   "category": "physical",
+   "hidden": false,
+   "description": "Energy cost of running at a given pace."
+  },
+  {
+   "id": "strength",
+   "name": "Strength",
+   "category": "physical",
+   "hidden": false,
+   "description": "Maximal force production."
+  },
+  {
+   "id": "power",
+   "name": "Power",
+   "category": "physical",
+   "hidden": false,
+   "description": "Explosiveness: force applied quickly."
+  },
+  {
+   "id": "mobility",
+   "name": "Mobility",
+   "category": "physical",
+   "hidden": false,
+   "description": "Range of motion and flexibility."
+  },
+  {
+   "id": "durability",
+   "name": "Durability",
+   "category": "physical",
+   "hidden": false,
+   "description": "How much training load the body tolerates."
+  },
+  {
+   "id": "running_technique",
+   "name": "Running technique",
+   "category": "technical",
+   "hidden": false,
+   "description": "Efficient, relaxed running form."
+  },
+  {
+   "id": "starts",
+   "name": "Starts",
+   "category": "technical",
+   "hidden": false,
+   "description": "Reaction and block/standing start quality."
+  },
+  {
+   "id": "race_tactics",
+   "name": "Race tactics",
+   "category": "mental",
+   "hidden": false,
+   "description": "Positioning, reading the race, timing moves."
+  },
+  {
+   "id": "composure",
+   "name": "Composure",
+   "category": "mental",
+   "hidden": false,
+   "description": "Performing under pressure in big races."
+  },
+  {
+   "id": "determination",
+   "name": "Determination",
+   "category": "mental",
+   "hidden": false,
+   "description": "Refusing to give up; drive in training."
+  },
+  {
+   "id": "competitiveness",
+   "name": "Competitiveness",
+   "category": "mental",
+   "hidden": false,
+   "description": "Rising to the challenge of rivals."
+  },
+  {
+   "id": "pain_tolerance",
+   "name": "Pain tolerance",
+   "category": "mental",
+   "hidden": false,
+   "description": "Pushing through the hurt late in a race."
+  },
+  {
+   "id": "consistency",
+   "name": "Consistency",
+   "category": "mental",
+   "hidden": false,
+   "description": "How reliably ability shows up on the day."
+  },
+  {
+   "id": "professionalism",
+   "name": "Professionalism",
+   "category": "mental",
+   "hidden": false,
+   "description": "Sleep, diet, recovery and discipline off the track."
+  },
+  {
+   "id": "potential",
+   "name": "Potential",
+   "category": "hidden",
+   "hidden": true,
+   "description": "Talent ceiling."
+  },
+  {
+   "id": "trainability",
+   "name": "Trainability",
+   "category": "hidden",
+   "hidden": true,
+   "description": "How strongly the body responds to training."
+  },
+  {
+   "id": "recovery_rate",
+   "name": "Recovery rate",
+   "category": "hidden",
+   "hidden": true,
+   "description": "How fast fatigue clears."
+  },
+  {
+   "id": "injury_proneness",
+   "name": "Injury proneness",
+   "category": "hidden",
+   "hidden": true,
+   "description": "Likelihood of picking up injuries."
+  },
+  {
+   "id": "maturation_timing",
+   "name": "Maturation timing",
+   "category": "hidden",
+   "hidden": true,
+   "description": "Early, average or late physical development."
+  },
+  {
+   "id": "ambition",
+   "name": "Ambition",
+   "category": "hidden",
+   "hidden": true,
+   "description": "How high the athlete aims."
+  }
+ ]
+}
