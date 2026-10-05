@@ -166,7 +166,7 @@ at real venues (marked `estimated` in `data/competitions.json`); the **player en
 
 - 2D stadium view during meets: track, crowd, simultaneous events.
 - Modern, sleek, responsive UI (desktop + mobile).
-- **Idea (user, for later):** the plain dark UI feels generic. Use athlete photos as screen backgrounds, darkened and/or blurred behind the panels so they never hurt readability. Could vary per screen or event (e.g. an 800 m pack on the career hub). Needs a set of good, properly licensed photos (e.g. Wikimedia Commons) or the user's own. Try it in a "UI polish" pass, starting with the main menu and character creation.
+- **Idea (user, for later):** the plain dark UI feels generic. Use athlete photos as screen backgrounds, darkened and/or blurred behind the panels so they never hurt readability. Could vary per screen or event (e.g. an 800 m pack on the career hub). Needs a set of good, properly licensed photos (e.g. Wikimedia Commons) or the user's own. **Status (UI polish pass, 2026-10-05):** the backdrop system is built (blurred + darkened photo behind translucent panels, per screen, falls back to a gradient). A deliberately harsh test image stayed readable, but loose text (tabs, captions) is the weak spot, so photos should be calm and dark. No photos are added yet: waiting for the user to choose or approve a source. See `assets/backgrounds/README.md`.
 
 ## 6. Data
 

@@ -2,6 +2,7 @@ extends SceneTree
 ## Dev tool: clicks through character creation and saves a screenshot of every step.
 ## Run (needs a display, e.g. xvfb-run):
 ##   godot --path . --rendering-driver opengl3 -s res://tools/screenshot_tour.gd -- <output_dir>
+## Add `--resolution 390x844` before `-s` to tour the phone layout (default window is 1600x900).
 
 var _out := "user://tour"
 
@@ -46,7 +47,7 @@ func _run() -> void:
 	hub._show("training")
 	await _frames(5)
 	await _shot("7_training")
-	hub.get_node("Margin/Column/Scroll").scroll_vertical = 640
+	hub._scroll.scroll_vertical = 640
 	await _frames(5)
 	await _shot("7b_training_summary")
 	# Enter every meet the coach recommends, then play until the first race (9 Jan 2027).
@@ -58,7 +59,7 @@ func _run() -> void:
 	hub._show("calendar")
 	await _frames(5)
 	await _shot("8_calendar")
-	hub.get_node("Margin/Column/Scroll").scroll_vertical = 700
+	hub._scroll.scroll_vertical = 700
 	await _frames(5)
 	await _shot("8b_calendar_scrolled")
 	# Play weeks until the first race day stops the week.

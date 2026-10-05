@@ -1,51 +1,125 @@
 extends Control
-## Career home screen: athlete profile, weekly training plan and last week's report.
-## "Continue" plays one week of training.
+## Career home screen: athlete header, tabs (Overview / Training / Calendar / Rankings / Last week) and
+## Continue, which plays one week. Wide layout on PC (tabs on top); on a phone the content is stacked and
+## the tabs sit in a bar at the bottom, within thumb reach.
 
 const MONTHS := ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-const VIEWS := [["overview", "Overview"], ["training", "Training"], ["calendar", "Calendar"], ["rankings", "Rankings"], ["report", "Last week"]]
+## id, tab text, short tab text (phone)
+const VIEWS := [["overview", "Overview", "Overview"], ["training", "Training", "Training"],
+		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Last week", "Report"]]
 const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
 		"September", "October", "November", "December"]
 
 var _view := "overview"
 var _tabs := {}   # view id -> tab Button
-
-@onready var _content: VBoxContainer = %Content
+var _margin: MarginContainer
+var _scroll: ScrollContainer
+var _content: VBoxContainer
+var _name_label: Label
+var _info_label: Label
+var _date_label: Label
 
 
 func _ready() -> void:
-	%MenuButton.pressed.connect(Router.go.bind("main_menu"))
+	Router.layout_changed.connect(func(_c): _build_shell(); _show(_view))
+	_build_shell()
+	# Coming back from a race day: show how the week went.
+	_show("report" if Game.open_report and not Game.last_report.is_empty() else "overview")
+	Game.open_report = false
+
+
+## Header, tab bar, scrolling content. Rebuilt when the window switches between wide and phone layout.
+func _build_shell() -> void:
+	if _margin:
+		_margin.queue_free()
+	_margin = MarginContainer.new()
+	_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	Layout.page_margin(_margin)
+	add_child(_margin)
+	var column := UIKit.vbox(10 if Layout.compact else 16)
+	_margin.add_child(column)
+
+	column.add_child(_build_header())
+	_scroll = ScrollContainer.new()
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_content = UIKit.vbox(14)
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(_content)
+
+	_tabs.clear()
+	var group := ButtonGroup.new()
+	var bar := UIKit.hbox(4)
+	for v in VIEWS:
+		var b := Button.new()
+		b.text = v[2] if Layout.compact else v[1]
+		b.toggle_mode = true
+		b.button_group = group
+		b.theme_type_variation = "BottomTabButton" if Layout.compact else "TabButton"
+		b.custom_minimum_size = Vector2(0 if Layout.compact else 130, 48 if Layout.compact else 44)
+		if Layout.compact:
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(_show.bind(v[0]))
+		bar.add_child(b)
+		_tabs[v[0]] = b
+	if Layout.compact:
+		column.add_child(_scroll)
+		column.add_child(HSeparator.new())
+		column.add_child(bar)
+	else:
+		column.add_child(bar)
+		column.add_child(HSeparator.new())
+		column.add_child(_scroll)
+	_refresh_header()
+
+
+func _build_header() -> Control:
+	_name_label = UIKit.label("", "TitleLabel")
+	_info_label = UIKit.wrapped("")
+	_date_label = UIKit.label("", "SubheadingLabel")
 	var cont := UIKit.button("Continue", true, 160)
-	cont.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	cont.tooltip_text = "Play one week of training"
 	cont.pressed.connect(_on_continue)
-	%MenuButton.add_sibling(cont)
-	%MenuButton.get_parent().move_child(cont, %MenuButton.get_index())
 	var save := UIKit.button("Save", false, 110)
-	save.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	save.tooltip_text = "Make a save you can always come back to (the game also autosaves every week)"
 	save.pressed.connect(func():
 		SaveGame.save_snapshot()
 		save.text = "Saved ✓"
 		get_tree().create_timer(1.5).timeout.connect(func(): save.text = "Save"))
-	%MenuButton.add_sibling(save)
-	%MenuButton.get_parent().move_child(save, %MenuButton.get_index())
+	var menu := UIKit.button("Menu" if Layout.compact else "Main menu", false, 140)
+	menu.pressed.connect(Router.go.bind("main_menu"))
 
-	var bar := UIKit.hbox(8)
-	var group := ButtonGroup.new()
-	for v in VIEWS:
-		var b := UIKit.toggle(v[1], group)
-		b.custom_minimum_size.x = 140
-		b.pressed.connect(_show.bind(v[0]))
-		bar.add_child(b)
-		_tabs[v[0]] = b
-	var column: Control = _content.get_parent().get_parent()
-	column.add_child(bar)
-	column.move_child(bar, 1)
-	_refresh_header()
-	# Coming back from a race day: show how the week went.
-	_show("report" if Game.open_report and not Game.last_report.is_empty() else "overview")
-	Game.open_report = false
+	if Layout.compact:
+		var box := UIKit.vbox(6)
+		var top := UIKit.hbox(8)
+		_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_name_label.clip_text = true
+		top.add_child(_name_label)
+		top.add_child(menu)
+		box.add_child(top)
+		box.add_child(_info_label)
+		var actions := UIKit.hbox(8)
+		_date_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_date_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		actions.add_child(_date_label)
+		actions.add_child(save)
+		cont.custom_minimum_size.x = 130
+		actions.add_child(cont)
+		box.add_child(actions)
+		return box
+
+	var row := UIKit.hbox(16)
+	var titles := UIKit.vbox(2)
+	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titles.add_child(_name_label)
+	titles.add_child(_info_label)
+	row.add_child(titles)
+	_date_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_date_label.custom_minimum_size.y = 44
+	_date_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(_date_label)
+	for b in [cont, save, menu]:
+		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.add_child(b)
+	return row
 
 
 func _on_continue() -> void:
@@ -59,17 +133,17 @@ func _on_continue() -> void:
 func _refresh_header() -> void:
 	var a := Game.athlete
 	var club := Data.get_club(a.club_id)
-	%NameLabel.text = a.full_name()
-	%InfoLabel.text = "%s · %d years · %s · %s" % [
+	_name_label.text = a.full_name()
+	_info_label.text = "%s · %d years · %s · %s" % [
 		Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", ""), a.hometown]
-	%DateLabel.text = "Mon %d %s %d" % [Game.date.day, MONTHS[Game.date.month - 1], Game.date.year]
+	_date_label.text = "Mon %d %s %d" % [Game.date.day, MONTHS[Game.date.month - 1], Game.date.year]
 	_tabs.report.disabled = Game.last_report.is_empty()
 
 
 func _show(view: String) -> void:
 	_view = view
 	_tabs[view].button_pressed = true
-	(_content.get_parent() as ScrollContainer).scroll_vertical = 0
+	_scroll.scroll_vertical = 0
 	for child in _content.get_children():
 		child.queue_free()
 	match view:
@@ -83,15 +157,17 @@ func _show(view: String) -> void:
 # --- Overview ---------------------------------------------------------------------------
 
 func _build_profile(a: Athlete) -> void:
-	var columns := UIKit.hbox(16)
+	var columns := UIKit.flex(16)
+	var attribute_panels := []
 	for category in ["physical", "technical", "mental"]:
-		var col := UIKit.vbox(6)
+		var col := UIKit.vbox(2)
 		col.add_child(UIKit.label(category.to_upper(), "CaptionLabel"))
 		for attr in Data.attributes_in(category):
-			var row := UIKit.attr_row(attr.name, a.get_attr(attr.id), a.trend(attr.id))
-			row.tooltip_text = attr.description
-			col.add_child(row)
-		columns.add_child(_column_panel(col))
+			col.add_child(UIKit.attr_row(attr.name, a.get_attr(attr.id), a.trend(attr.id), attr.description))
+		attribute_panels.append(_column_panel(col))
+	if not Layout.compact:
+		for p in attribute_panels:
+			columns.add_child(p)
 
 	var body := UIKit.vbox(6)
 	body.add_child(UIKit.label("CONDITION", "CaptionLabel"))
@@ -128,11 +204,14 @@ func _build_profile(a: Athlete) -> void:
 					Race._ordinal(int(r.place)), Calendar.format_time(r.time)]
 			body.add_child(UIKit.wrapped(line + (" PB" if r.pb else ""), "MutedLabel"))
 	columns.add_child(_column_panel(body))
+	if Layout.compact:   # condition and next race first, then the attributes
+		for p in attribute_panels:
+			columns.add_child(p)
 	_content.add_child(columns)
 
 	_content.add_child(UIKit.wrapped(
-			"Arrows show attributes that have been rising or falling lately. Plan your week under Training, then press Continue.",
-			"MutedLabel"))
+			"Arrows show attributes that have been rising or falling lately. Tap an attribute to see what it does. "
+			+ "Plan your week under Training, then press Continue.", "MutedLabel"))
 
 
 # --- Training plan ----------------------------------------------------------------------
@@ -148,32 +227,53 @@ func _build_training() -> void:
 	var summary := UIKit.vbox(8)
 	var refresh_summary := func(): _fill_plan_summary(summary, a, month)
 
-	var days := UIKit.vbox(8)
+	var days := UIKit.vbox(14 if Layout.compact else 8)
 	for day in 7:
+		if day > 0 and Layout.compact:
+			days.add_child(HSeparator.new())
 		days.add_child(_day_row(day, a, month, refresh_summary))
 	_content.add_child(UIKit.panel(days, 16))
 
 	var buttons := UIKit.hbox(8)
 	var coach := UIKit.button("Coach's plan", false, 160)
-	coach.tooltip_text = "Reset to your club coach's starter week"
 	coach.pressed.connect(func(): Game.training_plan = Training.coach_plan(); _show("training"))
 	var clear := UIKit.button("Clear week", false, 160)
 	clear.pressed.connect(func(): Game.training_plan = Training.empty_plan(); _show("training"))
 	buttons.add_child(coach)
 	buttons.add_child(clear)
+	if Layout.compact:
+		coach.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		clear.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(buttons)
+	_content.add_child(UIKit.wrapped("Coach's plan puts back the starter week your club coach suggests."))
 
 	_content.add_child(UIKit.panel(summary, 16))
 	refresh_summary.call()
 	_content.add_child(_session_library(a, month))
 
 
-func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> HBoxContainer:
-	var row := UIKit.hbox(10)
+## One day of the plan. Wide: day, two pickers and the load on one row. Phone: a header line
+## (day + load) with the two pickers stacked under it.
+func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> Control:
 	var date := Game.add_days(Game.date, day)
-	var day_label := UIKit.label("%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month])
-	day_label.custom_minimum_size.x = 100
-	row.add_child(day_label)
+	var day_label := UIKit.label("%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month],
+			"SubheadingLabel" if Layout.compact else "")
+	var load_label := UIKit.label("", "MutedLabel")
+	var row: BoxContainer
+	var slot_parent: Control
+	if Layout.compact:
+		row = UIKit.vbox(6)
+		var head := UIKit.hbox(8)
+		day_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		head.add_child(day_label)
+		head.add_child(load_label)
+		row.add_child(head)
+		slot_parent = row
+	else:
+		row = UIKit.hbox(10)
+		day_label.custom_minimum_size.x = 100
+		row.add_child(day_label)
+		slot_parent = row
 	var slots := []
 	for slot in Training.MAX_SESSIONS_PER_DAY:
 		var pick := _session_picker(a, month)
@@ -183,9 +283,10 @@ func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> HBoxCont
 			if pick.get_item_metadata(i) == id:
 				pick.select(i)
 		slots.append(pick)
-		row.add_child(pick)
-	var load_label := UIKit.label("", "MutedLabel")
-	row.add_child(load_label)
+		slot_parent.add_child(pick)
+	if not Layout.compact:
+		load_label.custom_minimum_size.x = 80
+		row.add_child(load_label)
 
 	var update := func():
 		var ids := []
@@ -206,7 +307,8 @@ func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> HBoxCont
 
 func _session_picker(a: Athlete, month: int) -> OptionButton:
 	var pick := OptionButton.new()
-	pick.custom_minimum_size = Vector2(250, 44)
+	pick.custom_minimum_size = Vector2(0 if Layout.compact else 200, 44)
+	pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pick.add_item("—")
 	pick.set_item_metadata(0, "")
 	for s in Data.training.sessions:
@@ -243,7 +345,7 @@ func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
 	box.add_child(_fact_row("Weekly load", UIKit.label(str(roundi(p.load)))))
 	var fat := UIKit.hbox(6)
 	fat.add_child(_fatigue_label(expected.avg))
-	fat.add_child(UIKit.label("on average after a few weeks", "MutedLabel"))
+	fat.add_child(UIKit.label("on average", "MutedLabel"))
 	box.add_child(_fact_row("Expected fatigue", fat))
 	box.add_child(UIKit.wrapped(verdict, ""))
 
@@ -255,11 +357,11 @@ func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
 	for id in focus:
 		var row := UIKit.hbox(10)
 		var l := UIKit.label(_attr_name(id))
-		l.custom_minimum_size.x = 200
+		l.custom_minimum_size.x = 150 if Layout.compact else 200
 		row.add_child(l)
 		var bar := ColorRect.new()
 		bar.color = Palette.ACCENT
-		bar.custom_minimum_size = Vector2(minf(p.stimulus[id], 6.0) * 50.0, 12)
+		bar.custom_minimum_size = Vector2(minf(p.stimulus[id], 6.0) * (30.0 if Layout.compact else 50.0), 12)
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(bar)
 		box.add_child(row)
@@ -294,7 +396,8 @@ func _build_calendar() -> void:
 	var a := Game.athlete
 	_content.add_child(UIKit.label("Season calendar", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
-			"Enter the meets you want to race; a race replaces that day's training. ★ = your coach recommends it. "
+			"Enter the meets you want to race; a race replaces that day's training. Tap \"Entered\" again to withdraw. "
+			+ "★ = your coach recommends it. "
 			+ "\"Estimated\" dates are believable guesses for small meets whose real dates aren't published."))
 
 	# The rest of this season and the whole next one.
@@ -305,22 +408,26 @@ func _build_calendar() -> void:
 		if m.date.month != month:
 			month = m.date.month
 			_content.add_child(UIKit.label("%s %d" % [MONTH_NAMES[month - 1].to_upper(), m.date.year], "CaptionLabel"))
-			box = UIKit.vbox(14)
+			box = UIKit.vbox(18 if Layout.compact else 14)
 			_content.add_child(UIKit.panel(box, 16))
 		box.add_child(_meet_row(a, m))
 
 
-func _meet_row(a: Athlete, m: Dictionary) -> HBoxContainer:
-	var row := UIKit.hbox(16)
-	var date := UIKit.label(Calendar.format_meet_date(m))
-	date.custom_minimum_size.x = 150
-	date.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+## One meet. Wide: date | details | Enter button. Phone: date, details, then a full-width button.
+func _meet_row(a: Athlete, m: Dictionary) -> Control:
+	var row: BoxContainer = UIKit.vbox(6) if Layout.compact else UIKit.hbox(16)
+	var date := UIKit.label(Calendar.format_meet_date(m), "CaptionLabel" if Layout.compact else "")
+	if Layout.compact:
+		date.text = date.text.to_upper()
+	else:
+		date.custom_minimum_size.x = 120
+		date.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	row.add_child(date)
 
 	var info := UIKit.vbox(2)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var title: String = m.name + ("  ★" if Calendar.coach_recommends(a, m, Game.date) else "")
-	info.add_child(UIKit.label(title, "SubheadingLabel" if not m.get("watch", false) else ""))
+	info.add_child(UIKit.wrapped(title, "SubheadingLabel" if not m.get("watch", false) else ""))
 	var details := [Calendar.place(a, m), Data.competitions.levels.get(m.level, "")]
 	if m.get("indoor", false):
 		details.append("Indoor")
@@ -347,7 +454,6 @@ func _meet_row(a: Athlete, m: Dictionary) -> HBoxContainer:
 			var entered: bool = m.key in Game.entries
 			b.text = "Entered ✓" if entered else "Enter"
 			b.theme_type_variation = "PrimaryButton" if entered else ""
-			b.tooltip_text = "Press to withdraw" if entered else ""
 		b.pressed.connect(func():
 			if m.key in Game.entries:
 				Game.withdraw(m.key)
@@ -395,30 +501,56 @@ func _build_rankings() -> void:
 	_content.add_child(UIKit.panel(box, 16))
 
 
+## Column widths: rank, athlete (0 = takes the free space), club (hidden on a phone), season best.
+func _ranking_columns() -> Array:
+	if Layout.compact:
+		return [["#", 36], ["ATHLETE", 0], ["SB", 80]]
+	return [["#", 50], ["ATHLETE", 260], ["CLUB", 0], ["SB", 90]]
+
+
 func _ranking_header() -> HBoxContainer:
 	var row := UIKit.hbox(10)
-	for c in [["#", 50], ["ATHLETE", 260], ["CLUB", 0], ["SB", 90]]:
+	for c in _ranking_columns():
 		var l := UIKit.label(c[0], "CaptionLabel")
 		l.custom_minimum_size.x = c[1]
 		if c[1] == 0:
 			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if c[0] == "SB":
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(l)
 	return row
 
 
-func _ranking_row(r: Dictionary) -> HBoxContainer:
+func _ranking_row(r: Dictionary) -> Control:
 	var row := UIKit.hbox(10)
-	var cells := [[str(r.rank), 50], [r.name, 260], [r.club, 0], [Calendar.format_time(r.time), 90]]
-	for c in cells:
-		var l := UIKit.label(c[0], "" if r.is_player else "MutedLabel")
-		l.custom_minimum_size.x = c[1]
-		if c[1] == 0:
+	row.custom_minimum_size.y = 30
+	var texts := [str(r.rank), r.name, Calendar.format_time(r.time)] if Layout.compact \
+			else [str(r.rank), r.name, r.club, Calendar.format_time(r.time)]
+	var columns := _ranking_columns()
+	for i in columns.size():
+		var l := UIKit.label(texts[i], "" if r.is_player else "MutedLabel")
+		l.custom_minimum_size.x = columns[i][1]
+		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if columns[i][1] == 0:
 			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			l.clip_text = true
+		if columns[i][0] == "SB":
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		if r.is_player:
 			l.add_theme_color_override("font_color", Palette.ACCENT)
 		row.add_child(l)
-	return row
+	if not r.is_player:
+		return row
+	# Highlight the player's own row.
+	var tint := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(Palette.ACCENT, 0.12)
+	style.set_corner_radius_all(Palette.RADIUS)
+	style.expand_margin_left = 8     # the tint reaches past the text so columns stay aligned
+	style.expand_margin_right = 8
+	tint.add_theme_stylebox_override("panel", style)
+	tint.add_child(row)
+	return tint
 
 
 # --- Weekly report ----------------------------------------------------------------------

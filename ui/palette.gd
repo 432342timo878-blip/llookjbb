@@ -3,6 +3,7 @@ class_name Palette
 
 const BG := Color("#12141a")          # app background
 const SURFACE := Color("#1b1e26")     # panels
+const SURFACE_PANEL := Color(0.106, 0.118, 0.149, 0.94)   # panels on the backdrop (a hint of it shows through)
 const SURFACE_2 := Color("#232733")   # raised panels, buttons
 const SURFACE_3 := Color("#2d3240")   # hover
 const BORDER := Color("#323848")
@@ -15,7 +16,7 @@ const ACCENT_PRESSED := Color("#e04a29")
 const TRACK := Color("#c2452d")       # track surface in drawings
 const INFIELD := Color("#1f3a2e")     # grass in drawings
 
-const RADIUS := 6
+const RADIUS := 8
 const FONT_SIZE := 16
 
 # Stadium drawing

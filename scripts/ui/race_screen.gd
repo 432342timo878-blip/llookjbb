@@ -17,6 +17,8 @@ var _acc := 0.0
 var _running := false
 var _finish_wait := 0.0
 
+var _stage := "pre"   # pre / running / result: what a layout change should rebuild
+var _margin: MarginContainer
 var _title: Label
 var _subtitle: Label
 var _header_right: HBoxContainer
@@ -27,7 +29,7 @@ var _clock: Label
 var _info: Label
 var _standings: VBoxContainer
 var _commentary: VBoxContainer
-var _decision: PanelContainer
+var _decision: Control   # full-screen dimmed overlay holding the decision card
 
 
 func _ready() -> void:
@@ -35,31 +37,77 @@ func _ready() -> void:
 	if _rd == null:
 		Router.go.call_deferred("career_hub")
 		return
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in [["left", 48], ["right", 48], ["top", 28], ["bottom", 24]]:
-		margin.add_theme_constant_override("margin_" + side[0], side[1])
-	add_child(margin)
-	var column := UIKit.vbox(16)
-	margin.add_child(column)
+	Router.layout_changed.connect(_on_layout_changed)
+	_build_shell()
+	_show_pre()
+
+
+## Title, speed buttons and the empty body that the stages fill. Rebuilt when the layout switches.
+func _build_shell() -> void:
+	if _margin:
+		_margin.queue_free()
+	_margin = MarginContainer.new()
+	_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	Layout.page_margin(_margin)
+	add_child(_margin)
+	var column := UIKit.vbox(10 if Layout.compact else 16)
+	_margin.add_child(column)
 
 	var header := UIKit.hbox(16)
 	var titles := UIKit.vbox(2)
 	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_title = UIKit.label("", "TitleLabel")
-	_subtitle = UIKit.label("", "MutedLabel")
+	_title = UIKit.wrapped("", "TitleLabel")
+	_subtitle = UIKit.wrapped("")
 	titles.add_child(_title)
 	titles.add_child(_subtitle)
 	header.add_child(titles)
 	_header_right = UIKit.hbox(8)
-	_header_right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	header.add_child(_header_right)
+	if Layout.compact:
+		_header_right.visible = false   # shown (under the title) when there are speed buttons
+	else:
+		_header_right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		header.add_child(_header_right)
 	column.add_child(header)
+	if Layout.compact:
+		column.add_child(_header_right)
 
 	_body = Control.new()
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(_body)
-	_show_pre()
+
+	if _decision == null:
+		_build_decision_overlay()
+
+
+func _on_layout_changed(_compact: bool) -> void:
+	if _stage == "running":
+		return   # the race goes on; the next stage uses the new layout
+	_build_shell()
+	if _stage == "result":
+		_show_result(false)
+	else:
+		_show_pre()
+
+
+## A dimmed full-screen layer with a centred card, used for the in-race decisions.
+func _build_decision_overlay() -> void:
+	_decision = ColorRect.new()
+	(_decision as ColorRect).color = Color(0.03, 0.035, 0.05, 0.72)
+	_decision.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_decision.visible = false
+	add_child(_decision)
+	var margin := MarginContainer.new()
+	margin.name = "Margin"
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 16)
+	_decision.add_child(margin)
+	var center := CenterContainer.new()
+	center.name = "Center"
+	margin.add_child(center)
+	var card := PanelContainer.new()
+	card.name = "Card"
+	center.add_child(card)
 
 
 func _set_body(content: Control) -> void:
@@ -67,6 +115,7 @@ func _set_body(content: Control) -> void:
 		child.queue_free()
 	for child in _header_right.get_children():
 		child.queue_free()
+	_header_right.visible = false
 	content.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_body.add_child(content)
 
@@ -81,38 +130,40 @@ func _update_titles() -> void:
 # --- Before the race ----------------------------------------------------------------------
 
 func _show_pre() -> void:
+	_stage = "pre"
 	_update_titles()
 	var a := Game.athlete
-	var row := UIKit.hbox(16)
 
 	var field := UIKit.vbox(6)
+	field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	field.add_child(UIKit.label("THE FIELD", "CaptionLabel"))
 	var entrants := _rd.current_entrants().duplicate()
 	entrants.sort_custom(func(x, y): return _pb_of(x) < _pb_of(y))
 	for e in entrants:
 		var line := UIKit.hbox(8)
+		line.custom_minimum_size.y = 30
 		var n := UIKit.label(e.name)
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		n.clip_text = true
 		if e.get("is_player", false):
 			n.add_theme_color_override("font_color", Palette.ACCENT)
 		line.add_child(n)
-		line.add_child(UIKit.label(e.club, "MutedLabel"))
+		if not Layout.compact:
+			var club := UIKit.label(e.club, "MutedLabel")
+			club.custom_minimum_size.x = 220
+			club.clip_text = true
+			line.add_child(club)
 		var pb := _pb_of(e)
 		var pb_label := UIKit.label("PB " + (Calendar.format_time(pb) if pb < 9999.0 else "–"), "MutedLabel")
 		pb_label.custom_minimum_size.x = 110
 		pb_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		line.add_child(pb_label)
 		field.add_child(line)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(field)
-	var field_panel := UIKit.panel(scroll, 16)
+	var field_panel := UIKit.panel(field, 16)
 	field_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(field_panel)
 
 	var side := UIKit.vbox(10)
-	side.custom_minimum_size.x = 440
 	side.add_child(UIKit.label("YOU", "CaptionLabel"))
 	var state := Training.fatigue_state(a.fatigue)
 	var cond := UIKit.label("Feeling %s (fatigue %d)" % [state[0].to_lower(), roundi(_rd.fatigue)])
@@ -124,24 +175,50 @@ func _show_pre() -> void:
 	side.add_child(UIKit.label("RACE PLAN", "CaptionLabel"))
 	var group := ButtonGroup.new()
 	for p in PLANS:
-		var b := UIKit.toggle(p[1], group)
-		b.button_pressed = p[0] == _plan
-		b.tooltip_text = p[2]
-		b.pressed.connect(func(): _plan = p[0])
-		side.add_child(b)
-		side.add_child(UIKit.wrapped(p[2]))
+		var card := ChoiceCard.new(p[1], p[2], group)
+		card.selected = p[0] == _plan
+		card.button.pressed.connect(func(): _plan = p[0])
+		side.add_child(card)
 	var buttons := UIKit.hbox(8)
-	var quick := UIKit.button("Quick result", false, 180)
+	var quick := UIKit.button("Quick result", false, 160)
+	quick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	quick.pressed.connect(_start.bind(false))
 	var watch := UIKit.button("Watch & decide", true, 200)
+	watch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	watch.pressed.connect(_start.bind(true))
 	buttons.add_child(quick)
 	buttons.add_child(watch)
 	side.add_child(buttons)
 	var side_panel := UIKit.panel(side, 16)
 	side_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+
+	if Layout.compact:
+		# One scrolling column: your plan and the start buttons first, the field below.
+		var scroll := _scroll_column()
+		var column := scroll.get_child(0) as VBoxContainer
+		column.add_child(side_panel)
+		column.add_child(field_panel)
+		_set_body(scroll)
+		return
+	side_panel.custom_minimum_size.x = 440
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(field_panel)
+	var row := UIKit.hbox(16)
+	row.add_child(scroll)
 	row.add_child(side_panel)
 	_set_body(row)
+
+
+## A vertically scrolling column (no sideways scrolling); returns the ScrollContainer, its child is the VBox.
+func _scroll_column() -> ScrollContainer:
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var column := UIKit.vbox(12)
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(column)
+	return scroll
 
 
 func _pb_of(e: Dictionary) -> float:
@@ -165,10 +242,13 @@ func _start(interactive: bool) -> void:
 # --- The race -------------------------------------------------------------------------------
 
 func _show_running() -> void:
-	var row := UIKit.hbox(16)
+	_stage = "running"
 	var track_area := Control.new()
 	track_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	track_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if Layout.compact:
+		track_area.custom_minimum_size.y = 250
+		track_area.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	if not _race.indoor:
 		var stadium := Control.new()
 		stadium.set_script(preload("res://scripts/ui/track_drawing.gd"))
@@ -179,32 +259,52 @@ func _show_running() -> void:
 	_runners_view.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_runners_view.set("race", _race)
 	track_area.add_child(_runners_view)
-	_decision = PanelContainer.new()
-	_decision.set_anchors_preset(Control.PRESET_CENTER)
-	_decision.visible = false
-	track_area.add_child(_decision)
-	row.add_child(track_area)
 
-	var side := UIKit.vbox(8)
-	side.custom_minimum_size.x = 330
 	_clock = UIKit.label("0.0", "TitleLabel")
-	side.add_child(_clock)
-	_info = UIKit.label("", "MutedLabel")
-	side.add_child(_info)
-	side.add_child(UIKit.label("POSITIONS", "CaptionLabel"))
+	_info = UIKit.wrapped("")
 	_standings = UIKit.vbox(2)
+	_commentary = UIKit.vbox(4)
+	var side := UIKit.vbox(8)
+	if Layout.compact:
+		var bar := UIKit.hbox(12)
+		_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		bar.add_child(_clock)
+		bar.add_child(_info)
+		side.add_child(bar)
+	else:
+		side.custom_minimum_size.x = 330
+		side.add_child(_clock)
+		side.add_child(_info)
+	side.add_child(UIKit.label("POSITIONS", "CaptionLabel"))
 	side.add_child(_standings)
 	side.add_child(UIKit.label("COMMENTARY", "CaptionLabel"))
-	_commentary = UIKit.vbox(4)
 	side.add_child(_commentary)
 	var side_panel := UIKit.panel(side, 16)
-	row.add_child(side_panel)
-	_set_body(row)
 
+	if Layout.compact:
+		var column := UIKit.vbox(10)
+		column.add_child(track_area)
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		side_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(side_panel)
+		column.add_child(scroll)
+		_set_body(column)
+	else:
+		var row := UIKit.hbox(16)
+		row.add_child(track_area)
+		row.add_child(side_panel)
+		_set_body(row)
+
+	_header_right.visible = true
 	var group := ButtonGroup.new()
 	for s in SPEEDS:
 		var b := UIKit.toggle("%dx" % s, group)
 		b.custom_minimum_size.x = 64
+		if Layout.compact:
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.button_pressed = s == _speed
 		b.pressed.connect(func(): _speed = s)
 		_header_right.add_child(b)
@@ -262,96 +362,119 @@ func _refresh_running() -> void:
 
 func _add_commentary(text: String) -> void:
 	_commentary.add_child(UIKit.wrapped(text, ""))
-	while _commentary.get_child_count() > 5:
+	while _commentary.get_child_count() > (3 if Layout.compact else 5):
 		var old := _commentary.get_child(0)
 		_commentary.remove_child(old)
 		old.queue_free()
 
 
+## The decision card: a dimmed overlay over the whole screen, so it fits any layout and can't be missed.
 func _show_decision(d: Dictionary) -> void:
 	_refresh_running()
-	for child in _decision.get_children():
+	var card: PanelContainer = _decision.get_node("Margin/Center/Card")
+	for child in card.get_children():
 		child.queue_free()
 	var box := UIKit.vbox(10)
-	box.custom_minimum_size.x = 480
-	box.add_child(UIKit.label(d.title, "HeadingLabel"))
+	box.custom_minimum_size.x = minf(480.0, size.x - 32.0 - 36.0)   # screen margin + panel padding
+	box.add_child(UIKit.wrapped(d.title, "HeadingLabel"))
 	box.add_child(UIKit.wrapped(d.text, ""))
 	for o in d.options:
-		var b := UIKit.button(o.label, false, 440)
-		b.tooltip_text = o.detail
+		var b := UIKit.button(o.label, false, 200)
 		b.pressed.connect(func():
 			_decision.visible = false
 			_race.choose(o.id))
 		box.add_child(b)
 		box.add_child(UIKit.wrapped(o.detail))
-	var m := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		m.add_theme_constant_override("margin_" + side, 20)
-	m.add_child(box)
-	_decision.add_child(m)
+	card.add_child(box)   # the panel style already pads it
 	_decision.visible = true
-	# Centre it over the track.
-	await get_tree().process_frame
-	_decision.position = (_decision.get_parent().size - _decision.size) / 2.0
 
 
 # --- Results ----------------------------------------------------------------------------------
 
-func _show_result() -> void:
-	var res := _race.results()
-	var old_pb: float = Game.athlete.personal_bests.get(Game.athlete.main_event, 0.0)
-	_rd.finish_round()
-	var mine: Dictionary = {}
-	for r in res:
-		if r.is_player:
-			mine = r
+var _result := {}   # what the result stage shows (kept so a layout change can redraw it)
+
+
+func _show_result(fresh := true) -> void:
+	_stage = "result"
+	if fresh:
+		_decision.visible = false
+		var res := _race.results()
+		var old_pb: float = Game.athlete.personal_bests.get(Game.athlete.main_event, 0.0)
+		_rd.finish_round()
+		var mine: Dictionary = {}
+		for r in res:
+			if r.is_player:
+				mine = r
+		var place := res.find(mine) + 1
+		var headline := "%s in %s" % [Race._ordinal(place), Calendar.format_time(mine.time)]
+		var best_so_far := old_pb
+		for r in _rd.player_results.slice(0, -1):
+			if best_so_far == 0.0 or r.time < best_so_far:
+				best_so_far = r.time
+		if best_so_far == 0.0 or mine.time < best_so_far:
+			headline += "  ·  Personal best!"
+		var qualifiers := []
+		if _rd.rounds.size() > 1 and _rd.round_index == 1:
+			qualifiers = _rd.final_entrants.map(func(e): return e.name)
+		_result = {"res": res, "headline": headline, "qualifiers": qualifiers,
+				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": _rd.rounds.size() > 1}
+	var res: Array = _result.res
 
 	var col := UIKit.vbox(12)
-	var place := res.find(mine) + 1
-	var headline := "%s in %s" % [Race._ordinal(place), Calendar.format_time(mine.time)]
-	var best_so_far := old_pb
-	for r in _rd.player_results.slice(0, -1):
-		if best_so_far == 0.0 or r.time < best_so_far:
-			best_so_far = r.time
-	if best_so_far == 0.0 or mine.time < best_so_far:
-		headline += "  ·  Personal best!"
-	col.add_child(UIKit.label(headline, "HeadingLabel"))
+	col.add_child(UIKit.wrapped(_result.headline, "HeadingLabel"))
 
 	var grid := GridContainer.new()
-	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 24)
-	grid.add_theme_constant_override("v_separation", 6)
-	for h in ["", "NAME", "CLUB", "TIME", ""]:
+	grid.columns = 4 if Layout.compact else 5
+	grid.add_theme_constant_override("h_separation", 14 if Layout.compact else 24)
+	grid.add_theme_constant_override("v_separation", 8)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var headers := ["", "NAME", "TIME", ""] if Layout.compact else ["", "NAME", "CLUB", "TIME", ""]
+	for h in headers:
 		grid.add_child(UIKit.label(h, "CaptionLabel"))
-	var qualifiers := []
-	if _rd.rounds.size() > 1 and _rd.round_index == 1:
-		qualifiers = _rd.final_entrants.map(func(e): return e.name)
 	for i in res.size():
 		var r: Dictionary = res[i]
-		var cells := [str(i + 1), r.name, r.club, Calendar.format_time(r.time), "Q" if r.name in qualifiers else ""]
+		var cells := [str(i + 1), r.name, Calendar.format_time(r.time), "Q" if r.name in _result.qualifiers else ""]
+		if not Layout.compact:
+			cells.insert(2, r.club)
 		for c in cells.size():
-			var l := UIKit.label(cells[c], "" if c != 2 else "MutedLabel")
+			var l := UIKit.label(cells[c], "MutedLabel" if (not Layout.compact and c == 2) else "")
+			if cells[c] == r.name:
+				l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				l.clip_text = true
 			if r.is_player:
 				l.add_theme_color_override("font_color", Palette.ACCENT)
 			grid.add_child(l)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.add_child(UIKit.panel(grid, 16))
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var panel := UIKit.panel(grid, 16)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(panel)
 	col.add_child(scroll)
 
 	var next := UIKit.button("", true, 220)
-	next.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	if not _rd.is_done():
+	if not _result.done:
 		col.add_child(UIKit.wrapped("You're through to the final!", ""))
 		next.text = "On to the final"
 		next.pressed.connect(_show_pre)
 	else:
-		if _rd.rounds.size() > 1 and not _rd.qualified:
+		if _result.heats and not _result.qualified:
 			col.add_child(UIKit.wrapped("Not enough to make the final this time.", ""))
 		next.text = "Continue"
 		next.pressed.connect(_leave)
 	col.add_child(next)
-	_set_body(col)
+
+	if Layout.compact:
+		_set_body(col)
+		return
+	# Wide screens: keep the table a readable width, centred.
+	col.custom_minimum_size.x = 820
+	next.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var wrap := UIKit.hbox(0)
+	wrap.add_child(UIKit.spacer())
+	wrap.add_child(col)
+	wrap.add_child(UIKit.spacer())
+	_set_body(wrap)
 
 
 func _leave() -> void:

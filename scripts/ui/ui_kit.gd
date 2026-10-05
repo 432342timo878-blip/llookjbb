@@ -19,7 +19,8 @@ static func wrapped(text: String, variation := "MutedLabel") -> Label:
 static func button(text: String, primary := false, min_width := 140.0) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(min_width, 44)
+	# 44 px is a comfortable touch target; on a phone the width comes from the layout instead.
+	b.custom_minimum_size = Vector2(minf(min_width, 100.0) if Layout.compact else min_width, 44)
 	if primary:
 		b.theme_type_variation = "PrimaryButton"
 	return b
@@ -35,11 +36,11 @@ static func toggle(text: String, group: ButtonGroup) -> Button:
 	return b
 
 
-static func panel(content: Control, padding := 20) -> PanelContainer:
+static func panel(content: Control, padding := 16) -> PanelContainer:
 	var p := PanelContainer.new()
 	var m := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
-		m.add_theme_constant_override("margin_" + side, padding)
+		m.add_theme_constant_override("margin_" + side, mini(padding, 14) if Layout.compact else padding)
 	m.add_child(content)
 	p.add_child(m)
 	return p
@@ -55,6 +56,20 @@ static func hbox(separation := 12) -> HBoxContainer:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", separation)
 	return h
+
+
+## A row on wide screens and a column on a phone (BoxContainer.vertical follows the layout).
+static func flex(separation := 16) -> BoxContainer:
+	var b := BoxContainer.new()
+	b.vertical = Layout.compact
+	b.add_theme_constant_override("separation", separation)
+	return b
+
+
+## Makes the control's children fill the width on a phone (buttons side by side get equal shares).
+static func fill(c: Control) -> Control:
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return c
 
 
 static func spacer() -> Control:
@@ -76,14 +91,39 @@ static func attr_color(value: float) -> Color:
 
 
 ## One "Name ........ ↑ 12" row as used in attribute panels. `trend`: -1, 0 or +1 (arrow).
-static func attr_row(attr_name: String, value: float, trend := 0) -> HBoxContainer:
+## With a `description`, tapping (or clicking) the row shows it underneath, so it works without hovering.
+static func attr_row(attr_name: String, value: float, trend := 0, description := "") -> Control:
 	var row := hbox(8)
+	row.custom_minimum_size.y = 34
 	var name_label := label(attr_name)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_label)
 	row.add_child(trend_arrow(trend))
 	row.add_child(attr_value_label(value))
-	return row
+	return tap_to_explain(row, description)
+
+
+## Wraps `row` so that a tap/click on it shows or hides `description` underneath (no hover needed).
+## Returns `row` itself when there is nothing to explain.
+static func tap_to_explain(row: Control, description: String) -> Control:
+	if description == "":
+		return row
+	var box := vbox(2)
+	box.add_child(row)
+	var text := wrapped(description, "MutedLabel")
+	text.visible = false
+	box.add_child(text)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var press := {"at": Vector2.ZERO}
+	row.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				press.at = event.position
+			elif event.position.distance_to(press.at) < 10.0:   # a tap, not a scroll drag
+				text.visible = not text.visible)
+	return box
 
 
 static func trend_arrow(trend: int) -> Label:

@@ -16,7 +16,7 @@ Build in layers: every milestone ends with something playable.
 - [x] Results and PBs (fictional youth rivals with their own PBs)
 - [x] Simple rankings (season list of your age class; season = 1 Nov – 31 Oct, rivals also race on their own)
 - [x] Save / load (weekly autosave + snapshot saves, Continue / Load Career in the main menu)
-- [ ] Basic sleek UI (desktop + mobile layout)
+- [x] Basic sleek UI (desktop + mobile layout): responsive wide/phone layouts, tab bar, 44 px touch targets, tap-to-explain instead of tooltips, optional blurred photo backdrop (see `docs/screenshots/`)
 
 ## M2 — Depth on the slice
 - [ ] Day-by-day mode, injuries & health, coaching (hire, veto), school

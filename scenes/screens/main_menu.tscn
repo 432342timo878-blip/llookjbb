@@ -24,7 +24,7 @@ theme_override_constants/margin_top = 48
 theme_override_constants/margin_right = 48
 theme_override_constants/margin_bottom = 32
 
-[node name="Row" type="HBoxContainer" parent="Margin"]
+[node name="Row" type="BoxContainer" parent="Margin"]
 layout_mode = 2
 theme_override_constants/separation = 48
 

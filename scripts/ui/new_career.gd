@@ -15,17 +15,69 @@ var _points := {}           # attribute id -> points added in the Attributes ste
 var _seed := randi()        # fixed per wizard so the base athlete doesn't re-roll
 var _base: Athlete          # athlete before points are added
 
-@onready var _step_label: Label = %StepLabel
-@onready var _content: VBoxContainer = %Content
-@onready var _back: Button = %BackButton
-@onready var _next: Button = %NextButton
+var _margin: MarginContainer
+var _step_label: Label
+var _status_label: Label     # "Points left" on the attributes step, pinned above the scrolling content
+var _scroll: ScrollContainer
+var _content: VBoxContainer
+var _back: Button
+var _next: Button
 
 
 func _ready() -> void:
+	_choices.birth_date = _random_birth_date()
+	Router.layout_changed.connect(func(_c): _build_shell(); _show_step())
+	_build_shell()
+	_show_step()
+
+
+## Step title, scrolling content and Back / Next. Rebuilt when the layout switches (wide <-> phone).
+func _build_shell() -> void:
+	if _margin:
+		_margin.queue_free()
+	_margin = MarginContainer.new()
+	_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	Layout.page_margin(_margin, 1000.0)   # the steps are forms: keep them from stretching across a wide window
+	add_child(_margin)
+	var column := UIKit.vbox(12 if Layout.compact else 16)
+	_margin.add_child(column)
+
+	var top := UIKit.hbox(12)
+	_step_label = UIKit.label("", "CaptionLabel")
+	_step_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_status_label = UIKit.label("", "SubheadingLabel")
+	_status_label.add_theme_color_override("font_color", Palette.ACCENT)
+	top.add_child(_step_label)
+	top.add_child(_status_label)
+	column.add_child(top)
+	column.add_child(UIKit.label("New Career", "HeadingLabel"))
+
+	_scroll = ScrollContainer.new()
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_content = UIKit.vbox(14)
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(_content)
+	column.add_child(_scroll)
+
+	var footer := UIKit.hbox(12)
+	_back = UIKit.button("Back", false, 160)
+	_back.custom_minimum_size.y = 48
+	_next = UIKit.button("Next", true, 200)
+	_next.custom_minimum_size.y = 48
 	_back.pressed.connect(_on_back)
 	_next.pressed.connect(_on_next)
-	_choices.birth_date = _random_birth_date()
-	_show_step()
+	if Layout.compact:
+		_back.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_next.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_next.size_flags_stretch_ratio = 1.5
+		footer.add_child(_back)
+		footer.add_child(_next)
+	else:
+		footer.add_child(_back)
+		footer.add_child(UIKit.spacer())
+		footer.add_child(_next)
+	column.add_child(footer)
 
 
 func _on_back() -> void:
@@ -49,6 +101,7 @@ func _show_step() -> void:
 	for child in _content.get_children():
 		child.queue_free()
 	_step_label.text = "STEP %d OF %d · %s" % [_step + 1, STEPS.size(), STEPS[_step].to_upper()]
+	_status_label.text = ""
 	_back.text = "Main menu" if _step == 0 else "Back"
 	_next.text = "Start career" if _step == STEPS.size() - 1 else "Next"
 	match _step:
@@ -80,13 +133,14 @@ func _build_identity() -> void:
 	for g in [["male", "Boy"], ["female", "Girl"]]:
 		var b := UIKit.toggle(g[1], group)
 		b.custom_minimum_size.x = 160
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_FILL
 		b.button_pressed = _choices.gender == g[0]
 		b.pressed.connect(func(): _choices.gender = g[0])
 		genders.add_child(b)
 	_content.add_child(genders)
 
 	_content.add_child(UIKit.label("NAME", "CaptionLabel"))
-	var names := UIKit.hbox()
+	var names := UIKit.flex(12)
 	var first := _line_edit("First name", _choices.first_name)
 	var last := _line_edit("Last name", _choices.last_name)
 	first.text_changed.connect(func(t): _choices.first_name = t; _validate())
@@ -104,11 +158,13 @@ func _build_identity() -> void:
 	names.add_child(random_name)
 	_content.add_child(names)
 
-	var row := UIKit.hbox(24)
+	var row := UIKit.flex(12 if Layout.compact else 24)
 	var town_col := UIKit.vbox(8)
+	town_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	town_col.add_child(UIKit.label("HOMETOWN", "CaptionLabel"))
 	var towns := OptionButton.new()
 	towns.custom_minimum_size = Vector2(260, 44)
+	towns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for i in Data.hometowns.size():
 		towns.add_item(Data.hometowns[i])
 		if Data.hometowns[i] == _choices.hometown:
@@ -120,6 +176,9 @@ func _build_identity() -> void:
 	club_col.add_child(UIKit.label("CLUB", "CaptionLabel"))
 	var clubs := OptionButton.new()
 	clubs.custom_minimum_size = Vector2(360, 44)
+	clubs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	clubs.clip_text = true
+	club_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	club_col.add_child(clubs)
 	row.add_child(club_col)
 	_content.add_child(row)
@@ -163,7 +222,8 @@ func _line_edit(placeholder: String, text: String) -> LineEdit:
 	var e := LineEdit.new()
 	e.placeholder_text = placeholder
 	e.text = text
-	e.custom_minimum_size = Vector2(220, 44)
+	e.custom_minimum_size = Vector2(0 if Layout.compact else 220, 44)
+	e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	e.max_length = 24
 	return e
 
@@ -183,13 +243,14 @@ func _build_event() -> void:
 		if not groups.has(event.group):
 			_content.add_child(UIKit.label(event.group.replace("_", " ").to_upper(), "CaptionLabel"))
 			var grid := GridContainer.new()
-			grid.columns = 4
+			grid.columns = 2 if Layout.compact else 4
 			grid.add_theme_constant_override("h_separation", 10)
 			grid.add_theme_constant_override("v_separation", 10)
 			_content.add_child(grid)
 			groups[event.group] = grid
 		var b := UIKit.toggle(event.name, group)
-		b.custom_minimum_size.x = 210
+		b.custom_minimum_size.x = 0 if Layout.compact else 210
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var playable: bool = event.id in PLAYABLE_EVENTS
 		b.disabled = not playable
 		b.tooltip_text = "" if playable else "Coming in a later version"
@@ -205,15 +266,14 @@ func _build_background() -> void:
 	_content.add_child(UIKit.wrapped("Your answers shape your starting attributes and hidden traits."))
 	for question in Data.background_questions:
 		var box := UIKit.vbox(8)
-		box.add_child(UIKit.label(question.question, "SubheadingLabel"))
+		box.add_child(UIKit.wrapped(question.question, "SubheadingLabel"))
 		var group := ButtonGroup.new()
 		for i in question.answers.size():
 			var answer: Dictionary = question.answers[i]
-			var b := UIKit.toggle("%s  —  %s" % [answer.text, answer.detail], group)
-			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.button_pressed = _choices.answers.get(question.id, -1) == i
-			b.pressed.connect(func(): _choices.answers[question.id] = i; _validate())
-			box.add_child(b)
+			var card := ChoiceCard.new(answer.text, answer.detail, group)
+			card.selected = _choices.answers.get(question.id, -1) == i
+			card.button.pressed.connect(func(): _choices.answers[question.id] = i; _validate())
+			box.add_child(card)
 		_content.add_child(UIKit.panel(box, 16))
 
 
@@ -223,17 +283,14 @@ func _build_attributes() -> void:
 	_base = _create_base_athlete()
 	_content.add_child(UIKit.label("Fine-tune your attributes", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
-			"Spend %d points to shape your athlete (max +%d per attribute). Attributes are on a 1–20 scale; a 20 is world class."
+			"Spend %d points to shape your athlete (max +%d per attribute). Attributes are on a 1–20 scale; a 20 is world class. Tap an attribute to see what it does."
 			% [AthleteFactory.POINT_POOL, AthleteFactory.MAX_POINTS_PER_ATTRIBUTE]))
-	var left := UIKit.label("", "SubheadingLabel")
-	_content.add_child(left)
-
-	var columns := UIKit.hbox(16)
+	var columns := UIKit.flex(16)
 	var refresh := []   # callables that update the value labels
 	var update_left := func():
-		left.text = "Points left: %d" % _points_left()
+		_status_label.text = "Points left: %d" % _points_left()
 	for category in ATTRIBUTE_CATEGORIES:
-		var col := UIKit.vbox(6)
+		var col := UIKit.vbox(2 if Layout.compact else 6)
 		col.add_child(UIKit.label(category.to_upper(), "CaptionLabel"))
 		for attr in Data.attributes_in(category):
 			col.add_child(_point_row(attr, refresh, update_left))
@@ -245,12 +302,11 @@ func _build_attributes() -> void:
 	update_left.call()
 
 
-func _point_row(attr: Dictionary, refresh: Array, update_left: Callable) -> HBoxContainer:
+func _point_row(attr: Dictionary, refresh: Array, update_left: Callable) -> Control:
 	var row := UIKit.hbox(6)
 	var name_label := UIKit.label(attr.name)
-	name_label.tooltip_text = attr.description
-	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_label)
 	var bonus := UIKit.label("", "MutedLabel")
 	bonus.custom_minimum_size.x = 26
@@ -280,14 +336,14 @@ func _point_row(attr: Dictionary, refresh: Array, update_left: Callable) -> HBox
 	minus.pressed.connect(change.bind(-1))
 	plus.pressed.connect(change.bind(1))
 	update.call()
-	return row
+	return UIKit.tap_to_explain(row, attr.description)   # tap the row to read what the attribute does
 
 
+## +/- button: 44x44 so it is easy to hit with a thumb.
 func _small_button(text: String) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(36, 32)
-	b.add_theme_constant_override("content_margin_left", 0)
+	b.custom_minimum_size = Vector2(44, 44)
 	return b
 
 
@@ -321,12 +377,12 @@ func _build_summary() -> void:
 		grid.add_child(UIKit.label(f[1]))
 	_content.add_child(UIKit.panel(grid))
 
-	var columns := UIKit.hbox(16)
+	var columns := UIKit.flex(16)
 	for category in ATTRIBUTE_CATEGORIES:
-		var col := UIKit.vbox(6)
+		var col := UIKit.vbox(2)
 		col.add_child(UIKit.label(category.to_upper(), "CaptionLabel"))
 		for attr in Data.attributes_in(category):
-			col.add_child(UIKit.attr_row(attr.name, a.get_attr(attr.id)))
+			col.add_child(UIKit.attr_row(attr.name, a.get_attr(attr.id), 0, attr.description))
 		var p := UIKit.panel(col, 16)
 		p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		p.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
