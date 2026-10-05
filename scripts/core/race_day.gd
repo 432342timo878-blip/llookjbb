@@ -144,7 +144,7 @@ func summary() -> String:
 		return ""
 	var parts := []
 	for r in player_results:
-		var where := "" if r.round == "Race" else r.round.to_lower() + " "
+		var where: String = "" if r.round == "Race" else r.round.to_lower() + " "
 		parts.append("%s%s in %s" % [where, Race._ordinal(r.place), Calendar.format_time(r.time)])
 	var text := "%s, 800 m: %s." % [meet.name, ", ".join(parts)]
 	if rounds.size() > 1 and not qualified:
