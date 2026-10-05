@@ -17,3 +17,15 @@ const INFIELD := Color("#1f3a2e")     # grass in drawings
 
 const RADIUS := 6
 const FONT_SIZE := 16
+
+# Stadium drawing
+const TRACK_APRON := Color("#a63d28")
+const GRASS_LIGHT := Color("#24423a")
+const GRASS_DARK := Color("#1f3a32")
+const STAND := Color("#262b37")
+const CONCOURSE := Color("#1d212b")
+const ROOF := Color("#323947")
+const SAND := Color("#cdb27e")
+const MAT := Color("#2f6db5")
+const LINE := Color(1, 1, 1, 0.55)
+const FLOODLIGHT := Color("#fff4d6")
