@@ -30,5 +30,6 @@ In-depth career mode track and field (yleisurheilu) game, built in Godot togethe
   `**Next message: Opus** / **Next message: Sonnet**` (+ suggested effort: low / medium / high).
   - Opus: design discussions, architecture, complex systems, hard bugs.
   - Sonnet: routine GDScript implementation, small features, fixes.
+  - Switching models mid-conversation makes the new model re-read the whole conversation (costs extra credits). So recommend a *different* model only for the start of a **new** conversation; within an ongoing one, recommend staying on the current model. When a task is finished, suggest starting a new conversation.
 - Keep sessions focused on one task; record decisions in docs, not just chat.
 - Commit and push at the end of every work session.
