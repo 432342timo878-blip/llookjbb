@@ -1,0 +1,188 @@
+{
+ "_note": "Character creation background questions. Effects are added to starting attributes (1-20 scale).",
+ "questions": [
+  {
+   "id": "previous_sport",
+   "question": "What did you do before athletics?",
+   "answers": [
+    {
+     "text": "Football",
+     "detail": "Quick feet, used to competing.",
+     "effects": {
+      "speed": 1.5,
+      "acceleration": 1.5,
+      "competitiveness": 1,
+      "race_tactics": 0.5
+     }
+    },
+    {
+     "text": "Cross-country skiing",
+     "detail": "A big engine from long winters on skis.",
+     "effects": {
+      "aerobic_capacity": 2,
+      "lactate_threshold": 1.5,
+      "determination": 1,
+      "speed": -0.5
+     }
+    },
+    {
+     "text": "Orienteering",
+     "detail": "Lots of running through forests.",
+     "effects": {
+      "aerobic_capacity": 1.5,
+      "running_economy": 1,
+      "durability": 1,
+      "race_tactics": 0.5
+     }
+    },
+    {
+     "text": "Gymnastics",
+     "detail": "Strong, mobile and body-aware.",
+     "effects": {
+      "mobility": 2.5,
+      "strength": 1.5,
+      "power": 1,
+      "aerobic_capacity": -0.5
+     }
+    },
+    {
+     "text": "Nothing organised",
+     "detail": "Just played outside a lot. A blank slate.",
+     "effects": {
+      "trainability": 2,
+      "injury_proneness": -1
+     }
+    }
+   ]
+  },
+  {
+   "id": "family",
+   "question": "What is your family's sporting background?",
+   "answers": [
+    {
+     "text": "A parent competed in athletics",
+     "detail": "You grew up at the track.",
+     "effects": {
+      "professionalism": 2,
+      "race_tactics": 1,
+      "running_technique": 1,
+      "potential": 1
+     }
+    },
+    {
+     "text": "Sporty family, recreational level",
+     "detail": "Weekends were always active.",
+     "effects": {
+      "determination": 1,
+      "durability": 1,
+      "professionalism": 1
+     }
+    },
+    {
+     "text": "Not sporty at all",
+     "detail": "You found the sport on your own.",
+     "effects": {
+      "ambition": 2,
+      "determination": 1.5
+     }
+    }
+   ]
+  },
+  {
+   "id": "development",
+   "question": "Compared to your classmates, you are…",
+   "answers": [
+    {
+     "text": "Taller and stronger than most",
+     "detail": "An early developer: strong now, others will catch up.",
+     "maturation": "early",
+     "effects": {
+      "strength": 2,
+      "speed": 1,
+      "power": 1,
+      "potential": -1.5
+     }
+    },
+    {
+     "text": "About average",
+     "detail": "Developing at a normal pace.",
+     "maturation": "average",
+     "effects": {}
+    },
+    {
+     "text": "One of the smallest",
+     "detail": "A late developer: tough now, big growth still to come.",
+     "maturation": "late",
+     "effects": {
+      "strength": -1.5,
+      "speed": -1,
+      "potential": 2,
+      "determination": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "pressure",
+   "question": "Before an important race, you usually…",
+   "answers": [
+    {
+     "text": "Can't wait to get going",
+     "detail": "Big moments bring out your best.",
+     "effects": {
+      "composure": 2,
+      "competitiveness": 1.5,
+      "consistency": -0.5
+     }
+    },
+    {
+     "text": "Feel nervous but manage it",
+     "detail": "Steady and reliable.",
+     "effects": {
+      "composure": 0.5,
+      "consistency": 2
+     }
+    },
+    {
+     "text": "Overthink everything",
+     "detail": "Nerves can get to you, but you prepare carefully.",
+     "effects": {
+      "composure": -1.5,
+      "professionalism": 1.5,
+      "race_tactics": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "school",
+   "question": "How do you do at school?",
+   "answers": [
+    {
+     "text": "Top of the class",
+     "detail": "Good grades come easily, but school takes time.",
+     "school": "high",
+     "effects": {
+      "professionalism": 1,
+      "race_tactics": 0.5
+     }
+    },
+    {
+     "text": "Doing fine",
+     "detail": "Average grades, no stress.",
+     "school": "medium",
+     "effects": {}
+    },
+    {
+     "text": "Struggling a bit",
+     "detail": "Sport matters more to you than school right now.",
+     "school": "low",
+     "effects": {
+      "ambition": 1.5,
+      "professionalism": -1
+     }
+    }
+   ]
+  }
+ ]
+}

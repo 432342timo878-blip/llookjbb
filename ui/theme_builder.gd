@@ -16,8 +16,10 @@ static func build() -> Theme:
 	# Label variations: use via `label.theme_type_variation = "TitleLabel"` etc.
 	_label_variation(theme, "TitleLabel", FONT_BOLD, 44, Palette.TEXT)
 	_label_variation(theme, "HeadingLabel", FONT_SEMIBOLD, 22, Palette.TEXT)
+	_label_variation(theme, "SubheadingLabel", FONT_SEMIBOLD, 17, Palette.TEXT)
 	_label_variation(theme, "MutedLabel", FONT_REGULAR, 15, Palette.TEXT_MUTED)
 	_label_variation(theme, "CaptionLabel", FONT_SEMIBOLD, 12, Palette.TEXT_FAINT)
+	_label_variation(theme, "AttrValueLabel", FONT_BOLD, 16, Palette.TEXT)
 
 	theme.set_stylebox("panel", "PanelContainer", _box(Palette.SURFACE, Palette.BORDER))
 	theme.set_stylebox("panel", "Panel", _box(Palette.SURFACE, Palette.BORDER))
@@ -25,6 +27,32 @@ static func build() -> Theme:
 	_button(theme, "Button", Palette.SURFACE_2, Palette.SURFACE_3, Palette.BG, Palette.TEXT)
 	theme.set_type_variation("PrimaryButton", "Button")
 	_button(theme, "PrimaryButton", Palette.ACCENT, Palette.ACCENT_HOVER, Palette.ACCENT_PRESSED, Color.WHITE)
+
+	# Selectable option (gender, answers, events): highlighted border when chosen.
+	theme.set_type_variation("ToggleButton", "Button")
+	_button(theme, "ToggleButton", Palette.SURFACE_2, Palette.SURFACE_3, Palette.SURFACE_3, Palette.TEXT)
+	var selected := _box(Palette.SURFACE_3, Palette.ACCENT)
+	selected.set_border_width_all(2)
+	theme.set_stylebox("pressed", "ToggleButton", selected)
+	theme.set_stylebox("hover_pressed", "ToggleButton", selected)
+	theme.set_constant("h_separation", "ToggleButton", 10)
+
+	var field := _box(Palette.BG, Palette.BORDER)
+	theme.set_stylebox("normal", "LineEdit", field)
+	var field_focus := _box(Palette.BG, Palette.ACCENT)
+	theme.set_stylebox("focus", "LineEdit", field_focus)
+	theme.set_color("font_color", "LineEdit", Palette.TEXT)
+	theme.set_color("font_placeholder_color", "LineEdit", Palette.TEXT_FAINT)
+
+	_button(theme, "OptionButton", Palette.SURFACE_2, Palette.SURFACE_3, Palette.BG, Palette.TEXT)
+	theme.set_stylebox("panel", "PopupMenu", _box(Palette.SURFACE_2, Palette.BORDER))
+	theme.set_stylebox("hover", "PopupMenu", _box(Palette.SURFACE_3))
+	theme.set_color("font_color", "PopupMenu", Palette.TEXT)
+	theme.set_color("font_hover_color", "PopupMenu", Palette.TEXT)
+	theme.set_constant("v_separation", "PopupMenu", 8)
+
+	theme.set_stylebox("panel", "TooltipPanel", _box(Palette.SURFACE_3, Palette.BORDER))
+	theme.set_color("font_color", "TooltipLabel", Palette.TEXT)
 	return theme
 
 

@@ -1,0 +1,71 @@
+{
+ "_note": "Real Finnish athletics clubs. Names/abbreviations not yet verified - correct or add clubs here.",
+ "clubs": [
+  {
+   "id": "hkv",
+   "name": "Helsingin Kisa-Veikot",
+   "short": "HKV",
+   "city": "Helsinki"
+  },
+  {
+   "id": "ponnistus",
+   "name": "Helsingin Ponnistus",
+   "short": "Ponnistus",
+   "city": "Helsinki"
+  },
+  {
+   "id": "et",
+   "name": "Espoon Tapiot",
+   "short": "ET",
+   "city": "Espoo"
+  },
+  {
+   "id": "vs",
+   "name": "Vantaan Salamat",
+   "short": "VS",
+   "city": "Vantaa"
+  },
+  {
+   "id": "ku",
+   "name": "Keravan Urheilijat",
+   "short": "KU",
+   "city": "Kerava"
+  },
+  {
+   "id": "tap",
+   "name": "Tampereen Pyrintö",
+   "short": "TaP",
+   "city": "Tampere"
+  },
+  {
+   "id": "tul",
+   "name": "Turun Urheiluliitto",
+   "short": "TUL",
+   "city": "Turku"
+  },
+  {
+   "id": "ahkera",
+   "name": "Lahden Ahkera",
+   "short": "Ahkera",
+   "city": "Lahti"
+  },
+  {
+   "id": "jku",
+   "name": "Jyväskylän Kenttäurheilijat",
+   "short": "JKU",
+   "city": "Jyväskylä"
+  },
+  {
+   "id": "op",
+   "name": "Oulun Pyrintö",
+   "short": "OP",
+   "city": "Oulu"
+  },
+  {
+   "id": "kataja",
+   "name": "Joensuun Kataja",
+   "short": "Kataja",
+   "city": "Joensuu"
+  }
+ ]
+}

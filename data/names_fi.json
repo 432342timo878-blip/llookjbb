@@ -1,0 +1,44 @@
+{
+ "male": [
+  "Eetu",
+  "Leo",
+  "Elias",
+  "Oliver",
+  "Onni",
+  "Aatu",
+  "Väinö",
+  "Eino",
+  "Veeti",
+  "Niilo",
+  "Lenni",
+  "Topias"
+ ],
+ "female": [
+  "Aino",
+  "Sofia",
+  "Eevi",
+  "Olivia",
+  "Lilja",
+  "Helmi",
+  "Ellen",
+  "Venla",
+  "Iida",
+  "Pihla",
+  "Enni",
+  "Aada"
+ ],
+ "surnames": [
+  "Korhonen",
+  "Virtanen",
+  "Mäkinen",
+  "Nieminen",
+  "Mäkelä",
+  "Hämäläinen",
+  "Laine",
+  "Heikkinen",
+  "Koskinen",
+  "Järvinen",
+  "Lehtonen",
+  "Salonen"
+ ]
+}

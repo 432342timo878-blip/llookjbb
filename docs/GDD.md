@@ -71,6 +71,16 @@ strength, power (explosiveness), mobility, durability (resistance to training lo
 **Hidden (never shown as numbers, only hinted via tests and coach reports):** talent ceiling (potential), trainability,
 recovery rate, injury proneness, maturation timing, ambition.
 
+### 4.1.1 Character creation (built)
+
+1. Identity: gender, first/last name (random Finnish name option), hometown, club (hometown clubs listed first; `data/clubs.json`, names to be verified).
+2. Main event (all events shown; only 800 m playable in M1).
+3. Background questions (`data/background_questions.json`): previous sport, family background, physical development (sets maturation: early/average/late), handling pressure, school level. Each answer adjusts visible and hidden attributes.
+4. 12 attribute points, max +3 per attribute.
+5. Summary → career starts on 2 Nov 2026 (start of the Finnish training year), athlete born Jan–Oct 2012 (age 14).
+
+Starting levels: physical 4–7, technical 3–6, mental 5–9 before background effects; potential 13–18 (hidden).
+
 ### Other systems (to be designed)
 
 - 4.2 Training & progression

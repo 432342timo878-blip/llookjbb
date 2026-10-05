@@ -7,8 +7,9 @@ Build in layers: every milestone ends with something playable.
 - [x] User setup: Godot + GitHub Desktop installed, can pull and press Play
 
 ## M1 — Vertical slice: "800m youth season"
-- [ ] Athlete model (attributes, hidden potential, growth/maturation)
-- [ ] Character creation (event, points, background questions — simplified)
+- [x] Athlete model (attributes, hidden potential, maturation) — growth over time comes with training
+- [x] Character creation (identity, club, event, 5 background questions, 12 attribute points, summary)
+- [x] Career hub with FM-style athlete profile (placeholder for the main game screen)
 - [ ] Weekly training plan → attribute progression, fatigue
 - [ ] Finnish youth calendar (simplified, 1–2 seasons)
 - [ ] 800m race simulation with in-race decisions (quick + detailed mode)

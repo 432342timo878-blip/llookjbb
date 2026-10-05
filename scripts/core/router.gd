@@ -6,6 +6,7 @@ signal screen_requested(scene: PackedScene)
 const SCREENS := {
 	"main_menu": "res://scenes/screens/main_menu.tscn",
 	"new_career": "res://scenes/screens/new_career.tscn",
+	"career_hub": "res://scenes/screens/career_hub.tscn",
 }
 
 
