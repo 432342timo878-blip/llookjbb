@@ -177,9 +177,17 @@ func _draw_field_events() -> void:
 	draw_rect(_px_rect(Rect2(pv.x - 3.0, pv.y - 3.0, 6.0, 6.0)), Palette.MAT)
 	draw_rect(_px_rect(Rect2(pv.x - 3.0 - 26.0, pv.y - 0.61, 26.0, 1.22)), Palette.TRACK.lightened(0.06))
 
-	# Right D: hammer/discus cage at the edge of the grass, throwing down the pitch.
+	# Javelin: runway along the axis in the left D, 8m-radius throwing arc at the grass edge.
+	var jav_center := Vector2(grass.position.x - 8.0, 0.0)
+	draw_rect(_px_rect(Rect2(grass.position.x - 34.0, -2.0, 34.0, 4.0)), Palette.TRACK.lightened(0.06))
+	var arc_half := asin(2.0 / 8.0)
+	draw_arc(_px(jav_center), 8.0 * _k, -arc_half, arc_half, 12, Color.WHITE, maxf(0.15 * _k, 1.5), true)
+	# Distances are measured from the inside of the arc, i.e. 8m from its centre.
+	_draw_throwing_sector(jav_center, 0.0, 28.96, 8.0, [30, 40, 50, 60, 70, 80], -1)
+
+		# Right D: hammer/discus cage at the edge of the grass, throwing down the pitch.
 	var cage := Vector2(grass.end.x + 6.0, 0.0)
-	_draw_throwing_sector(cage, PI, 34.92, cage.x - grass.position.x - 6.0)
+	_draw_throwing_sector(cage, PI, 34.92, 0.0, [20, 30, 40, 50, 60, 70, 80], -1)
 	draw_circle(_px(cage), 1.25 * _k, Color("#9aa1b2"))
 	draw_arc(_px(cage), 3.8 * _k, PI + deg_to_rad(38.0), PI * 3.0 - deg_to_rad(38.0), 32,
 			Color("#202430"), maxf(0.45 * _k, 2.0), true)
@@ -199,11 +207,31 @@ func _draw_field_events() -> void:
 	draw_line(_px(Vector2(23.0, runway_y - 0.61)), _px(Vector2(23.0, runway_y + 0.61)), Color.WHITE, line_w)
 
 
-func _draw_throwing_sector(origin: Vector2, direction: float, angle_deg: float, length: float) -> void:
+## Sector lines plus distance arcs (in metres) with labels. `offset` is how far from
+## `origin` the measuring starts; `label_side` picks which sector line gets the numbers.
+func _draw_throwing_sector(origin: Vector2, direction: float, angle_deg: float, offset: float,
+		marks: Array, label_side: int) -> void:
 	var half := deg_to_rad(angle_deg / 2.0)
+	var length := offset + float(marks.back()) + 4.0
+	var w := maxf(0.08 * _k, 1.0)
 	for side in [-half, half]:
-		var end := origin + Vector2.from_angle(direction + side) * length
-		draw_line(_px(origin), _px(end), Color(1, 1, 1, 0.5), maxf(0.08 * _k, 1.0), true)
+		draw_line(_px(origin), _px(origin + Vector2.from_angle(direction + side) * length),
+				Color(1, 1, 1, 0.55), w, true)
+
+	var font := get_theme_default_font()
+	var font_size := int(2.4 * _k)
+	for d in marks:
+		var r := offset + float(d)
+		draw_arc(_px(origin), r * _k, direction - half, direction + half, 24, Color(1, 1, 1, 0.3), w, true)
+		if font_size < 7:
+			continue
+		var at := origin + Vector2.from_angle(direction + half * label_side) * r
+		var label := str(d)
+		var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
+		# Place the number just outside the sector line.
+		var out := Vector2.from_angle(direction + (half + PI / 2.0) * label_side) * text_size.y * 0.8
+		var pos := _px(at) + out + Vector2(-text_size.x / 2.0, text_size.y * 0.3)
+		draw_string(font, pos, label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(1, 1, 1, 0.6))
 
 
 # --- Geometry helpers ------------------------------------------------------------
