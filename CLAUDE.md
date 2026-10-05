@@ -2,7 +2,10 @@
 
 In-depth career mode track and field (yleisurheilu) game, built in Godot together with the user.
 
-**Status:** design phase — gathering requirements. No code yet. Design doc will live in `docs/GDD.md`.
+**Status:** design phase — gathering requirements (round 2). No code yet.
+**Design doc:** `docs/GDD.md` — the source of truth for all design decisions. Read it before design or code work.
+
+**User:** no programming experience — explain how to run/test things in plain steps; Claude writes all code.
 
 ## Working rules
 - **Model recommendation:** start every reply with a line saying which model the user should use for their *next* message:
