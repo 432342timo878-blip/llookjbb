@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.3 — 2026-10-05. Living document: updated after each design discussion.
+Version 0.4 — 2026-10-05 (M2 design: day-by-day mode, injuries & health). Living document: updated after each design discussion.
 
 ## 1. Vision
 
@@ -101,7 +101,7 @@ the **club coach gives a starter plan** that the player can edit; the **plan rep
   shows expected fatigue after a few weeks and a training-focus chart.
 - **Tuning** (`tools/training_balance.gd`, 1 year from age 14): coach plan → fatigue ~23, key attributes +1.5–3.5;
   2 easy runs a week → little progress; 12 sessions a week → tired (~58) and only somewhat better in the trained areas.
-  Overtraining will become properly risky once injuries exist (M2).
+  Overtraining becomes risky with injuries: new targets in 4.6.
 
 ### 4.3 800 m race simulation (first version built)
 
@@ -149,18 +149,134 @@ at real venues (marked `estimated` in `data/competitions.json`); the **player en
 - **Races** replace that day's training, add fatigue and train race-related attributes (`race_session` in the data).
   Results come with the race simulation (4.3).
 
+### 4.5 Day-by-day mode (M2, designed 2026-10-05)
+
+Decisions (user, 2026-10-05): **two buttons, no mode switch**; day changes apply to **this week only**; each day has an
+**intensity** setting (Easy / Normal / Hard).
+
+- **Time controls:** the hub has **Next day** (plays one day) and **Play week** (plays the rest of the week to Sunday
+  night). Play week stops early when something needs the player: a race day, a new injury or a strong warning sign,
+  and later coach/school events (see 4.7, "stop events"). Weeks always run Mon–Sun, so the weekly plan and report keep working.
+- **Weekly plan = template.** It repeats every week and is edited in the Training tab, as in M1.
+- **Day changes (this week only):** any not-yet-played day of the current week can be changed: swap, skip or add a
+  session (max 2 per day), make it a rest day, or set intensity. Intensity changes load and training effect (numbers
+  in `data/health.json`, see 4.6). Changes work in both styles of play: edit the days, then press Play week.
+- **Fixed:** played days, future weeks (they come from the template), entered races. On race day the player can
+  **scratch** (not start).
+- **Simulation:** `Game.date` is the real current day. The current week (`WeekSim`) lives between days and is saved.
+  `WeekSim` gets a single-day step; `Game.advance_day()` plays one day, `Game.advance_week()` plays until Sunday or
+  the next stop event. **Fatigue and health change daily; attribute progression is still applied once a week**
+  (Sunday night), so the M1 training balance stays valid. Rivals still train weekly. Race flow is unchanged: Next day
+  on a race day opens the race screen, and the race completes that day.
+- **Hub UI:** a **week strip** under the header on PC and phone (7 day cells: date, session markers, race badge;
+  played days dimmed with a fatigue dot; today highlighted). Tapping a day opens the **day editor** (side panel on
+  PC, bottom sheet on phone, 44 px controls). On a phone the cells are ~62 px wide and show day letter, date and markers.
+  Overview starts with a **Today** card (today's sessions, how you feel, warning signs, next race). The Report tab
+  shows this week day by day plus last week's summary. Header shows the real date; phone buttons read "Day" / "Week".
+- **Save/load:** save version 2 stores the date, the in-progress week (played days, this week's changes, stimulus so
+  far, notes, fatigue stats) and the health state. Autosave after every played day. Version-1 saves load fine:
+  they're always on a Monday with no week in progress, so new fields start empty.
+
+### 4.6 Injuries & health (M2, designed 2026-10-05)
+
+Decisions (user, 2026-10-05): **minor problems can be trained/raced through with a warning, serious injuries and fever
+are blocked**; risk is shown through **body signs + "load vs normal" + a Low/Moderate/High plan risk word** (no exact
+percentages); **illnesses are included now**. Everything else below is Claude's proposal, accepted by the user.
+
+**Data:** `data/health.json` (body areas, rates, thresholds, intensity multipliers, illness rates, rival injury chance)
+and `data/injuries.json` (catalogue). Sessions in `data/training.json` get a `strain` per body area and an optional
+acute-risk value. No injury numbers in scripts.
+
+**How injuries happen (body-area strain model):**
+- Six body areas: shins, feet, knees, heels/Achilles, hamstrings, calves. Each has a hidden **strain** value.
+- Each session adds strain to its areas. Strain fades daily (bone slowly, muscle faster; faster on rest days and with
+  recovery rate). Extra strain from fatigue, Hard intensity, hard surfaces (off-track winter road running) and **load
+  spikes**: the body adapts to its last ~4 weeks of load (acute vs chronic load), so gradual build-ups are safe and
+  sudden jumps are not. Durability, recovery rate and professionalism protect; hidden **injury proneness** multiplies
+  everything (~×0.6–1.8).
+- Strain shows as **soreness** per area (none / a bit sore / sore / painful). Daily injury chance is near zero below
+  "a bit sore" and rises steeply above it; ~15 % of injuries come with only a slight warning.
+- **Acute bad luck** per session: ankle sprains (trail fartlek, icy winter roads), hamstring/calf strains (speed work,
+  races; more when tired).
+- **Growth spurt:** a growth-spurt age from gender + maturation (early/average/late) makes knees and heels more
+  vulnerable around it (an average-maturing boy is in it at 14).
+- **History:** a past injury raises the same area's risk for ~6 months.
+- **Illness:** daily chance higher Nov–Mar, when tired and in the days after a race; lower with professionalism.
+
+**Catalogue (youth runners; time ranges real-world, actual length drawn inside the range):**
+
+| Tier | Examples | Time | Allowed |
+|---|---|---|---|
+| Niggle | shin splints (MTSS), Osgood-Schlatter flare, Sever's (growth), patellofemoral pain, calf/hamstring tightness | 1–4 wk | train with limits |
+| Injury | hamstring/calf strain gr. 1–2, ankle sprain, tibial/metatarsal stress reaction, Achilles tendinopathy (16+), ITB syndrome (15+) | 1–8 wk | no running, then easy only |
+| Serious | stress fracture (tibia, metatarsal), hamstring tear gr. 2–3 | 6–16 wk | no running; cross-training when allowed |
+| Illness | cold 3–7 days, flu/fever 7–14 days | days | cold: easy training; fever: none |
+
+- Which injury: by strain level (moderate → niggle, very high → stress reaction), age, gender (girls: higher bone-stress
+  risk, later explained by nutrition) and growth phase. **Training through can escalate** (shin splints → stress
+  reaction → stress fracture).
+- Each injury has **phases** in the data (e.g. stress reaction: no running 4–6 wk → easy only 1–2 wk → full).
+
+**While injured:**
+- The day editor greys out banned sessions and says why. New **cross-training** sessions: aqua jogging, stationary
+  bike, swimming, gym/core (aqua jogging keeps the most aerobic fitness).
+- Override: niggles, colds and minor-injury limits can be ignored after a clear warning (more strain, escalation risk).
+  Serious injuries and fever lock banned sessions and races.
+- **Racing** with a niggle or cold is allowed: slower, and the problem may get worse.
+- Fitness fades through the normal detraining (no stimulus = slow loss) plus a stronger loss after ~10 days with no
+  training. **No permanent attribute damage**: the cost is lost time and recurrence risk. Coming back too fast is
+  itself a load spike, so a gradual return matters.
+- **Rivals** get a simple weekly chance to be out for a few weeks (they miss training and races).
+
+**Warning signs & UI (no hover-only info, 44 px targets):**
+- Today card: soreness per area in words + colour, tap for the cause and what helps. Week strip: warning marker on sore days.
+- Training tab: "load vs your normal" (%) and plan risk (Low / Moderate / High).
+- Play week **stops** the first time an area turns "sore": keep going / take it easy today / rest day.
+- New injury: **diagnosis panel** (name, plain explanation, expected time range, what's allowed).
+- Injury proneness stays hidden; after repeated injuries a hint ("you seem to pick up knocks easily").
+
+**Balance targets** (`tools/training_balance.gd`, 200 athletes per plan, 1 year from age 14; adds a "careful" policy
+= take it easy when sore, and a "ramp" plan = build up to the hard plan over 8 weeks):
+
+| Plan | Injuries/yr | Serious | Progress |
+|---|---|---|---|
+| Coach plan | ~0.5–1 (mostly niggles) | < 5 % | as in M1 |
+| Lazy | ~0 | ~0 | little |
+| Hard, warnings ignored | 3+ | > 40 % | **below the coach plan** |
+| Hard, careful | ~1–1.5 | ~10 % | a bit above the coach plan |
+| Ramp to hard | clearly below "hard, ignored" | | best |
+| Illness (all plans) | 2–3 colds/yr, mostly winter | | |
+
+Rule of thumb: training harder pays off only if you listen to your body.
+
+### 4.7 Daily events & hooks (M2 foundation, designed 2026-10-05)
+
+Decisions (user, 2026-10-05): **no Inbox tab yet**: events show on the Today card and in the Report's day log (revisit
+an FM-style Inbox when coaching arrives). The **Finnish school calendar comes with the school system**; for now days
+are only weekday/weekend.
+
+- **System slots in the day loop:** every day runs *day start → training/race → health → day end*, plus *week end*.
+  Systems (Health now; Coach, School later) hook into these steps and save their own state in the save file.
+- **Events:** one format for everything that needs attention: date, source (health / coach / school), title, text,
+  optional choices. A **stop event** pauses Play week and shows a decision panel (same style as race decisions);
+  the source system handles the answer. First users: new injury, first "sore" warning. Later: coach changes with
+  Accept / Veto, school exam vs meet clashes.
+- **Day changes remember who made them** (player / coach / injury restriction), so the day editor can show "changed
+  by coach" with Veto (D18).
+- **Day log:** what was actually done each day (sessions, intensity, fatigue, soreness, events). Used by the Report
+  tab now, and later by the coach and school.
+- **Day type:** weekday / weekend now; school days, exams and holidays later.
+
 ### Other systems (to be designed)
 
-- 4.3 Competition simulation & in-event decisions
-- 4.4 Season calendar & competition structure
-- 4.5 Injuries, health, nutrition, sleep
-- 4.6 Mental side, motivation, relationships
-- 4.7 Coaching
-- 4.8 Money, sponsors, equipment
-- 4.9 Fame, media, rivals
-- 4.10 School / work–life balance
-- 4.11 Doping / anti-doping
-- 4.12 World simulation (other athletes, records, rankings)
+- Nutrition, sleep
+- Mental side, motivation, relationships
+- Coaching
+- Money, sponsors, equipment
+- Fame, media, rivals
+- School / work–life balance
+- Doping / anti-doping
+- World simulation (other athletes, records, rankings)
 
 ## 5. Presentation
 

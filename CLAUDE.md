@@ -2,7 +2,7 @@
 
 In-depth career mode track and field (yleisurheilu) game, built in Godot together with the user.
 
-**Status:** M1 done — character creation, weekly training, season calendar, save/load, the 800m race simulation, season rankings and the responsive UI (desktop + phone portrait) are done. Next: M2 (day-by-day mode, injuries, coaching, school). Youth opponents stay fictional (minors); real athletes only at senior level. Milestones: `docs/ROADMAP.md`.
+**Status:** M1 done — character creation, weekly training, season calendar, save/load, the 800m race simulation, season rankings and the responsive UI (desktop + phone portrait) are done. Next: M2 part 1 (day-by-day mode, injuries & health; designed in GDD 4.5–4.7, steps in the roadmap), then coaching and school. Youth opponents stay fictional (minors); real athletes only at senior level. Milestones: `docs/ROADMAP.md`.
 **Design doc:** `docs/GDD.md` — the source of truth for all design decisions. Read it before design or code work.
 
 **User:** no programming experience — explain how to run/test things in plain steps; Claude writes all code.
