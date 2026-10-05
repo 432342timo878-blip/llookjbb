@@ -20,8 +20,8 @@ const FONT_SIZE := 16
 
 # Stadium drawing
 const TRACK_APRON := Color("#a63d28")
-const GRASS_LIGHT := Color("#24423a")
-const GRASS_DARK := Color("#1f3a32")
+const GRASS_LIGHT := Color("#2e5a43")
+const GRASS_DARK := Color("#29513d")
 const STAND := Color("#262b37")
 const CONCOURSE := Color("#1d212b")
 const ROOF := Color("#323947")

@@ -86,12 +86,11 @@ func _draw_main_stand_roof(r_stand_in: float, r_stand_out: float) -> void:
 
 
 func _draw_scoreboard(r_stand_in: float, r_stand_out: float) -> void:
-	# Video board on top of the far-end stand (left).
-	var x := -STRAIGHT / 2.0 - r_stand_in - STAND_DEPTH * 0.5
-	var rect := Rect2(x - 1.5, -12.0, 3.0, 24.0)
-	draw_rect(_px_rect(rect.grow(0.6)), Color("#0b0d12"))
-	draw_rect(_px_rect(rect), Color("#141b2a"))
-	draw_rect(_px_rect(Rect2(rect.position.x, rect.position.y, rect.size.x, 3.0)), Palette.ACCENT)
+	# Video screen on the rim of the far-end stand (left), facing the track.
+	var x := -STRAIGHT / 2.0 - r_stand_out + 1.0
+	var frame := Rect2(x - 1.0, -13.0, 4.0, 26.0)
+	draw_rect(_px_rect(frame), Color("#0b0d12"))
+	draw_rect(_px_rect(Rect2(frame.end.x - 1.4, frame.position.y + 0.8, 0.8, frame.size.y - 1.6)), Color("#3b5bdb"))
 
 
 func _draw_floodlights(r_stand_out: float, heads: bool) -> void:
@@ -110,17 +109,20 @@ func _draw_floodlights(r_stand_out: float, heads: bool) -> void:
 # --- Track ---------------------------------------------------------------------
 
 func _draw_infield() -> void:
-	_fill_stadium(R_IN, Palette.GRASS_DARK)
-	# Mowing stripes across the rectangular part of the infield.
-	var stripe := 6.0
-	var x := -STRAIGHT / 2.0
-	var i := 0
-	while x < STRAIGHT / 2.0:
-		if i % 2 == 0:
-			var w := minf(stripe, STRAIGHT / 2.0 - x)
-			draw_rect(_px_rect(Rect2(x, -R_IN, w, R_IN * 2.0)), Palette.GRASS_LIGHT)
-		x += stripe
-		i += 1
+	# Everything inside the kerb is synthetic surface, except the grass rectangle.
+	_fill_stadium(R_IN, Palette.TRACK.darkened(0.05))
+	var grass := _grass_rect()
+	var stripe := grass.size.x / 14.0
+	for i in range(14):
+		var color := Palette.GRASS_LIGHT if i % 2 == 0 else Palette.GRASS_DARK
+		draw_rect(_px_rect(Rect2(grass.position.x + stripe * i, grass.position.y, stripe, grass.size.y)), color)
+	draw_rect(_px_rect(grass), Color(1, 1, 1, 0.12), false, 1.0)
+
+
+## The grass pitch: the straights' length plus a little, leaving a synthetic strip by the kerb.
+func _grass_rect() -> Rect2:
+	var half := Vector2(STRAIGHT / 2.0 + 3.0, R_IN - 4.0)
+	return Rect2(-half, half * 2.0)
 
 
 func _draw_lane_lines(r_out: float) -> void:
@@ -162,72 +164,46 @@ func _draw_finish_area(r_out: float) -> void:
 # --- Field events --------------------------------------------------------------
 
 func _draw_field_events() -> void:
-	# Standard layout: the two "D" areas at the ends of the infield hold the jumps and
-	# throws circles, and all throws land along the long axis of the grass.
+	# Layout follows a typical stadium (e.g. London Stadium): the synthetic "D" areas at
+	# each end hold the jumps and throwing circles; throws land on the grass.
 	var line_w := maxf(0.1 * _k, 1.0)
-	var left_d := Vector2(-STRAIGHT / 2.0, 0.0)
-	var right_d := Vector2(STRAIGHT / 2.0, 0.0)
+	var grass := _grass_rect()
 
-	# Left D: synthetic high jump fan, with the javelin runway crossing it along the axis.
-	_fill_d(left_d, -1.0, R_IN - 1.0, Palette.TRACK.darkened(0.06))
-	var hj_bar := left_d + Vector2(-10.0, -15.0)
-	draw_rect(_px_rect(Rect2(hj_bar.x - 3.0, hj_bar.y - 3.0, 6.0, 3.0)), Palette.MAT)
-	draw_line(_px(hj_bar + Vector2(-2.0, 0.2)), _px(hj_bar + Vector2(2.0, 0.2)), Color.WHITE, line_w)
+	# Left D: high jump (large mat, run-up from the bend) and the pole vault.
+	var hj := Vector2(grass.position.x - 9.0, -9.0)
+	draw_rect(_px_rect(Rect2(hj.x - 2.5, hj.y - 3.0, 5.0, 6.0)), Palette.MAT)
+	draw_line(_px(hj + Vector2(-2.7, -3.0)), _px(hj + Vector2(-2.7, 3.0)), Color.WHITE, maxf(0.15 * _k, 1.5))
+	var pv := Vector2(grass.position.x - 4.0, 14.0)
+	draw_rect(_px_rect(Rect2(pv.x - 3.0, pv.y - 3.0, 6.0, 6.0)), Palette.MAT)
+	draw_rect(_px_rect(Rect2(pv.x - 3.0 - 26.0, pv.y - 0.61, 26.0, 1.22)), Palette.TRACK.lightened(0.06))
 
-	# Javelin: 4m-wide runway ending in an 8m-radius arc at the edge of the grass.
-	var jav_arc_center := left_d + Vector2(-8.0, 0.0)
-	draw_rect(_px_rect(Rect2(left_d.x - 33.0, -2.0, 33.0, 4.0)), Palette.TRACK.lightened(0.05))
-	var arc_half := asin(2.0 / 8.0)
-	draw_arc(_px(jav_arc_center), 8.0 * _k, -arc_half, arc_half, 12, Color.WHITE, maxf(0.15 * _k, 1.5), true)
-	_draw_throwing_sector(jav_arc_center, 0.0, 28.96, 84.0)
-
-	# Right D: discus/hammer cage throwing along the axis into the infield.
-	_fill_d(right_d, 1.0, R_IN - 1.0, Palette.GRASS_DARK.darkened(0.12))
-	var cage := right_d + Vector2(10.0, 0.0)
-	draw_rect(_px_rect(Rect2(cage.x - 3.0, cage.y - 3.0, 6.0, 6.0)), Color("#3a404e"))
+	# Right D: hammer/discus cage at the edge of the grass, throwing down the pitch.
+	var cage := Vector2(grass.end.x + 6.0, 0.0)
+	_draw_throwing_sector(cage, PI, 34.92, cage.x - grass.position.x - 6.0)
 	draw_circle(_px(cage), 1.25 * _k, Color("#9aa1b2"))
-	draw_arc(_px(cage), 3.6 * _k, PI + deg_to_rad(40.0), PI * 3.0 - deg_to_rad(40.0), 32,
-			Color(1, 1, 1, 0.7), maxf(0.3 * _k, 1.5), true)
-	_draw_throwing_sector(cage, PI, 34.92, 80.0)
+	draw_arc(_px(cage), 3.8 * _k, PI + deg_to_rad(38.0), PI * 3.0 - deg_to_rad(38.0), 32,
+			Color("#202430"), maxf(0.45 * _k, 2.0), true)
+	for post in range(7):
+		var angle := PI + deg_to_rad(38.0) + (TAU - deg_to_rad(76.0)) * post / 6.0
+		draw_circle(_px(cage + Vector2.from_angle(angle) * 3.8), maxf(0.35 * _k, 1.5), Color("#101218"))
 
-	# Shot put circle in the right D, its sector landing on the D apron.
-	var shot := right_d + Vector2(22.0, -20.0)
-	draw_rect(_px_rect(Rect2(shot.x - 2.0, shot.y - 2.0, 4.0, 4.0)), Color("#3a404e"))
-	_draw_throwing_sector(shot, deg_to_rad(110.0), 34.92, 20.0)
+	# Shot put circle in the right D, landing on the synthetic area.
+	var shot := Vector2(grass.end.x + 20.0, -18.0)
 	draw_circle(_px(shot), 1.07 * _k, Color("#9aa1b2"))
+	draw_line(_px(shot + Vector2(-1.15, -0.6)), _px(shot + Vector2(-1.15, 0.6)), Color.WHITE, maxf(0.2 * _k, 1.5))
 
-	# Long & triple jump runway along the back straight, sand pit at the end.
-	var runway_y := -R_IN + 3.5
-	draw_rect(_px_rect(Rect2(-36.0, runway_y - 0.61, 64.0, 1.22)), Palette.TRACK)
-	draw_rect(_px_rect(Rect2(28.0, runway_y - 1.5, 9.0, 3.0)), Palette.SAND)
-	draw_line(_px(Vector2(25.0, runway_y - 0.61)), _px(Vector2(25.0, runway_y + 0.61)), Color.WHITE, line_w)
-
-	# Pole vault runway along the home straight, landing mat at the end.
-	var pv_y := R_IN - 3.5
-	draw_rect(_px_rect(Rect2(-30.0, pv_y - 0.61, 45.0, 1.22)), Palette.TRACK)
-	draw_rect(_px_rect(Rect2(15.0, pv_y - 3.0, 6.0, 6.0)), Palette.MAT)
-
-
-## Fills the half-disc ("D") at one end of the infield. `side` is -1 for left, 1 for right.
-func _fill_d(center: Vector2, side: float, radius: float, color: Color) -> void:
-	var points := PackedVector2Array()
-	var start := -PI / 2.0 if side > 0.0 else PI / 2.0
-	for i in range(31):
-		points.append(_px(center + Vector2.from_angle(start + PI * i / 30.0) * radius))
-	draw_colored_polygon(points, color)
+	# Long & triple jump runway in the strip along the back straight, sand pit at the end.
+	var runway_y := grass.position.y - 2.0
+	draw_rect(_px_rect(Rect2(-40.0, runway_y - 0.61, 66.0, 1.22)), Palette.TRACK.lightened(0.06))
+	draw_rect(_px_rect(Rect2(26.0, runway_y - 1.4, 9.0, 2.8)), Palette.SAND)
+	draw_line(_px(Vector2(23.0, runway_y - 0.61)), _px(Vector2(23.0, runway_y + 0.61)), Color.WHITE, line_w)
 
 
 func _draw_throwing_sector(origin: Vector2, direction: float, angle_deg: float, length: float) -> void:
 	var half := deg_to_rad(angle_deg / 2.0)
-	var color := Color(1, 1, 1, 0.3)
 	for side in [-half, half]:
 		var end := origin + Vector2.from_angle(direction + side) * length
-		draw_line(_px(origin), _px(end), color, 1.0, true)
-	# Distance arcs every 10m.
-	var d := 10.0
-	while d <= length:
-		draw_arc(_px(origin), d * _k, direction - half, direction + half, 16, Color(1, 1, 1, 0.14), 1.0, true)
-		d += 10.0
+		draw_line(_px(origin), _px(end), Color(1, 1, 1, 0.5), maxf(0.08 * _k, 1.0), true)
 
 
 # --- Geometry helpers ------------------------------------------------------------
