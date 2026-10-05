@@ -162,17 +162,39 @@ func _draw_finish_area(r_out: float) -> void:
 # --- Field events --------------------------------------------------------------
 
 func _draw_field_events() -> void:
+	# Standard layout: the two "D" areas at the ends of the infield hold the jumps and
+	# throws circles, and all throws land along the long axis of the grass.
 	var line_w := maxf(0.1 * _k, 1.0)
+	var left_d := Vector2(-STRAIGHT / 2.0, 0.0)
+	var right_d := Vector2(STRAIGHT / 2.0, 0.0)
 
-	# High jump fan in the left (far) bend.
-	var hj_center := Vector2(-STRAIGHT / 2.0, 0.0)
-	var fan := PackedVector2Array([_px(hj_center + Vector2(0, -R_IN * 0.75))])
-	for a in range(0, 181, 6):
-		var angle := deg_to_rad(90.0 + a)
-		fan.append(_px(hj_center + Vector2.from_angle(angle) * R_IN * 0.75))
-	draw_colored_polygon(fan, Palette.TRACK.darkened(0.06))
-	draw_rect(_px_rect(Rect2(hj_center.x - 14.0, -3.0, 3.0, 6.0)), Palette.MAT)
-	draw_line(_px(Vector2(hj_center.x - 11.2, -2.4)), _px(Vector2(hj_center.x - 11.2, 2.4)), Color.WHITE, line_w)
+	# Left D: synthetic high jump fan, with the javelin runway crossing it along the axis.
+	_fill_d(left_d, -1.0, R_IN - 1.0, Palette.TRACK.darkened(0.06))
+	var hj_bar := left_d + Vector2(-10.0, -15.0)
+	draw_rect(_px_rect(Rect2(hj_bar.x - 3.0, hj_bar.y - 3.0, 6.0, 3.0)), Palette.MAT)
+	draw_line(_px(hj_bar + Vector2(-2.0, 0.2)), _px(hj_bar + Vector2(2.0, 0.2)), Color.WHITE, line_w)
+
+	# Javelin: 4m-wide runway ending in an 8m-radius arc at the edge of the grass.
+	var jav_arc_center := left_d + Vector2(-8.0, 0.0)
+	draw_rect(_px_rect(Rect2(left_d.x - 33.0, -2.0, 33.0, 4.0)), Palette.TRACK.lightened(0.05))
+	var arc_half := asin(2.0 / 8.0)
+	draw_arc(_px(jav_arc_center), 8.0 * _k, -arc_half, arc_half, 12, Color.WHITE, maxf(0.15 * _k, 1.5), true)
+	_draw_throwing_sector(jav_arc_center, 0.0, 28.96, 84.0)
+
+	# Right D: discus/hammer cage throwing along the axis into the infield.
+	_fill_d(right_d, 1.0, R_IN - 1.0, Palette.GRASS_DARK.darkened(0.12))
+	var cage := right_d + Vector2(10.0, 0.0)
+	draw_rect(_px_rect(Rect2(cage.x - 3.0, cage.y - 3.0, 6.0, 6.0)), Color("#3a404e"))
+	draw_circle(_px(cage), 1.25 * _k, Color("#9aa1b2"))
+	draw_arc(_px(cage), 3.6 * _k, PI + deg_to_rad(40.0), PI * 3.0 - deg_to_rad(40.0), 32,
+			Color(1, 1, 1, 0.7), maxf(0.3 * _k, 1.5), true)
+	_draw_throwing_sector(cage, PI, 34.92, 80.0)
+
+	# Shot put circle in the right D, its sector landing on the D apron.
+	var shot := right_d + Vector2(22.0, -20.0)
+	draw_rect(_px_rect(Rect2(shot.x - 2.0, shot.y - 2.0, 4.0, 4.0)), Color("#3a404e"))
+	_draw_throwing_sector(shot, deg_to_rad(110.0), 34.92, 20.0)
+	draw_circle(_px(shot), 1.07 * _k, Color("#9aa1b2"))
 
 	# Long & triple jump runway along the back straight, sand pit at the end.
 	var runway_y := -R_IN + 3.5
@@ -180,24 +202,19 @@ func _draw_field_events() -> void:
 	draw_rect(_px_rect(Rect2(28.0, runway_y - 1.5, 9.0, 3.0)), Palette.SAND)
 	draw_line(_px(Vector2(25.0, runway_y - 0.61)), _px(Vector2(25.0, runway_y + 0.61)), Color.WHITE, line_w)
 
-	# Discus / hammer cage in the right (near) bend, throwing into the infield.
-	var cage := Vector2(STRAIGHT / 2.0 + 18.0, -8.0)
-	_draw_throwing_sector(cage, PI, 34.92, 50.0)
-	draw_circle(_px(cage), 1.25 * _k, Color("#9aa1b2"))
-	draw_arc(_px(cage), 3.6 * _k, PI + deg_to_rad(40.0), PI * 3.0 - deg_to_rad(40.0), 32,
-			Color(1, 1, 1, 0.7), maxf(0.3 * _k, 1.5), true)
+	# Pole vault runway along the home straight, landing mat at the end.
+	var pv_y := R_IN - 3.5
+	draw_rect(_px_rect(Rect2(-30.0, pv_y - 0.61, 45.0, 1.22)), Palette.TRACK)
+	draw_rect(_px_rect(Rect2(15.0, pv_y - 3.0, 6.0, 6.0)), Palette.MAT)
 
-	# Shot put circle with stop board, near the home straight.
-	var shot := Vector2(-18.0, 24.0)
-	_draw_throwing_sector(shot, -PI / 2.0, 34.92, 22.0)
-	draw_circle(_px(shot), 1.07 * _k, Color("#9aa1b2"))
-	draw_line(_px(shot + Vector2(-0.6, -1.15)), _px(shot + Vector2(0.6, -1.15)), Color.WHITE, maxf(0.2 * _k, 1.5))
 
-	# Javelin runway on the right end, throwing towards the left.
-	var jav_y := 16.0
-	draw_rect(_px_rect(Rect2(STRAIGHT / 2.0 + 6.0, jav_y - 2.0, 24.0, 4.0)), Palette.TRACK.darkened(0.08))
-	draw_arc(_px(Vector2(STRAIGHT / 2.0 + 12.0, jav_y)), 8.0 * _k, PI - 0.25, PI + 0.25, 12,
-			Color.WHITE, line_w, true)
+## Fills the half-disc ("D") at one end of the infield. `side` is -1 for left, 1 for right.
+func _fill_d(center: Vector2, side: float, radius: float, color: Color) -> void:
+	var points := PackedVector2Array()
+	var start := -PI / 2.0 if side > 0.0 else PI / 2.0
+	for i in range(31):
+		points.append(_px(center + Vector2.from_angle(start + PI * i / 30.0) * radius))
+	draw_colored_polygon(points, color)
 
 
 func _draw_throwing_sector(origin: Vector2, direction: float, angle_deg: float, length: float) -> void:
