@@ -61,30 +61,56 @@ func _run() -> void:
 	hub.get_node("Margin/Column/Scroll").scroll_vertical = 700
 	await _frames(5)
 	await _shot("8b_calendar_scrolled")
-	for i in 10:
-		hub._on_continue()
+	# Play weeks until the first race day stops the week.
+	var router = main.get_node("/root/Router")
+	while not game.advance_week():
+		pass
+	router.go("race")
 	await _frames(5)
-	await _shot("9_week_report_race")
+	await _shot("9_race_field")
+	var screen: Control = main.get_node("ScreenHost").get_child(-1)
+	screen._start(true)
+	Engine.time_scale = 3.0
+	var shots := {"decision": false, "mid": false}
+	while not screen._race.finished or screen._running:
+		await process_frame
+		var race = screen._race
+		if not race.pending.is_empty():
+			if not shots.decision:
+				shots.decision = true
+				await _frames(3)
+				await _shot("10_race_decision")
+			screen._decision.visible = false
+			race.choose(race.pending.options[0].id)
+		if not shots.mid and race.player.d > 560.0:
+			shots.mid = true
+			await _shot("11_race_mid")
+	Engine.time_scale = 1.0
+	await _frames(5)
+	await _shot("12_race_result")
+	screen._leave()
+	await _frames(5)
+	await _shot("13_week_report_after_race")
+	hub = main.get_node("ScreenHost").get_child(-1)
 	hub._show("overview")
 	await _frames(5)
-	await _shot("10_overview_after_10_weeks")
+	await _shot("14_overview_with_pb")
 
 	# Save, go back to the menu, load the snapshot again.
 	var saves = load("res://scripts/core/save_game.gd")
 	var slot: String = saves.save_snapshot()
-	var router = main.get_node("/root/Router")
 	router.go("main_menu")
 	await _frames(5)
-	await _shot("11_main_menu_with_save")
+	await _shot("15_main_menu_with_save")
 	router.go("load_game")
 	await _frames(5)
-	await _shot("12_load_game")
+	await _shot("16_load_game")
 	game.date = game.START_DATE.duplicate()   # scramble, then load to prove it restores
 	saves.load_slot(slot)
 	print("loaded date ", game.date, " athlete ", game.athlete.full_name(), " entries ", game.entries.size())
 	router.go("career_hub")
 	await _frames(5)
-	await _shot("13_hub_after_load")
+	await _shot("17_hub_after_load")
 	saves.delete(slot)
 	quit()
 

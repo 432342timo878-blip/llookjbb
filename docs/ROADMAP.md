@@ -12,8 +12,9 @@ Build in layers: every milestone ends with something playable.
 - [x] Career hub with FM-style athlete profile (placeholder for the main game screen)
 - [x] Weekly training plan → attribute progression, fatigue (first version; tune once races exist)
 - [x] Finnish youth calendar (2026–27 season with real big-meet dates; later seasons estimated)
-- [ ] 800m race simulation with in-race decisions (quick + detailed mode)
-- [ ] Results, PBs, simple rankings
+- [x] 800m race simulation with in-race decisions (quick + detailed mode), indoor + outdoor tracks
+- [x] Results and PBs (fictional youth rivals with their own PBs)
+- [ ] Simple rankings (season list of your age class)
 - [x] Save / load (weekly autosave + snapshot saves, Continue / Load Career in the main menu)
 - [ ] Basic sleek UI (desktop + mobile layout)
 

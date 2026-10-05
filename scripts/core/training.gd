@@ -78,83 +78,10 @@ static func preview(a: Athlete, plan: Array, month: int) -> Dictionary:
 	return {"stimulus": stimulus, "load": load}
 
 
-## Runs one week of the plan starting on `monday`. Changes the athlete; returns a report for the UI.
-## `races`: day index (0–6) -> meet (see Calendar); a race replaces that day's planned sessions.
+## Runs a whole week of the plan starting on `monday` (race days count as races without a result).
+## Changes the athlete; returns the weekly report. The game itself uses WeekSim directly to stop on race days.
 static func simulate_week(a: Athlete, plan: Array, monday: Dictionary, races := {}) -> Dictionary:
-	var month: int = Game.add_days(monday, 3).month   # the month most of the week is in
-	var season: Dictionary = Data.training.season
-	var stimulus := {}
-	var notes := []
-	var raced := []
-	var fatigue_start := a.fatigue
-	var fatigue_peak := a.fatigue
-	var fatigue_sum := 0.0
-	var sessions_done := 0
-	var total_load := 0.0
-	var off_track := []
-
-	for day in 7:
-		var day_load := 0.0
-		var keep := daily_keep(a)
-		var extra_recovery := 0.0
-		var trained := false
-		var sessions := []
-		if races.has(day):
-			var race: Dictionary = Data.competitions.race_session.duplicate()
-			race.name = races[day].name
-			sessions.append(race)
-			raced.append({"meet": races[day], "day": day, "fatigue": a.fatigue})
-		else:
-			for id in plan[day]:
-				sessions.append(Data.get_session(id))
-		for s in sessions:
-			if s.is_empty():
-				continue
-			var eff := 1.0 if races.has(day) else effectiveness(a, s, month)
-			if eff == 0.0:
-				notes.append("%s: %s isn't possible this time of year, so it was skipped." % [DAY_NAMES[day], s.name])
-				continue
-			if eff < 1.0 and not s.name in off_track:
-				off_track.append(s.name)
-			# Training while very tired does less good.
-			var fresh := 1.0
-			if a.fatigue > FATIGUE_LIMIT:
-				fresh = lerpf(1.0, FATIGUED_MIN_EFFECT, (a.fatigue - FATIGUE_LIMIT) / (100.0 - FATIGUE_LIMIT))
-			for attr in s.effects:
-				stimulus[attr] = stimulus.get(attr, 0.0) + float(s.effects[attr]) * eff * fresh
-			day_load += session_load(a, s)
-			extra_recovery += float(s.get("recovery", 0))
-			sessions_done += 1
-			trained = true
-		if not trained:
-			keep -= REST_DAY_EXTRA
-		total_load += day_load
-		a.fatigue = clampf(a.fatigue * keep + day_load - extra_recovery, 0.0, 100.0)
-		fatigue_peak = maxf(fatigue_peak, a.fatigue)
-		fatigue_sum += a.fatigue
-
-	var fatigue_avg := fatigue_sum / 7.0
-	for r in raced:
-		var state: Array = fatigue_state(r.fatigue)
-		notes.append("%s: raced the %s at %s, feeling %s. Race results arrive with the race simulation (next update)." % [
-				DAY_NAMES[r.day], Data.get_event(a.main_event).name, r.meet.name, state[0].to_lower()])
-	if not off_track.is_empty():
-		notes.append("No indoor track in winter: %s done on roads and snow instead (%d%% effect)." % [
-				", ".join(off_track), roundi(float(season.off_track_effect) * 100)])
-	if fatigue_avg >= 65.0:
-		notes.append("You were exhausted this week. Training that tired does little good and risks injury.")
-	elif fatigue_avg >= 45.0:
-		notes.append("Your legs felt heavy this week. A lighter week would help you absorb the training.")
-	if sessions_done == 0:
-		notes.append("A full week off. Good for recovery, but fitness slowly fades.")
-
-	var changes := _apply_progression(a, stimulus)
-	return {
-		"monday": monday, "sessions": sessions_done, "load": total_load,
-		"fatigue_start": fatigue_start, "fatigue_end": a.fatigue, "fatigue_peak": fatigue_peak,
-		"fatigue_avg": fatigue_avg, "changes": changes, "notes": notes, "races": raced,
-	}
-
+	return WeekSim.new(a, plan, monday, races).finish()
 
 ## Typical fatigue once the athlete has followed `plan` for a few weeks: {avg, peak}.
 ## Simulated on a copy, so the real athlete is untouched.

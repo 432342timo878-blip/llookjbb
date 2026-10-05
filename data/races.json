@@ -1,0 +1,26 @@
+{
+ "_note": "800 m race model. Ability (1-20, from attributes) maps to an even-effort race time by gender, interpolated between these anchors. Calibrated against SUL youth skill-badge standards for 15-year-olds (taitomerkkirajat: boys 2:16 / 2:26 / 2:36, girls 2:33 / 2:43 / 2:53), SM 14-15 qualifying times (M15 2:21, N15 2:35), Kalevan kisat standards (1:53.50 / 2:11.00) and Finnish/world-class senior times. Ability 20 = world-class senior.",
+ "time_anchors": {
+  "male":   [[1, 210], [3, 185], [5, 165], [7, 151], [9, 140], [11, 130], [13, 120], [15, 113], [17, 107], [20, 102]],
+  "female": [[1, 225], [3, 200], [5, 180], [7, 166], [9, 155], [11, 144], [13, 135], [15, 128], [17, 122], [20, 116]]
+ },
+ "ability_weights": {
+  "_note": "How much each attribute counts towards 800 m ability (sums to 1).",
+  "speed_endurance": 0.22, "aerobic_capacity": 0.14, "lactate_threshold": 0.14, "speed": 0.14,
+  "running_economy": 0.10, "running_technique": 0.06, "strength": 0.05, "power": 0.05,
+  "pain_tolerance": 0.05, "mobility": 0.02, "determination": 0.03
+ },
+ "fields": {
+  "_note": "Opponents per meet level: how many, and which part of the rival pool they come from (0 = weakest, 1 = strongest).",
+  "local":         {"size": [5, 8],   "pool_range": [0.0, 0.8]},
+  "district":      {"size": [8, 12],  "pool_range": [0.1, 0.9]},
+  "international": {"size": [9, 14],  "pool_range": [0.35, 1.0]},
+  "national":      {"size": [18, 32], "pool_range": [0.45, 1.0]}
+ },
+ "rivals": {
+  "_note": "Fictional rivals of the player's age and gender (real youth athletes are minors, so they're not used). Ability at career start ~ N(mean, sd).",
+  "count": 150, "ability_mean": 7.2, "ability_sd": 2.0, "ability_min": 3.0, "ability_max": 13.5,
+  "ceiling_mean": 13.0, "ceiling_sd": 2.5
+ },
+ "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2}
+}

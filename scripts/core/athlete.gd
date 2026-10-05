@@ -22,6 +22,7 @@ var training_base := "outdoor_track"   # where they train; ids from background_q
 
 var attributes := {}            # attribute id -> float, visible and hidden
 var personal_bests := {}        # event id -> mark (seconds or metres)
+var results := []               # [{date, meet, meet_key, event, round, place, field, time, pb}]
 
 var fatigue := 0.0              # 0 (fresh) – 100 (exhausted)
 var recent_change := {}         # attribute id -> recent trend (decaying sum of weekly changes), for the arrows
@@ -54,7 +55,7 @@ func to_dict() -> Dictionary:
 		"main_event": main_event, "height_cm": height_cm, "weight_kg": weight_kg,
 		"maturation": maturation, "school_level": school_level, "training_base": training_base,
 		"attributes": attributes, "personal_bests": personal_bests,
-		"fatigue": fatigue, "recent_change": recent_change,
+		"fatigue": fatigue, "recent_change": recent_change, "results": results,
 	}
 
 

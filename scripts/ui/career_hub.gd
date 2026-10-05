@@ -43,11 +43,15 @@ func _ready() -> void:
 	column.add_child(bar)
 	column.move_child(bar, 1)
 	_refresh_header()
-	_show("overview")
+	# Coming back from a race day: show how the week went.
+	_show("report" if Game.open_report and not Game.last_report.is_empty() else "overview")
+	Game.open_report = false
 
 
 func _on_continue() -> void:
-	Game.advance_week()
+	if Game.advance_week():
+		Router.go("race")
+		return
 	_refresh_header()
 	_show("report")
 
@@ -109,8 +113,19 @@ func _build_profile(a: Athlete) -> void:
 	]:
 		body.add_child(_fact_row(f[0], UIKit.label(f[1])))
 	body.add_child(UIKit.label(" "))
-	body.add_child(UIKit.label("PERSONAL BESTS", "CaptionLabel"))
-	body.add_child(UIKit.wrapped("No races yet. Your first season starts soon.", "MutedLabel"))
+	body.add_child(UIKit.label("PERSONAL BEST", "CaptionLabel"))
+	var pb: float = a.personal_bests.get(a.main_event, 0.0)
+	if pb == 0.0:
+		body.add_child(UIKit.wrapped("No races yet. Enter some in the Calendar.", "MutedLabel"))
+	else:
+		body.add_child(_fact_row(Data.get_event(a.main_event).name, UIKit.label(Calendar.format_time(pb))))
+		body.add_child(UIKit.label(" "))
+		body.add_child(UIKit.label("RECENT RACES", "CaptionLabel"))
+		for r in a.results.slice(-5):
+			var where: String = "" if r.round == "Race" else " (%s)" % r.round.to_lower()
+			var line := "%d.%d. %s%s: %s %s" % [int(r.date.day), int(r.date.month), r.meet, where,
+					Race._ordinal(int(r.place)), Calendar.format_time(r.time)]
+			body.add_child(UIKit.wrapped(line + (" PB" if r.pb else ""), "MutedLabel"))
 	columns.add_child(_column_panel(body))
 	_content.add_child(columns)
 

@@ -10,6 +10,7 @@ var background_questions: Array = []   # data/background_questions.json
 var names: Dictionary = {}             # data/names_fi.json
 var training: Dictionary = {}          # data/training.json: sessions, season rules, coach plan
 var competitions: Dictionary = {}      # data/competitions.json: meets, standards, race training effect
+var races: Dictionary = {}             # data/races.json: 800 m race model tuning
 
 
 func _ready() -> void:
@@ -26,6 +27,7 @@ func _ready() -> void:
 	names = _load("res://data/names_fi.json")
 	training = _load("res://data/training.json")
 	competitions = _load("res://data/competitions.json")
+	races = _load("res://data/races.json")
 
 
 func get_event(id: String) -> Dictionary:

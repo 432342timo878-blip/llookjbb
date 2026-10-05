@@ -1,44 +1,26 @@
 {
+ "_note": "Common Finnish first names for children born around 2010-2013 and common Finnish surnames. Used for the player's random name and for fictional rivals.",
  "male": [
-  "Eetu",
-  "Leo",
-  "Elias",
-  "Oliver",
-  "Onni",
-  "Aatu",
-  "Väinö",
-  "Eino",
-  "Veeti",
-  "Niilo",
-  "Lenni",
-  "Topias"
+  "Eetu", "Leo", "Elias", "Oliver", "Onni", "Aatu", "Väinö", "Eino", "Veeti", "Niilo", "Lenni", "Topias",
+  "Aleksi", "Lauri", "Joona", "Juho", "Leevi", "Eemeli", "Valtteri", "Daniel", "Emil", "Rasmus", "Niko",
+  "Matias", "Otto", "Arttu", "Santeri", "Toivo", "Aaro", "Akseli", "Mikael", "Samuel", "Konsta", "Iiro",
+  "Joel", "Julius", "Kasper", "Luukas", "Nooa", "Oskari", "Viljami", "Ville", "Tuomas", "Eeli", "Jesse",
+  "Patrik", "Benjamin", "Vilho", "Elmeri", "Aapo", "Oiva", "Teemu", "Miro", "Severi", "Ilmari"
  ],
  "female": [
-  "Aino",
-  "Sofia",
-  "Eevi",
-  "Olivia",
-  "Lilja",
-  "Helmi",
-  "Ellen",
-  "Venla",
-  "Iida",
-  "Pihla",
-  "Enni",
-  "Aada"
+  "Aino", "Sofia", "Eevi", "Olivia", "Lilja", "Helmi", "Ellen", "Venla", "Iida", "Pihla", "Enni", "Aada",
+  "Emma", "Ella", "Linnea", "Emilia", "Siiri", "Saara", "Lotta", "Anni", "Oona", "Kerttu", "Elli", "Nelli",
+  "Veera", "Minea", "Isla", "Alisa", "Amanda", "Julia", "Milla", "Vilma", "Eveliina", "Neea", "Aliisa",
+  "Iina", "Inka", "Jenna", "Hilla", "Senni", "Selma", "Ronja", "Sara", "Matilda", "Viivi", "Tilda", "Elsa",
+  "Fanni", "Josefiina", "Peppi", "Hertta", "Nea", "Lumi", "Kaisla", "Ilona"
  ],
  "surnames": [
-  "Korhonen",
-  "Virtanen",
-  "Mäkinen",
-  "Nieminen",
-  "Mäkelä",
-  "Hämäläinen",
-  "Laine",
-  "Heikkinen",
-  "Koskinen",
-  "Järvinen",
-  "Lehtonen",
-  "Salonen"
+  "Korhonen", "Virtanen", "Mäkinen", "Nieminen", "Mäkelä", "Hämäläinen", "Laine", "Heikkinen", "Koskinen",
+  "Järvinen", "Lehtonen", "Salonen", "Lehtinen", "Saarinen", "Salminen", "Heinonen", "Niemi", "Heikkilä",
+  "Kinnunen", "Turunen", "Salo", "Laitinen", "Tuominen", "Rantanen", "Karjalainen", "Jokinen", "Mattila",
+  "Savolainen", "Lahtinen", "Ahonen", "Hiltunen", "Leppänen", "Hirvonen", "Kallio", "Leinonen", "Miettinen",
+  "Pitkänen", "Väisänen", "Aaltonen", "Manninen", "Hakala", "Koivisto", "Anttila", "Laaksonen", "Kärkkäinen",
+  "Rissanen", "Mustonen", "Nurmi", "Toivonen", "Peltonen", "Lappalainen", "Hyvönen", "Seppälä", "Vainio",
+  "Ojala", "Kettunen", "Lindqvist", "Nyström", "Holmberg", "Lindroos"
  ]
 }

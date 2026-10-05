@@ -103,6 +103,34 @@ the **club coach gives a starter plan** that the player can edit; the **plan rep
   2 easy runs a week → little progress; 12 sessions a week → tired (~58) and only somewhat better in the trained areas.
   Overtraining will become properly risky once injuries exist (M2).
 
+### 4.3 800 m race simulation (first version built)
+
+Decisions (user, 2026-10-05): opponents should be real athletes where possible, otherwise generated. **Claude's
+constraint:** youth opponents (14–17) are fictional, because real youth athletes are minors. Their levels are calibrated
+on aggregate result standards only, with no individual names or results. Real athletes come in at senior level
+(Kalevan kisat, internationals). Detailed races show **runners as dots on the track**.
+
+- **Ability → time:** 800 m ability (1–20) = weighted attributes (`data/races.json`), mapped to an even-effort time by
+  gender. Anchors: SUL skill-badge standards for 15-year-olds (boys A/B/C 2:16 / 2:26 / 2:36, girls 2:33 / 2:43 / 2:53),
+  SM 14-15 standards, Kalevan kisat standards, world-class seniors. A new 14-year-old is ~2:40 (boys) / ~2:55 (girls).
+- **Engine** (`Race`, 0.1 s steps): each runner has a sustainable speed and an anaerobic reserve (metres). Running
+  above it drains the reserve, drafting drains it 7 % slower, and an empty reserve means tying up. The race is in lanes
+  until the break line after the first bend. Running wide on a bend costs distance, and runners can get boxed in.
+  Kick timing depends on the runner type (kickers vs grinders) and tactics.
+- **Tracks:** outdoor 400 m with 8 lanes. Indoor 200 m with 6 lanes, tight bends (~2 s slower), 4 laps, and heats of 6
+  at indoor championships.
+- **Race day form:** consistency sets the day-to-day spread, composure matters at national/international meets, and
+  fatigue above 25 costs ability.
+- **Player decisions (detailed mode):** pre-race plan (front / pack / kick late), position at the break, bell /
+  halfway (push / hold / ease), covering a rival's move, kick timing (200 m or 100 m to go), home straight (go wide /
+  wait for the inside). In quick mode the athlete decides by plan and race tactics.
+- **Rivals:** a pool of 150 fictional runners (same birth year and gender, Finnish names, real clubs). They train every
+  week like the player (toward their own ceiling), keep PBs and fill the fields: local 5–8, district 8–12,
+  international youth 9–14. At the national championships, everyone with the standard enters plus ~12 % without it,
+  with heats when needed (2 auto qualifiers per heat + fastest losers).
+- **Results:** stored on the athlete (results list, PB). They show on the Overview and in the weekly report.
+- **Tuning:** `tools/race_balance.gd` (median times hit the anchors within ~1 s).
+
 ### 4.4 Season calendar (first version built)
 
 Decisions (user, 2026-10-05): big meets use **real dates**; small local/district meets get **believable estimated dates**
