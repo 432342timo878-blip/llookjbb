@@ -1,9 +1,9 @@
 extends Control
-## Career home screen: athlete header, tabs (Overview / Training / Calendar / Rankings / Last week) and
-## Continue, which plays one week. Wide layout on PC (tabs on top); on a phone the content is stacked and
-## the tabs sit in a bar at the bottom, within thumb reach.
+## Career home screen: athlete header with today's date, Next day (plays one day) and Play week (plays to
+## Sunday night or until something needs the player), and tabs (Overview / Training / Calendar / Rankings /
+## Last week). Wide layout on PC (tabs on top); on a phone the content is stacked and the tabs sit in a bar
+## at the bottom, within thumb reach. Stop events show as a full-screen dimmed decision panel.
 
-const MONTHS := ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 ## id, tab text, short tab text (phone)
 const VIEWS := [["overview", "Overview", "Overview"], ["training", "Training", "Training"],
 		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Last week", "Report"]]
@@ -18,14 +18,25 @@ var _content: VBoxContainer
 var _name_label: Label
 var _info_label: Label
 var _date_label: Label
+var _event_overlay: ColorRect   # full-screen dimmed layer for stop events
 
 
 func _ready() -> void:
-	Router.layout_changed.connect(func(_c): _build_shell(); _show(_view))
+	Router.layout_changed.connect(func(_c): _build_shell(); _show(_view); _show_pending_event())
 	_build_shell()
-	# Coming back from a race day: show how the week went.
+	# Coming back from a race that ended the week: show how the week went.
 	_show("report" if Game.open_report and not Game.last_report.is_empty() else "overview")
 	Game.open_report = false
+	_show_pending_event()
+
+
+## Debug builds only: F8 arms a test stop event for the end of the next played day (see DevEvents).
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_F8:
+		var dev := Game.get_system("dev") as DevEvents
+		if dev:
+			dev.armed = true
+			print("Test stop event armed: it comes at the end of the next played day.")
 
 
 ## Header, tab bar, scrolling content. Rebuilt when the window switches between wide and phone layout.
@@ -70,6 +81,8 @@ func _build_shell() -> void:
 		column.add_child(bar)
 		column.add_child(HSeparator.new())
 		column.add_child(_scroll)
+	if _event_overlay:
+		move_child(_event_overlay, -1)   # stays on top of the rebuilt page
 	_refresh_header()
 
 
@@ -77,8 +90,10 @@ func _build_header() -> Control:
 	_name_label = UIKit.label("", "TitleLabel")
 	_info_label = UIKit.wrapped("")
 	_date_label = UIKit.label("", "SubheadingLabel")
-	var cont := UIKit.button("Continue", true, 160)
-	cont.pressed.connect(_on_continue)
+	var next_day := UIKit.button("Day" if Layout.compact else "Next day", true, 140)
+	next_day.pressed.connect(_on_advance.bind(false))
+	var play_week := UIKit.button("Week" if Layout.compact else "Play week", false, 140)
+	play_week.pressed.connect(_on_advance.bind(true))
 	var save := UIKit.button("Save", false, 110)
 	save.pressed.connect(func():
 		SaveGame.save_snapshot()
@@ -88,11 +103,15 @@ func _build_header() -> Control:
 	menu.pressed.connect(Router.go.bind("main_menu"))
 
 	if Layout.compact:
+		# Name + Save + Menu on top, then the info line, then today's date with the time buttons.
 		var box := UIKit.vbox(6)
 		var top := UIKit.hbox(8)
 		_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_name_label.clip_text = true
 		top.add_child(_name_label)
+		save.custom_minimum_size.x = 76
+		menu.custom_minimum_size.x = 76
+		top.add_child(save)
 		top.add_child(menu)
 		box.add_child(top)
 		box.add_child(_info_label)
@@ -100,9 +119,10 @@ func _build_header() -> Control:
 		_date_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_date_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		actions.add_child(_date_label)
-		actions.add_child(save)
-		cont.custom_minimum_size.x = 130
-		actions.add_child(cont)
+		next_day.custom_minimum_size.x = 100
+		play_week.custom_minimum_size.x = 100
+		actions.add_child(next_day)
+		actions.add_child(play_week)
 		box.add_child(actions)
 		return box
 
@@ -116,18 +136,25 @@ func _build_header() -> Control:
 	_date_label.custom_minimum_size.y = 44
 	_date_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(_date_label)
-	for b in [cont, save, menu]:
+	for b in [next_day, play_week, save, menu]:
 		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		row.add_child(b)
 	return row
 
 
-func _on_continue() -> void:
-	if Game.advance_week():
+## Next day (`week` = false) or Play week. A race day opens the race screen; a finished week shows its report.
+func _on_advance(week: bool) -> void:
+	var result := Game.advance_week() if week else Game.advance_day()
+	if result == Game.RACE:
 		Router.go("race")
 		return
 	_refresh_header()
-	_show("report")
+	if Game.open_report:
+		Game.open_report = false
+		_show("report")
+	else:
+		_show(_view)
+	_show_pending_event()
 
 
 func _refresh_header() -> void:
@@ -136,8 +163,63 @@ func _refresh_header() -> void:
 	_name_label.text = a.full_name()
 	_info_label.text = "%s · %d years · %s · %s" % [
 		Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", ""), a.hometown]
-	_date_label.text = "Mon %d %s %d" % [Game.date.day, MONTHS[Game.date.month - 1], Game.date.year]
+	_date_label.text = Calendar.format_day(Game.date)
 	_tabs.report.disabled = Game.last_report.is_empty()
+
+
+# --- Stop events ------------------------------------------------------------------------------
+
+## Shows the oldest unanswered stop event as a dimmed full-screen panel (hidden when there is none).
+## Its choices are 44 px buttons; an event without choices just has OK.
+func _show_pending_event() -> void:
+	var e := Game.pending_event()
+	if e.is_empty():
+		if _event_overlay:
+			_event_overlay.visible = false
+		return
+	if _event_overlay == null:
+		_event_overlay = ColorRect.new()
+		_event_overlay.color = Color(0.03, 0.035, 0.05, 0.72)
+		_event_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		add_child(_event_overlay)
+	for child in _event_overlay.get_children():
+		child.queue_free()
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 16)
+	_event_overlay.add_child(margin)
+	var center := CenterContainer.new()
+	margin.add_child(center)
+	var card := PanelContainer.new()
+	center.add_child(card)
+
+	var box := UIKit.vbox(10)
+	# Logical window width (the screen may not be laid out yet), minus screen margin and panel padding.
+	box.custom_minimum_size.x = minf(480.0, Layout.logical_width - 32.0 - 36.0)
+	box.add_child(UIKit.label(Calendar.format_day(e.date).to_upper(), "CaptionLabel"))
+	box.add_child(UIKit.wrapped(e.title, "HeadingLabel"))
+	box.add_child(UIKit.wrapped(e.text, ""))
+	var choices: Array = e.choices
+	if choices.is_empty():
+		choices = [{"id": "ok", "label": "OK", "detail": ""}]
+	for c in choices:
+		var b := UIKit.button(c.label, false, 200)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(_on_event_answer.bind(e.id, c.id))
+		box.add_child(b)
+		if c.get("detail", "") != "":
+			box.add_child(UIKit.wrapped(c.detail))
+	card.add_child(box)
+	_event_overlay.visible = true
+	move_child(_event_overlay, -1)
+
+
+func _on_event_answer(event_id: String, choice: String) -> void:
+	Game.answer_event(event_id, choice)
+	_refresh_header()
+	_show(_view)
+	_show_pending_event()
 
 
 func _show(view: String) -> void:
@@ -211,14 +293,14 @@ func _build_profile(a: Athlete) -> void:
 
 	_content.add_child(UIKit.wrapped(
 			"Arrows show attributes that have been rising or falling lately. Tap an attribute to see what it does. "
-			+ "Plan your week under Training, then press Continue.", "MutedLabel"))
+			+ "Plan your week under Training, then press Next day or Play week.", "MutedLabel"))
 
 
 # --- Training plan ----------------------------------------------------------------------
 
 func _build_training() -> void:
 	var a := Game.athlete
-	var month: int = Game.add_days(Game.date, 3).month
+	var month: int = Game.add_days(Game.week_monday(), 3).month
 	_content.add_child(UIKit.label("Weekly plan", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
 			"Your plan repeats every week until you change it. Up to %d sessions a day; an empty day is a rest day."
@@ -255,7 +337,7 @@ func _build_training() -> void:
 ## One day of the plan. Wide: day, two pickers and the load on one row. Phone: a header line
 ## (day + load) with the two pickers stacked under it.
 func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> Control:
-	var date := Game.add_days(Game.date, day)
+	var date := Game.add_days(Game.week_monday(), day)
 	var day_label := UIKit.label("%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month],
 			"SubheadingLabel" if Layout.compact else "")
 	var load_label := UIKit.label("", "MutedLabel")
@@ -330,7 +412,7 @@ func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
 	for child in box.get_children():
 		child.queue_free()
 	var p := Training.preview(a, Game.training_plan, month)
-	var expected := Training.expected_fatigue(a, Game.training_plan, Game.date)
+	var expected := Training.expected_fatigue(a, Game.training_plan, Game.week_monday())
 	var verdict: String
 	if expected.avg < 15.0:
 		verdict = "Light: easy to recover from, but slower progress."

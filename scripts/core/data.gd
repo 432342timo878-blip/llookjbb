@@ -11,6 +11,7 @@ var names: Dictionary = {}             # data/names_fi.json
 var training: Dictionary = {}          # data/training.json: sessions, season rules, coach plan
 var competitions: Dictionary = {}      # data/competitions.json: meets, standards, race training effect
 var races: Dictionary = {}             # data/races.json: 800 m race model tuning
+var health: Dictionary = {}            # data/health.json: day intensity (later body strain, injuries, illness)
 
 
 func _ready() -> void:
@@ -28,6 +29,7 @@ func _ready() -> void:
 	training = _load("res://data/training.json")
 	competitions = _load("res://data/competitions.json")
 	races = _load("res://data/races.json")
+	health = _load("res://data/health.json")
 
 
 func get_event(id: String) -> Dictionary:

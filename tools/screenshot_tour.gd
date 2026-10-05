@@ -62,9 +62,22 @@ func _run() -> void:
 	hub._scroll.scroll_vertical = 700
 	await _frames(5)
 	await _shot("8b_calendar_scrolled")
+	# Next day twice: the header shows Wednesday.
+	hub._show("overview")
+	hub._on_advance(false)
+	hub._on_advance(false)
+	await _frames(5)
+	await _shot("8c_hub_wednesday")
+	# A test stop event at the end of Wednesday: Play week stops and shows the decision panel.
+	game.get_system("dev").armed = true
+	hub._on_advance(true)
+	await _frames(5)
+	await _shot("8d_stop_event")
+	hub._on_event_answer(game.pending_event().id, "easy")
+	await _frames(3)
 	# Play weeks until the first race day stops the week.
 	var router = main.get_node("/root/Router")
-	while not game.advance_week():
+	while game.advance_week() != game.RACE:
 		pass
 	router.go("race")
 	await _frames(5)

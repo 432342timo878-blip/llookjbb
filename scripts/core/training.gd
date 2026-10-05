@@ -52,6 +52,16 @@ static func effectiveness(a: Athlete, session: Dictionary, month: int) -> float:
 	return 1.0
 
 
+## Day intensity ids, lightest first (data/health.json).
+const INTENSITIES := ["easy", "normal", "hard"]
+
+
+## {name, load, effect, description} for a day intensity id; unknown ids count as Normal.
+static func intensity(id: String) -> Dictionary:
+	var all: Dictionary = Data.health.intensity
+	return all.get(id, all.normal)
+
+
 ## Fatigue added by a session, after the athlete's durability.
 static func session_load(a: Athlete, session: Dictionary) -> float:
 	return float(session.load) * (0.9 - a.get_attr("durability") / 50.0)
@@ -79,7 +89,7 @@ static func preview(a: Athlete, plan: Array, month: int) -> Dictionary:
 
 
 ## Runs a whole week of the plan starting on `monday` (race days count as races without a result).
-## Changes the athlete; returns the weekly report. The game itself uses WeekSim directly to stop on race days.
+## Changes the athlete; returns the weekly report. The game itself plays WeekSim a day at a time (Game.advance_day).
 static func simulate_week(a: Athlete, plan: Array, monday: Dictionary, races := {}) -> Dictionary:
 	return WeekSim.new(a, plan, monday, races).finish()
 

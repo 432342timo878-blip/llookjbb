@@ -43,6 +43,9 @@ func _run() -> void:
 	wizard._on_next()   # start the career
 	await _frames(5)
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	game.advance_day()   # a mid-week date in the header (Wednesday)
+	game.advance_day()
+	hub._refresh_header()
 
 	for size in SIZES:
 		root.size = size
@@ -53,6 +56,16 @@ func _run() -> void:
 			hub._show(view)
 			await _frames(4)
 			await _shot("%s_%s" % [tag, view])
+		# The stop-event panel (a test event with three choices).
+		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
+				"Your legs feel heavy after today's training. What do you do tomorrow?", [
+					{"id": "keep", "label": "Keep going", "detail": "Train as planned."},
+					{"id": "easy", "label": "Take it easy", "detail": "Tomorrow's sessions at Easy intensity."},
+					{"id": "rest", "label": "Rest day", "detail": "No training tomorrow."}], true)
+		hub._show_pending_event()
+		await _frames(4)
+		await _shot("%s_stop_event" % tag)
+		hub._on_event_answer(e.id, "keep")
 		router.go("main_menu")
 		await _frames(6)
 		await _shot("%s_menu" % tag)

@@ -176,6 +176,11 @@ Decisions (user, 2026-10-05): **two buttons, no mode switch**; day changes apply
 - **Save/load:** save version 2 stores the date, the in-progress week (played days, this week's changes, stimulus so
   far, notes, fatigue stats) and the health state. Autosave after every played day. Version-1 saves load fine:
   they're always on a Monday with no week in progress, so new fields start empty.
+- **Built (step 1, 2026-10-05):** engine, day changes, events, day log, save v2, Next day / Play week and a simple
+  stop-event panel. Details chosen while building: intensity Easy = ×0.7 load / ×0.8 effect, Hard = ×1.3 load /
+  ×1.15 effect (first values, tuned in step 5); a race reached with Play week continues the week after the race
+  (as in M1), one reached with Next day completes just the race day; a stop event raised after a day's training shows
+  that night, before the next day is played; the day log and events keep the last 4 weeks.
 
 ### 4.6 Injuries & health (M2, designed 2026-10-05)
 

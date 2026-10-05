@@ -1,6 +1,6 @@
 extends Control
 ## Race day: the field and your race plan → the race (quick result, or watched with decisions) → results.
-## Works on Game.race_day; when it's all done, Game.finish_race() continues the week.
+## Works on Game.race_day; when it's all done, Game.finish_race() completes the race day.
 
 const PLANS := [
 	["front", "Run from the front", "Go out hard and make the others chase. Suits strong, even runners."],
@@ -477,9 +477,9 @@ func _show_result(fresh := true) -> void:
 	_set_body(wrap)
 
 
+## Completes the race day. If the race came up during Play week, the week goes on (and may reach another race).
 func _leave() -> void:
-	if Game.finish_race():
-		Router.go("race")   # another race later this week
+	if Game.finish_race() == Game.RACE:
+		Router.go("race")
 	else:
-		Game.open_report = true
-		Router.go("career_hub")
+		Router.go("career_hub")   # the hub shows the weekly report or a stop event if there is one

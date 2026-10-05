@@ -1,0 +1,18 @@
+{
+ "_note": "Health and day-intensity tuning (GDD 4.5–4.6). M2 step 1 only uses the intensity settings; body areas, strain rates, thresholds, illness rates and the rival injury chance come with the health model (step 3).",
+ "intensity": {
+  "_note": "Per-day intensity (this week's day changes). load = multiplier on the fatigue a session adds; effect = multiplier on its training stimulus. Normal must stay 1.0 / 1.0 so the weekly plan behaves as before. Races ignore intensity.",
+  "easy": {
+   "name": "Easy", "load": 0.7, "effect": 0.8,
+   "description": "Run the sessions gently: less tiring, a bit less training effect."
+  },
+  "normal": {
+   "name": "Normal", "load": 1.0, "effect": 1.0,
+   "description": "The sessions as planned."
+  },
+  "hard": {
+   "name": "Hard", "load": 1.3, "effect": 1.15,
+   "description": "Push harder than planned: a bit more training effect, but much more tiring."
+  }
+ }
+}

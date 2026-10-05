@@ -20,12 +20,14 @@ Build in layers: every milestone ends with something playable.
 
 ## M2 — Depth on the slice
 Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session per step:
-- [ ] **1. Day engine + hooks:** `WeekSim` single-day step and save/load mid-week; `Game.advance_day()` /
+- [x] **1. Day engine + hooks:** `WeekSim` single-day step and save/load mid-week; `Game.advance_day()` /
       `advance_week()` (stops on stop events); `Game.date` = today; day loop with system slots, event format,
       day log; day changes with "changed by"; intensity (`data/health.json`); save version 2 (v1 saves still load),
       autosave daily. UI: just the Next day / Play week buttons + a simple stop-event panel. *(Opus)*
-- [ ] **2. Week strip & day editor UI:** week strip (PC + phone), day editor (side panel / bottom sheet), Today card,
-      Report day log, real date in the header; update `layout_check.gd` and the screenshot tour. *(Sonnet)*
+      Done: training balance bit-for-bit unchanged; checks in `tools/day_engine_check.gd`; F8 test stop event in debug builds.
+- [ ] **2. Week strip & day editor UI:** week strip (PC + phone), day editor (side panel / bottom sheet) on top of the
+      `WeekSim` day-change API, Today card, Report day log (`Game.day_log`); update `layout_check.gd` and the
+      screenshot tour. *(Sonnet)*
 - [ ] **3. Health model:** body-area strain, soreness, injury and illness rolls, catalogue with phases
       (`data/injuries.json`), growth spurt, history, cross-training sessions, detraining when out, rival injuries;
       `training_balance.gd` with 200 athletes, injuries/illness/days lost, careful policy and ramp plan; first tuning

@@ -101,6 +101,30 @@ static func parse_date(s: String) -> Dictionary:
 	return {"year": int(p[0]), "month": int(p[1]), "day": int(p[2])}
 
 
+const MONTHS_SHORT := ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+## Day of the week: 0 = Monday … 6 = Sunday (as in the training plan).
+static func weekday(d: Dictionary) -> int:
+	var t := Time.get_unix_time_from_datetime_dict({"year": d.year, "month": d.month, "day": d.day, "hour": 12})
+	return (Time.get_datetime_dict_from_unix_time(t).weekday + 6) % 7   # Time counts from Sunday
+
+
+## The Monday of the week `d` is in.
+static func monday_of(d: Dictionary) -> Dictionary:
+	return Game.add_days(d, -weekday(d))
+
+
+## "weekday" or "weekend" (school days, exams and holidays come with the school system, GDD 4.7).
+static func day_type(d: Dictionary) -> String:
+	return "weekend" if weekday(d) >= 5 else "weekday"
+
+
+## "Wed 4 Nov 2026"
+static func format_day(d: Dictionary) -> String:
+	return "%s %d %s %d" % [Training.DAY_NAMES[weekday(d)], d.day, MONTHS_SHORT[int(d.month) - 1], d.year]
+
+
 ## Sortable integer, e.g. 20270213.
 static func date_key(d: Dictionary) -> int:
 	return int(d.year) * 10000 + int(d.month) * 100 + int(d.day)

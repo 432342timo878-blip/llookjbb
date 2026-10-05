@@ -31,7 +31,7 @@ func _build() -> void:
 	header.add_child(back)
 	column.add_child(header)
 	column.add_child(UIKit.wrapped(
-			"The autosave is updated every week. Saves you make with the Save button stay exactly as they were, so you can load them again and again."))
+			"The autosave is updated after every day you play. Saves you make with the Save button stay exactly as they were, so you can load them again and again."))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
