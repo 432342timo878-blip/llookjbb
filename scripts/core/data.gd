@@ -15,6 +15,11 @@ func _ready() -> void:
 	attributes = _load("res://data/attributes.json").get("attributes", [])
 	clubs = _load("res://data/clubs.json").get("clubs", [])
 	hometowns = _load("res://data/hometowns.json").get("hometowns", [])
+	# Every club's home town can also be picked as a hometown.
+	for club in clubs:
+		if not club.city in hometowns:
+			hometowns.append(club.city)
+	hometowns.sort()
 	background_questions = _load("res://data/background_questions.json").get("questions", [])
 	names = _load("res://data/names_fi.json")
 

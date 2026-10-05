@@ -8,50 +8,72 @@
     {
      "text": "Football",
      "detail": "Quick feet, used to competing.",
-     "effects": {
-      "speed": 1.5,
-      "acceleration": 1.5,
-      "competitiveness": 1,
-      "race_tactics": 0.5
-     }
+     "effects": {"speed": 1.5, "acceleration": 1.5, "competitiveness": 1, "race_tactics": 0.5}
+    },
+    {
+     "text": "Ice hockey",
+     "detail": "Explosive and physical, but not used to running far.",
+     "effects": {"power": 1.5, "strength": 1.5, "competitiveness": 1.5, "pain_tolerance": 0.5, "running_economy": -1}
+    },
+    {
+     "text": "Floorball",
+     "detail": "Endless sprints and changes of direction.",
+     "effects": {"acceleration": 1.5, "speed_endurance": 1, "speed": 0.5, "competitiveness": 1}
+    },
+    {
+     "text": "Pesäpallo",
+     "detail": "Short dashes between bases, sharp reactions.",
+     "effects": {"acceleration": 1.5, "starts": 1.5, "speed": 1, "aerobic_capacity": -0.5}
+    },
+    {
+     "text": "Basketball",
+     "detail": "Springy legs and good coordination.",
+     "effects": {"power": 1.5, "mobility": 1, "acceleration": 1, "speed_endurance": 0.5}
     },
     {
      "text": "Cross-country skiing",
      "detail": "A big engine from long winters on skis.",
-     "effects": {
-      "aerobic_capacity": 2,
-      "lactate_threshold": 1.5,
-      "determination": 1,
-      "speed": -0.5
-     }
+     "effects": {"aerobic_capacity": 2, "lactate_threshold": 1.5, "determination": 1, "speed": -0.5}
     },
     {
      "text": "Orienteering",
      "detail": "Lots of running through forests.",
-     "effects": {
-      "aerobic_capacity": 1.5,
-      "running_economy": 1,
-      "durability": 1,
-      "race_tactics": 0.5
-     }
+     "effects": {"aerobic_capacity": 1.5, "running_economy": 1, "durability": 1, "race_tactics": 0.5}
+    },
+    {
+     "text": "Swimming",
+     "detail": "A strong engine, but running muscles and bones aren't used to the pounding.",
+     "effects": {"aerobic_capacity": 2, "mobility": 1, "determination": 1, "durability": -1, "running_economy": -0.5}
     },
     {
      "text": "Gymnastics",
      "detail": "Strong, mobile and body-aware.",
-     "effects": {
-      "mobility": 2.5,
-      "strength": 1.5,
-      "power": 1,
-      "aerobic_capacity": -0.5
-     }
+     "effects": {"mobility": 2.5, "strength": 1.5, "power": 1, "aerobic_capacity": -0.5}
+    },
+    {
+     "text": "Dance",
+     "detail": "Light on your feet, great posture and rhythm.",
+     "effects": {"mobility": 2, "running_technique": 1.5, "composure": 1, "strength": -0.5}
+    },
+    {
+     "text": "Martial arts or wrestling",
+     "detail": "Tough, disciplined and hard to break.",
+     "effects": {"strength": 1.5, "pain_tolerance": 1.5, "determination": 1, "running_economy": -0.5}
+    },
+    {
+     "text": "Athletics school since I was little",
+     "detail": "You already know the basics, but your body has seen it all before.",
+     "effects": {"running_technique": 1.5, "starts": 1, "race_tactics": 1, "trainability": -1}
     },
     {
      "text": "Nothing organised",
      "detail": "Just played outside a lot. A blank slate.",
-     "effects": {
-      "trainability": 2,
-      "injury_proneness": -1
-     }
+     "effects": {"trainability": 2, "injury_proneness": -1}
+    },
+    {
+     "text": "Never really exercised",
+     "detail": "Games, books, the sofa. You start from scratch, but your body has never been trained, so it will respond fast.",
+     "effects": {"aerobic_capacity": -2, "strength": -1.5, "durability": -1.5, "speed_endurance": -1, "running_technique": -1, "trainability": 3.5, "potential": 0.5, "injury_proneness": 1}
     }
    ]
   },
@@ -62,29 +84,32 @@
     {
      "text": "A parent competed in athletics",
      "detail": "You grew up at the track.",
-     "effects": {
-      "professionalism": 2,
-      "race_tactics": 1,
-      "running_technique": 1,
-      "potential": 1
-     }
+     "effects": {"professionalism": 2, "race_tactics": 1, "running_technique": 1, "potential": 1}
+    },
+    {
+     "text": "A parent was a top athlete in another sport",
+     "detail": "Good genes and high standards at home.",
+     "effects": {"potential": 1, "professionalism": 1.5, "competitiveness": 1, "composure": -0.5}
+    },
+    {
+     "text": "An older sibling runs",
+     "detail": "You've chased them around the track for years.",
+     "effects": {"competitiveness": 2, "race_tactics": 0.5, "determination": 1}
     },
     {
      "text": "Sporty family, recreational level",
      "detail": "Weekends were always active.",
-     "effects": {
-      "determination": 1,
-      "durability": 1,
-      "professionalism": 1
-     }
+     "effects": {"determination": 1, "durability": 1, "professionalism": 1}
     },
     {
      "text": "Not sporty at all",
      "detail": "You found the sport on your own.",
-     "effects": {
-      "ambition": 2,
-      "determination": 1.5
-     }
+     "effects": {"ambition": 2, "determination": 1.5}
+    },
+    {
+     "text": "They think sport is a waste of time",
+     "detail": "You'll have to prove them wrong.",
+     "effects": {"ambition": 2.5, "determination": 2, "professionalism": -1, "composure": -0.5}
     }
    ]
   },
@@ -96,12 +121,7 @@
      "text": "Taller and stronger than most",
      "detail": "An early developer: strong now, others will catch up.",
      "maturation": "early",
-     "effects": {
-      "strength": 2,
-      "speed": 1,
-      "power": 1,
-      "potential": -1.5
-     }
+     "effects": {"strength": 2, "speed": 1, "power": 1, "potential": -1.5}
     },
     {
      "text": "About average",
@@ -110,15 +130,22 @@
      "effects": {}
     },
     {
+     "text": "Shooting up right now",
+     "detail": "Mid growth spurt: all arms and legs, a bit clumsy for now.",
+     "maturation": "average",
+     "effects": {"running_technique": -1, "mobility": -1, "injury_proneness": 1, "potential": 1}
+    },
+    {
+     "text": "Skinny and light",
+     "detail": "Not much muscle, but you float along.",
+     "maturation": "average",
+     "effects": {"running_economy": 1.5, "aerobic_capacity": 0.5, "strength": -1.5, "power": -0.5}
+    },
+    {
      "text": "One of the smallest",
      "detail": "A late developer: tough now, big growth still to come.",
      "maturation": "late",
-     "effects": {
-      "strength": -1.5,
-      "speed": -1,
-      "potential": 2,
-      "determination": 1
-     }
+     "effects": {"strength": -1.5, "speed": -1, "potential": 2, "determination": 1}
     }
    ]
   },
@@ -129,28 +156,32 @@
     {
      "text": "Can't wait to get going",
      "detail": "Big moments bring out your best.",
-     "effects": {
-      "composure": 2,
-      "competitiveness": 1.5,
-      "consistency": -0.5
-     }
+     "effects": {"composure": 2, "competitiveness": 1.5, "consistency": -0.5}
+    },
+    {
+     "text": "Get fired up and angry",
+     "detail": "You want to beat everyone, sometimes too badly.",
+     "effects": {"competitiveness": 2, "pain_tolerance": 1, "race_tactics": -1, "consistency": -0.5}
     },
     {
      "text": "Feel nervous but manage it",
      "detail": "Steady and reliable.",
-     "effects": {
-      "composure": 0.5,
-      "consistency": 2
-     }
+     "effects": {"composure": 0.5, "consistency": 2}
     },
     {
      "text": "Overthink everything",
      "detail": "Nerves can get to you, but you prepare carefully.",
-     "effects": {
-      "composure": -1.5,
-      "professionalism": 1.5,
-      "race_tactics": 1
-     }
+     "effects": {"composure": -1.5, "professionalism": 1.5, "race_tactics": 1}
+    },
+    {
+     "text": "Don't really care how it goes",
+     "detail": "Relaxed, maybe a bit too relaxed.",
+     "effects": {"composure": 2, "competitiveness": -1.5, "ambition": -1, "consistency": 0.5}
+    },
+    {
+     "text": "No idea, I've never raced",
+     "detail": "Everything about competing is new to you.",
+     "effects": {"race_tactics": -1, "composure": -0.5, "ambition": 1}
     }
    ]
   },
@@ -162,10 +193,13 @@
      "text": "Top of the class",
      "detail": "Good grades come easily, but school takes time.",
      "school": "high",
-     "effects": {
-      "professionalism": 1,
-      "race_tactics": 0.5
-     }
+     "effects": {"professionalism": 1, "race_tactics": 0.5}
+    },
+    {
+     "text": "Good grades through hard work",
+     "detail": "You put the hours in, in class and out of it.",
+     "school": "high",
+     "effects": {"determination": 1.5, "professionalism": 1, "recovery_rate": -0.5}
     },
     {
      "text": "Doing fine",
@@ -177,10 +211,13 @@
      "text": "Struggling a bit",
      "detail": "Sport matters more to you than school right now.",
      "school": "low",
-     "effects": {
-      "ambition": 1.5,
-      "professionalism": -1
-     }
+     "effects": {"ambition": 1.5, "professionalism": -1}
+    },
+    {
+     "text": "Couldn't care less",
+     "detail": "Often late, homework rarely done.",
+     "school": "low",
+     "effects": {"ambition": 1, "professionalism": -1.5, "consistency": -0.5, "composure": 0.5}
     }
    ]
   }

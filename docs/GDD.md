@@ -73,9 +73,9 @@ recovery rate, injury proneness, maturation timing, ambition.
 
 ### 4.1.1 Character creation (built)
 
-1. Identity: gender, first/last name (random Finnish name option), hometown, club (hometown clubs listed first; `data/clubs.json`, names to be verified).
+1. Identity: gender, first/last name (random Finnish name option), hometown, club (hometown clubs listed first). `data/clubs.json` holds 122 real clubs, sourced from SUL's Tähtiseurat list and Finnish Wikipedia's athletics-club category. The original 11 were confirmed by the user, and Vammalan seudun Voima was added at the user's request. Every club's town is also selectable as a hometown.
 2. Main event (all events shown; only 800 m playable in M1).
-3. Background questions (`data/background_questions.json`): previous sport, family background, physical development (sets maturation: early/average/late), handling pressure, school level. Each answer adjusts visible and hidden attributes.
+3. Background questions (`data/background_questions.json`): previous sport, family background, physical development (sets maturation: early/average/late), handling pressure, school level. Each answer adjusts visible and hidden attributes. The user asked for a wide range of answers, including weak starting points. Example: "Never really exercised" gives low physical stats but very high trainability.
 4. 12 attribute points, max +3 per attribute.
 5. Summary → career starts on 2 Nov 2026 (start of the Finnish training year), athlete born Jan–Oct 2012 (age 14).
 

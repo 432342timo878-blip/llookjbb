@@ -25,13 +25,15 @@ func _run() -> void:
 	wizard._choices.first_name = "Aino"
 	wizard._choices.last_name = "Virtanen"
 	wizard._choices.gender = "female"
+	wizard._choices.hometown = "Sastamala"
+	wizard._choices.club_id = ""
 	wizard._show_step()
 	await _frames(5)
 	await _shot("1_identity")
 	for i in range(4):
 		if i == 1:
 			for q in wizard.get_node("/root/Data").background_questions:
-				wizard._choices.answers[q.id] = 0
+				wizard._choices.answers[q.id] = q.answers.size() - 1
 		wizard._on_next()
 		await _frames(5)
 		await _shot("%d_%s" % [i + 2, wizard.STEPS[i + 1].to_lower().replace(" ", "_")])
