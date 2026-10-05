@@ -47,13 +47,25 @@ func _run() -> void:
 	hub.get_node("Margin/Column/Scroll").scroll_vertical = 640
 	await _frames(5)
 	await _shot("7b_training_summary")
-	for i in 4:
+	# Enter every meet the coach recommends, then play until the first race (9 Jan 2027).
+	var game = main.get_node("/root/Game")
+	var cal = load("res://scripts/core/calendar.gd")
+	for m in cal.meets_between(game.date, game.add_days(game.date, 330)):
+		if cal.coach_recommends(game.athlete, m, game.date):
+			game.enter(m.key)
+	hub._show("calendar")
+	await _frames(5)
+	await _shot("8_calendar")
+	hub.get_node("Margin/Column/Scroll").scroll_vertical = 700
+	await _frames(5)
+	await _shot("8b_calendar_scrolled")
+	for i in 10:
 		hub._on_continue()
 	await _frames(5)
-	await _shot("8_week_report")
+	await _shot("9_week_report_race")
 	hub._show("overview")
 	await _frames(5)
-	await _shot("9_overview_after_4_weeks")
+	await _shot("10_overview_after_10_weeks")
 	quit()
 
 

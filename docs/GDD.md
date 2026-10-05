@@ -103,6 +103,24 @@ the **club coach gives a starter plan** that the player can edit; the **plan rep
   2 easy runs a week → little progress; 12 sessions a week → tired (~58) and only somewhat better in the trained areas.
   Overtraining will become properly risky once injuries exist (M2).
 
+### 4.4 Season calendar (first version built)
+
+Decisions (user, 2026-10-05): big meets use **real dates**; small local/district meets get **believable estimated dates**
+at real venues (marked `estimated` in `data/competitions.json`); the **player enters meets, the coach suggests** (★).
+
+- **Age classes:** M/N + age in the competition year (born 2012 → M15/N15 in 2027). SUL now uses M/N for youth classes too.
+- **Season 2026–27** (sources: SUL Arvokilpailukalenteri 2026 and preliminary 2027, SM-tulosrajat 2026, kilpailukalenteri.fi,
+  Vammalan seudun Voima's competition list): indoor local meets Dec–Feb, district indoor finale, **Nuorten SM-hallit M/N14-15
+  13–14.2.2027 Lappeenranta**, **Tampere Junior Indoor Games 12–14.3.**, outdoor local meets from mid-May, **Youth Athletics
+  Games 17–20.6. Lahti**, Pohjola Seuracup district rounds (June/Aug), Lajikarnevaalit 3–4.7., district youth championships,
+  **Nuorten SM M/N14-15 6–8.8.2027 Kauhava**, SM-maastot 23.10. Lahti (XC, not playable yet). Senior events (Kalevan kisat Pori,
+  Ruotsi-ottelu Stockholm, World Championships Beijing) are shown but not enterable.
+- **Qualifying standards (SM 14-15, 2026 values):** 800 m M15 2:21.00, N15 2:35.00, M14 2:28.00, N14 2:36.00. Max 3 events,
+  max 1 without the standard, so a pure 800 m runner can always enter.
+- **Later seasons** repeat the list 52 weeks later as estimates (national venues "TBA") until real data is added.
+- **Races** replace that day's training, add fatigue and train race-related attributes (`race_session` in the data).
+  Results come with the race simulation (4.3).
+
 ### Other systems (to be designed)
 
 - 4.3 Competition simulation & in-event decisions

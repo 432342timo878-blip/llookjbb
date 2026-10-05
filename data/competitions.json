@@ -1,0 +1,48 @@
+{
+ "_note": "Competition calendar for the first season (Nov 2026 – Oct 2027). Big meets use real dates from SUL's Arvokilpailukalenteri 2027 (preliminary, 12.5.2026) and kilpailukalenteri.fi. Entries with \"estimated\": true are small meets with believable but made-up dates (the real ones aren't published centrally) - correct them freely. Later seasons repeat this list 52 weeks later as estimates. city \"@club\" = your club's town, \"@district\" = a meet somewhere in your district. ages = age-class range (age class = competition year - birth year). coach = the club coach suggests it. watch = big event shown for atmosphere, not enterable.",
+ "levels": {
+  "local": "Local meet",
+  "district": "District",
+  "national": "National",
+  "international": "International",
+  "elite": "Senior / international"
+ },
+ "competitions": [
+  {"id": "joulukisat", "name": "Joulukisat", "date": "2026-12-12", "city": "Tampere", "venue": "Pirkkahalli", "indoor": true, "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true},
+  {"id": "hallikisat_jkl", "name": "Hippoksen hallikisat", "date": "2027-01-09", "city": "Jyväskylä", "venue": "Hippos", "indoor": true, "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true, "coach": true},
+  {"id": "hallikisat_espoo", "name": "Otahallin nuorten kisat", "date": "2027-01-23", "city": "Espoo", "venue": "Otahalli", "indoor": true, "level": "local", "ages": [9, 17], "events": ["800m"], "estimated": true},
+  {"id": "piirin_hallihuipentuma", "name": "Piirin hallihuipentuma", "description": "District indoor finale for 9–15-year-olds.", "date": "2027-01-30", "city": "@district", "indoor": true, "level": "district", "ages": [9, 15], "events": ["800m"], "estimated": true, "coach": true},
+  {"id": "sm_hallit_14_15", "name": "Nuorten SM-hallit (M/N14-15)", "description": "National indoor championships for 14–15-year-olds.", "date": "2027-02-13", "days": 2, "city": "Lappeenranta", "indoor": true, "level": "national", "ages": [14, 15], "events": ["800m"], "coach": true, "standard": "sm_14_15"},
+  {"id": "hallikisat_kuortane", "name": "Kuortaneen hallikisat", "date": "2027-02-27", "city": "Kuortane", "venue": "Kuortaneen urheiluopisto", "indoor": true, "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true},
+  {"id": "tjig", "name": "Tampere Junior Indoor Games", "description": "Big youth indoor meet with guests from abroad.", "date": "2027-03-12", "days": 3, "city": "Tampere", "venue": "Pirkkahalli", "indoor": true, "level": "international", "ages": [10, 17], "events": ["800m"], "coach": true},
+
+  {"id": "kevatkisat", "name": "Kevätkisat", "description": "First outdoor meet of the summer.", "date": "2027-05-15", "city": "@club", "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true, "coach": true},
+  {"id": "ratina_nuoret", "name": "Nuorten kevätkisat", "date": "2027-05-29", "city": "Tampere", "venue": "Ratinan stadion", "level": "local", "ages": [9, 17], "events": ["800m"], "estimated": true},
+  {"id": "iltakisat_kesakuu", "name": "Iltakisat", "description": "Weekday evening meet at your club.", "date": "2027-06-08", "city": "@club", "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true},
+  {"id": "youth_athletics_games", "name": "Youth Athletics Games", "description": "Large international youth meet.", "date": "2027-06-17", "days": 4, "city": "Lahti", "level": "international", "ages": [10, 19], "events": ["800m"], "coach": true},
+  {"id": "seuracup_1", "name": "Pohjola Seuracup, piirikisa I", "description": "Club team competition: your result scores points for your club.", "date": "2027-06-22", "city": "@district", "level": "district", "ages": [11, 17], "events": ["800m"], "estimated": true, "coach": true, "team": true},
+  {"id": "lajikarnevaalit", "name": "Lajikarnevaalit (kestävyys)", "description": "Endurance-event camp week that ends with competitions.", "date": "2027-07-03", "days": 2, "city": "Lahti", "level": "national", "ages": [10, 17], "events": ["800m"]},
+  {"id": "piirihuipentuma", "name": "Piirin nuorten mestaruuskilpailut", "description": "District youth championships (piirihuipentuma) for 9–15-year-olds.", "date": "2027-07-10", "days": 2, "city": "@district", "level": "district", "ages": [9, 15], "events": ["800m"], "estimated": true, "coach": true},
+  {"id": "iltakisat_heinakuu", "name": "Iltakisat", "description": "Weekday evening meet at your club.", "date": "2027-07-20", "city": "@club", "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true},
+  {"id": "kalevan_kisat", "name": "Kalevan kisat", "description": "The senior Finnish Championships.", "date": "2027-07-30", "days": 3, "city": "Pori", "level": "elite", "ages": [16, 99], "events": ["800m"], "watch": true},
+  {"id": "sm_14_15", "name": "Nuorten SM-kilpailut (M/N14-15)", "description": "National championships for 14–15-year-olds: the highlight of the summer.", "date": "2027-08-06", "days": 3, "city": "Kauhava", "level": "national", "ages": [14, 15], "events": ["800m"], "coach": true, "standard": "sm_14_15"},
+  {"id": "sm_16_17", "name": "Nuorten SM-kilpailut (M/N16-17)", "description": "National championships for 16–17-year-olds.", "date": "2027-08-06", "days": 3, "city": "Oulu", "level": "national", "ages": [16, 17], "events": ["800m"], "coach": true},
+  {"id": "seuracup_2", "name": "Pohjola Seuracup, piirikisa II", "description": "Club team competition: your result scores points for your club.", "date": "2027-08-17", "city": "@district", "level": "district", "ages": [11, 17], "events": ["800m"], "estimated": true, "coach": true, "team": true},
+  {"id": "ruotsi_ottelu", "name": "Ruotsi-ottelu", "description": "Finland vs Sweden athletics international.", "date": "2027-08-21", "days": 2, "city": "Stockholm", "level": "elite", "ages": [16, 99], "events": ["800m"], "watch": true},
+  {"id": "syyskisat", "name": "Syyskisat", "description": "Last track meet of the season.", "date": "2027-08-28", "city": "@club", "level": "local", "ages": [9, 19], "events": ["800m"], "estimated": true},
+  {"id": "seuracup_finaali", "name": "Pohjola Seuracup, finaalit", "description": "Finals for the best clubs of the district rounds. Club selection comes in a later version.", "date": "2027-09-11", "city": "TBA", "level": "national", "ages": [11, 17], "events": [], "team": true},
+  {"id": "mm_2027", "name": "World Championships", "description": "World Athletics Championships.", "date": "2027-09-11", "days": 9, "city": "Beijing", "level": "elite", "ages": [18, 99], "events": ["800m"], "watch": true},
+  {"id": "sm_maastot", "name": "SM-maastot", "description": "National cross-country championships (4 km for 15-year-olds). Cross-country races come in a later version.", "date": "2027-10-23", "city": "Lahti", "level": "national", "ages": [14, 99], "events": ["xc_4km"]}
+ ],
+ "standards": {
+  "sm_14_15": {
+   "_note": "SM-kisojen tulosrajat 2026 (SUL, 25.2.2026). 2027 limits not published yet. Max 3 events per athlete, max 1 of them without the standard. Seconds.",
+   "800m": {"M15": 141.0, "N15": 155.0, "M14": 148.0, "N14": 156.0}
+  }
+ },
+ "race_session": {
+  "_note": "Training effect and fatigue of racing an 800 m (replaces that day's planned sessions).",
+  "load": 18,
+  "effects": {"speed_endurance": 1.0, "race_tactics": 0.6, "composure": 0.4, "competitiveness": 0.3, "pain_tolerance": 0.3}
+ }
+}

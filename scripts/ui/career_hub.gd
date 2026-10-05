@@ -3,7 +3,9 @@ extends Control
 ## "Continue" plays one week of training.
 
 const MONTHS := ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-const VIEWS := [["overview", "Overview"], ["training", "Training"], ["report", "Last week"]]
+const VIEWS := [["overview", "Overview"], ["training", "Training"], ["calendar", "Calendar"], ["report", "Last week"]]
+const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
+		"September", "October", "November", "December"]
 
 var _view := "overview"
 var _tabs := {}   # view id -> tab Button
@@ -54,11 +56,13 @@ func _refresh_header() -> void:
 func _show(view: String) -> void:
 	_view = view
 	_tabs[view].button_pressed = true
+	(_content.get_parent() as ScrollContainer).scroll_vertical = 0
 	for child in _content.get_children():
 		child.queue_free()
 	match view:
 		"overview": _build_profile(Game.athlete)
 		"training": _build_training()
+		"calendar": _build_calendar()
 		"report": _build_report(Game.last_report)
 
 
@@ -78,6 +82,14 @@ func _build_profile(a: Athlete) -> void:
 	var body := UIKit.vbox(6)
 	body.add_child(UIKit.label("CONDITION", "CaptionLabel"))
 	body.add_child(_fact_row("Fatigue", _fatigue_label(a.fatigue)))
+	body.add_child(UIKit.label(" "))
+	body.add_child(UIKit.label("NEXT RACE", "CaptionLabel"))
+	var next := Game.next_race()
+	if next.is_empty():
+		body.add_child(UIKit.wrapped("No races entered. Pick some in the Calendar.", "MutedLabel"))
+	else:
+		body.add_child(UIKit.wrapped(next.name, ""))
+		body.add_child(UIKit.wrapped("%s · %s" % [Calendar.format_meet_date(next), Calendar.place(a, next)], "MutedLabel"))
 	body.add_child(UIKit.label(" "))
 	body.add_child(UIKit.label("BODY", "CaptionLabel"))
 	for f in [
@@ -249,6 +261,74 @@ func _session_library(a: Athlete, month: int) -> PanelContainer:
 		col.add_child(UIKit.wrapped(text))
 		box.add_child(col)
 	return UIKit.panel(box, 16)
+
+
+# --- Calendar ---------------------------------------------------------------------------
+
+func _build_calendar() -> void:
+	var a := Game.athlete
+	_content.add_child(UIKit.label("Season calendar", "HeadingLabel"))
+	_content.add_child(UIKit.wrapped(
+			"Enter the meets you want to race; a race replaces that day's training. ★ = your coach recommends it. "
+			+ "\"Estimated\" dates are believable guesses for small meets whose real dates aren't published."))
+
+	# The rest of this season and the whole next one.
+	var meets := Calendar.meets_between(Game.date, {"year": Game.date.year + 1, "month": 10, "day": 31})
+	var month := -1
+	var box: VBoxContainer
+	for m in meets:
+		if m.date.month != month:
+			month = m.date.month
+			_content.add_child(UIKit.label("%s %d" % [MONTH_NAMES[month - 1].to_upper(), m.date.year], "CaptionLabel"))
+			box = UIKit.vbox(14)
+			_content.add_child(UIKit.panel(box, 16))
+		box.add_child(_meet_row(a, m))
+
+
+func _meet_row(a: Athlete, m: Dictionary) -> HBoxContainer:
+	var row := UIKit.hbox(16)
+	var date := UIKit.label(Calendar.format_meet_date(m))
+	date.custom_minimum_size.x = 150
+	date.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(date)
+
+	var info := UIKit.vbox(2)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var title: String = m.name + ("  ★" if Calendar.coach_recommends(a, m, Game.date) else "")
+	info.add_child(UIKit.label(title, "SubheadingLabel" if not m.get("watch", false) else ""))
+	var details := [Calendar.place(a, m), Data.competitions.levels.get(m.level, "")]
+	if m.get("indoor", false):
+		details.append("Indoor")
+	if m.get("estimated", false):
+		details.append("Estimated date")
+	info.add_child(UIKit.wrapped(" · ".join(details), "MutedLabel"))
+	if m.has("description"):
+		info.add_child(UIKit.wrapped(m.description, "MutedLabel"))
+	var check := Calendar.can_enter(a, m, Game.date)
+	var standard := Calendar.standard_text(a, m)
+	if check.ok and standard != "":
+		info.add_child(UIKit.wrapped(standard, ""))
+	if not check.ok:
+		info.add_child(UIKit.wrapped(check.reason, "MutedLabel"))
+	row.add_child(info)
+
+	if check.ok:
+		var b := UIKit.button("", false, 150)
+		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		var refresh := func():
+			var entered: bool = m.key in Game.entries
+			b.text = "Entered ✓" if entered else "Enter"
+			b.theme_type_variation = "PrimaryButton" if entered else ""
+			b.tooltip_text = "Press to withdraw" if entered else ""
+		b.pressed.connect(func():
+			if m.key in Game.entries:
+				Game.withdraw(m.key)
+			else:
+				Game.enter(m.key)
+			refresh.call())
+		refresh.call()
+		row.add_child(b)
+	return row
 
 
 # --- Weekly report ----------------------------------------------------------------------

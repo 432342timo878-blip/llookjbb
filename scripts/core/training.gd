@@ -79,11 +79,13 @@ static func preview(a: Athlete, plan: Array, month: int) -> Dictionary:
 
 
 ## Runs one week of the plan starting on `monday`. Changes the athlete; returns a report for the UI.
-static func simulate_week(a: Athlete, plan: Array, monday: Dictionary) -> Dictionary:
+## `races`: day index (0–6) -> meet (see Calendar); a race replaces that day's planned sessions.
+static func simulate_week(a: Athlete, plan: Array, monday: Dictionary, races := {}) -> Dictionary:
 	var month: int = Game.add_days(monday, 3).month   # the month most of the week is in
 	var season: Dictionary = Data.training.season
 	var stimulus := {}
 	var notes := []
+	var raced := []
 	var fatigue_start := a.fatigue
 	var fatigue_peak := a.fatigue
 	var fatigue_sum := 0.0
@@ -96,11 +98,19 @@ static func simulate_week(a: Athlete, plan: Array, monday: Dictionary) -> Dictio
 		var keep := daily_keep(a)
 		var extra_recovery := 0.0
 		var trained := false
-		for id in plan[day]:
-			var s := Data.get_session(id)
+		var sessions := []
+		if races.has(day):
+			var race: Dictionary = Data.competitions.race_session.duplicate()
+			race.name = races[day].name
+			sessions.append(race)
+			raced.append({"meet": races[day], "day": day, "fatigue": a.fatigue})
+		else:
+			for id in plan[day]:
+				sessions.append(Data.get_session(id))
+		for s in sessions:
 			if s.is_empty():
 				continue
-			var eff := effectiveness(a, s, month)
+			var eff := 1.0 if races.has(day) else effectiveness(a, s, month)
 			if eff == 0.0:
 				notes.append("%s: %s isn't possible this time of year, so it was skipped." % [DAY_NAMES[day], s.name])
 				continue
@@ -124,6 +134,10 @@ static func simulate_week(a: Athlete, plan: Array, monday: Dictionary) -> Dictio
 		fatigue_sum += a.fatigue
 
 	var fatigue_avg := fatigue_sum / 7.0
+	for r in raced:
+		var state: Array = fatigue_state(r.fatigue)
+		notes.append("%s: raced the %s at %s, feeling %s. Race results arrive with the race simulation (next update)." % [
+				DAY_NAMES[r.day], Data.get_event(a.main_event).name, r.meet.name, state[0].to_lower()])
 	if not off_track.is_empty():
 		notes.append("No indoor track in winter: %s done on roads and snow instead (%d%% effect)." % [
 				", ".join(off_track), roundi(float(season.off_track_effect) * 100)])
@@ -138,7 +152,7 @@ static func simulate_week(a: Athlete, plan: Array, monday: Dictionary) -> Dictio
 	return {
 		"monday": monday, "sessions": sessions_done, "load": total_load,
 		"fatigue_start": fatigue_start, "fatigue_end": a.fatigue, "fatigue_peak": fatigue_peak,
-		"fatigue_avg": fatigue_avg, "changes": changes, "notes": notes,
+		"fatigue_avg": fatigue_avg, "changes": changes, "notes": notes, "races": raced,
 	}
 
 
