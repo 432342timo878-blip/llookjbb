@@ -91,6 +91,11 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 - **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 
+- **Playtest notes (user, 2026-10-06):**
+  - *Coach gives only one program:* the coach should offer several plans (fits Coaching + periodization, steps 6 and Part 2).
+  - *Race is jittery and lags after the first decision:* a **bug to investigate first** (profile `race_screen.gd` / `race_runners_view.gd` / `track_drawing.gd`, probably redraw or overlay rebuild per frame; check on PC and phone). *(Sonnet)*
+  - *More immersive races:* more in-race options, and commentary in its own box that reacts to what happens and to the player's choices (e.g. "someone kicks with 229 m to go" should be something the player can answer), less repetition, more realism. Needs a design session (Opus), then build; belongs before or inside M3 (stadium view).
+
 ## M3 — Stadium view
 - [ ] 2D stadium during meets: track, crowd, simultaneous events
 
