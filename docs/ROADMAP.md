@@ -44,8 +44,18 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       the Training tab. *(Sonnet)*
 - [ ] **5. Balance & playtest:** tune to the GDD 4.6 targets, play through a season on PC and phone, fix rough
       edges, update docs. *(Sonnet; Opus if tuning gets stuck)*
+- [ ] **6. Season periodization (design + build):** the weekly plan follows the training year instead of repeating
+      the autumn base plan: phases (general base Nov–Jan, specific / indoor racing Feb–Mar, base again Apr, race
+      season May–Aug with lighter weeks, autumn break Sep–Oct), the club coach's plan per phase, deload weeks, and a
+      **taper** before a target championship (form peak on the day). Player still edits; changes apply per phase.
+      Realism gap found in the step-3 review (2026-10-06). Design session first. *(Opus)*
+- [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
+      loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
+      talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
+      plateau). Tune the progression ceiling, maturation and rival growth; also check whether rivals need the health
+      model and plan-based training. *(Opus)*
 
-Part 2 (design later, plugs into the step-1 hooks):
+Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans):
 - [ ] Coaching (hire, veto)
 - [ ] School (grades, exams vs meets, Finnish school calendar)
 
