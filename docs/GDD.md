@@ -344,7 +344,7 @@ UI" above, on PC and phone, with 44 px targets and no hover-only information. De
   only your injury changed has no "Back to plan" (it would be put straight back). *Train through it…* asks once more
   with the consequences (more strain, +2 days of recovery per day, what it can turn into) and then uses `override_day`;
   after that the banned sessions can be picked again and are marked "(against limits)". Not offered when locked.
-  There is no "undo" for training through (the model has no function for it): the plan's own days can be changed.
+  A trained-through day shows *Follow the limits again* (`HealthSystem.cancel_override`), which puts the limits back.
 - **Race day:** the day editor and the race screen warn when you'd race injured (slower by the injury's share, may get
   worse) or can't race (locked: you are withdrawn when the day starts, as before), and both have *Scratch from this
   race* (asks once more) = `Game.scratch_race`: the entry is withdrawn, a race screen that was waiting is dropped, the day

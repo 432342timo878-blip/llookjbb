@@ -538,6 +538,7 @@ func _post_diagnosis(inj: Dictionary) -> void:
 		text += " You could train through it, but it may get worse."
 	var e := Game.post_event(id, title, text, [], true)
 	e.kind = "diagnosis"
+	e.injury = inj.id   # the UI finds the injury by this id
 
 
 ## The first time an area turns sore (at most once per area every few weeks): a stop event, unless today
@@ -808,6 +809,18 @@ func override_day(d: int) -> bool:
 		week.set_sessions(d, week.plan[d], "player")
 	if c.has("intensity") and c.intensity.by == "injury":
 		week.set_intensity(d, WeekSim.NORMAL, "player")
+	return true
+
+
+## Take back "train through it" for day `d`: the limits go into the day again (banned sessions are swapped
+## as before). False if the day wasn't trained through, or can't be changed any more.
+func cancel_override(d: int) -> bool:
+	var week := Game.current_week()
+	var key := Calendar.date_key(Game.add_days(week.monday, d))
+	if not week.can_change(d) or not key in overrides:
+		return false
+	overrides.erase(key)
+	_apply_restrictions(week)
 	return true
 
 

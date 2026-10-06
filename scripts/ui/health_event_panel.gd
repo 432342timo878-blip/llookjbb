@@ -57,12 +57,13 @@ static func _diagnosis(e: Dictionary, width: float, on_answer: Callable) -> Cont
 	return box
 
 
-## The active injury a diagnosis event is about: the event title ends with its name ("Injury: Shin splints").
+## The active injury a diagnosis event is about: by the injury id stored on the event. (Events saved before
+## the id was stored fall back to the name at the end of the title, "Injury: Shin splints".)
 static func _find_active(h: HealthSystem, e: Dictionary) -> Dictionary:
 	var title: String = e.title
 	var name_part := title.substr(title.find(": ") + 2) if ": " in title else title
 	for x in h.active():
-		if x.name == name_part:
+		if (e.has("injury") and x.id == e.injury) or (not e.has("injury") and x.name == name_part):
 			return x
 	return {}
 

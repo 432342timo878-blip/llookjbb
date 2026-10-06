@@ -141,6 +141,16 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 		await _frames(6)
 		await _shot("%s_health_train_through" % tag)
 		_check_overflow(hub, "%s health_train_through" % tag)
+		var yes := _find_button(hub, "Train through it anyway")
+		if yes:   # then the day is trained through: the box offers "Follow the limits again"
+			yes.pressed.emit()
+			await _frames(6)
+			await _shot("%s_health_trained_through" % tag)
+			_check_overflow(hub, "%s health_trained_through" % tag)
+			var back := _find_button(hub, "Follow the limits again")
+			if back:
+				back.pressed.emit()
+				await _frames(4)
 	hub._close_day()
 
 	# A locked injury on top: banned sessions, no override.

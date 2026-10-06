@@ -357,6 +357,11 @@ func _health_box(info: Dictionary) -> Control:
 		if through:
 			color = Palette.SORE_3
 			limits.add_child(UIKit.wrapped("You chose to ignore these limits today. That means more strain, and it may get worse.", ""))
+			var back := UIKit.button("Follow the limits again", true, 200)
+			back.pressed.connect(func():
+				if h.cancel_override(day):
+					_after_change())
+			limits.add_child(back)
 		elif rule.locked:
 			color = Palette.SORE_3
 			limits.add_child(UIKit.wrapped("Locked: this can't be trained through, and you can't race. "

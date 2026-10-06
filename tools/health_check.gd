@@ -432,8 +432,18 @@ func _check_health_ui() -> void:
 	_ok("… with a warning card", _made(UI.race_card(outlook, true)))
 	_ok("banned session: reason shown (Long run)", UI.ban_reason("long_run", 0).begins_with("Shin splints"))
 	_ok("training through offered for a niggle", _made(UI.through_control(0, func(): pass)))
+	game.training_plan = HARD.duplicate(true)   # Monday has hard intervals: banned with shin splints
+	health.refresh()
+	var restricted_ids: Array = game.current_week().session_ids(0).duplicate()
+	_ok("niggle: Monday is restricted", restricted_ids != HARD[0])
 	health.override_day(0)
-	_ok("trained through: nothing is banned any more, and the editor knows", UI.is_overridden(0) and UI.ban_reason("long_run", 0) == "")
+	_ok("trained through: nothing is banned any more, and the editor knows", UI.is_overridden(0) and UI.ban_reason("long_run", 0) == ""
+			and game.current_week().session_ids(0) == HARD[0])
+	_ok("take it back: the limits are in the day again", health.cancel_override(0) and not UI.is_overridden(0)
+			and game.current_week().session_ids(0) == restricted_ids)
+	_ok("… and a day that wasn't trained through can't be 'taken back'", not health.cancel_override(0))
+	game.training_plan = Tr.coach_plan()
+	health.refresh()
 	health.injuries.clear()
 	health._start(data.get_injury("tibial_stress_reaction"), game.date, [])
 	health._apply_restrictions(game.current_week())
@@ -475,6 +485,8 @@ func _check_health_ui() -> void:
 	health._post_diagnosis(news[0])
 	var event: Dictionary = game.pending_event()
 	_ok("a diagnosis event is drawn by the health panel", event.get("kind", "") == "diagnosis" and Panels.handles(event))
+	_ok("… it carries the injury id, and the panel finds that injury", event.get("injury", "") == "hamstring_strain"
+			and Panels._find_active(health, event).get("id", "") == "hamstring_strain")
 	var panel = Panels.build(event, 400.0, func(_c): pass)
 	_ok("… with the name, facts and an OK button", panel.get_child_count() >= 6)
 	panel.free()
