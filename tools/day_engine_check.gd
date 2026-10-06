@@ -36,6 +36,7 @@ func _run() -> void:
 	_check_race_week(true)
 	_check_stop_events()
 	_check_day_start_stop()
+	_check_ui_models()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -274,6 +275,73 @@ func on_day_start(ctx):
 	_ok("then plays Wednesday and the rest", r == game.WEEK_DONE and game.day_log.size() == 7)
 	_ok("day start ran once", sys.fired == 1)
 	game.systems.erase(sys)
+
+
+## The week strip, day editor, Today card and Report (M2 step 2): they build without errors, the planned load
+## shown for a day is what the engine then plays, and a day change gives the same strip data after save/load.
+func _check_ui_models() -> void:
+	print("-- UI models (week strip, day editor, Today card, Report)")
+	_new_career(8)
+	var DI = load("res://scripts/ui/day_info.gd")
+	var Strip = load("res://scripts/ui/week_strip.gd")
+	var Editor = load("res://scripts/ui/day_editor.gd")
+	var Card = load("res://scripts/ui/today_card.gd")
+	var Report = load("res://scripts/ui/report_view.gd")
+	var meet := {}
+	for m in Cal.meets_between(game.date, game.add_days(game.date, 120)):
+		if Cal.coach_recommends(game.athlete, m, game.date):
+			meet = m
+			break
+	game.enter(meet.key)
+	var w = game.current_week()
+	w.set_intensity(3, "hard")
+	w.add_session(3, "easy_run")
+	w.make_rest_day(4)
+	var thu = DI.of(w, 3)
+	_ok("Thu shows 2 sessions at Hard, changed by you", thu.sessions.size() == 2 and thu.intensity == "hard"
+			and thu.changed and DI.changed_text(thu) == "Changed by you")
+	_ok("Fri is a changed rest day with no load", DI.of(w, 4).sessions.is_empty() and DI.of(w, 4).load == 0.0)
+	_ok("Mon is as planned (not changed)", not DI.of(w, 0).changed and DI.of(w, 0).fatigue < 0.0)
+	var planned_thu: float = thu.load
+	for d in 4:
+		game.advance_day()
+	_ok("planned load = played load (%d)" % roundi(planned_thu),
+			is_equal_approx(planned_thu, game.day_log[-1].load) and Cal.weekday(game.day_log[-1].date) == 3)
+	w = game.current_week()
+	_ok("played days: fatigue known, cannot be changed", DI.of(w, 3).played and DI.of(w, 3).fatigue >= 0.0 and not DI.of(w, 3).editable)
+	_ok("the played day still says it was changed", DI.of(w, 3).changed)
+	_ok("reason a session isn't possible (skiing in November)",
+			DI.unavailable_text(game.get_node("/root/Data").get_session("xc_skiing")) == "only Dec–Mar"
+			and DI.unavailable_text(game.get_node("/root/Data").get_session("easy_run")) == "")
+	var week_json := func() -> String:
+		var list := []
+		for d in 7:
+			list.append(DI.of(game.current_week(), d))
+		return _json(list)
+	var before: String = week_json.call()
+	var strip = Strip.new()
+	strip.refresh()
+	_ok("strip has 7 cells", strip.get_child_count() == 7)
+	var editor = Editor.new()
+	var built := 0
+	for d in 7:
+		editor.show_day(d)
+		built += 1 if editor.get_child_count() >= 2 else 0
+	_ok("day editor builds for all 7 days (played, changed, rest, plain)", built == 7)
+	var card = Card.new()
+	_ok("Today card builds", card.get_child_count() == 2)
+	var report = Report.new()
+	root.add_child(report)   # ReportView builds itself when it enters the tree
+	_ok("Report builds", report.get_child_count() >= 3)
+	report.queue_free()
+	saves.save("ui")
+	game.date = game.START_DATE.duplicate()
+	_ok("load", saves.load_slot("ui"))
+	_ok("the strip data comes back the same after save/load", week_json.call() == before)
+	saves.delete("ui")
+	strip.free()
+	editor.free()
+	card.free()
 
 
 # --- Helpers -------------------------------------------------------------------------------------

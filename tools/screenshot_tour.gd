@@ -67,7 +67,19 @@ func _run() -> void:
 	hub._on_advance(false)
 	hub._on_advance(false)
 	await _frames(5)
-	await _shot("8c_hub_wednesday")
+	await _shot("8c_hub_wednesday")   # week strip (Mon, Tue played) + Today card
+	# Day editor: Thursday with a change (Hard) open, then a played day (Monday), then closed again.
+	game.current_week().set_intensity(3, "hard")
+	hub._on_day_changed()
+	hub._open_day(3)
+	await _frames(6)
+	await _shot("8c2_day_editor")
+	hub._open_day(0)
+	await _frames(6)
+	await _shot("8c3_day_editor_played")
+	hub._close_day()
+	game.current_week().reset_day(3)
+	hub._on_day_changed()
 	# A test stop event at the end of Wednesday: Play week stops and shows the decision panel.
 	game.get_system("dev").armed = true
 	hub._on_advance(true)
@@ -79,6 +91,13 @@ func _run() -> void:
 	var router = main.get_node("/root/Router")
 	while game.advance_week() != game.RACE:
 		pass
+	# The race day on the strip and in the day editor (read-only, with the meet).
+	hub._refresh_week_ui()
+	hub._show("overview")
+	hub._open_day(cal.weekday(game.date))
+	await _frames(6)
+	await _shot("8e_race_day_editor")
+	hub._close_day()
 	router.go("race")
 	await _frames(5)
 	await _shot("9_race_field")
@@ -113,6 +132,22 @@ func _run() -> void:
 	await _frames(5)
 	await _shot("14b_rankings")
 
+	# The Report tab in the middle of a week: this week so far, then last week.
+	game.advance_day()
+	game.advance_day()
+	hub._refresh_week_ui()
+	hub._show("report")
+	await _frames(5)
+	await _shot("14c_report_midweek")
+	hub._show("overview")
+
+	# A day change must survive save and load: Friday easy + a rest-day Saturday, this week only.
+	var week = game.current_week()
+	week.set_intensity(4, "easy")
+	week.make_rest_day(5)
+	hub._on_day_changed()
+	var changed_json := JSON.stringify(week.changes)
+
 	# Save, go back to the menu, load the snapshot again.
 	var saves = load("res://scripts/core/save_game.gd")
 	var slot: String = saves.save_snapshot()
@@ -128,6 +163,12 @@ func _run() -> void:
 	router.go("career_hub")
 	await _frames(5)
 	await _shot("17_hub_after_load")
+	hub = main.get_node("ScreenHost").get_child(-1)
+	print("day changes survive save/load: ", JSON.stringify(game.current_week().changes) == changed_json,
+			" (", game.current_week().changes.size(), " changed days)")
+	hub._open_day(4)
+	await _frames(6)
+	await _shot("18_day_editor_after_load")
 	saves.delete(slot)
 	quit()
 

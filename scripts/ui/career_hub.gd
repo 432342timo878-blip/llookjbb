@@ -1,12 +1,16 @@
 extends Control
 ## Career home screen: athlete header with today's date, Next day (plays one day) and Play week (plays to
-## Sunday night or until something needs the player), and tabs (Overview / Training / Calendar / Rankings /
-## Last week). Wide layout on PC (tabs on top); on a phone the content is stacked and the tabs sit in a bar
-## at the bottom, within thumb reach. Stop events show as a full-screen dimmed decision panel.
+## Sunday night or until something needs the player), the week strip (Mon–Sun of this week; tap a day to
+## open the day editor), and tabs (Overview / Training / Calendar / Rankings / Report). Wide layout on PC
+## (tabs on top, the day editor as a side panel); on a phone the content is stacked, the tabs sit in a bar
+## at the bottom, within thumb reach, and the day editor is a bottom sheet. Stop events show as a
+## full-screen dimmed decision panel.
 
 ## id, tab text, short tab text (phone)
 const VIEWS := [["overview", "Overview", "Overview"], ["training", "Training", "Training"],
-		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Last week", "Report"]]
+		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Report", "Report"]]
+const SIDE_PANEL_WIDTH := 480.0       # the day editor's side panel on PC (a bit less on a short, wide window)
+const TAB_BAR_WIDTH := 690.0          # what the five tabs need next to the side panel
 const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
 		"September", "October", "November", "December"]
 
@@ -19,6 +23,14 @@ var _name_label: Label
 var _info_label: Label
 var _date_label: Label
 var _event_overlay: ColorRect   # full-screen dimmed layer for stop events
+var _strip: WeekStrip
+var _editor: DayEditor          # the day editor; lives in the side panel (PC) or the bottom sheet (phone)
+var _selected_day := -1         # the day open in the editor, -1 = none
+var _side: PanelContainer       # PC: the side panel around the editor (null on a phone)
+var _sheet: Control             # phone: the dimmed layer + bottom sheet around the editor (null on PC)
+var _sheet_scroll: ScrollContainer
+var _today_card: TodayCard      # on Overview only
+var _overview_columns := 0      # columns the wide Overview was built with (0 = not built yet)
 
 
 func _ready() -> void:
@@ -33,7 +45,12 @@ func _ready() -> void:
 ## Debug builds only: T arms a test stop event for the end of the next played day (see DevEvents).
 ## (Not an F key: when the game runs from the editor, F7/F8 pause/stop the game.)
 func _unhandled_key_input(event: InputEvent) -> void:
-	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_T:
+	if not event.is_pressed() or event.is_echo():
+		return
+	var key := (event as InputEventKey).keycode
+	if key == KEY_ESCAPE and _selected_day >= 0:
+		_close_day()
+	elif key == KEY_T:
 		var dev := Game.get_system("dev") as DevEvents
 		if dev:
 			dev.armed = true
@@ -43,10 +60,16 @@ func _unhandled_key_input(event: InputEvent) -> void:
 					_refresh_header())
 
 
-## Header, tab bar, scrolling content. Rebuilt when the window switches between wide and phone layout.
+## Header, week strip, tab bar, scrolling content, day editor. Rebuilt when the window switches between
+## wide and phone layout (an open day stays open).
 func _build_shell() -> void:
 	if _margin:
 		_margin.queue_free()
+	if _sheet:
+		_sheet.queue_free()
+	_side = null
+	_sheet = null
+	_sheet_scroll = null
 	_margin = MarginContainer.new()
 	_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	Layout.page_margin(_margin)
@@ -55,6 +78,14 @@ func _build_shell() -> void:
 	_margin.add_child(column)
 
 	column.add_child(_build_header())
+	_strip = WeekStrip.new()
+	_strip.selected = _selected_day
+	_strip.day_pressed.connect(_on_day_pressed)
+	column.add_child(_strip)
+	_editor = DayEditor.new()
+	_editor.changed.connect(_on_day_changed)
+	_editor.close_requested.connect(_close_day)
+	_editor.rebuilt.connect(_fit_sheet)
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -81,10 +112,22 @@ func _build_shell() -> void:
 		column.add_child(_scroll)
 		column.add_child(HSeparator.new())
 		column.add_child(bar)
+		_build_sheet()
 	else:
-		column.add_child(bar)
-		column.add_child(HSeparator.new())
-		column.add_child(_scroll)
+		var left := UIKit.vbox(16)
+		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		left.add_child(bar)
+		left.add_child(HSeparator.new())
+		left.add_child(_scroll)
+		var body := UIKit.hbox(16)
+		body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		body.add_child(left)
+		_build_side_panel()
+		body.add_child(_side)
+		column.add_child(body)
+	if _selected_day >= 0:
+		_editor.show_day(_selected_day)
+	_apply_editor_visibility()
 	if _event_overlay:
 		move_child(_event_overlay, -1)   # stays on top of the rebuilt page
 	_refresh_header()
@@ -152,7 +195,7 @@ func _on_advance(week: bool) -> void:
 	if result == Game.RACE:
 		Router.go("race")
 		return
-	_refresh_header()
+	_refresh_week_ui()
 	if Game.open_report:
 		Game.open_report = false
 		_show("report")
@@ -168,7 +211,162 @@ func _refresh_header() -> void:
 	_info_label.text = "%s · %d years · %s · %s" % [
 		Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", ""), a.hometown]
 	_date_label.text = Calendar.format_day(Game.date)
-	_tabs.report.disabled = Game.last_report.is_empty()
+
+
+## After days were played or an event was answered: header, week strip and the open day.
+## If a new week has begun, the day editor closes (its day belonged to the old week).
+func _refresh_week_ui() -> void:
+	_refresh_header()
+	if _selected_day >= 0 and _strip.monday != Game.week_monday():
+		_selected_day = -1
+		_strip.selected = -1
+		_apply_editor_visibility()
+	_strip.refresh()
+	if _selected_day >= 0:
+		_editor.refresh()
+
+
+# --- Week strip and day editor -----------------------------------------------------------------
+
+func _on_day_pressed(day: int) -> void:
+	if day == _selected_day:
+		_close_day()
+	else:
+		_open_day(day)
+
+
+func _open_day(day: int) -> void:
+	_selected_day = day
+	_editor.show_day(day)
+	_strip.selected = day
+	_strip.refresh()
+	_apply_editor_visibility()
+	if _event_overlay:
+		move_child(_event_overlay, -1)
+
+
+func _close_day() -> void:
+	_selected_day = -1
+	_strip.selected = -1
+	_strip.refresh()
+	_apply_editor_visibility()
+
+
+## A day change was made in the editor: the strip and the Today card show it too.
+func _on_day_changed() -> void:
+	_strip.refresh()
+	if is_instance_valid(_today_card):
+		_today_card.refresh()
+
+
+func _apply_editor_visibility() -> void:
+	var open := _selected_day >= 0
+	if _side:
+		_side.custom_minimum_size.x = _side_width()   # the window may have been resized since the page was built
+		_side.visible = open
+	if _sheet:
+		_sheet.visible = open
+	if _view == "overview" and _overview_columns != 0 and not Layout.compact \
+			and _overview_columns != _wanted_overview_columns():
+		_relayout_overview()
+
+
+## Columns of the wide Overview: 4 need about 1150 logical px, which the side panel takes away.
+func _wanted_overview_columns() -> int:
+	var width := Layout.logical_width - 96.0 - (_side_width() + 16.0 if _selected_day >= 0 else 0.0)
+	return 4 if width >= 1150.0 else 2
+
+
+## Width of the side panel: 480, or less when the window is too narrow to keep the tabs beside it.
+func _side_width() -> float:
+	return clampf(Layout.logical_width - 96.0 - 16.0 - TAB_BAR_WIDTH, 380.0, SIDE_PANEL_WIDTH)
+
+
+## Rebuilds the Overview for a new width and keeps its scroll position.
+func _relayout_overview() -> void:
+	var at := _scroll.scroll_vertical
+	_show("overview")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_scroll.scroll_vertical = at
+
+
+## PC: the editor in a panel to the right of the tabs and content.
+func _build_side_panel() -> void:
+	var scroll := _scrolling_editor()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_side = UIKit.panel(scroll, 16)
+	_side.custom_minimum_size.x = _side_width()
+	_side.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_side.visible = false
+
+
+## The editor in a vertical scroll area, with a little room on the right for the scroll bar.
+func _scrolling_editor() -> ScrollContainer:
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var pad := MarginContainer.new()
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pad.add_theme_constant_override("margin_right", 12)
+	pad.add_child(_editor)
+	scroll.add_child(pad)
+	return scroll
+
+
+## Phone: a dimmed layer over the whole screen (tap it to close) with the editor in a sheet at the bottom.
+func _build_sheet() -> void:
+	_sheet = Control.new()
+	_sheet.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_sheet.visible = false
+	add_child(_sheet)
+	var dim := ColorRect.new()
+	dim.color = Color(0.03, 0.035, 0.05, 0.62)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed:
+			_close_day())
+	_sheet.add_child(dim)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.0
+	panel.anchor_right = 1.0
+	panel.anchor_top = 1.0
+	panel.anchor_bottom = 1.0
+	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(Palette.SURFACE, 0.98)
+	style.border_color = Palette.BORDER
+	style.border_width_top = 1
+	style.corner_radius_top_left = 16
+	style.corner_radius_top_right = 16
+	panel.add_theme_stylebox_override("panel", style)
+	_sheet.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+	var box := UIKit.vbox(8)
+	margin.add_child(box)
+	var handle := UIKit.dot(Palette.BORDER, 44, 5)
+	handle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(handle)
+	_sheet_scroll = _scrolling_editor()
+	box.add_child(_sheet_scroll)
+
+
+## Sizes the bottom sheet to its content (at most 72 % of the screen; longer content scrolls).
+func _fit_sheet() -> void:
+	if _sheet_scroll == null:
+		return
+	var scroll := _sheet_scroll
+	await get_tree().process_frame   # the texts need to be laid out before their height is known
+	await get_tree().process_frame
+	if scroll != _sheet_scroll or not is_instance_valid(scroll):
+		return
+	scroll.custom_minimum_size.y = minf(_editor.get_combined_minimum_size().y, size.y * 0.72)
 
 
 # --- Stop events ------------------------------------------------------------------------------
@@ -221,7 +419,7 @@ func _show_pending_event() -> void:
 
 func _on_event_answer(event_id: String, choice: String) -> void:
 	Game.answer_event(event_id, choice)
-	_refresh_header()
+	_refresh_week_ui()
 	_show(_view)
 	_show_pending_event()
 
@@ -237,13 +435,26 @@ func _show(view: String) -> void:
 		"training": _build_training()
 		"calendar": _build_calendar()
 		"rankings": _build_rankings()
-		"report": _build_report(Game.last_report)
+		"report": _content.add_child(ReportView.new())
 
 
 # --- Overview ---------------------------------------------------------------------------
 
 func _build_profile(a: Athlete) -> void:
-	var columns := UIKit.flex(16)
+	_today_card = TodayCard.new()
+	_today_card.pressed.connect(func(): _open_day(Calendar.weekday(Game.date)))
+	_content.add_child(_today_card)
+
+	var columns: Container   # wide: a grid of 4 (2 when the width is short, e.g. with the side panel open)
+	if Layout.compact:
+		columns = UIKit.flex(16)
+	else:
+		_overview_columns = _wanted_overview_columns()
+		var grid := GridContainer.new()
+		grid.columns = _overview_columns
+		grid.add_theme_constant_override("h_separation", 16)
+		grid.add_theme_constant_override("v_separation", 16)
+		columns = grid
 	var attribute_panels := []
 	for category in ["physical", "technical", "mental"]:
 		var col := UIKit.vbox(2)
@@ -255,18 +466,7 @@ func _build_profile(a: Athlete) -> void:
 		for p in attribute_panels:
 			columns.add_child(p)
 
-	var body := UIKit.vbox(6)
-	body.add_child(UIKit.label("CONDITION", "CaptionLabel"))
-	body.add_child(_fact_row("Fatigue", _fatigue_label(a.fatigue)))
-	body.add_child(UIKit.label(" "))
-	body.add_child(UIKit.label("NEXT RACE", "CaptionLabel"))
-	var next := Game.next_race()
-	if next.is_empty():
-		body.add_child(UIKit.wrapped("No races entered. Pick some in the Calendar.", "MutedLabel"))
-	else:
-		body.add_child(UIKit.wrapped(next.name, ""))
-		body.add_child(UIKit.wrapped("%s · %s" % [Calendar.format_meet_date(next), Calendar.place(a, next)], "MutedLabel"))
-	body.add_child(UIKit.label(" "))
+	var body := UIKit.vbox(6)   # condition and next race are on the Today card
 	body.add_child(UIKit.label("BODY", "CaptionLabel"))
 	for f in [
 		["Height", "%d cm" % a.height_cm],
@@ -290,14 +490,15 @@ func _build_profile(a: Athlete) -> void:
 					Race._ordinal(int(r.place)), Calendar.format_time(r.time)]
 			body.add_child(UIKit.wrapped(line + (" PB" if r.pb else ""), "MutedLabel"))
 	columns.add_child(_column_panel(body))
-	if Layout.compact:   # condition and next race first, then the attributes
+	if Layout.compact:   # the body and results first, then the attributes
 		for p in attribute_panels:
 			columns.add_child(p)
 	_content.add_child(columns)
 
 	_content.add_child(UIKit.wrapped(
 			"Arrows show attributes that have been rising or falling lately. Tap an attribute to see what it does. "
-			+ "Plan your week under Training, then press Next day or Play week.", "MutedLabel"))
+			+ "Plan your week under Training, change a single day by tapping it in the week strip, "
+			+ "then press Next day or Play week.", "MutedLabel"))
 
 
 # --- Training plan ----------------------------------------------------------------------
@@ -307,8 +508,9 @@ func _build_training() -> void:
 	var month: int = Game.add_days(Game.week_monday(), 3).month
 	_content.add_child(UIKit.label("Weekly plan", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
-			"Your plan repeats every week until you change it. Up to %d sessions a day; an empty day is a rest day."
-			% Training.MAX_SESSIONS_PER_DAY))
+			("Your plan repeats every week until you change it. Up to %d sessions a day; an empty day is a rest day. "
+			% Training.MAX_SESSIONS_PER_DAY)
+			+ "To change just one day of this week, tap it in the week strip above."))
 
 	var summary := UIKit.vbox(8)
 	var refresh_summary := func(): _fill_plan_summary(summary, a, month)
@@ -639,84 +841,18 @@ func _ranking_row(r: Dictionary) -> Control:
 	return tint
 
 
-# --- Weekly report ----------------------------------------------------------------------
-
-func _build_report(r: Dictionary) -> void:
-	if r.is_empty():
-		return
-	var a := Game.athlete
-	var sunday := Game.add_days(r.monday, 6)
-	_content.add_child(UIKit.label("Week %d.%d. – %d.%d.%d" % [
-			r.monday.day, r.monday.month, sunday.day, sunday.month, sunday.year], "HeadingLabel"))
-
-	var facts := UIKit.vbox(6)
-	facts.add_child(_fact_row("Sessions", UIKit.label(str(r.sessions))))
-	facts.add_child(_fact_row("Training load", UIKit.label(str(roundi(r.load)))))
-	var fat := UIKit.hbox(6)
-	fat.add_child(_fatigue_label(r.fatigue_start))
-	fat.add_child(UIKit.label("→", "MutedLabel"))
-	fat.add_child(_fatigue_label(r.fatigue_end))
-	facts.add_child(_fact_row("Fatigue (Mon → Sun)", fat))
-	_content.add_child(UIKit.panel(facts, 16))
-
-	for note in r.notes:
-		_content.add_child(UIKit.wrapped("• " + note, ""))
-
-	var up := []
-	var down := []
-	for id in r.changes:
-		var c: Dictionary = r.changes[id]
-		if roundi(c.after) != roundi(c.before):
-			(up if c.after > c.before else down).append(id)
-	var box := UIKit.vbox(6)
-	box.add_child(UIKit.label("ATTRIBUTES", "CaptionLabel"))
-	if up.is_empty() and down.is_empty():
-		box.add_child(UIKit.wrapped("No attribute has moved up a whole point this week. Progress builds up slowly, so keep going."))
-	for id in up + down:
-		var c: Dictionary = r.changes[id]
-		var row := UIKit.hbox(8)
-		var l := UIKit.label(_attr_name(id))
-		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(l)
-		row.add_child(UIKit.attr_value_label(c.before))
-		row.add_child(UIKit.label("→", "MutedLabel"))
-		row.add_child(UIKit.trend_arrow(1 if c.after > c.before else -1))
-		row.add_child(UIKit.attr_value_label(c.after))
-		box.add_child(row)
-	var improving := []
-	for category in Training.TRAINED_CATEGORIES:
-		for attr in Data.attributes_in(category):
-			if a.trend(attr.id) > 0:
-				improving.append(attr.name.to_lower())
-	if not improving.is_empty():
-		box.add_child(UIKit.wrapped("Improving lately: %s." % ", ".join(improving)))
-	_content.add_child(UIKit.panel(box, 16))
-
-
 # --- Helpers ------------------------------------------------------------------------------
 
 func _fact_row(key: String, value: Control) -> HBoxContainer:
-	var row := UIKit.hbox()
-	var k := UIKit.label(key, "MutedLabel")
-	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	k.custom_minimum_size.x = 140
-	row.add_child(k)
-	row.add_child(value)
-	return row
+	return UIKit.fact_row(key, value)
 
 
 func _fatigue_label(fatigue: float) -> Label:
-	var state := Training.fatigue_state(fatigue)
-	var l := UIKit.label("%s (%d)" % [state[0], roundi(fatigue)])
-	l.add_theme_color_override("font_color", state[1])
-	return l
+	return UIKit.fatigue_label(fatigue)
 
 
 func _attr_name(id: String) -> String:
-	for attr in Data.attributes:
-		if attr.id == id:
-			return attr.name
-	return id
+	return UIKit.attr_name(id)
 
 
 func _column_panel(content: Control) -> PanelContainer:

@@ -45,17 +45,41 @@ func _run() -> void:
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
 	game.advance_day()   # a mid-week date in the header (Wednesday)
 	game.advance_day()
-	hub._refresh_header()
+	hub._refresh_week_ui()
 
 	for size in SIZES:
 		root.size = size
 		await _frames(8)
 		var tag := "%dx%d" % [size.x, size.y]
 		print("size ", tag, " compact=", main.get_node("/root/Router") != null and Layout.compact, " logical=", root.content_scale_size)
-		for view in ["overview", "training", "calendar", "rankings"]:
+		for view in ["overview", "training", "calendar", "rankings", "report"]:
 			hub._show(view)
 			await _frames(4)
 			await _shot("%s_%s" % [tag, view])
+			_check_overflow(hub, "%s %s" % [tag, view])
+		# The day editor: an editable day with changes (Thu: Hard + a second session), the "add session" row,
+		# and a played day (Mon). Side panel on PC, bottom sheet on a phone.
+		hub._show("overview")
+		game.current_week().set_intensity(3, "hard")
+		game.current_week().add_session(3, "mobility")
+		hub._on_day_changed()
+		hub._open_day(3)
+		await _frames(6)
+		await _shot("%s_editor_thu" % tag)
+		_check_overflow(hub, "%s editor_thu" % tag)
+		hub._editor._adding = true
+		hub._editor.refresh()
+		await _frames(6)
+		await _shot("%s_editor_adding" % tag)
+		_check_overflow(hub, "%s editor_adding" % tag)
+		hub._open_day(0)
+		await _frames(6)
+		await _shot("%s_editor_played" % tag)
+		_check_overflow(hub, "%s editor_played" % tag)
+		game.current_week().reset_day(3)
+		hub._close_day()
+		hub._on_day_changed()
+		await _frames(3)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -73,6 +97,36 @@ func _run() -> void:
 		await _frames(6)
 		hub = main.get_node("ScreenHost").get_child(-1)
 	quit()
+
+
+## Prints OVERFLOW for every visible control that sticks out past the window or past the scroll area it is in.
+func _check_overflow(node: Node, label: String) -> void:
+	var count := [0]
+	_walk_overflow(node, label, count)
+	if count[0] == 0:
+		print("  no overflow: ", label)
+
+
+func _walk_overflow(node: Node, label: String, count: Array) -> void:
+	if node is Control and not (node as Control).is_visible_in_tree():
+		return
+	if node is Control and node.get_parent() is Control:
+		var c := node as Control
+		var clip := Rect2(Vector2.ZERO, root.get_visible_rect().size)   # the window, in logical px
+		var p := node.get_parent()
+		while p:
+			if p is ScrollContainer and (p as Control).is_visible_in_tree():
+				clip = (p as Control).get_global_rect()
+				break
+			p = p.get_parent()
+		var r := c.get_global_rect()
+		if r.size.x > 0.0 and (r.end.x > clip.end.x + 1.5 or r.position.x < clip.position.x - 1.5) \
+				and not (c is ScrollContainer):
+			count[0] += 1
+			if count[0] <= 5:
+				print("  OVERFLOW ", label, ": ", c.get_path(), " rect ", r, " clip ", clip)
+	for child in node.get_children():
+		_walk_overflow(child, label, count)
 
 
 func _frames(n: int) -> void:

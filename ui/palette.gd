@@ -31,6 +31,11 @@ const MAT := Color("#2f6db5")
 const LINE := Color(1, 1, 1, 0.55)
 const FLOODLIGHT := Color("#fff4d6")
 
+# Day intensity markers (week strip, day editor)
+const DAY_EASY := Color("#6cb8e6")
+const DAY_NORMAL := Color("#9aa1b2")
+const DAY_HARD := Color("#d9665b")
+
 # Attribute value colours (1-5 / 6-10 / 11-15 / 16-20)
 const ATTR_POOR := Color("#d9665b")
 const ATTR_AVERAGE := Color("#e0b252")

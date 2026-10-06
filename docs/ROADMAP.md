@@ -25,9 +25,12 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       day log; day changes with "changed by"; intensity (`data/health.json`); save version 2 (v1 saves still load),
       autosave daily. UI: just the Next day / Play week buttons + a simple stop-event panel. *(Opus)*
       Done: training balance bit-for-bit unchanged; checks in `tools/day_engine_check.gd`; T key = test stop event in debug builds.
-- [ ] **2. Week strip & day editor UI:** week strip (PC + phone), day editor (side panel / bottom sheet) on top of the
+- [x] **2. Week strip & day editor UI:** week strip (PC + phone), day editor (side panel / bottom sheet) on top of the
       `WeekSim` day-change API, Today card, Report day log (`Game.day_log`); update `layout_check.gd` and the
       screenshot tour. *(Sonnet)*
+      Done: engine untouched (balance fingerprints identical); `layout_check.gd` now flags overflow, the tour and
+      `day_engine_check.gd` cover the new UI. Left for later steps: warning-sign slot on the Today card and
+      the scratch-race button (step 4), coach Veto (coaching).
 - [ ] **3. Health model:** body-area strain, soreness, injury and illness rolls, catalogue with phases
       (`data/injuries.json`), growth spurt, history, cross-training sessions, detraining when out, rival injuries;
       `training_balance.gd` with 200 athletes, injuries/illness/days lost, careful policy and ramp plan; first tuning

@@ -176,6 +176,12 @@ Decisions (user, 2026-10-05): **two buttons, no mode switch**; day changes apply
 - **Save/load:** save version 2 stores the date, the in-progress week (played days, this week's changes, stimulus so
   far, notes, fatigue stats) and the health state. Autosave after every played day. Version-1 saves load fine:
   they're always on a Monday with no week in progress, so new fields start empty.
+- **Built (step 2, 2026-10-06):** the week strip, day editor, Today card and Report tab as described above. Details
+  chosen while building: strip markers are coloured by intensity (blue Easy, grey Normal, red Hard); a changed day shows
+  a small accent dot (also after it was played); the day editor shows the day's load next to the weekly plan's, who
+  changed it, and "Back to plan"; unavailable sessions stay in the picker, greyed out with the reason in their name;
+  the Today card replaces Overview's old Condition and Next race blocks; the Report tab also shows last week's days;
+  warning signs ("None." for now) and scratching a race are left as marked spots for step 4.
 - **Built (step 1, 2026-10-05):** engine, day changes, events, day log, save v2, Next day / Play week and a simple
   stop-event panel. Details chosen while building: intensity Easy = ×0.7 load / ×0.8 effect, Hard = ×1.3 load /
   ×1.15 effect (first values, tuned in step 5); a race reached with Play week continues the week after the race

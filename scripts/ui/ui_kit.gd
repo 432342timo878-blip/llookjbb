@@ -142,5 +142,45 @@ static func attr_value_label(value: float) -> Label:
 	return l
 
 
+## A "Key ........ value" row (key muted on the left, the value control on the right).
+static func fact_row(key: String, value: Control) -> HBoxContainer:
+	var row := hbox()
+	var k := label(key, "MutedLabel")
+	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	k.custom_minimum_size.x = 140
+	row.add_child(k)
+	row.add_child(value)
+	return row
+
+
+## "Tired (52)" in the colour of that fatigue state.
+static func fatigue_label(fatigue: float) -> Label:
+	var state := Training.fatigue_state(fatigue)
+	var l := label("%s (%d)" % [state[0], roundi(fatigue)])
+	l.add_theme_color_override("font_color", state[1])
+	return l
+
+
+static func attr_name(id: String) -> String:
+	for attr in Data.attributes:
+		if attr.id == id:
+			return attr.name
+	return id
+
+
+## A small round or rounded-rectangle colour mark (fatigue dot, session marker).
+static func dot(color: Color, width := 10.0, height := -1.0) -> Panel:
+	var p := Panel.new()
+	var h := width if height < 0.0 else height
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.set_corner_radius_all(int(minf(width, h) / 2.0))
+	p.add_theme_stylebox_override("panel", box)
+	p.custom_minimum_size = Vector2(width, h)
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return p
+
+
 static func format_date(d: Dictionary) -> String:
 	return "%d.%d.%d" % [d.day, d.month, d.year]
