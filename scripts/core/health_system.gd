@@ -36,6 +36,8 @@ var levels := {}             # area id -> soreness level after the last played d
 var overrides: Array = []    # date keys of days the player trains through the limits
 var days_without_training := 0
 var detrain_days := 0        # days this week beyond the detraining limit
+var days_without_running := 0
+var run_detrain_days := 0    # days this week beyond the running-detraining limit (cross-training doesn't count)
 var last_race_no := -1000    # day_no of the last race
 var counters := {"days_injured": 0, "days_ill": 0, "days_out": 0}
 
@@ -124,7 +126,8 @@ func on_health(ctx: Dictionary) -> void:
 	ctx.log_extra = {"soreness": sore, "health": injuries.map(func(i): return i.id)}
 
 
-## Sunday night: extra detraining after long breaks, and the rivals' injuries.
+## Sunday night: extra detraining after long breaks (from all training, and running-specific fitness after
+## weeks without running), and the rivals' injuries.
 func on_week_end(ctx: Dictionary) -> void:
 	if not model_enabled:
 		return
@@ -138,6 +141,14 @@ func on_week_end(ctx: Dictionary) -> void:
 				a.set_attr(attr.id, before - loss)
 				a.recent_change[attr.id] = a.recent_change.get(attr.id, 0.0) + a.get_attr(attr.id) - before
 		detrain_days = 0
+	if run_detrain_days > 0:
+		var a := Game.athlete
+		var per_day: Dictionary = Data.health.running_detraining.per_day
+		for attr_id in per_day:
+			var before := a.get_attr(attr_id)
+			a.set_attr(attr_id, before - float(per_day[attr_id]) * run_detrain_days)
+			a.recent_change[attr_id] = a.recent_change.get(attr_id, 0.0) + a.get_attr(attr_id) - before
+		run_detrain_days = 0
 	var cfg: Dictionary = Data.health.rivals
 	for r in Game.rivals:
 		if Rivals.is_out(r):
@@ -172,6 +183,12 @@ func _count_day(rec: Dictionary) -> void:
 	days_without_training = 0 if trained else days_without_training + 1
 	if days_without_training > int(Data.health.detraining.after_days):
 		detrain_days += 1
+	var ran: bool = rec.race != ""
+	for sid in rec.sessions:
+		ran = ran or "run" in Data.get_session(sid).get("tags", [])
+	days_without_running = 0 if ran else days_without_running + 1
+	if days_without_running > int(Data.health.running_detraining.after_days):
+		run_detrain_days += 1
 	var rule := rule_at(1)   # today's limits (injuries move on after this)
 	for inj in injuries:
 		if inj.tier == "illness":
@@ -928,6 +945,7 @@ func to_dict() -> Dictionary:
 			"strain": strain, "impacts": impacts, "capacity": capacity_now, "injuries": injuries, "history": history, "warned": warned,
 			"last_level": last_level, "levels": levels, "overrides": overrides,
 			"days_without_training": days_without_training, "detrain_days": detrain_days,
+			"days_without_running": days_without_running, "run_detrain_days": run_detrain_days,
 			"last_race_no": last_race_no, "counters": counters}
 
 
@@ -963,6 +981,8 @@ func from_dict(d: Dictionary) -> void:
 	overrides = d.overrides.map(func(x): return int(x))
 	days_without_training = int(d.days_without_training)
 	detrain_days = int(d.detrain_days)
+	days_without_running = int(d.get("days_without_running", 0))   # saves from before this was added
+	run_detrain_days = int(d.get("run_detrain_days", 0))
 	last_race_no = int(d.last_race_no)
 	for key in d.counters:
 		counters[key] = int(d.counters[key])

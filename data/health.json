@@ -101,6 +101,8 @@
 
  "detraining": {"_note": "Extra loss for every physical attribute that got no training stimulus this week, per day beyond after_days in a row with no training at all.", "after_days": 10, "per_day": 0.01},
 
+ "running_detraining": {"_note": "Running-specific fitness fades without running even when cross-training keeps the aerobic engine (aqua jogging, bike and swimming maintain VO2max for weeks, but not speed endurance, economy, threshold pace or top speed). Per day beyond after_days in a row without a running session or race (session tag 'run'), applied at the end of the week. Not permanent: training builds it back.", "after_days": 10, "per_day": {"speed_endurance": 0.01, "running_economy": 0.006, "lactate_threshold": 0.005, "speed": 0.005}},
+
  "plan_risk": {"_note": "The weekly plan's risk word: expected overuse injuries over `weeks` weeks of it from the current body state (average proneness, so it never gives the hidden value away).", "weeks": 4, "moderate": 0.1, "high": 0.18},
 
  "proneness_hint": {"_note": "After this many injuries (not illnesses) within this many days, the game hints that the athlete picks up knocks easily.", "injuries": 3, "days": 365},

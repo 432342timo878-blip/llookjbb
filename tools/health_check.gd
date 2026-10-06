@@ -331,7 +331,23 @@ func _check_detraining() -> void:
 		sums.append(total)
 	H.model_enabled = true
 	var expected: float = data.attributes_in("physical").size() * float(data.health.detraining.per_day) * (21 - int(data.health.detraining.after_days))
+	var run_cfg: Dictionary = data.health.running_detraining
+	for attr_id in run_cfg.per_day:
+		expected += float(run_cfg.per_day[attr_id]) * (21 - int(run_cfg.after_days))
 	_ok("3 weeks off: %.2f extra loss (expected %.2f)" % [sums[0] - sums[1], expected], is_equal_approx(sums[0] - sums[1], expected))
+	# Only aqua jogging for 3 weeks: the aerobic engine is kept, running-specific fitness fades.
+	var values := []
+	for on in [false, true]:
+		H.model_enabled = on
+		_new_career(20, 8)
+		game.training_plan = [["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"]]
+		_play_days(21)
+		values.append({"se": game.athlete.get_attr("speed_endurance"), "aero": game.athlete.get_attr("aerobic_capacity")})
+	H.model_enabled = true
+	var se_expected := float(run_cfg.per_day.speed_endurance) * (21 - int(run_cfg.after_days))
+	_ok("3 weeks of aqua jogging: speed endurance −%.3f (expected −%.3f)" % [values[0].se - values[1].se, se_expected],
+			is_equal_approx(values[0].se - values[1].se, se_expected))
+	_ok("… while the aerobic engine is kept", values[1].aero >= values[0].aero - 0.05)
 
 
 ## What the health UI (step 4) will read.

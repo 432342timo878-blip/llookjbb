@@ -37,8 +37,8 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       pass. Headless only. *(Opus)*
       Done: `HealthSystem` + data; M1 fingerprints identical with the model off; checks in `tools/health_check.gd`;
       watch a season with `tools/health_season.gd`, H key in the hub prints the hidden numbers. First-pass numbers
-      and the open balance questions (hard plan still out-progresses the coach plan when warnings are ignored) in
-      GDD 4.6 "Built (step 3)"; they go to step 5.
+      in GDD 4.6 "Built (step 3)" (running detraining added after the first pass, so ignoring warnings no longer pays);
+      the small open points go to step 5.
 - [ ] **4. Health UI:** soreness on Today card + strip markers, diagnosis panel, "sore" stop decision, banned
       sessions + override warnings, scratch / race injured (slower, may worsen), load vs normal and plan risk in
       the Training tab. *(Sonnet)*

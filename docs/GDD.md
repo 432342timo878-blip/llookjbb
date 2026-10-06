@@ -288,6 +288,9 @@ decided while building (all numbers in `data/health.json` / `data/injuries.json`
 - **Other:** "sore" stop event at most once per area per 14 days; extra detraining 0.01/day after 10 days in a row
   without any training; rivals 0.6 %/week chance to be out 2–6 weeks (≈2 % of rivals out at any time); plan risk =
   expected overuse injuries in the next 4 weeks of the plan at average proneness: Low < 0.1 ≤ Moderate < 0.18 ≤ High.
+  **Running detraining** (user decision 2026-10-06, after the first tuning pass): after 10 days in a row without a
+  running session or race, speed endurance −0.01, running economy −0.006, lactate threshold −0.005 and speed −0.005
+  per day, even when cross-training (pool running and the bike keep the aerobic engine, not running-specific fitness).
   "Load vs your normal" can be huge right after a layoff (normal ≈ 0): the UI should cap it (e.g. "over 300 %").
 
 **First tuning pass** (`tools/training_balance.gd`, 200 athletes per row, 1 year from 14, random backgrounds, half
@@ -300,11 +303,11 @@ ability +1.18.
 | Coach | 0.67 | 84 / 15 / 0 % | 10 (3) | 2.2 (71 %) | +1.18 | yes (as M1) |
 | Coach, careful | 0.69 | 86 / 13 / 0 % | 10 (2) | 2.2 | +1.18 | (careful hardly matters: rarely "sore") |
 | Lazy | 0.07 | (bad luck only) | 1 (2) | 2.2 | +0.37 | yes |
-| Hard, warnings ignored | 5.3 | 43 / 12 / 44 % | 270 (173) | 2.7 | +1.51 | 3+ yes, > 40 % serious yes, **progress not below coach** |
-| Hard, neutral | 3.4 | 76 / 21 / 2 % | 55 (20) | 2.5 | +1.62 | (no target) |
+| Hard, warnings ignored | 5.3 | 43 / 12 / 44 % | 270 (173) | 2.7 | +1.03 | yes (3+, > 40 % serious, below coach) |
+| Hard, neutral | 3.4 | 76 / 21 / 2 % | 55 (20) | 2.5 | +1.58 | (no target) |
 | Hard, careful | 1.58 | 78 / 21 / 0 % | 24 (6) | 2.9 | +1.65 | ~1–1.5 nearly; **~10 % serious not reached (0 %)**; progress above coach yes |
-| Ramp to hard | 2.5 | 73 / 23 / 3 % | 42 (17) | 2.8 | +1.62 | clearly below "ignored" yes; **best progress no (tie)** |
-| Ramp, careful | 1.52 | 80 / 19 / 0 % | 22 (5) | 2.7 | +1.64 | |
+| Ramp to hard | 2.5 | 73 / 23 / 3 % | 42 (17) | 2.8 | +1.58 | clearly below "ignored" yes; **best progress no (tie)** |
+| Ramp, careful | 1.52 | 80 / 19 / 0 % | 22 (5) | 2.7 | +1.63 | |
 
 Warnings: on the hard plans 70–90 % of overuse injuries came after the area had been "sore" (the rest after "a bit
 sore"); on the coach plan, which rarely makes anyone sore, most niggles came after only "a bit sore" (59 %) or none.
@@ -312,17 +315,13 @@ Plan risk at week 12: coach Low 95 %; hard plans split between Low (already adap
 
 - **M1 unchanged:** with the health model off, all M1 fingerprints are bit-for-bit identical (part 2 of the tool);
   with it on, the coach plan's progress is the same as M1 (+1.18).
-- **Open (for step 5):** (1) Ignoring warnings on the hard plan still out-progresses the coach plan (+1.51 vs +1.18), although it costs ~270
-  injured days: M1's progression gives the hard plan so much per week that ~half a year of it wins, and cross-training
-  plus puberty growth keep the athlete improving while out. Options: running fitness (speed endurance, lactate
-  threshold, economy, speed) fades faster after ~10 days without *running* while cross-training keeps only the
-  aerobic engine (Claude's recommendation), and/or sessions trained through pain give less effect. Needs the user's
-  decision (it extends "stronger loss after ~10 days with no training"). (2) Hard-careful gets no serious injuries
-  (careful players back off before bone stress gets bad); accept, or add rare "silent" stress reactions. (3) Ramp ties
-  with hard-careful on progress (it loses a little training while building up); (1) would also fix this, as ramping
-  avoids layoffs. (4) The coach plan's niggles mostly come with only a slight warning ("a bit sore"), so step 4 should
-  show "a bit sore" clearly on the Today card.
-
+- **Open (for step 5):** (1) Hard-careful gets no serious injuries (careful players back off before bone stress gets
+  bad), target was ~10 %: accept, or add rare "silent" stress reactions. (2) Ramp ties with hard-careful on progress
+  (+1.63 vs +1.65): the ramp loses a little training while building up, careful-hard gets away with the jump because
+  it backs off when sore. The ramp is clearly safer for a player who doesn't listen (2.5 vs 3.4 injuries/yr). (3) The
+  coach plan's niggles mostly come with only a slight warning ("a bit sore"), so step 4 should show "a bit sore"
+  clearly on the Today card. (Solved: ignoring warnings no longer out-progresses the coach plan, thanks to running
+  detraining.)
 ### 4.7 Daily events & hooks (M2 foundation, designed 2026-10-05)
 
 Decisions (user, 2026-10-05): **no Inbox tab yet**: events show on the Today card and in the Report's day log (revisit
