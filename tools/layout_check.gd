@@ -82,6 +82,8 @@ func _run() -> void:
 		hub._close_day()
 		hub._on_day_changed()
 		await _frames(3)
+		await _health_views(main, game, data, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -99,6 +101,196 @@ func _run() -> void:
 		await _frames(6)
 		hub = main.get_node("ScreenHost").get_child(-1)
 	quit()
+
+
+# --- The health UI (M2 step 4): seeded states at this window size ----------------------------------------------
+
+## A sore body (three areas), a niggle + a cold (then a locked injury), the diagnosis and "sore" panels, the Training
+## tab's body strain, the Report with health lines, and a race day while injured (day editor and race screen).
+## Everything is put back afterwards, and the health model is switched off again.
+func _health_views(main: Node, game, data, tag: String) -> void:
+	load("res://scripts/core/health_system.gd").model_enabled = true
+	var health = game.get_system("health")
+	health._ensure_started()
+	var router = main.get_node("/root/Router")
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var today: int = load("res://scripts/core/calendar.gd").weekday(game.date)
+
+	# Sore: a bit sore, sore and painful; a niggle and a cold. Today card with a row open, then today's editor.
+	_reset_health(game, health)
+	health.strain["shins"] = 36.0
+	health.strain["achilles"] = 55.0
+	health.strain["calves"] = 75.0
+	_start_problem(health, data, game, "shin_splints")
+	_start_problem(health, data, game, "cold")
+	health._apply_restrictions(game.current_week())
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(5)
+	hub._today_card.open_area("achilles")
+	await _frames(5)
+	await _shot("%s_health_today_card" % tag)
+	_check_overflow(hub, "%s health_today_card" % tag)
+	hub._open_day(today)
+	await _frames(6)
+	await _shot("%s_health_editor_limits" % tag)
+	_check_overflow(hub, "%s health_editor_limits" % tag)
+	var through := _find_button(hub, "Train through it…")
+	if through:
+		through.pressed.emit()
+		await _frames(6)
+		await _shot("%s_health_train_through" % tag)
+		_check_overflow(hub, "%s health_train_through" % tag)
+	hub._close_day()
+
+	# A locked injury on top: banned sessions, no override.
+	_start_problem(health, data, game, "hamstring_strain")
+	health._apply_restrictions(game.current_week())
+	hub._refresh_week_ui()
+	hub._open_day(today)
+	await _frames(6)
+	await _shot("%s_health_editor_locked" % tag)
+	_check_overflow(hub, "%s health_editor_locked" % tag)
+	hub._close_day()
+	hub._show("overview")
+	await _frames(5)
+	await _shot("%s_health_today_three_problems" % tag)
+	_check_overflow(hub, "%s health_today_three_problems" % tag)
+
+	# The two stop panels: the diagnosis of the injury, and the "sore" warning with its decision.
+	var news := []
+	health._start(data.get_injury("tibial_stress_reaction"), game.date, news)
+	health._post_diagnosis(news[0])
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_health_diagnosis" % tag)
+	_check_overflow(hub, "%s health_diagnosis" % tag)
+	game.answer_event(game.pending_event().id, "ok")
+	health.injuries.erase(news[0])
+	health.levels.clear()
+	health.warned.clear()
+	health._update_soreness(true)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_health_sore_event" % tag)
+	_check_overflow(hub, "%s health_sore_event" % tag)
+	if not game.pending_event().is_empty():
+		game.answer_event(game.pending_event().id, "keep")
+	hub._show_pending_event()
+
+	# The Training tab (body strain), and the Report with sore days, injuries and the proneness hint.
+	_reset_health(game, health)
+	_start_problem(health, data, game, "shin_splints")
+	game.training_plan = [["intervals_800", "strength"], ["tempo_run", "drills"], ["long_run"], ["intervals_800", "hill_sprints"],
+			["tempo_run"], ["long_run", "speed_strides"], ["fartlek"]]
+	hub._show("training")
+	await _frames(6)
+	var strain := _find_label(hub, "BODY STRAIN")
+	if strain:
+		hub._scroll.ensure_control_visible(strain)
+		await _frames(4)
+	await _shot("%s_health_training" % tag)
+	_check_overflow(hub, "%s health_training" % tag)
+	game.training_plan = load("res://scripts/core/training.gd").coach_plan()
+	for e in game.day_log:   # the two played days: put some health into their day log entries
+		e["soreness"] = {"shins": 1, "calves": 2}
+		e["health"] = ["shin_splints"]
+	for i in 2:
+		health.history.append({"id": "calf_tightness", "first": "calf_tightness", "tier": "niggle", "area": "calves",
+				"cause": "overuse", "started": game.add_days(game.date, -40 - i * 30), "days": [7], "phase": 1, "left": 0,
+				"through_days": 0, "warning": 0, "escalated": false, "healed": game.add_days(game.date, -30 - i * 30),
+				"healed_no": health.day_no - 30})
+	hub._refresh_week_ui()
+	hub._show("report")
+	await _frames(6)
+	await _shot("%s_health_report" % tag)
+	_check_overflow(hub, "%s health_report" % tag)
+	health.history.clear()
+	for e in game.day_log:
+		e.erase("soreness")
+		e.erase("health")
+
+	# A race day while injured: a few days earlier in the calendar, the Saturday race entered.
+	var cal = load("res://scripts/core/calendar.gd")
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_week = game._week
+	var meet := {}
+	for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 3, "day": 31}):
+		if cal.coach_recommends(game.athlete, m, {"year": 2027, "month": 1, "day": 1}) and cal.weekday(m.date) >= 5:
+			meet = m
+			break
+	if not meet.is_empty():
+		game.date = game.add_days(cal.monday_of(meet.date), 2)
+		game._week = null
+		game.enter(meet.key)
+		_reset_health(game, health)
+		_start_problem(health, data, game, "shin_splints")
+		hub._refresh_week_ui()
+		hub._show("overview")
+		hub._open_day(cal.weekday(meet.date))
+		await _frames(6)
+		await _shot("%s_health_race_day_editor" % tag)
+		_check_overflow(hub, "%s health_race_day_editor" % tag)
+		var scratch := _find_button(hub, "Scratch from this race")
+		if scratch:
+			scratch.pressed.emit()
+			await _frames(5)
+			await _shot("%s_health_race_day_scratch" % tag)
+			_check_overflow(hub, "%s health_race_day_scratch" % tag)
+		hub._close_day()
+		game.date = meet.date.duplicate()
+		game._week = null
+		game.current_week()
+		game.race_day = load("res://scripts/core/race_day.gd").new(meet, game.athlete, game.rivals)
+		router.go("race")
+		await _frames(8)
+		var screen: Control = main.get_node("ScreenHost").get_child(-1)
+		await _shot("%s_health_race_screen" % tag)
+		_check_overflow(screen, "%s health_race_screen" % tag)
+		game.race_day = null
+		game.withdraw(meet.key)
+	game.date = saved_date
+	game._week = saved_week
+	_reset_health(game, health)
+	game.current_week()
+	router.go("career_hub")
+	await _frames(6)
+	load("res://scripts/core/health_system.gd").model_enabled = false
+
+
+func _reset_health(game, health) -> void:
+	for area_id in health.strain:
+		health.strain[area_id] = 0.0
+	health.injuries.clear()
+	health.levels.clear()
+	health.warned.clear()
+	health.last_level.clear()
+	health.overrides.clear()
+	health._apply_restrictions(game.current_week())
+
+
+func _start_problem(health, data, game, injury_id: String) -> void:
+	health._start(data.get_injury(injury_id), game.date, [])
+
+
+func _find_button(node: Node, text: String) -> Button:
+	if node is Button and (node as Button).text == text and (node as Button).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _find_button(c, text)
+		if found:
+			return found
+	return null
+
+
+func _find_label(node: Node, text: String) -> Label:
+	if node is Label and (node as Label).text == text and (node as Label).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _find_label(c, text)
+		if found:
+			return found
+	return null
 
 
 ## Prints OVERFLOW for every visible control that sticks out past the window or past the scroll area it is in.

@@ -3,9 +3,11 @@ extends VBoxContainer
 ## The day editor (GDD 4.5 "Hub UI"): one day of the current week. The hub shows it as a side panel on PC and
 ## as a bottom sheet on a phone. It builds one of three views:
 ##   - a day that can still be changed: sessions (swap, remove, add up to 2), Rest day, intensity,
-##     the day's load, who changed it, and Back to plan;
-##   - a played day: read-only, what was actually done (from the day log);
-##   - a race day: read-only, with the meet.
+##     the day's load, who changed it, and Back to plan. With the health model: soreness today, the injury
+##     limits of the day (banned sessions greyed out with the reason, intensity capped, "Train through it"
+##     with a warning where it's allowed);
+##   - a played day: read-only, what was actually done (from the day log, with soreness and injuries);
+##   - a race day: read-only, with the meet, a warning when racing injured and a Scratch button.
 ## Everything is a 44 px control and nothing needs hovering (descriptions are shown as text).
 ## All changes go through the WeekSim day-change functions; `changed` tells the hub to redraw the strip.
 
@@ -79,6 +81,10 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	var month := DayInfo.month_of(w)
 	var ids: Array = info.sessions
 
+	var health := _health_box(info)
+	if health != null:
+		add_child(health)
+
 	var sessions := UIKit.vbox(8)
 	sessions.add_child(UIKit.label("SESSIONS", "CaptionLabel"))
 	if ids.is_empty() and not _adding:
@@ -119,11 +125,15 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 		summary.add_child(UIKit.wrapped(DayInfo.changed_text(info), ""))
 		# The coach's Veto button goes here, next to "Back to plan", once coaching exists (GDD 4.7:
 		# changes remember who made them, and a coach change shows Accept / Veto).
-		var back := UIKit.button("Back to plan", false, 160)
-		back.pressed.connect(func():
-			if Game.current_week().reset_day(day):
-				_after_change())
-		summary.add_child(back)
+		if info.by.values().all(func(who): return who == "injury"):
+			summary.add_child(UIKit.wrapped("Your injury sets these limits. They go away when you've recovered.", "MutedLabel"))
+		else:
+			var back := UIKit.button("Back to plan", false, 160)
+			back.pressed.connect(func():
+				if Game.current_week().reset_day(day):
+					HealthUI.refresh()   # the injury limits (if any) go back into the day
+					_after_change())
+			summary.add_child(back)
 	else:
 		summary.add_child(UIKit.wrapped("This is the weekly plan. Changes here apply to this day only.", "MutedLabel"))
 	add_child(UIKit.panel(summary, 14))
@@ -157,6 +167,11 @@ func _slot(slot: int, id: String, month: int) -> Control:
 		col.add_child(warn)
 	elif eff < 1.0:
 		col.add_child(UIKit.wrapped("No indoor track for you in winter: done on roads, less effective."))
+	var h := HealthUI.system()
+	if h != null and HealthUI.is_overridden(day) and h.ban_reason(id, day) != "":
+		var against := UIKit.wrapped("Against your injury limits (%s): more strain, and it may get worse." % h.ban_reason(id, day), "")
+		against.add_theme_color_override("font_color", Palette.SORE_3)
+		col.add_child(against)
 	return col
 
 
@@ -177,7 +192,9 @@ func _new_slot(month: int) -> Control:
 	return row
 
 
-## Every session; those that aren't possible this month are greyed out with the reason in the name.
+## Every session; those that aren't possible this month, or that an injury bans, are greyed out with the reason
+## in the name ("(only Dec–Mar)", "(not with Shin splints)"). When you train through the limits, banned
+## sessions can be picked and are marked "(against limits)".
 func _picker(month: int, with_placeholder: bool) -> OptionButton:
 	var pick := OptionButton.new()
 	pick.custom_minimum_size = Vector2(0, 44)
@@ -187,17 +204,26 @@ func _picker(month: int, with_placeholder: bool) -> OptionButton:
 	if with_placeholder:
 		pick.add_item("Choose a session…")
 		pick.set_item_metadata(0, "")
+	var h := HealthUI.system()
+	var through := HealthUI.is_overridden(day)
 	for s in Data.training.sessions:
 		var eff := Training.effectiveness(Game.athlete, s, month)
+		var banned := h.ban_reason(s.id, day) if h != null else ""
 		var text: String = s.name
+		var disabled := eff == 0.0
 		if eff == 0.0:
 			text += " (%s)" % DayInfo.unavailable_text(s)
+		elif banned != "" and through:
+			text += " (against limits)"
+		elif banned != "":
+			text += " (not with %s)" % banned.get_slice(": ", 0)
+			disabled = true
 		elif eff < 1.0:
 			text += " (no track)"
 		pick.add_item(text)
 		var i := pick.item_count - 1
 		pick.set_item_metadata(i, s.id)
-		pick.set_item_disabled(i, eff == 0.0)
+		pick.set_item_disabled(i, disabled)
 	return pick
 
 
@@ -206,10 +232,12 @@ func _intensity_box(info: Dictionary) -> Control:
 	box.add_child(UIKit.label("INTENSITY", "CaptionLabel"))
 	var group := ButtonGroup.new()
 	var row := UIKit.hbox(8)
+	var cap := _intensity_cap()
 	for level in Training.INTENSITIES:
 		var b := UIKit.toggle(Training.intensity(level).name, group)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.button_pressed = level == info.intensity
+		b.disabled = cap != "" and Training.INTENSITIES.find(level) > Training.INTENSITIES.find(cap)
 		b.pressed.connect(func():
 			if Game.current_week().set_intensity(day, level):
 				_after_change())
@@ -220,6 +248,8 @@ func _intensity_box(info: Dictionary) -> Control:
 	if info.intensity != WeekSim.NORMAL:
 		text += " Tiring ×%s, training effect ×%s." % [_x(current.load), _x(current.effect)]
 	box.add_child(UIKit.wrapped(text))
+	if cap != "":
+		box.add_child(UIKit.wrapped("Your injury limits this day to %s at most." % Training.intensity(cap).name, ""))
 	if info.sessions.is_empty():
 		box.add_child(UIKit.wrapped("Rest day: there are no sessions, so intensity changes nothing."))
 	return box
@@ -251,6 +281,20 @@ func _build_played(info: Dictionary) -> void:
 		box.add_child(UIKit.wrapped(DayInfo.changed_text(info), "MutedLabel"))
 	add_child(UIKit.panel(box, 14))
 
+	if not info.sore_areas.is_empty() or not info.health.is_empty():
+		var body := UIKit.vbox(4)
+		body.add_child(UIKit.label("HEALTH THAT DAY", "CaptionLabel"))
+		for x in info.sore_areas:
+			var line := UIKit.wrapped("%s: %s" % [x.name, HealthUI.level_word(int(x.level)).to_lower()], "")
+			line.add_theme_color_override("font_color", HealthUI.level_color(int(x.level)))
+			body.add_child(line)
+		for id in info.health:
+			var data := Data.get_injury(str(id))
+			var line := UIKit.wrapped("%s (%s)" % [data.get("name", id), HealthUI.TIER_NAMES.get(data.get("tier", ""), "").to_lower()], "")
+			line.add_theme_color_override("font_color", HealthUI.tier_color(data.get("tier", "")))
+			body.add_child(line)
+		add_child(UIKit.panel(body, 14))
+
 	if not info.events.is_empty():
 		var events := UIKit.vbox(6)
 		events.add_child(UIKit.label("EVENTS", "CaptionLabel"))
@@ -273,9 +317,70 @@ func _build_race(info: Dictionary) -> void:
 	if level != "":
 		box.add_child(UIKit.wrapped(level, "MutedLabel"))
 	box.add_child(UIKit.wrapped("The race replaces the day's training, so there is nothing to plan here. "
-			+ "You can't change a race day."))
-	# Scratching the race (not starting) comes here with the health UI (M2 step 4, GDD 4.6).
+			+ "You can't change a race day, but you can scratch from the race."))
+	# The coach's Veto (GDD 4.7) would sit next to this scratch button once coaching exists.
+	box.add_child(HealthUI.scratch_control(meet, _after_change))
+	var warning := HealthUI.race_card(HealthUI.race_outlook(day), info.today)
+	if warning != null:
+		add_child(warning)
 	add_child(UIKit.panel(box, 14))
+
+
+# --- Health ------------------------------------------------------------------------------------------
+
+## Soreness today and the injury limits of this day, with "Train through it" where that is allowed. Null when
+## there is nothing to say (healthy, or the health model is off).
+func _health_box(info: Dictionary) -> Control:
+	var h := HealthUI.system()
+	if h == null:
+		return null
+	var rule := h.rule_at(day - Game.current_week().day + 1)
+	var parts := []
+	if info.today and not info.sore_areas.is_empty():
+		var sore := UIKit.vbox(4)
+		sore.add_child(UIKit.label("SORE TODAY", "CaptionLabel"))
+		var worst := 0
+		for x in info.sore_areas:
+			worst = maxi(worst, int(x.level))
+			var line := UIKit.wrapped("%s: %s" % [x.name, HealthUI.level_word(int(x.level)).to_lower()], "")
+			line.add_theme_color_override("font_color", HealthUI.level_color(int(x.level)))
+			sore.add_child(line)
+		sore.add_child(UIKit.wrapped(str(Data.health.ui.soreness_hints[worst])))
+		parts.append(UIKit.alert_panel(sore, HealthUI.level_color(worst)))
+	if rule.active:
+		var through := HealthUI.is_overridden(day)
+		var limits := UIKit.vbox(6)
+		limits.add_child(UIKit.label("INJURY LIMITS" if not through else "TRAINING THROUGH THE LIMITS", "CaptionLabel"))
+		for reason in rule.reasons:
+			limits.add_child(UIKit.wrapped(reason, ""))
+		var color := Palette.SORE_1
+		if through:
+			color = Palette.SORE_3
+			limits.add_child(UIKit.wrapped("You chose to ignore these limits today. That means more strain, and it may get worse.", ""))
+		elif rule.locked:
+			color = Palette.SORE_3
+			limits.add_child(UIKit.wrapped("Locked: this can't be trained through, and you can't race. "
+					+ "Sessions that aren't allowed were swapped for ones that are.", ""))
+		else:
+			limits.add_child(UIKit.wrapped("Sessions that aren't allowed were swapped for ones that are.", ""))
+			var over := HealthUI.through_control(day, _after_change)
+			if over != null:
+				limits.add_child(over)
+		parts.append(UIKit.alert_panel(limits, color))
+	if parts.is_empty():
+		return null
+	var box := UIKit.vbox(8)
+	for p in parts:
+		box.add_child(p)
+	return box
+
+
+## The most intense setting the injury allows on this day ("" = no limit, or you train through it).
+func _intensity_cap() -> String:
+	var h := HealthUI.system()
+	if h == null or HealthUI.is_overridden(day):
+		return ""
+	return str(h.rule_at(day - Game.current_week().day + 1).intensity)
 
 
 # --- Helpers -----------------------------------------------------------------------------------------

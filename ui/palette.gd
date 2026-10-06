@@ -36,6 +36,18 @@ const DAY_EASY := Color("#6cb8e6")
 const DAY_NORMAL := Color("#9aa1b2")
 const DAY_HARD := Color("#d9665b")
 
+# Health (Today card, week strip, injury panels): soreness levels, injury tiers, plan risk
+const SORE_1 := Color("#e0b252")      # a bit sore (amber)
+const SORE_2 := Color("#f0883e")      # sore (orange)
+const SORE_3 := Color("#e5534b")      # painful (red)
+const TIER_NIGGLE := Color("#e0b252")
+const TIER_INJURY := Color("#f0883e")
+const TIER_SERIOUS := Color("#e5534b")
+const TIER_ILLNESS := Color("#6cb8e6")
+const RISK_LOW := Color("#3ddc84")
+const RISK_MODERATE := Color("#e0b252")
+const RISK_HIGH := Color("#e5534b")
+
 # Attribute value colours (1-5 / 6-10 / 11-15 / 16-20)
 const ATTR_POOR := Color("#d9665b")
 const ATTR_AVERAGE := Color("#e0b252")

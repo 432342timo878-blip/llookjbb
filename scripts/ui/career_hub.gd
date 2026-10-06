@@ -20,6 +20,7 @@ var _margin: MarginContainer
 var _scroll: ScrollContainer
 var _content: VBoxContainer
 var _name_label: Label
+var _save_button: Button
 var _info_label: Label
 var _date_label: Label
 var _event_overlay: ColorRect   # full-screen dimmed layer for stop events
@@ -42,6 +43,7 @@ func _ready() -> void:
 	_show_pending_event()
 
 
+## Ctrl+S saves (desktop only), like the Save button. Escape closes the day editor.
 ## Debug builds only: T arms a test stop event for the end of the next played day (see DevEvents);
 ## H prints the hidden health numbers (strain, injuries, risk) to the Output panel (HealthSystem.debug_text).
 ## (Not F keys: when the game runs from the editor, F7/F8 pause/stop the game.)
@@ -49,7 +51,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
 	var key := (event as InputEventKey).keycode
-	if key == KEY_ESCAPE and _selected_day >= 0:
+	if key == KEY_S and (event as InputEventKey).is_command_or_control_pressed():
+		if OS.has_feature("pc"):
+			_save()
+			get_viewport().set_input_as_handled()
+	elif key == KEY_ESCAPE and _selected_day >= 0:
 		_close_day()
 	elif key == KEY_T:
 		var dev := Game.get_system("dev") as DevEvents
@@ -147,10 +153,8 @@ func _build_header() -> Control:
 	var play_week := UIKit.button("Week" if Layout.compact else "Play week", false, 140)
 	play_week.pressed.connect(_on_advance.bind(true))
 	var save := UIKit.button("Save", false, 110)
-	save.pressed.connect(func():
-		SaveGame.save_snapshot()
-		save.text = "Saved ✓"
-		get_tree().create_timer(1.5).timeout.connect(func(): save.text = "Save"))
+	_save_button = save
+	save.pressed.connect(_save)
 	var menu := UIKit.button("Menu" if Layout.compact else "Main menu", false, 140)
 	menu.pressed.connect(Router.go.bind("main_menu"))
 
@@ -192,6 +196,17 @@ func _build_header() -> Control:
 		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		row.add_child(b)
 	return row
+
+
+## The Save button and Ctrl+S: a new snapshot save, and "Saved ✓" on the button for a moment.
+func _save() -> void:
+	SaveGame.save_snapshot()
+	if not is_instance_valid(_save_button):
+		return
+	_save_button.text = "Saved ✓"
+	get_tree().create_timer(1.5).timeout.connect(func():
+		if is_instance_valid(_save_button):
+			_save_button.text = "Save")
 
 
 ## Next day (`week` = false) or Play week. A race day opens the race screen; a finished week shows its report.
@@ -401,25 +416,44 @@ func _show_pending_event() -> void:
 	var card := PanelContainer.new()
 	center.add_child(card)
 
-	var box := UIKit.vbox(10)
 	# Logical window width (the screen may not be laid out yet), minus screen margin and panel padding.
-	box.custom_minimum_size.x = minf(480.0, Layout.logical_width - 32.0 - 36.0)
-	box.add_child(UIKit.label(Calendar.format_day(e.date).to_upper(), "CaptionLabel"))
-	box.add_child(UIKit.wrapped(e.title, "HeadingLabel"))
-	box.add_child(UIKit.wrapped(e.text, ""))
-	var choices: Array = e.choices
-	if choices.is_empty():
-		choices = [{"id": "ok", "label": "OK", "detail": ""}]
-	for c in choices:
-		var b := UIKit.button(c.label, false, 200)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.pressed.connect(_on_event_answer.bind(e.id, c.id))
-		box.add_child(b)
-		if c.get("detail", "") != "":
-			box.add_child(UIKit.wrapped(c.detail))
-	card.add_child(box)
+	var width := minf(480.0, Layout.logical_width - 32.0 - 36.0 - 12.0)
+	var box: Control
+	if HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels
+		box = HealthEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice))
+	else:
+		box = UIKit.vbox(10)
+		box.custom_minimum_size.x = width
+		box.add_child(UIKit.label(Calendar.format_day(e.date).to_upper(), "CaptionLabel"))
+		box.add_child(UIKit.wrapped(e.title, "HeadingLabel"))
+		box.add_child(UIKit.wrapped(e.text, ""))
+		var choices: Array = e.choices
+		if choices.is_empty():
+			choices = [{"id": "ok", "label": "OK", "detail": ""}]
+		for c in choices:
+			var b := UIKit.button(c.label, false, 200)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.pressed.connect(_on_event_answer.bind(e.id, c.id))
+			box.add_child(b)
+			if c.get("detail", "") != "":
+				box.add_child(UIKit.wrapped(c.detail))
+	# A long panel (phone) scrolls instead of running off the screen.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_child(box)
+	card.add_child(scroll)
 	_event_overlay.visible = true
 	move_child(_event_overlay, -1)
+	_fit_event_card(scroll, box)
+
+
+## Sizes the scrolling event panel to its content, at most the screen height minus the margins.
+func _fit_event_card(scroll: ScrollContainer, box: Control) -> void:
+	await get_tree().process_frame   # the texts need to be laid out before their height is known
+	await get_tree().process_frame
+	if not is_instance_valid(scroll) or not is_instance_valid(box):
+		return
+	scroll.custom_minimum_size.y = minf(box.get_combined_minimum_size().y, size.y - 32.0 - 36.0)
 
 
 func _on_event_answer(event_id: String, choice: String) -> void:
@@ -500,10 +534,13 @@ func _build_profile(a: Athlete) -> void:
 			columns.add_child(p)
 	_content.add_child(columns)
 
-	_content.add_child(UIKit.wrapped(
-			"Arrows show attributes that have been rising or falling lately. Tap an attribute to see what it does. "
+	var help := ("Arrows show attributes that have been rising or falling lately. Tap an attribute to see what it does. "
 			+ "Plan your week under Training, change a single day by tapping it in the week strip, "
-			+ "then press Next day or Play week.", "MutedLabel"))
+			+ "then press Next day or Play week. In the week strip, a round ! means you were sore that day "
+			+ "(the colour says how sore) and a + means an injury or illness limited it.")
+	if OS.has_feature("pc"):
+		help += " Ctrl+S saves."
+	_content.add_child(UIKit.wrapped(help, "MutedLabel"))
 
 
 # --- Training plan ----------------------------------------------------------------------
@@ -519,19 +556,33 @@ func _build_training() -> void:
 
 	var summary := UIKit.vbox(8)
 	var refresh_summary := func(): _fill_plan_summary(summary, a, month)
+	# After every edit of the weekly plan: the injury limits go into this week again, the week strip and the
+	# open day follow the plan, and the summary (with load vs normal and risk) is worked out again.
+	var on_plan_edited := func():
+		HealthUI.refresh()
+		_refresh_week_ui()
+		refresh_summary.call()
 
 	var days := UIKit.vbox(14 if Layout.compact else 8)
 	for day in 7:
 		if day > 0 and Layout.compact:
 			days.add_child(HSeparator.new())
-		days.add_child(_day_row(day, a, month, refresh_summary))
+		days.add_child(_day_row(day, a, month, on_plan_edited))
 	_content.add_child(UIKit.panel(days, 16))
 
 	var buttons := UIKit.hbox(8)
 	var coach := UIKit.button("Coach's plan", false, 160)
-	coach.pressed.connect(func(): Game.training_plan = Training.coach_plan(); _show("training"))
+	coach.pressed.connect(func():
+		Game.training_plan = Training.coach_plan()
+		HealthUI.refresh()
+		_refresh_week_ui()
+		_show("training"))
 	var clear := UIKit.button("Clear week", false, 160)
-	clear.pressed.connect(func(): Game.training_plan = Training.empty_plan(); _show("training"))
+	clear.pressed.connect(func():
+		Game.training_plan = Training.empty_plan()
+		HealthUI.refresh()
+		_refresh_week_ui()
+		_show("training"))
 	buttons.add_child(coach)
 	buttons.add_child(clear)
 	if Layout.compact:
@@ -641,6 +692,10 @@ func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
 	fat.add_child(UIKit.label("on average", "MutedLabel"))
 	box.add_child(_fact_row("Expected fatigue", fat))
 	box.add_child(UIKit.wrapped(verdict, ""))
+	# Body strain of this plan: load vs your normal and injury risk (works for any plan passed in).
+	var strain := HealthUI.plan_section(Game.training_plan, Game.current_week())
+	if strain != null:
+		box.add_child(strain)
 
 	box.add_child(UIKit.label("TRAINING FOCUS", "CaptionLabel"))
 	var focus: Array = p.stimulus.keys()
@@ -752,6 +807,9 @@ func _meet_row(a: Athlete, m: Dictionary) -> Control:
 				Game.withdraw(m.key)
 			else:
 				Game.enter(m.key)
+			Game.current_week()   # this week's race days follow the entries
+			HealthUI.refresh()    # a race day that was withdrawn is a training day again: injury limits apply to it
+			_refresh_week_ui()
 			refresh.call())
 		refresh.call()
 		row.add_child(b)

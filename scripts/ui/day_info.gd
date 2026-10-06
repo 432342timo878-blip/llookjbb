@@ -8,7 +8,11 @@ const WHO := {"player": "you", "coach": "your coach", "injury": "an injury restr
 
 ## Day `d` (0 = Mon) of week `w`:
 ## {day, date, played, today, editable, race (meet or {}), sessions (ids), intensity (id), load,
-##  fatigue (after the day; -1 until it is played), changed, by ({"sessions": who, "intensity": who}), events}
+##  fatigue (after the day; -1 until it is played), changed, by ({"sessions": who, "intensity": who}), events,
+##  and the health side (empty with the health model off): sore (highest soreness level 0–3 that day: for a played
+##  day from the day log, for today now), sore_areas ([{id, name, level}]), health (injury ids active that day:
+##  the day log for a played day, today's now), limited (the day was changed by an injury), tier (the worst
+##  tier of the problems that touch the day, "" for none)}
 static func of(w: WeekSim, d: int) -> Dictionary:
 	var date := Game.add_days(w.monday, d)
 	var played := d < w.day
@@ -16,7 +20,10 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 		"day": d, "date": date, "played": played, "today": Calendar.date_key(date) == Calendar.date_key(Game.date),
 		"editable": w.can_change(d), "race": {}, "sessions": [], "intensity": WeekSim.NORMAL, "load": 0.0,
 		"fatigue": -1.0, "changed": w.changes.has(d), "by": w.changed_by(d), "events": [],
+		"sore": 0, "sore_areas": [], "health": [], "limited": false, "tier": "",
 	}
+	info.limited = info.by.values().has("injury")
+	_add_health(info, log_entry(date) if played else {})
 	if played:
 		var rec := _record(w, d)
 		var entry := log_entry(date)
@@ -37,6 +44,27 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 		info.intensity = w.intensity(d)
 		info.load = planned_load(info.sessions, info.intensity, month_of(w))
 	return info
+
+
+## The health fields of a day's info (see `of`). A played day reads its day log entry, today reads the body now.
+static func _add_health(info: Dictionary, entry: Dictionary) -> void:
+	var h := HealthUI.system()
+	if h == null:
+		return
+	if info.played:
+		var levels: Dictionary = entry.get("soreness", {})
+		for id in levels:
+			info.sore_areas.append({"id": id, "name": HealthUI.area_name(id), "level": int(levels[id])})
+		info.health = entry.get("health", []).duplicate()
+	elif info.today:
+		for x in HealthUI.sore_areas():
+			info.sore_areas.append({"id": x.id, "name": x.name, "level": int(x.level)})
+		info.health = h.active().map(func(x): return x.id)
+	for x in info.sore_areas:
+		info.sore = maxi(info.sore, int(x.level))
+	info.tier = HealthUI.worst_tier(info.health)
+	if info.limited and info.tier == "":   # a coming day with limits: the problems that exist now
+		info.tier = HealthUI.worst_tier(h.active().map(func(x): return x.id))
 
 
 ## The month most of the week is in (what the training model uses for the whole week).

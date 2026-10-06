@@ -132,6 +132,23 @@ func withdraw(meet_key: String) -> void:
 	entries.erase(meet_key)
 
 
+## The player scratches from an entered race (doesn't start): the entry is withdrawn and that day becomes
+## a training day again. Works before the day (the race is still only in the week) and on race day itself,
+## when the race screen is waiting (`race_day`); then the day is still to be played, as a training day.
+func scratch_race(meet_key: String) -> void:
+	var meet := Calendar.get_meet(meet_key)
+	withdraw(meet_key)
+	if race_day != null and race_day.meet.key == meet_key:
+		race_day = null
+		_playing_week = false
+	if not meet.is_empty() and Calendar.date_key(meet.date) == Calendar.date_key(date):
+		post_event("player", "Scratched: %s" % meet.get("name", meet_key), "You decided not to start.")
+	current_week()   # the week's races follow the entries: the day is a training day now
+	var health := get_system("health") as HealthSystem
+	if health:
+		health.refresh()   # injury limits for the day that was a race day
+
+
 ## The next entered meet from today on, or {}.
 func next_race() -> Dictionary:
 	for m in Calendar.meets_between(date, add_days(date, 400)):

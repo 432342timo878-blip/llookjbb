@@ -169,6 +169,16 @@ func _show_pre() -> void:
 	var cond := UIKit.label("Feeling %s (fatigue %d)" % [state[0].to_lower(), roundi(_rd.fatigue)])
 	cond.add_theme_color_override("font_color", state[1])
 	side.add_child(cond)
+	# Racing with a niggle or a cold: slower, and it may get worse (GDD 4.6).
+	var injured := HealthUI.race_card(HealthUI.race_outlook(Game.current_week().day), true)
+	# Scratching (not starting) is possible in the first round; when injured it sits right under the warning.
+	var scratch: Control = null
+	if _rd.round_index == 0:
+		scratch = HealthUI.scratch_control(_rd.meet, func(): Router.go("career_hub"))
+	if injured != null:
+		side.add_child(injured)
+		if scratch != null:
+			side.add_child(scratch)
 	var standard := Calendar.standard_text(a, _rd.meet)
 	if standard != "":
 		side.add_child(UIKit.wrapped(standard))
@@ -189,6 +199,8 @@ func _show_pre() -> void:
 	buttons.add_child(quick)
 	buttons.add_child(watch)
 	side.add_child(buttons)
+	if injured == null and scratch != null:   # (once you've run a heat, you finish the meet: no scratch in the final)
+		side.add_child(scratch)
 	var side_panel := UIKit.panel(side, 16)
 	side_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 
@@ -201,13 +213,18 @@ func _show_pre() -> void:
 		_set_body(scroll)
 		return
 	side_panel.custom_minimum_size.x = 440
+	side_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(field_panel)
+	var side_scroll := ScrollContainer.new()   # the plan, buttons and health warning can be taller than a short window
+	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side_scroll.custom_minimum_size.x = 440.0 + 12.0
+	side_scroll.add_child(side_panel)
 	var row := UIKit.hbox(16)
 	row.add_child(scroll)
-	row.add_child(side_panel)
+	row.add_child(side_scroll)
 	_set_body(row)
 
 

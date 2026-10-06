@@ -1,33 +1,32 @@
 class_name TodayCard
 extends PanelContainer
-## The Today card at the top of Overview (GDD 4.5): today's sessions and intensity (or rest day / the race),
-## how you feel, warning signs, and the next race. Tapping it opens today's day editor (`pressed`).
+## The Today card at the top of Overview (GDD 4.5, 4.6): today's sessions and intensity (or rest day / the race),
+## how you feel, and the next race. Tapping that top part opens today's day editor (`pressed`).
+## Under it the health part: warning signs (soreness per body area, in words and colour, tap an area for why and
+## what helps) next to the active injuries and illnesses (phase, what's allowed, expected return).
 
 signal pressed
 
 const FEEL := {"Fresh": "Your legs feel light.", "Normal": "You feel fine.",
 		"Tired": "Your legs feel heavy.", "Exhausted": "You're running on empty."}
 
-var _content: MarginContainer
+var _rows: VBoxContainer
+var _open_areas := {}   # soreness rows that are open (area id -> bool), kept when the card redraws
 
 
 func _init() -> void:
-	_content = MarginContainer.new()
-	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
-		_content.add_theme_constant_override("margin_" + side, 14 if Layout.compact else 18)
-	add_child(_content)
-	var button := Button.new()   # laid over the whole card
-	button.theme_type_variation = "CardOverlay"
-	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	button.pressed.connect(func(): pressed.emit())
-	add_child(button)
+		margin.add_theme_constant_override("margin_" + side, 14 if Layout.compact else 18)
+	add_child(margin)
+	_rows = UIKit.vbox(12)
+	margin.add_child(_rows)
 	refresh()
 
 
 func refresh() -> void:
-	for c in _content.get_children():
-		_content.remove_child(c)
+	for c in _rows.get_children():
+		_rows.remove_child(c)
 		c.queue_free()
 	var info := DayInfo.of(Game.current_week(), Calendar.weekday(Game.date))
 	var columns := UIKit.flex(24 if not Layout.compact else 14)
@@ -35,7 +34,26 @@ func refresh() -> void:
 	columns.add_child(_today(info))
 	columns.add_child(_feel())
 	columns.add_child(_next_race(info))
-	_content.add_child(columns)
+	# The top part is one big button (tap = today's editor); the health part below has its own taps.
+	var top := PanelContainer.new()
+	top.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	top.add_child(columns)
+	var button := Button.new()
+	button.theme_type_variation = "CardOverlay"
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(func(): pressed.emit())
+	top.add_child(button)
+	_rows.add_child(top)
+	var health := HealthUI.warning_sections(_open_areas)
+	if health != null:
+		_rows.add_child(HSeparator.new())
+		_rows.add_child(health)
+
+
+## Opens the soreness row of an area (for screenshots and the layout check).
+func open_area(area_id: String) -> void:
+	_open_areas[area_id] = true
+	refresh()
 
 
 func _column() -> VBoxContainer:
@@ -75,15 +93,7 @@ func _feel() -> Control:
 	var fatigue := Game.athlete.fatigue
 	col.add_child(UIKit.fatigue_label(fatigue))
 	col.add_child(UIKit.wrapped(FEEL.get(Training.fatigue_state(fatigue)[0], ""), "MutedLabel"))
-	_warning_signs(col)
 	return col
-
-
-## Body warning signs (soreness per area, GDD 4.6) come with the health UI (M2 step 4). Until the health
-## model exists there is nothing to warn about.
-func _warning_signs(col: VBoxContainer) -> void:
-	col.add_child(UIKit.label("WARNING SIGNS", "CaptionLabel"))
-	col.add_child(UIKit.wrapped("None.", "MutedLabel"))
 
 
 func _next_race(info: Dictionary) -> Control:

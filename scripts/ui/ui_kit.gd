@@ -46,6 +46,39 @@ static func panel(content: Control, padding := 16) -> PanelContainer:
 	return p
 
 
+## A panel with a thick coloured edge on the left: used for warnings, injuries and soreness (the colour says how serious).
+static func alert_panel(content: Control, color: Color, padding := 12) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", alert_style(color, padding))
+	p.add_child(content)
+	return p
+
+
+static func alert_style(color: Color, padding := 12) -> StyleBoxFlat:
+	var box := ThemeBuilder.card_box(false)
+	box.border_width_left = 5
+	box.border_color = color
+	box.content_margin_left = padding + 2
+	box.content_margin_right = padding
+	box.content_margin_top = padding - 2
+	box.content_margin_bottom = padding - 2
+	return box
+
+
+## A small coloured badge with one character in it ("!" warning, "+" injury): week strip markers.
+static func badge(text: String, color: Color, size := 16.0) -> Panel:
+	var p := dot(color, size, size)
+	var l := label(text, "CaptionLabel")
+	l.add_theme_color_override("font_color", Palette.BG)
+	l.add_theme_font_size_override("font_size", int(size * 0.72))
+	l.set_anchors_preset(Control.PRESET_FULL_RECT)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(l)
+	return p
+
+
 static func vbox(separation := 12) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", separation)

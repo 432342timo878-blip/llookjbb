@@ -40,6 +40,7 @@ func _run() -> void:
 	_check_model_off()
 	_check_detraining()
 	_check_ui_data()
+	_check_health_ui()
 	_check_rivals()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
@@ -376,6 +377,147 @@ func _check_ui_data() -> void:
 	_ok("proneness stays hidden until repeated injuries", not health.proneness_hint())
 
 
+## The health UI (M2 step 4): the pieces build, read the model correctly, and the actions work (scratching a race,
+## training through, banned sessions). The pictures themselves are checked with the tour and layout_check.
+func _check_health_ui() -> void:
+	print("-- health UI (step 4)")
+	var UI = load("res://scripts/ui/health_ui.gd")
+	var Panels = load("res://scripts/ui/health_event_panel.gd")
+	var DI = load("res://scripts/ui/day_info.gd")
+	var Strip = load("res://scripts/ui/week_strip.gd")
+	var Card = load("res://scripts/ui/today_card.gd")
+	var WS = load("res://scripts/core/week_sim.gd")
+	var Tr = load("res://scripts/core/training.gd")
+	_new_career(23, 14)
+	var health = game.get_system("health")
+	health._ensure_started()
+
+	# Words and numbers.
+	_ok("load vs normal is capped: 450% reads 'over 300 %'", UI.load_text(450) == "over 300 %" and UI.load_text(120) == "120 %")
+	_ok("slowdown as a percentage: 1.5 % and 2 %", UI.percent_text(0.015) == "1.5 %" and UI.percent_text(0.02) == "2 %")
+	var empty_week = WS.new(game.athlete, Tr.empty_plan(), game.week_monday())
+	_ok("a plan passed in: an all-rest plan is 0 % of normal", health.load_vs_normal(empty_week) == 0)
+	for plan in [Tr.coach_plan(), HARD, Tr.empty_plan()]:
+		var section = UI.plan_section(plan)
+		_ok("body strain section builds for any plan (%d sessions a week)" % plan.reduce(func(n, d): return n + d.size(), 0),
+				section != null and section.get_child_count() >= 3)
+		section.free()
+
+	# Soreness rows and injury blocks.
+	var none = UI.soreness_list({})
+	_ok("no soreness: one line saying so", none is Label and none.text.begins_with("No soreness"))
+	none.free()
+	health.strain["shins"] = 36.0
+	health.strain["calves"] = 75.0
+	var list = UI.soreness_list({})
+	var rows: Array = list.get_children().filter(func(c): return c is PanelContainer)   # (the rest is a hint line)
+	_ok("two sore areas: two rows", rows.size() == 2 and UI.sore_areas().size() == 2)
+	list.free()
+	health.strain["shins"] = 0.0
+	health.strain["calves"] = 0.0
+	for id in ["shin_splints", "tibial_stress_fracture", "cold", "ankle_sprain"]:
+		health.injuries.clear()
+		health._start(data.get_injury(id), game.date, [])
+		var block = UI.injury_block(health.active()[0])
+		_ok("injury block builds: %s (%s)" % [id, health.active()[0].tier], block != null and block.get_child_count() >= 1)
+		block.free()
+	health.injuries.clear()
+
+	# Racing outlook and the banned sessions.
+	_ok("healthy: fit to race", UI.race_outlook(0).state == "fit" and UI.race_card(UI.race_outlook(0), true) == null)
+	health._start(data.get_injury("shin_splints"), game.date, [])
+	health._apply_restrictions(game.current_week())
+	var outlook: Dictionary = UI.race_outlook(0)
+	_ok("niggle: limited, slower (%s)" % UI.percent_text(outlook.slowdown), outlook.state == "limited" and outlook.slowdown > 0.0)
+	_ok("… with a warning card", _made(UI.race_card(outlook, true)))
+	_ok("banned session: reason shown (Long run)", UI.ban_reason("long_run", 0).begins_with("Shin splints"))
+	_ok("training through offered for a niggle", _made(UI.through_control(0, func(): pass)))
+	health.override_day(0)
+	_ok("trained through: nothing is banned any more, and the editor knows", UI.is_overridden(0) and UI.ban_reason("long_run", 0) == "")
+	health.injuries.clear()
+	health._start(data.get_injury("tibial_stress_reaction"), game.date, [])
+	health._apply_restrictions(game.current_week())
+	_ok("locked: can't race, no 'train through'", UI.race_outlook(0).state == "locked" and not _made(UI.through_control(1, func(): pass)))
+	_ok("locked: the race warning says so", _made(UI.race_card(UI.race_outlook(0), true)))
+	health.injuries.clear()
+	health.overrides.clear()
+
+	# Day info and the strip: sore and injured days are marked.
+	game.training_plan = HARD.duplicate(true)
+	health.strain["shins"] = 40.0
+	health._start(data.get_injury("shin_splints"), game.date, [])
+	health._apply_restrictions(game.current_week())
+	_advance()
+	var week = game.current_week()
+	var played: Dictionary = DI.of(week, 0)
+	_ok("played day: soreness and the injury come from the day log", played.sore >= 1 and "shin_splints" in played.health
+			and played.tier == "niggle")
+	var limited_days := 0
+	for d in range(1, 7):
+		var info: Dictionary = DI.of(week, d)
+		if info.limited and info.tier == "niggle":
+			limited_days += 1
+	_ok("coming days the injury changed carry the marker (%d)" % limited_days, limited_days >= 1)
+	var strip = Strip.new()
+	strip.refresh()
+	_ok("the week strip builds with health markers", strip.get_child_count() == 7)
+	strip.free()
+	var card = Card.new()
+	_ok("the Today card builds with an injury and soreness", card.get_child_count() == 1)
+	card.free()
+
+	# The styled events: a diagnosis and the "sore" warning.
+	health.injuries.clear()
+	health.levels.clear()
+	health.warned.clear()
+	var news := []
+	health._start(data.get_injury("hamstring_strain"), game.date, news)
+	health._post_diagnosis(news[0])
+	var event: Dictionary = game.pending_event()
+	_ok("a diagnosis event is drawn by the health panel", event.get("kind", "") == "diagnosis" and Panels.handles(event))
+	var panel = Panels.build(event, 400.0, func(_c): pass)
+	_ok("… with the name, facts and an OK button", panel.get_child_count() >= 6)
+	panel.free()
+	game.answer_event(event.id, "ok")
+	health.injuries.clear()
+	health.strain["calves"] = 60.0
+	health.levels.clear()
+	health.warned.clear()
+	health._update_soreness(true)
+	event = game.pending_event()
+	_ok("a 'sore' event is drawn by the health panel", event.get("kind", "") == "sore" and Panels.handles(event))
+	panel = Panels.build(event, 400.0, func(_c): pass)
+	_ok("… with its three choices", panel.get_child_count() >= 6)
+	panel.free()
+	game.answer_event(event.id, "keep")
+	health.strain["calves"] = 0.0
+
+	# Scratching a race: before the day, and on race day when the race screen is waiting.
+	_new_career(24, 15)
+	var meet := {}
+	for m in Cal.meets_between(game.date, game.add_days(game.date, 120)):
+		if Cal.coach_recommends(game.athlete, m, game.date):
+			meet = m
+			break
+	game.enter(meet.key)
+	while Cal.days_between(game.date, meet.date) > 3:
+		_advance()
+	game.scratch_race(meet.key)
+	_ok("scratched in advance: no race day in the week", not meet.key in game.entries
+			and not game.current_week().is_race_day(Cal.weekday(meet.date)))
+	game.enter(meet.key)
+	while Cal.days_between(game.date, meet.date) > 0:
+		_advance()
+	var result: String = game.advance_day()
+	_ok("race day: the race screen is waiting (%s)" % result, result == game.RACE and game.race_day != null)
+	game.scratch_race(meet.key)
+	_ok("scratched on race day: no race waiting, entry gone", game.race_day == null and not meet.key in game.entries)
+	_ok("… an event says so", game.events.any(func(e): return e.title.begins_with("Scratched")))
+	result = game.advance_day()
+	_ok("… the day then plays as a training day", result != game.RACE and game.day_log[-1].race == ""
+			and game.day_log[-1].date == meet.date)
+
+
 ## Rivals get injured now and then, and injured rivals don't race.
 func _check_rivals() -> void:
 	print("-- rival injuries")
@@ -389,6 +531,14 @@ func _check_rivals() -> void:
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
+## True when a UI piece was built (and frees it: checks build real controls).
+func _made(control) -> bool:
+	if control == null:
+		return false
+	control.free()
+	return true
+
 
 func _new_career(seed_value: int, health_seed: int) -> void:
 	var rng := RandomNumberGenerator.new()

@@ -290,6 +290,7 @@ func _check_ui_models() -> void:
 	var Editor = load("res://scripts/ui/day_editor.gd")
 	var Card = load("res://scripts/ui/today_card.gd")
 	var Report = load("res://scripts/ui/report_view.gd")
+	var DayInfoClass = load("res://scripts/ui/day_info.gd")
 	var meet := {}
 	for m in Cal.meets_between(game.date, game.add_days(game.date, 120)):
 		if Cal.coach_recommends(game.athlete, m, game.date):
@@ -332,7 +333,10 @@ func _check_ui_models() -> void:
 		built += 1 if editor.get_child_count() >= 2 else 0
 	_ok("day editor builds for all 7 days (played, changed, rest, plain)", built == 7)
 	var card = Card.new()
-	_ok("Today card builds", card.get_child_count() == 2)
+	_ok("Today card builds", card.get_child_count() == 1)   # one padded column: the top part is a button, the health part its own taps
+	var info: Dictionary = DayInfoClass.of(game.current_week(), 0)
+	_ok("day info has the health fields (empty with the health model off)", info.has("sore") and info.sore == 0
+			and info.health.is_empty() and info.limited == false and info.tier == "")
 	var report = Report.new()
 	root.add_child(report)   # ReportView builds itself when it enters the tree
 	_ok("Report builds", report.get_child_count() >= 3)

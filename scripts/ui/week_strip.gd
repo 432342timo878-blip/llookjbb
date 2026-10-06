@@ -3,6 +3,7 @@ extends HBoxContainer
 ## The week strip (GDD 4.5 "Hub UI"): seven cells for Mon–Sun of the current week, under the header.
 ## Each cell shows the date, one marker per session (colour = intensity: blue Easy, grey Normal, red Hard),
 ## a RACE badge on race days, a dot when the day was changed, and for played days a fatigue dot (dimmed).
+## Health: a round "!" on days you were sore and a "+" on days an injury or illness limited (see _health_marks).
 ## Today has an accent border; `selected` (the day open in the day editor) a bright one.
 ## Tapping a cell emits `day_pressed`. On a phone the cells are ~62 px wide and show the day letter, the
 ## day of the month and the markers; on PC they also show the session names.
@@ -97,6 +98,10 @@ func _cell(info: Dictionary) -> Control:
 			line.add_child(l)
 			col.add_child(line)
 
+	var marks := _health_marks(info)
+	if marks != null:
+		col.add_child(marks)
+
 	# Bottom: race badge, or (PC) the fatigue word of a played day.
 	if not info.race.is_empty():
 		var badge := PanelContainer.new()
@@ -131,6 +136,21 @@ func _cell(info: Dictionary) -> Control:
 	button.pressed.connect(func(): day_pressed.emit(info.day))
 	cell.add_child(button)
 	return cell
+
+
+## Health markers (GDD 4.6): a round "!" on a day you were sore (its colour = how sore: amber / orange / red),
+## a "+" on a day an injury or illness limited (the colour = how serious). Null on a healthy day.
+func _health_marks(info: Dictionary) -> Control:
+	var injured: bool = info.limited or not info.health.is_empty()
+	if int(info.sore) == 0 and not injured:
+		return null
+	var row := UIKit.hbox(3)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if int(info.sore) > 0:
+		row.add_child(UIKit.badge("!", HealthUI.level_color(int(info.sore)), 16))
+	if injured:
+		row.add_child(UIKit.badge("+", HealthUI.tier_color(info.tier if info.tier != "" else "injury"), 16))
+	return row
 
 
 func _cell_style(info: Dictionary) -> StyleBoxFlat:

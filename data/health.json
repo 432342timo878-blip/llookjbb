@@ -40,6 +40,17 @@
   "names": ["None", "A bit sore", "Sore", "Painful"]
  },
 
+ "ui": {
+  "_note": "Display only (M2 step 4, the health UI): nothing here changes the model. load_cap = 'load vs your normal' is shown as 'over N %' above this; load_low / load_high = the percentages where the words change (a lighter week / a step up above data strain.spike.free_ratio / a big jump). soreness_hints = the one-line advice shown with each soreness level.",
+  "load_cap": 300, "load_low": 70, "load_high": 160,
+  "soreness_hints": [
+   "",
+   "An early warning. This is the cheapest moment to ease off: a lighter day or two now usually stops it turning into a real problem.",
+   "Your body is asking for a break. Training on through this is how most running injuries start.",
+   "Painful: this area is close to giving way. Rest it. If you carry on, expect it to become an injury."
+  ]
+ },
+
  "strain": {
   "_note": "What adds strain on top of the session's own numbers, and what makes it fade faster. Every multiplier is 1.0 for an average athlete on a normal day.",
   "fatigue_from": 30, "fatigue_extra": 0.25,

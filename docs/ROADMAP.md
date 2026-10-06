@@ -39,9 +39,12 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       watch a season with `tools/health_season.gd`, H key in the hub prints the hidden numbers. First-pass numbers
       in GDD 4.6 "Built (step 3)" (running detraining added after the first pass, so ignoring warnings no longer pays);
       the small open points go to step 5.
-- [ ] **4. Health UI:** soreness on Today card + strip markers, diagnosis panel, "sore" stop decision, banned
+- [x] **4. Health UI:** soreness on Today card + strip markers, diagnosis panel, "sore" stop decision, banned
       sessions + override warnings, scratch / race injured (slower, may worsen), load vs normal and plan risk in
       the Training tab. *(Sonnet)*
+      Done: model untouched (only `Game.scratch_race` added and display texts in `data/health.json` `ui`); also the
+      Report tab's health lines and the Ctrl+S save. Checks: `health_check.gd` (health UI section), seeded health
+      states in `screenshot_tour.gd` and `layout_check.gd` (no overflow at 5 window sizes). Details: GDD 4.6 "Built (step 4)".
 - [ ] **5. Balance & playtest:** tune to the GDD 4.6 targets, play through a season on PC and phone, fix rough
       edges, update docs. *(Sonnet; Opus if tuning gets stuck)*
 - [ ] **6. Season periodization (design + build):** the weekly plan follows the training year instead of repeating
@@ -60,7 +63,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 - [ ] School (grades, exams vs meets, Finnish school calendar)
 
 ## Ideas backlog (from the user, 2026-10-06; placement is Claude's proposal, not yet designed)
-- **Ctrl+S to save:** tiny. Do it in M2 step 4 (hub UI session): same as the Save button (new snapshot, "Saved ✓" feedback), desktop only. *(Sonnet)*
+- ~~**Ctrl+S to save**~~ — done in M2 step 4 (same as the Save button, "Saved ✓", desktop only).
 - **Choose your birth date:** birth date is already an input to `AthleteFactory`. Day + month inside the starting
   birth year is safe (same age class); other years change the start age, eligible meets and the rival cohort, so
   that waits until more age classes exist (M4+). Small character-creation task after step 5. *(Sonnet)*

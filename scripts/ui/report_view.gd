@@ -11,6 +11,9 @@ func _init() -> void:
 
 func _ready() -> void:
 	var monday := Game.week_monday()
+	var note := HealthUI.proneness_note()   # after repeated injuries
+	if note != null:
+		add_child(note)
 	add_child(UIKit.label("This week", "HeadingLabel"))
 	add_child(UIKit.wrapped(_range(monday), "MutedLabel"))
 	_add_days(monday, "No days played yet this week. Press Next day or Play week.")
@@ -70,6 +73,10 @@ func _day_row(e: Dictionary) -> Control:
 			meta.append(DayInfo.intensity_name(e.intensity))
 	meta.append("load %d" % roundi(e.load))
 	box.add_child(UIKit.wrapped(" · ".join(meta), "MutedLabel"))
+	for line in _health_lines(e):
+		var l := UIKit.wrapped(line.text, "")
+		l.add_theme_color_override("font_color", line.color)
+		box.add_child(l)
 	for ev in DayInfo.events_of(e):
 		var line: String = "• " + ev.title
 		if ev.answer != "":
@@ -80,7 +87,57 @@ func _day_row(e: Dictionary) -> Control:
 	return box
 
 
+## The health side of a played day (from its day log entry): injuries and illnesses that were active
+## after the day, and sore areas. [{text, color}], empty on a healthy day or with the health model off.
+func _health_lines(e: Dictionary) -> Array:
+	var lines := []
+	if HealthUI.system() == null:
+		return lines
+	for id in e.get("health", []):
+		var data := Data.get_injury(str(id))
+		if not data.is_empty():
+			lines.append({"text": "%s (%s)" % [data.name, str(HealthUI.TIER_NAMES[data.tier]).to_lower()],
+					"color": HealthUI.tier_color(data.tier)})
+	var levels: Dictionary = e.get("soreness", {})
+	var worst := 0
+	var parts := []
+	for area in HealthSystem.areas():   # in the body areas' order
+		var level := int(levels.get(area.id, 0))
+		if level > 0:
+			worst = maxi(worst, level)
+			parts.append("%s %s" % [area.name.to_lower(), HealthUI.level_word(level).to_lower()])
+	if not parts.is_empty():
+		lines.append({"text": "Sore: " + ", ".join(parts), "color": HealthUI.level_color(worst)})
+	return lines
+
+
 # --- Last week ---------------------------------------------------------------------------------------
+
+## One line about the week's injuries, illnesses and soreness from the day log ("" when it was a healthy week).
+func _week_health(monday: Dictionary) -> String:
+	if HealthUI.system() == null:
+		return ""
+	var lo := Calendar.date_key(monday)
+	var hi := Calendar.date_key(Game.add_days(monday, 6))
+	var names := []
+	var sore_days := 0
+	for e in Game.day_log:
+		var key := Calendar.date_key(e.date)
+		if key < lo or key > hi:
+			continue
+		for id in e.get("health", []):
+			var n: String = Data.get_injury(str(id)).get("name", id)
+			if not n in names:
+				names.append(n)
+		if not e.get("soreness", {}).is_empty():
+			sore_days += 1
+	var parts := []
+	if not names.is_empty():
+		parts.append(", ".join(names))
+	if sore_days > 0:
+		parts.append("sore on %d day%s" % [sore_days, "" if sore_days == 1 else "s"])
+	return "; ".join(parts)
+
 
 func _add_last_week(r: Dictionary) -> void:
 	var a := Game.athlete
@@ -97,6 +154,9 @@ func _add_last_week(r: Dictionary) -> void:
 	fat.add_child(UIKit.label("→", "MutedLabel"))
 	fat.add_child(UIKit.fatigue_label(r.fatigue_end))
 	facts.add_child(UIKit.fact_row("Fatigue (Mon → Sun)", fat))
+	var health := _week_health(r.monday)
+	if health != "":
+		facts.add_child(UIKit.wrapped("Health: " + health, ""))
 	add_child(UIKit.panel(facts, 16))
 
 	for note in r.notes:

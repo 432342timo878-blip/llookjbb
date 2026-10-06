@@ -171,8 +171,235 @@ func _run() -> void:
 	hub._open_day(4)
 	await _frames(6)
 	await _shot("18_day_editor_after_load")
+	hub._close_day()
+	await _health_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- The health UI (M2 step 4): seeded states, the health model on --------------------------------------------
+
+const HARD := [["intervals_800", "strength"], ["tempo_run", "drills"], ["long_run"], ["intervals_800", "hill_sprints"],
+		["tempo_run"], ["long_run", "speed_strides"], ["fartlek"]]
+
+
+func _health_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var data = main.get_node("/root/Data")
+	var router = main.get_node("/root/Router")
+	var cal = load("res://scripts/core/calendar.gd")
+	load("res://scripts/core/health_system.gd").model_enabled = true
+	var health = game.get_system("health")
+	health.rng.seed = 7
+	health._ensure_started()
+	var hub := hub_in
+
+	# 1. Sore: shins and Achilles a bit sore. The Today card, a row opened, then calves sore and a played day:
+	#    the "sore" stop event, and the week strip with its "!" marker.
+	_reset_health(game, health)
+	health.strain["shins"] = 36.0
+	health.strain["achilles"] = 33.0
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(6)
+	await _shot("19_health_today_card")
+	hub._today_card.open_area("shins")
+	await _frames(4)
+	await _shot("19b_health_soreness_row_open")
+	health.strain["calves"] = 62.0
+	hub._on_advance(false)
+	await _frames(6)
+	print("health tour: pending event after the sore day: ", game.pending_event().get("kind", "none"))
+	await _shot("19c_health_sore_stop_event")
+	if not game.pending_event().is_empty():
+		hub._on_event_answer(game.pending_event().id, "easy")
+	await _frames(6)
+	await _shot("19d_health_strip_markers")
+	hub._open_day(cal.weekday(game.date))
+	await _frames(6)
+	await _shot("19e_health_editor_sore_today")
+	hub._close_day()
+
+	# 2. A niggle (shin splints): the diagnosis panel, the Today card, the day editor with limits and the
+	#    "train through it" warning.
+	_reset_health(game, health)
+	await _new_problem(game, hub, health, data, "shin_splints")
+	await _shot("20_health_diagnosis_niggle")
+	hub._on_event_answer(game.pending_event().id, "ok")
+	await _frames(6)
+	await _shot("20b_health_today_injured")
+	hub._open_day(cal.weekday(game.date))
+	await _frames(6)
+	await _shot("20c_health_editor_limits")
+	var through := _find_button(hub, "Train through it…")
+	if through:
+		through.pressed.emit()
+		await _frames(6)
+		await _shot("20d_health_train_through_warning")
+	hub._close_day()
+
+	# 3. A locked injury (shin stress reaction): diagnosis, Today card, day editor without an override.
+	_reset_health(game, health)
+	await _new_problem(game, hub, health, data, "tibial_stress_reaction")
+	await _shot("21_health_diagnosis_locked")
+	hub._on_event_answer(game.pending_event().id, "ok")
+	await _frames(6)
+	await _shot("21b_health_today_locked")
+	hub._open_day(cal.weekday(game.date))
+	await _frames(6)
+	await _shot("21c_health_editor_locked")
+	hub._close_day()
+
+	# 4. The Training tab: load vs your normal and plan risk, for the coach plan and for a hard plan.
+	_reset_health(game, health)
+	hub._show("training")
+	await _frames(6)
+	await _scroll_to_label(hub, "BODY STRAIN")
+	await _shot("22_health_training_coach_plan")
+	game.training_plan = HARD.duplicate(true)
+	hub._show("training")
+	await _frames(6)
+	await _scroll_to_label(hub, "BODY STRAIN")
+	await _shot("22b_health_training_hard_plan")
+	game.training_plan = load("res://scripts/core/training.gd").coach_plan()
+
+	# 5. The Report tab: an injury and sore days in the log, and the proneness hint (two earlier injuries).
+	for i in 2:
+		health.history.append({"id": "calf_tightness", "first": "calf_tightness", "tier": "niggle", "area": "calves",
+				"cause": "overuse", "started": game.add_days(game.date, -40 - i * 30), "days": [7], "phase": 1, "left": 0,
+				"through_days": 0, "warning": 0, "escalated": false, "healed": game.add_days(game.date, -30 - i * 30),
+				"healed_no": health.day_no - 30})
+	health.strain["shins"] = 36.0
+	await _new_problem(game, hub, health, data, "shin_splints")
+	hub._on_event_answer(game.pending_event().id, "ok")
+	_quiet_day(game)
+	_quiet_day(game)
+	hub._refresh_week_ui()
+	hub._show("report")
+	await _frames(6)
+	await _shot("23_health_report")
+
+	# 6. Racing injured: the next race with shin splints that last. The day editor on race day (with the scratch
+	#    button asking once more), then the race screen (slower, may get worse, scratch).
+	_reset_health(game, health)
+	await _new_problem(game, hub, health, data, "shin_splints")
+	hub._on_event_answer(game.pending_event().id, "ok")
+	health.injuries[0].days = [90]
+	health.injuries[0].left = 90
+	var race: Dictionary = game.next_race()
+	var guard := 0
+	while not race.is_empty() and guard < 400 and not (cal.monday_of(race.date) == game.week_monday()
+			and cal.date_key(game.date) <= cal.date_key(race.date)):
+		guard += 1
+		_quiet_day(game)
+	hub._refresh_week_ui()
+	hub._show("overview")
+	hub._open_day(cal.weekday(race.date))
+	await _frames(6)
+	await _shot("24_health_race_day_injured")
+	var scratch := _find_button(hub, "Scratch from this race")
+	if scratch:
+		scratch.pressed.emit()
+		await _frames(4)
+		await _shot("24b_health_scratch_confirm")
+	hub._close_day()
+	var reached: bool = game.race_day != null
+	while not reached and guard < 500:
+		guard += 1
+		reached = game.advance_day() == game.RACE
+		while not reached and not game.pending_event().is_empty():
+			var e: Dictionary = game.pending_event()
+			game.answer_event(e.id, "keep" if e.get("kind", "") == "sore" else "ok")
+	print("health tour: reached the race day injured: ", reached)
+	if reached:
+		router.go("race")
+		await _frames(6)
+		await _shot("25_health_race_screen_injured")
+		_find_button(main, "Scratch from this race").pressed.emit()
+		await _frames(4)
+		await _shot("25b_health_race_scratch_confirm")
+		_find_button(main, "Yes, scratch").pressed.emit()
+		await _frames(8)
+		hub = main.get_node("ScreenHost").get_child(-1)
+		print("health tour: scratched: entry gone ", not race.key in game.entries, ", no race waiting ", game.race_day == null)
+		await _shot("25c_health_after_scratch")
+
+	# 7. Ctrl+S saves: the Save button says "Saved ✓".
+	var key := InputEventKey.new()
+	key.keycode = KEY_S
+	key.ctrl_pressed = true
+	key.pressed = true
+	hub._unhandled_key_input(key)
+	await _frames(3)
+	await _shot("26_health_ctrl_s_saved")
+	load("res://scripts/core/health_system.gd").model_enabled = false
+
+
+## Back to a healthy body: no strain, no injuries, no leftover warnings.
+func _reset_health(game, health) -> void:
+	for area_id in health.strain:
+		health.strain[area_id] = 0.0
+	health.injuries.clear()
+	health.levels.clear()
+	health.warned.clear()
+	health.last_level.clear()
+	health.overrides.clear()
+	health._apply_restrictions(game.current_week())
+
+
+## Starts an injury (the same steps the model takes) and shows its diagnosis panel in the hub.
+func _new_problem(game, hub: Control, health, data, injury_id: String) -> void:
+	var news := []
+	health._start(data.get_injury(injury_id), game.date, news)
+	health._post_diagnosis(news[0])
+	health._apply_restrictions(game.current_week())
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+
+
+## One day with Next day; a race is run in quick mode, stop events are answered.
+func _quiet_day(game) -> void:
+	if game.advance_day() == game.RACE:
+		var rd = game.race_day
+		while not rd.is_done():
+			var race = rd.start_round(false, "pack")
+			race.run()
+			rd.finish_round()
+		game.finish_race()
+	while not game.pending_event().is_empty():
+		var e: Dictionary = game.pending_event()
+		game.answer_event(e.id, "keep" if e.get("kind", "") == "sore" else "ok")
+
+
+## Scrolls the hub's content so the label with this text is in view (a bit below the top edge).
+func _scroll_to_label(hub: Control, text: String) -> void:
+	var label := _find_label(hub, text)
+	if label:
+		hub._scroll.ensure_control_visible(label)
+		await _frames(2)
+		hub._scroll.scroll_vertical += 150
+	await _frames(4)
+
+
+func _find_label(node: Node, text: String) -> Label:
+	if node is Label and (node as Label).text == text and (node as Label).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _find_label(c, text)
+		if found:
+			return found
+	return null
+
+
+func _find_button(node: Node, text: String) -> Button:
+	if node is Button and (node as Button).text == text and (node as Button).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _find_button(c, text)
+		if found:
+			return found
+	return null
 
 
 func _frames(n: int) -> void:

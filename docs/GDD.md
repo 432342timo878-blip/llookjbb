@@ -322,6 +322,46 @@ Plan risk at week 12: coach Low 95 %; hard plans split between Low (already adap
   coach plan's niggles mostly come with only a slight warning ("a bit sore"), so step 4 should show "a bit sore"
   clearly on the Today card. (Solved: ignoring warnings no longer out-progresses the coach plan, thanks to running
   detraining.)
+**Built (step 4, 2026-10-06, the health UI; the model's numbers are untouched):** everything under "Warning signs &
+UI" above, on PC and phone, with 44 px targets and no hover-only information. Details chosen while building:
+- **Today card:** the top part (today, how you feel, next race) is still the button for today's editor. Under it,
+  *Warning signs*: one row per area that is at least a bit sore (amber "A bit sore", orange "Sore", red "Painful"),
+  tap a row for the one-line advice, why it is sore (recent training, a load spike, tired legs, growth spurt, an old
+  injury) and what helps; "No soreness" otherwise, plus a line that "a bit sore" is the early warning (open point 3 of
+  step 3). Next to it *Injury & illness*: tier, phase, what's allowed now, "expected back" (about N days / weeks and a
+  date; it moves later when you train through it), and whether it is locked or "may get worse"; tap for the plain
+  explanation.
+- **Week strip:** a round "!" on days you were sore (colour = how sore; played days from the day log, today from the
+  body now) and a "+" on days an injury or illness limited (colour = tier: niggle amber, injury orange, serious red,
+  illness blue). The Overview's help line explains both.
+- **Diagnosis and "sore" panels:** the same look (caption with the date, heading, explanation, a card with a coloured
+  edge). Diagnosis: tier and area, the explanation, expected time, allowed now, racing (can't / about X % slower and it
+  may get worse), and "Locked" or "You can train through it, but it may get worse"; one OK button. "Sore": the sore
+  areas as the same tappable rows (opened when only one) and the three choices as big buttons with their detail
+  ("Take it easy today" is the highlighted one). The panel scrolls on a short window.
+- **Day editor:** soreness today and an *Injury limits* box (the reasons from the model); banned sessions are greyed out
+  in the pickers as "(not with Shin splints)"; intensity buttons above what the injury allows are disabled; a day that
+  only your injury changed has no "Back to plan" (it would be put straight back). *Train through it…* asks once more
+  with the consequences (more strain, +2 days of recovery per day, what it can turn into) and then uses `override_day`;
+  after that the banned sessions can be picked again and are marked "(against limits)". Not offered when locked.
+  There is no "undo" for training through (the model has no function for it): the plan's own days can be changed.
+- **Race day:** the day editor and the race screen warn when you'd race injured (slower by the injury's share, may get
+  worse) or can't race (locked: you are withdrawn when the day starts, as before), and both have *Scratch from this
+  race* (asks once more) = `Game.scratch_race`: the entry is withdrawn, a race screen that was waiting is dropped, the day
+  becomes a training day with the injury limits, and an event "Scratched: …" is logged. On the race screen scratching is
+  only offered in the first round.
+- **Training tab:** "Body strain" under the plan summary: *Load vs your normal* (the plan's week against the average
+  week of your last four, capped at "over 300 %", with a sentence: lighter / about usual / a step up above 120 % / a big
+  jump above 160 %) and *Plan risk* Low / Moderate / High (green / amber / red) with a sentence, and a line for the
+  current week with its day changes. The section works for any plan passed in (`HealthUI.plan_section(plan, week)`), so
+  season periodization (roadmap step 6) can show a phase's plan. Every plan edit (and Coach's plan / Clear week, and
+  entering or withdrawing from a race) re-applies the injury limits to this week and redraws the week strip.
+- **Report tab:** each played day lists its injuries/illnesses and sore areas; last week's facts have a health line; the
+  proneness hint ("You seem to pick up knocks easily") is shown at the top after 3 injuries within a year.
+- **Ctrl+S** saves, like the Save button ("Saved ✓"), desktop only.
+- Display texts and thresholds live in `data/health.json` under `ui` (load cap and the % where the words change, the
+  soreness advice lines); no model numbers were changed.
+
 ### 4.7 Daily events & hooks (M2 foundation, designed 2026-10-05)
 
 Decisions (user, 2026-10-05): **no Inbox tab yet**: events show on the Today card and in the Report's day log (revisit
