@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.5 — 2026-10-06 (M2 step 3: health model built, first tuning pass in 4.6). Living document: updated after each design discussion.
+Version 0.6 — 2026-10-06 (M2 steps 3–5: health model built and tuned, 4.6; step 6 season periodization designed, 4.8). Living document: updated after each design discussion.
 
 ## 1. Vision
 
@@ -85,6 +85,7 @@ Starting levels: physical 4–7, technical 3–6, mental 5–9 before background
 
 Decisions (user, 2026-10-05): attributes shown as whole numbers with green/red **trend arrows** (FM style, no decimals);
 the **club coach gives a starter plan** that the player can edit; the **plan repeats every week** until changed.
+(From M2 step 6 this is the "one repeating week" mode; the default becomes a season plan with phases, see 4.8.)
 
 - **Plan:** Mon–Sun, up to 2 ready-made sessions per day, empty day = rest. Sessions in `data/training.json`
   (easy run, long run, fartlek, tempo, 800 m intervals, speed & strides, hill sprints, start practice, club group session,
@@ -460,7 +461,7 @@ Fixed in step 5:
 
 Suggestions for later (not done): (a) a **return plan** after a layoff: after two weeks out, the unchanged coach
 plan reads "load 168 % of normal, plan risk High" and the player has to rebuild by hand: the coach (Coaching) or the
-periodization step could propose gradual return weeks. (b) **Injuries cost little progress** (see point 2); decide in
+periodization step could propose gradual return weeks. (Designed in 4.8: the club coach's "return block".) (b) **Injuries cost little progress** (see point 2); decide in
 step 7 whether long layoffs should cost more aerobic base. (c) If the Today card still feels busy on a hard plan
 (about 1.5 sore areas on an average day), show the three worst areas and fold the rest into "+2 more". (d) The
 diagnosis panel is dated the evening it happened ("FRI 13 NOV") while the header already shows the next day; "last
@@ -485,11 +486,192 @@ are only weekday/weekend.
   tab now, and later by the coach and school.
 - **Day type:** weekday / weekend now; school days, exams and holidays later.
 
+### 4.8 Season periodization (M2 step 6, designed 2026-10-06)
+
+Decisions (user, 2026-10-06): phases are **tied to target meets**; the player can keep **one repeating week** instead
+(a switch in the Training tab); the player edits **one week per phase and moves phase edges by whole weeks** (plus the
+this-week day changes of 4.5); **lighter weeks come from an automatic rule**; the club coach offers **three season plans
+by load: Steady / Balanced / Ambitious**, shown as cards with a ★ pick, offered once at career start and again each
+autumn; a **return block after a layoff** is offered already in step 6; a small **Form** mechanism (about ±1.5 % of race
+time); the coach proposes the target meets, **up to 3 targets a season**, each with a 10-day **taper**; an **easy day
+before every race** in the race phases; balance targets as in "Balance" below. The rest is Claude's proposal, accepted
+with these answers.
+
+**Why it matters in this model (read before tuning).** Progression has diminishing returns per attribute *per week*
+(4.2), so spreading the stimulus every week is always best: a "base first, specific later" order earns nothing by
+itself. Periodization pays off through (1) **safety**: lighter weeks and gradual build-ups let the body's capacity
+(4.6) follow, so more total load is possible at the same risk; (2) **race-day Form** (below): freshness from a taper and
+sharpness from recent race-specific work; (3) **structure**: the coach's year, with the right sessions in the right
+months (track closed Nov–Apr, skiing Dec–Mar). The weekly progression model itself is **not** changed in step 6.
+
+**Week plan (one storage for both features).** A week plan is
+`{"days": [7 lists of session ids], "intensity": [7 × "easy" / "normal" / "hard"]}` (helpers in a new
+`scripts/core/week_plan.gd`: make, `of(x)` accepts the old plain Array = all Normal, days, intensity, equals).
+`WeekSim` gets `plan_intensity`; `intensity(d)` = the day change, else `plan_intensity[d]` (was always Normal), and "a
+change equal to the plan is dropped" compares against it. With every intensity Normal everything is bit for bit as
+before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected_fatigue / simulate_week` and
+`HealthUI.plan_section` take a week plan (an old Array still works through `WeekPlan.of`).
+
+**Season plan** (`scripts/core/season_plan.gd`, `Game.season`, replaces `Game.training_plan`):
+- `mode`: `"repeat"` (one repeating week = M1 behaviour, `repeat_week`) or `"phases"`.
+- `season`: the start year (the season runs Nov–Oct as in Rankings; its plan starts on the Monday of the week that
+  contains 1 November, e.g. Mon 2 Nov 2026, Mon 30 Oct 2028).
+- `variant`: `"steady"` / `"balanced"` / `"ambitious"` (the coach plan it came from); `targets`: up to 3 meet keys.
+- `phases`: `{type, week (a week plan), edited, lighter (on/off), ramp_weeks}` in skeleton order; `shifts`: the
+  player's moves of each phase edge in whole weeks (relative to the anchors, so a moved target still works).
+- `return_block`: `{start, weeks}` or empty.
+- `week_for(monday)` → `{days, intensity, why (per day, "" or a reason), phase, phase_week, phase_weeks, kind}` with
+  kind `normal` / `lighter` / `taper` / `return`. A pure function of the season plan, the entries and the date: no
+  dice, cheap. `Game.current_week()` sets the week's plan from it every time (it now sets `_week.plan` from the
+  repeating plan), so the strip, the day editor, "Back to plan" and the injury limits (4.6) all keep working
+  unchanged on top of it.
+- Save version 3 stores `season`; a version-2 / version-1 save becomes repeat mode with its `training_plan` and all
+  days Normal (it plays exactly as before), and the Training tab offers the coach's season plans.
+
+**Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
+
+| Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |
+|---|---|---|---|---|
+| General base | season start → indoor specific | 2 Nov → mid-Jan | every 4th week | no |
+| Indoor specific | the 5 weeks up to and including the indoor anchor's week | mid-Jan → SM-hallit 13 Feb | no | yes |
+| Spring base | after indoor specific → pre-competition | mid-Feb → end of Apr | every 4th week | no |
+| Pre-competition | the 4 weeks before race season | May | no | yes |
+| Race season | 10 weeks before the outdoor anchor → 3 weeks after it | end of May → end of Aug | no | yes |
+| Transition | 3 weeks after race season | Sep | no | no |
+| Autumn general | → season end | Oct | no | no |
+
+- **Anchors** = the indoor and outdoor target, or, with no target of that kind, the season's main championship for the
+  athlete's age class (new tag in `data/competitions.json`: `"main": "indoor"` / `"outdoor"`, e.g. SM-hallit 14-15 and
+  Nuorten SM 14-15); with none, the highest-level ★ meet of that season part; with none at all, the phase is left out
+  and the phase before it lasts longer. Next season's age class (16-17) needs its own main meets in the data (to add
+  with sources in step 6b, or the fallback applies).
+- **Edges:** each edge can be moved −4…+4 weeks; every phase keeps at least 1 week. Phases always start on a Monday.
+
+**How a week is built** (`week_for`), in this order; every rule that changes a day writes its `why`:
+1. The phase's week plan.
+2. **Ramp:** the first `ramp_weeks` weeks of a phase blend in from the previous phase's week, a day at a time (as the
+   "ramp" row of `training_balance.gd`). For the very first phase of a career the previous week is today's coach week.
+3. **Lighter week:** in phases with lighter weeks, every 4th week of the phase: every day one intensity step down
+   (Hard → Normal → Easy). Strip markers turn blue. Can be switched off per phase. Not in a taper.
+4. **Easy day before a race:** in race phases, the day before an entered race is Easy (when it is in the same week and
+   not a race or rest day): "Easy: race tomorrow".
+5. **Taper** (numbers in `data/periodization.json`, counted back from the target's race day): days −10…−4 at most one
+   session a day and the long run becomes an easy run; −3 one session at Normal (keeps sharpness); −2 rest; −1 Easy,
+   one session. Wins over rules 3–4.
+6. **Return block** (below) wins over everything.
+Then this week's day changes (player / coach / injury) apply on top, as now.
+
+**Target meets.** The coach proposes the indoor and outdoor main championship. The player can change them or add a
+third (max 3 a season) in the Training tab or with a "Target" toggle on a meet in the Calendar. Marking a target enters
+the meet when allowed. Withdrawing or scratching removes the target. A target gets the taper; the indoor and outdoor
+targets are also the phase anchors (a third target only gets a taper).
+
+**The coach's three plans** (all templates in `data/periodization.json`, per variant and phase; tuned in step 6d):
+- **Steady:** about 80 % of Balanced's load. Low risk, slower progress.
+- **Balanced:** the club coach's normal. Its general-base week is exactly today's coach week, so a new career starts
+  as it does now.
+- **Ambitious:** about 140–160 % of Balanced, built up with `ramp_weeks`. Moderate risk; it pays only if you listen to
+  your body.
+- **The coach's ★** uses only what the player can see: Steady after 2+ injuries in the last 12 months or with
+  durability ≤ 6; Ambitious with durability and professionalism ≥ 12 and no injury in 6 months; otherwise Balanced
+  (thresholds in the data).
+- **Offer:** a new career starts on the ★ plan. On its first day a stop event "Your coach has three plans for the
+  season" offers the three plans and "Decide later in the Training tab". Each autumn (3 weeks before the new season)
+  the same event comes for next season; if ignored, the ★ plan is used. Choosing a plan replaces the phases, after a
+  warning when the player has edited phases ("This replaces your changes to N phases").
+- **First Balanced templates** (Normal unless marked; tuned in 6d):
+
+| Phase | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
+|---|---|---|---|---|---|---|---|
+| General base | easy run + drills | club session | strength + speed & strides | fartlek | mobility | long run | rest |
+| Indoor specific | easy run + drills | 800 m intervals | strength | club session | mobility | long run | rest |
+| Spring base | easy run + drills | tempo run | strength + hill sprints | fartlek | mobility | long run | rest |
+| Pre-competition | easy run + drills | 800 m intervals | strength + speed & strides | fartlek | mobility | club session | rest |
+| Race season | easy run | 800 m intervals | strength + speed & strides | easy run + drills | mobility | club session | long run (Easy) |
+| Transition | mobility | rest | easy run (Easy) | rest | rest | easy run (Easy) | rest |
+| Autumn general | easy run + drills | rest | strength | fartlek | mobility | long run | rest |
+
+**Return block** (the step-5 suggestion "return plan after a layoff"). After 14 or more days in a row without running
+(`HealthSystem.days_without_running`), on the first day running is allowed again, the club coach posts a stop event
+"Easing back in": Accept / No thanks. Accept sets `return_block` from the next day: 2 weeks after 14–27 days out,
+3 after 28–55, 4 after 56+ (data). The block's weeks are worked out from the plan that would apply: return week 1 = at
+most one session a day, all Easy, hard and speed sessions replaced by an easy run; week 2 = one session a day at
+Normal, one hard session kept; the last week = a lighter week; then the normal plan. It works in both modes. The event
+explains the plan risk it avoids ("going straight back to your full plan: High").
+
+**Form** (race day only; switch `Form.enabled`, like `HealthSystem.model_enabled`). A new `FormSystem` (GameSystem
+id `form`, no dice) keeps **sharpness** 0–100: each day `sharpness × 0.93 + Σ session sharp × intensity effect`, with a
+new `sharp` value per session in `data/training.json` (first values: race 15, 800 m intervals 12, club session 7,
+speed & strides 4, fartlek 4, tempo run 3, hill sprints 3, start practice 2). Race-day form, as a share of race time:
+- sharpness term: −0.75 % at 0, 0 at `neutral`, +0.75 % at 2 × `neutral` (capped);
+- freshness term: +0.75 % at fatigue ≤ 8, falling to 0 at fatigue 20;
+- total capped at +1.5 % faster / −1.0 % slower. The existing fatigue rule in `Race` (bonus under 10, slower above 25)
+  stays as it is.
+- `neutral` is calibrated so that the **old repeating coach plan averages 0** over its races (so the race anchors in
+  4.3 stay right); first guess ≈ its steady-state sharpness (~30). Applied like the injury slowdown in
+  `RaceDay._player_entrant`: time × (1 + slowdown − form). All numbers in the data, tuned in 6c.
+- Shown as a word (no %): **Peaking** (≥ +1.0 %), **Sharp** (+0.4…1.0), **OK**, **Rusty** (≤ −0.3 %, little recent
+  race-specific work), and **Tired** when fatigue is over 25. On the Today card (tap = what it means and what builds
+  it) and before a race. Rivals have no form (their consistency spread covers good and bad days; step 7 revisits).
+
+**UI.**
+- **Training tab:** a switch *Season plan* / *One repeating week*.
+  - **Repeat mode:** today's week editor, plus Easy / Normal / Hard per day.
+  - **Season mode:**
+    - *Coach's plans*: three `ChoiceCard`s with average weekly load, highest plan risk, focus and a sentence; ★ on the
+      coach's pick.
+    - *Season*: PC = a Nov–Oct bar with coloured phases, ★ targets and a today marker; phone = a list of phases (name,
+      dates, weeks, "your changes").
+    - *Targets*: change / remove / add, max 3.
+  - **Tapping a phase** opens its editor: the same day pickers plus intensity per day, lighter weeks on/off, ramp
+    weeks, the edges (◀ ▶ by a week), *Back to coach's*, the plan summary and
+    `HealthUI.plan_section(phase week, lead_in)`.
+  - **Future phases:** the lead-in plays the season plan on copies (no dice) from today up to the phase's start, so the
+    risk shown is the real risk of *switching into* that phase. Cost ~6.4 ms per 28 days, so it is computed only for
+    the opened phase and cached until the plan changes. "Load vs" reads *vs the phase before* for a future phase.
+- **Week strip:** a caption above the cells, e.g. "General base · week 3 of 10 · lighter week", "Taper: Nuorten SM in
+  9 days", "Easing back in · week 1 of 3".
+- **Day editor:** the rule's `why` under the plan ("Easy: race tomorrow", "Taper"). "Back to plan" returns to the
+  season plan's day.
+- **Report:** the week's phase and kind in last week's facts. **Calendar:** the Target toggle. 44 px targets, no
+  hover-only info, PC + phone as everywhere.
+
+**Waits for Coaching (M2 part 2):** hiring coaches and specialists (focus plans such as speed vs endurance, plan quality
+that varies with the coach), a coach changing days week by week from the day log and soreness (`by = "coach"`, Accept
+/ Veto, D18), targets suggested from form and results, a physio reading the health model, coach relationships and
+messages. Step 6's club coach only offers data templates, the ★ rule, targets and the return block.
+
+**Balance and verification** (`tools/training_balance.gd`):
+- **Off = identical:** with repeat mode, all intensities Normal and `Form.enabled = false`, parts 1–2 fingerprints must
+  be bit for bit the same (coach 215.999957139 / 13.751549603 / 1203.029795007 …), and `tools/race_balance.gd` the
+  same. Tools that play days must set repeat mode explicitly (new careers start in phases mode and post the offer
+  event, which would stop every loop).
+- **New part 4:** 200 athletes per row, 1 year from 14, health and form on, targets entered. Rows: repeating coach week
+  (reference), Steady, Balanced, Ambitious, each neutral and careful. Prints injuries per year, ability ± standard
+  error, average race-day form at targets and at other races, and how often the season best is run at a target.
+- **Targets** (user, 2026-10-06):
+
+| Row | Injuries/yr | 800 m ability / yr | Other |
+|---|---|---|---|
+| Repeating coach week (reference) | 0.67 | +1.18 | average race-day form ≈ 0 (±0.2 %) |
+| Steady | ≈ 0.4 | ≈ +1.0 | |
+| Balanced | ≤ 0.8 | +1.25–1.35 | clearly faster at targets: form ≈ +0.8…1.3 % there; season best at a target more often than on the repeating week |
+| Ambitious, careful | ≈ 1.3–1.6 | ≈ +1.5–1.6 | (≈ today's "ramp, careful") |
+| Ambitious, neutral | higher than careful | | |
+
+  If a target can't be reached with templates alone (e.g. Balanced above +1.25 without more injuries), the tuning
+  session reports the options instead of changing the model.
+- **Multi-season check** (new `tools/season_check.gd`): 50 athletes, 3 seasons (ages 14–17) on Balanced through the
+  game loop with health on. The offer events are answered by the tool. It checks: the season rollover (new phases,
+  targets for the new age class or the fallback, no week without a plan, the 2028 leap year), save/load at the season
+  boundary continuing bit for bit, and injuries and progress per season not drifting. Longer careers (5–8 seasons) stay
+  in step 7.
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep
 - Mental side, motivation, relationships
-- Coaching
+- Coaching (step 6 prepares it: season plans, `by = "coach"` day changes, the coach event source; see 4.8 "Waits for Coaching")
 - Money, sponsors, equipment
 - Fame, media, rivals
 - School / work–life balance

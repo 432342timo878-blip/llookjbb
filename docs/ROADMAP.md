@@ -62,6 +62,52 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       M1 balance stays identical; it feeds "Load vs your normal" and plan risk (`HealthUI.plan_section(plan)`).
       Design the plan storage once for both (phase plans + per-day intensity).
       Realism gap found in the step-3 review (2026-10-06). Design session first. *(Opus)*
+      **Designed 2026-10-06: GDD 4.8** (phases tied to targets, repeat mode kept, one week per phase + edges, automatic
+      lighter weeks, coach's Steady / Balanced / Ambitious plans, taper for up to 3 targets, easy day before races, a
+      return block after a layoff, Form ±1.5 %). Build in these sessions, in order; each ends with the checks named,
+      a commit, and "Push origin":
+  - [ ] **6a. Week plan storage + intensity in the plan** (repeat mode only, no phases yet): `week_plan.gd`;
+        `Game.season` with `mode = "repeat"` and `repeat_week` replacing `Game.training_plan`; `WeekSim.plan_intensity`;
+        `plan_risk` / `load_vs_normal` / `Training.preview / expected_fatigue / simulate_week` / `HealthUI.plan_section`
+        take a week plan (`WeekPlan.of` accepts the old Array); Training tab: Easy / Normal / Hard per day (44 px, phone
+        layout); save version 3 (v2 and v1 saves load as repeat mode, all Normal); update every tool that sets
+        `training_plan`. *(Sonnet, high)*
+        Check: `training_balance.gd` parts 1–2 fingerprints identical; `day_engine_check`, `health_check` (+ a check that
+        Hard days in the plan raise load vs normal and plan risk, and that a plan-level Easy day equal to a day change
+        is dropped as "same as plan"); load your own v2 save; tour + layout check.
+  - [ ] **6b. Season model (headless):** `data/periodization.json` (phase types, skeleton, anchor rules, lighter /
+        ramp / taper / race-week / return rules, the Balanced templates of GDD 4.8), `"main"` tags in
+        `competitions.json` (+ 16-17 main meets with sources, or rely on the fallback), `SeasonPlan` (phases mode,
+        anchors, edges, targets max 3, `week_for(monday)` with `why` per day), `Game.current_week()` takes its plan from
+        it; new careers start in phases mode on Balanced (no offer event yet). *(Sonnet, high; Opus if the anchor rules
+        get tangled)*
+        Check: new `tools/season_plan_check.gd`: every Monday of 2026–27 and 2027–28 has a plan, phases in order with no
+        gaps, the 2026–27 dates match the GDD table, lighter weeks every 4th base week, taper days −10…−1 before each
+        target, easy day before races only in race phases, moving an edge / a target moves the phases, a missing target
+        falls back to the main meet, save/load bit for bit; fingerprints still identical in repeat mode.
+  - [ ] **6c. Form:** `FormSystem` (sharpness per day, freshness), `sharp` values in `training.json`, applied in
+        `RaceDay._player_entrant` like the slowdown, `Form.enabled`; calibrate `neutral` so the repeating coach week
+        averages 0; form word on the Today card (tap = explanation) and before a race. *(Sonnet, medium)*
+        Check: `race_balance.gd` identical with form off; a check tool shows the repeating coach week ≈ 0 % average
+        form, a tapered target ≈ "Peaking", the first race after base "Rusty"; fingerprints identical.
+  - [ ] **6d. Coach's three plans + balance:** Steady and Ambitious templates, the ★ rule, `training_balance.gd` part 4
+        (season rows × neutral / careful, form at targets, season best at targets); tune the templates to the GDD 4.8
+        targets and write the numbers into the GDD. No model changes without asking. *(Opus, high: tuning)*
+        Check: part 4 table against the targets; parts 1–2 identical; run rows in parallel (~4 at a time).
+  - [ ] **6e. Season UI:** Training tab mode switch, coach plan cards, season bar (PC) / phase list (phone), phase
+        editor (days + intensity, lighter weeks, ramp, edges, Back to coach's), targets (Training tab + Calendar
+        Target toggle), `plan_section` for future phases with the lead-in (cached), week strip caption, `why` in the day
+        editor, phase line in the Report. *(Sonnet, high; split into two sessions if big: Training tab first, then
+        strip / calendar / report)*
+        Check: tour + layout check (no overflow at the 5 sizes) with phases, a taper week and a lighter week seeded;
+        `season_plan_check.gd` still passes; look at the screenshots.
+  - [ ] **6f. Coach events, season rollover, return block, multi-season check, playtest:** `SeasonSystem` (GameSystem
+        id `season`): the "three plans" offer at career start and each autumn (★ if ignored), next season's phases and
+        targets, the return block (Accept / No thanks); new `tools/season_check.gd` (50 athletes × 3 seasons);
+        a season played through the hub on PC and phone (`season_playtest.gd`); update docs and CLAUDE.md.
+        *(Sonnet, high)*
+        Check: `season_check.gd` (rollover, 2028 leap year, save/load at the boundary, no drift), all earlier checks,
+        tools that play days still finish (they set repeat mode / answer the offer), playtest screenshots.
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
@@ -92,7 +138,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 
 - **Playtest notes (user, 2026-10-06):**
-  - *Coach gives only one program:* the coach should offer several plans (fits Coaching + periodization, steps 6 and Part 2).
+  - *Coach gives only one program:* the coach should offer several plans (fits Coaching + periodization, steps 6 and Part 2). Designed in GDD 4.8: the club coach offers Steady / Balanced / Ambitious season plans (built in 6d–6f); focus plans and hired coaches wait for Coaching.
   - [x] *Race is jittery and lags after the first decision:* fixed. Two causes, found with `tools/race_perf.gd`: the indoor hall track (antialiased arcs) was redrawn every frame together with the runners (~4.6 ms of drawing per frame, 40 → 20 ms/frame on the dev laptop's Intel GPU), and the POSITIONS rows were deleted and rebuilt every frame, which re-laid-out the whole side panel with its wrapped commentary labels (the lag grew as the commentary filled up, i.e. after the first decisions). Now the hall track is its own view drawn once and the position rows are reused; steady 60 fps (16.7 ms) on PC and phone size, indoor and outdoor.
   - *More immersive races:* more in-race options, and commentary in its own box that reacts to what happens and to the player's choices (e.g. "someone kicks with 229 m to go" should be something the player can answer), less repetition, more realism. Needs a design session (Opus), then build; belongs before or inside M3 (stadium view).
 
