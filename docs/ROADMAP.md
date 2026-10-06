@@ -88,6 +88,9 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   properly licensed photo exists (e.g. Wikimedia Commons CC BY-SA, needs the Credits screen), a real photo.
   Youth stay fictional (minors). The player's own avatar can come with stage 1 too.
 
+- **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
+- **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
+
 ## M3 — Stadium view
 - [ ] 2D stadium during meets: track, crowd, simultaneous events
 

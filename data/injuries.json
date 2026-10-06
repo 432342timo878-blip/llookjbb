@@ -121,7 +121,7 @@
 
   {
    "id": "tibial_stress_fracture", "name": "Shin stress fracture", "tier": "serious", "area": "shins", "cause": "overuse",
-   "min_strain": 75, "weight": 0.5, "female": 1.5,
+   "min_strain": 38, "weight": 1.5, "female": 1.5,
    "description": "A small crack in the shin bone from repeated overload. No running for weeks; pool running and swimming keep the fitness while it heals, then a slow return.",
    "phases": [
     {"restriction": "no_impact", "days": [14, 21], "locked": true},
@@ -132,7 +132,7 @@
   },
   {
    "id": "metatarsal_stress_fracture", "name": "Foot stress fracture (metatarsal)", "tier": "serious", "area": "feet", "cause": "overuse",
-   "min_strain": 75, "weight": 0.5, "female": 1.5,
+   "min_strain": 38, "weight": 1.5, "female": 1.5,
    "description": "A crack in one of the long foot bones. It needs a protected period with no impact at all, then weeks of cross-training before running again.",
    "phases": [
     {"restriction": "no_impact", "days": [14, 28], "locked": true},

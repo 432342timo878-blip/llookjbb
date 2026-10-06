@@ -412,7 +412,7 @@ diagnoses, colds included), and in how many of the 52 weeks Play week stops at l
   needed. The "sore" warning stays at most once per area per 14 days.
 
 Decisions on the open points:
-1. **Hard-careful serious injuries: not decided, waiting for the user.** Today a careful player never gets a serious
+1. **Hard-careful serious injuries: DECIDED 2026-10-06: option B3 applied** (stress fractures `min_strain` 38, `weight` 1.5; expect careful ≈ 8 % serious, neutral ≈ 14 %, coach ≈ 1 %, per the option table; the final-table rows above are from before it). Today a careful player never gets a serious
    injury (0 %): the stress reaction needs strain 50 and is locked, so it can't be trained through into a fracture,
    and a careful player backs off before strain reaches 75. Options (100 athletes per row, with the new soreness
    levels; serious share of injuries, injuries/yr, progress):
