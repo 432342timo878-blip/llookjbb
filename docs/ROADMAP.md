@@ -45,6 +45,21 @@ Part 2 (design later, plugs into the step-1 hooks):
 - [ ] Coaching (hire, veto)
 - [ ] School (grades, exams vs meets, Finnish school calendar)
 
+## Ideas backlog (from the user, 2026-10-06; placement is Claude's proposal, not yet designed)
+- **Ctrl+S to save:** tiny. Do it in M2 step 4 (hub UI session): same as the Save button (new snapshot, "Saved ✓" feedback), desktop only. *(Sonnet)*
+- **Choose your birth date:** birth date is already an input to `AthleteFactory`. Day + month inside the starting
+  birth year is safe (same age class); other years change the start age, eligible meets and the rival cohort, so
+  that waits until more age classes exist (M4+). Small character-creation task after step 5. *(Sonnet)*
+- **Choice of coaches / coaching groups / coaches per sub-area** (e.g. speed, endurance, strength, mental, physio):
+  belongs to M2 part 2 "Coaching". Needs a design session first (Opus); it plugs into the step-1 hooks (`by = "coach"`,
+  Accept / Veto in the day editor, coach events). Design it together with School, since both compete for the athlete's time.
+- **Profiles for all other athletes + profile pictures:** two stages. (1) After M2 part 1: a rival profile screen
+  (tap a name in Rankings or a race field: club, age, PB / season best, results history, scouting-style attribute
+  hints) with procedurally drawn avatars (generated in code, never real photos) for the fictional youth rivals.
+  Needs rival results history stored. (2) With senior level (M4+): real athletes with data from `data/*.json` and, where a
+  properly licensed photo exists (e.g. Wikimedia Commons CC BY-SA, needs the Credits screen), a real photo.
+  Youth stay fictional (minors). The player's own avatar can come with stage 1 too.
+
 ## M3 — Stadium view
 - [ ] 2D stadium during meets: track, crowd, simultaneous events
 
