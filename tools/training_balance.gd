@@ -9,9 +9,13 @@ extends SceneTree
 ##    through the game's day loop with the health model on, entering the coach's recommended meets.
 ##    Policies: neutral = follows injury limits, ignores soreness; careful = takes it easy when sore
 ##    (rest when painful); ignore = keeps going and trains through every limit that isn't locked.
-## Run: godot --headless --path . -s res://tools/training_balance.gd [-- <athletes per row, default 200> [rows]]
-## rows: only these rows, comma-separated, spaces as underscores (e.g. coach,hard_careful).
+## Run: godot --headless --path . -s res://tools/training_balance.gd [-- <athletes per row, default 200> [rows [start age]]]
+## rows: only these rows, comma-separated, spaces as underscores (e.g. coach,hard_careful); "all" = every row.
+## start age: 14 (default), 15 or 16. Only the birth date moves (the attributes are still a 14-year-old's), so
+## it shows how age and the growth spurt change injuries, not how a real 16-year-old trains.
+## Each row also prints a second line with boys vs girls, colds per month and how often the game would stop.
 
+var start_age := 14
 var game
 var data
 var Cal
@@ -68,14 +72,17 @@ func _run() -> void:
 	print("   inj/yr = injuries (not illness) per athlete, an escalated one counts once at its worst tier; nig/inj/ser =")
 	print("   share by tier; warned = overuse injuries that came after the area had been sore / only a bit sore (week")
 	print("   before); days inj/out = days with an injury / with no running allowed; ill = illnesses per year (share")
-	print("   Nov–Mar, share flu, days ill); ability = 800 m ability gain (M1 coach plan, no health: compare part 1).")
+	print("   Novâ€“Mar, share flu, days ill); ability = 800 m ability gain (M1 coach plan, no health: compare part 1).")
 	var rows := [
 		["coach", "coach", "neutral"], ["coach careful", "coach", "careful"], ["lazy", "lazy", "neutral"],
 		["hard ignore", "hard", "ignore"], ["hard neutral", "hard", "neutral"], ["hard careful", "hard", "careful"],
 		["ramp", "ramp", "neutral"], ["ramp careful", "ramp", "careful"],
 	]
-	if args.size() > 1:
+	if args.size() > 1 and args[1] != "all":
 		rows = rows.filter(func(r): return r[0] in args[1].replace("_", " ").split(","))
+	if args.size() > 2 and args[2].is_valid_int():
+		start_age = args[2].to_int()
+		print("   start age %d (birth date moved only)" % start_age)
 	for row in rows:
 		_health_row(row, plans, n)
 	quit()
@@ -129,7 +136,7 @@ func _m1_row(run: Array, plans: Dictionary, through_game: bool) -> String:
 		fat_sum += r.fatigue_avg
 	var line := "%-10s avg fatigue %3d peak %3d |" % [run[0], roundi(fat_sum / 52), roundi(peak)]
 	for id in start:
-		line += " %s %.1f→%.1f" % [id.substr(0, 8), start[id], a.get_attr(id)]
+		line += " %s %.1fâ†’%.1f" % [id.substr(0, 8), start[id], a.get_attr(id)]
 	if not through_game:
 		print(line)
 	# Full precision, to prove that an engine change leaves the results exactly the same.
@@ -153,7 +160,7 @@ func _random_athlete(i: int):
 	return F.create({
 		"first_name": "Test", "last_name": "Runner%d" % i, "gender": "male" if i % 2 == 0 else "female",
 		"hometown": "Tampere", "club_id": "tap", "main_event": "800m",
-		"birth_date": {"year": 2012, "month": rng.randi_range(1, 10), "day": rng.randi_range(1, 28)},
+		"birth_date": {"year": 2012 - (start_age - 14), "month": rng.randi_range(1, 10), "day": rng.randi_range(1, 28)},
 		"answers": answers}, rng)
 
 
@@ -174,9 +181,12 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 	var t0 := Time.get_ticks_msec()
 	var policy: String = row[2]
 	var s := {"inj": 0, "niggle": 0, "injury": 0, "serious": 0, "acute": 0, "overuse": 0, "warned": 0, "ill": 0,
-			"ill_winter": 0, "flu": 0, "days_injured": 0, "days_out": 0, "days_ill": 0, "ability": 0.0,
+			"ill_winter": 0, "flu": 0, "days_injured": 0, "days_out": 0, "days_ill": 0, "ability": 0.0, "ability2": 0.0,
 			"zero": 0, "three_plus": 0, "fatigue": 0.0, "risk": {"low": 0, "moderate": 0, "high": 0},
-			"rivals_out": 0.0, "escalated": 0, "slight": 0, "early": 0, "cap26": 0.0}
+			"rivals_out": 0.0, "escalated": 0, "slight": 0, "early": 0, "cap26": 0.0,
+			"ill_month": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "stops_sore": 0, "stops_diag": 0, "stop_weeks": 0,
+			"sore_bit": 0, "sore_sore": 0, "sore_areas": 0, "days": 0,
+			"male": {"n": 0, "inj": 0, "serious": 0, "out": 0, "areas": {}}, "female": {"n": 0, "inj": 0, "serious": 0, "out": 0, "areas": {}}}
 	var end_key: int = Cal.date_key(game.add_days(game.START_DATE, 364))
 	for i in n:
 		var a = _random_athlete(i)
@@ -190,8 +200,11 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 		var w := 0
 		var fat_sum := 0.0
 		var days := 0
+		var stopped_this_week := false
 		while Cal.date_key(game.date) < end_key:
 			if Cal.weekday(game.date) == 0 and game.current_week().day == 0:
+				s.stop_weeks += 1 if stopped_this_week else 0
+				stopped_this_week = false
 				game.training_plan = _plan_for(row[1], w, plans)
 				game.current_week()
 				if w == 12:
@@ -204,21 +217,38 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 			while not game.pending_event().is_empty():
 				var e: Dictionary = game.pending_event()
 				var answer := "ok"
+				stopped_this_week = true
 				if e.get("kind", "") == "sore":
+					s.stops_sore += 1
 					answer = "easy" if policy == "careful" else "keep"
+				else:
+					s.stops_diag += 1
 				game.answer_event(e.id, answer)
 			fat_sum += a.fatigue
 			days += 1
+			var worst := 0
+			var bit_sore_areas := 0
+			for lvl in health.levels.values():
+				worst = maxi(worst, int(lvl))
+				bit_sore_areas += 1 if int(lvl) >= 1 else 0
+			s.sore_bit += 1 if worst >= 1 else 0
+			s.sore_sore += 1 if worst >= 2 else 0
+			s.sore_areas += bit_sore_areas
+			s.days += 1
 			if days == 182:
 				s.cap26 += health.capacity()
 			if Cal.weekday(game.date) == 0:
 				s.rivals_out += game.rivals.filter(func(x): return int(x.get("out_weeks", 0)) > 0).size() / float(game.rivals.size())
 		s.fatigue += fat_sum / days
 		s.ability += RP.ability(a) - start_ability
+		s.ability2 += pow(RP.ability(a) - start_ability, 2.0)
 		var count := 0
+		var g: Dictionary = s[a.gender]
+		g.n += 1
 		for inj in health.history + health.injuries:
 			if inj.tier == "illness":
 				s.ill += 1
+				s.ill_month[int(inj.started.month) - 1] += 1
 				if int(inj.started.month) in [11, 12, 1, 2, 3]:
 					s.ill_winter += 1
 				if inj.id == "flu":
@@ -226,6 +256,10 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 				continue
 			count += 1
 			s.inj += 1
+			g.inj += 1
+			g.areas[inj.area] = int(g.areas.get(inj.area, 0)) + 1
+			if inj.tier == "serious":
+				g.serious += 1
 			if Cal.days_between(game.START_DATE, inj.started) < 56:
 				s.early += 1
 			s[inj.tier] += 1
@@ -243,16 +277,33 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 		s.three_plus += 1 if count >= 3 else 0
 		s.days_injured += health.counters.days_injured
 		s.days_out += health.counters.days_out
+		g.out += health.counters.days_out
 		s.days_ill += health.counters.days_ill
 	var inj := maxf(1.0, s.inj)
-	print("%-13s inj/yr %4.2f (nig %2d%% inj %2d%% ser %2d%%, acute %2d%%, escalated %2d%%, warned %2d%%/%2d%%) | days inj %3d out %3d | 0 inj %2d%% 3+ %2d%% | ill %4.2f (winter %2d%%, flu %2d%%, %2d days) | fatigue %2d | ability %+.2f | %.0fs" % [
+	print("%-13s inj/yr %4.2f (nig %2d%% inj %2d%% ser %2d%%, acute %2d%%, escalated %2d%%, warned %2d%%/%2d%%) | days inj %3d out %3d | 0 inj %2d%% 3+ %2d%% | ill %4.2f (winter %2d%%, flu %2d%%, %2d days) | fatigue %2d | ability %+.2f (se %.2f) | %.0fs" % [
 		row[0], s.inj / float(n), 100 * s.niggle / inj, 100 * s.injury / inj, 100 * s.serious / inj,
 		100 * s.acute / inj, 100 * s.escalated / inj, 100 * s.warned / maxf(1.0, s.overuse), 100 * s.slight / maxf(1.0, s.overuse),
 		roundi(s.days_injured / float(n)), roundi(s.days_out / float(n)), 100 * s.zero / n, 100 * s.three_plus / n,
 		s.ill / float(n), 100 * s.ill_winter / maxf(1.0, s.ill), 100 * s.flu / maxf(1.0, s.ill), roundi(s.days_ill / float(n)),
-		roundi(s.fatigue / n), s.ability / n, (Time.get_ticks_msec() - t0) / 1000.0])
-	print("              injuries in the first 8 weeks %.2f | capacity at week 26 ×%.2f | plan risk at week 12: Low %d%% Moderate %d%% High %d%%" % [
+		roundi(s.fatigue / n), s.ability / n, sqrt(maxf(0.0, s.ability2 / n - pow(s.ability / n, 2.0)) / n), (Time.get_ticks_msec() - t0) / 1000.0])
+	print("              injuries in the first 8 weeks %.2f | capacity at week 26 Ã—%.2f | plan risk at week 12: Low %d%% Moderate %d%% High %d%%" % [
 			s.early / float(n), s.cap26 / n, 100 * s.risk.low / n, 100 * s.risk.moderate / n, 100 * s.risk.high / n])
+	var months := []
+	for mo in [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+		months.append("%.2f" % (s.ill_month[mo - 1] / float(n)))
+	var boys: Dictionary = s.male
+	var girls: Dictionary = s.female
+	print("              boys %.2f inj/yr, %.0f%% serious, %d days out | girls %.2f inj/yr, %.0f%% serious, %d days out | stops/yr: sore %.1f, new injury or illness %.1f, weeks with a stop %.1f of 52" % [
+			boys.inj / maxf(1.0, boys.n), 100.0 * boys.serious / maxf(1.0, boys.inj), roundi(boys.out / maxf(1.0, boys.n)),
+			girls.inj / maxf(1.0, girls.n), 100.0 * girls.serious / maxf(1.0, girls.inj), roundi(girls.out / maxf(1.0, girls.n)),
+			s.stops_sore / float(n), s.stops_diag / float(n), s.stop_weeks / float(n)])
+	var by_area := []
+	for area in H.areas():
+		by_area.append("%s %.2f/%.2f" % [area.id, int(boys.areas.get(area.id, 0)) / maxf(1.0, boys.n), int(girls.areas.get(area.id, 0)) / maxf(1.0, girls.n)])
+	print("              injuries per athlete by area, boys/girls: %s" % ", ".join(by_area))
+	print("              days with a sore area: at least a bit sore %.0f%%, at least sore %.0f%% | areas a bit sore or worse on an average day %.2f" % [
+			100.0 * s.sore_bit / maxf(1.0, s.days), 100.0 * s.sore_sore / maxf(1.0, s.days), s.sore_areas / maxf(1.0, s.days)])
+	print("              colds+flu per athlete by month Nov..Oct: %s" % " ".join(months))
 	if row[0] == "coach":
 		print("              rivals injured at any time: %.1f%%" % (100.0 * s.rivals_out / (52.0 * n)))
 

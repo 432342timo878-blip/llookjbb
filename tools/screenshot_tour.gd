@@ -198,7 +198,7 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	#    the "sore" stop event, and the week strip with its "!" marker.
 	_reset_health(game, health)
 	health.strain["shins"] = 36.0
-	health.strain["achilles"] = 33.0
+	health.strain["achilles"] = 38.0
 	hub._show("overview")
 	hub._refresh_week_ui()
 	await _frames(6)
@@ -332,6 +332,23 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	hub._unhandled_key_input(key)
 	await _frames(3)
 	await _shot("26_health_ctrl_s_saved")
+
+	# 8. The "sore" warning on the night before a race: a race day can't be made easier, so the choices are
+	#    race as planned / scratch from the race (M2 step 5).
+	_reset_health(game, health)
+	var upcoming: Dictionary = game.next_race()
+	if not upcoming.is_empty():
+		var g2 := 0
+		while cal.days_between(game.date, upcoming.date) > 1 and g2 < 400:
+			g2 += 1
+			_quiet_day(game)
+		hub = main.get_node("ScreenHost").get_child(-1)
+		health.strain["calves"] = 80.0
+		hub._refresh_week_ui()
+		hub._on_advance(false)
+		await _frames(6)
+		print("health tour: sore warning the night before a race names the race: ", game.pending_event().get("meet", "none") == upcoming.key)
+		await _shot("27_health_sore_before_race")
 	load("res://scripts/core/health_system.gd").model_enabled = false
 
 

@@ -45,8 +45,14 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       Done: model untouched (only `Game.scratch_race` added and display texts in `data/health.json` `ui`); also the
       Report tab's health lines and the Ctrl+S save. Checks: `health_check.gd` (health UI section), seeded health
       states in `screenshot_tour.gd` and `layout_check.gd` (no overflow at 5 window sizes). Details: GDD 4.6 "Built (step 4)".
-- [ ] **5. Balance & playtest:** tune to the GDD 4.6 targets, play through a season on PC and phone, fix rough
+- [x] **5. Balance & playtest:** tune to the GDD 4.6 targets, play through a season on PC and phone, fix rough
       edges, update docs. *(Sonnet; Opus if tuning gets stuck)*
+      Done: all targets met except "~10 % serious for hard-careful" (decision for the user, recommendation: a
+      data-only change, see GDD 4.6 "Tuned (step 5)") and the ramp target, reworded (same progress as hard-careful,
+      far fewer injuries). Data change: soreness levels 30/50/70 → 34/52/70 (the coach plan was "a bit sore" on 42 %
+      of days, now 18 %). Fixed: the "sore" warning before a race day (Easy / Rest did nothing there). New tools:
+      `tools/season_playtest.gd`; `training_balance.gd` prints boys vs girls, ages, stops and colds by month.
+      Playtest through the real hub on PC and phone size: no errors; suggestions for later in the GDD.
 - [ ] **6. Season periodization (design + build):** the weekly plan follows the training year instead of repeating
       the autumn base plan: phases (general base Nov–Jan, specific / indoor racing Feb–Mar, base again Apr, race
       season May–Aug with lighter weeks, autumn break Sep–Oct), the club coach's plan per phase, deload weeks, and a

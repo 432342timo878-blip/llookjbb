@@ -251,7 +251,6 @@ static func warning_sections(open: Dictionary) -> Control:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(UIKit.label("WARNING SIGNS", "CaptionLabel"))
 	left.add_child(soreness_list(open))
-	columns.add_child(left)
 
 	var right := UIKit.vbox(6)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -261,7 +260,13 @@ static func warning_sections(open: Dictionary) -> Control:
 		right.add_child(UIKit.wrapped("None. You're healthy.", "MutedLabel"))
 	for x in active:
 		right.add_child(injury_block(x))
-	columns.add_child(right)
+	# On a phone the sections are stacked: an injury matters more than a row of sore areas, so it comes first.
+	if Layout.compact and not active.is_empty():
+		columns.add_child(right)
+		columns.add_child(left)
+	else:
+		columns.add_child(left)
+		columns.add_child(right)
 	return columns
 
 

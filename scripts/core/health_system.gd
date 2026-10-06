@@ -117,7 +117,7 @@ func on_health(ctx: Dictionary) -> void:
 	_roll_illness(a, news)
 	for inj in news:
 		_post_diagnosis(inj)
-	_update_soreness(news.is_empty())
+	_update_soreness(news.is_empty(), date)
 	_apply_restrictions(ctx.week)
 	var sore := {}
 	for area in areas():
@@ -157,9 +157,13 @@ func on_week_end(ctx: Dictionary) -> void:
 			r.out_weeks = rng.randi_range(int(cfg.weeks[0]), int(cfg.weeks[1]))
 
 
-## The "sore" warning: keep going / take it easy today / rest day (today = the day not played yet).
+## The "sore" warning: keep going / take it easy today / rest day (today = the day not played yet). When that
+## day is a race day (the event has the meet's key) the choices are race as planned / scratch from the race.
 func on_answer(event: Dictionary, choice: String) -> void:
 	if event.get("kind", "") != "sore":
+		return
+	if choice == "scratch" and event.has("meet"):
+		Game.scratch_race(str(event.meet))
 		return
 	var week := Game.current_week()
 	match choice:
@@ -543,7 +547,9 @@ func _post_diagnosis(inj: Dictionary) -> void:
 
 ## The first time an area turns sore (at most once per area every few weeks): a stop event, unless today
 ## already brought a diagnosis.
-func _update_soreness(may_warn: bool) -> void:
+func _update_soreness(may_warn: bool, date := {}) -> void:
+	if date.is_empty():
+		date = Game.date   # the day just played (dev tools that seed a state call it without)
 	var newly := []
 	for area in areas():
 		var lvl := soreness_level(area.id)
@@ -563,14 +569,35 @@ func _update_soreness(may_warn: bool) -> void:
 		warned[area.id] = day_no
 		names.append(area.name.left(1).to_lower() + area.name.substr(1))   # "heels & Achilles"
 	var list: String = names[-1] if names.size() == 1 else ", ".join(names.slice(0, -1)) + " and " + names[-1]
-	var e := Game.post_event(id, "Your %s feel sore" % list,
-			"After training your %s are sore. Soreness is the body's warning: training on through it " % list
-			+ "is how most running injuries start. What do you do today?", [
-				{"id": "keep", "label": "Keep going", "detail": "Train as planned and hope it settles."},
-				{"id": "easy", "label": "Take it easy today", "detail": "Today's sessions at Easy intensity."},
-				{"id": "rest", "label": "Rest day", "detail": "No training today."},
-			], true)
+	var text := "After training your %s are sore. Soreness is the body's warning: training on through it " % list \
+			+ "is how most running injuries start. "
+	var meet := _entered_meet_on(Game.add_days(date, 1))
+	var choices := [
+		{"id": "keep", "label": "Keep going", "detail": "Train as planned and hope it settles."},
+		{"id": "easy", "label": "Take it easy today", "detail": "Today's sessions at Easy intensity."},
+		{"id": "rest", "label": "Rest day", "detail": "No training today."},
+	]
+	if not meet.is_empty():   # a race day can't be made easier: race or scratch
+		text += "Today is a race day (%s). What do you do?" % meet.name
+		choices = [
+			{"id": "keep", "label": "Race as planned", "detail": "Start and see how it goes."},
+			{"id": "scratch", "label": "Scratch from the race", "detail": "You won't start; the day becomes a training day you can still change."},
+		]
+	else:
+		text += "What do you do today?"
+	var e := Game.post_event(id, "Your %s feel sore" % list, text, choices, true)
 	e.kind = "sore"
+	if not meet.is_empty():
+		e.meet = meet.key
+
+
+## The entered meet on `date`, or {}.
+func _entered_meet_on(date: Dictionary) -> Dictionary:
+	for key in Game.entries:
+		var meet := Calendar.get_meet(key)
+		if not meet.is_empty() and Calendar.date_key(meet.date) == Calendar.date_key(date):
+			return meet
+	return {}
 
 
 # --- Restrictions ------------------------------------------------------------------------------

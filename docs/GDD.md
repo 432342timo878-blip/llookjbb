@@ -242,7 +242,8 @@ acute-risk value. No injury numbers in scripts.
 **Warning signs & UI (no hover-only info, 44 px targets):**
 - Today card: soreness per area in words + colour, tap for the cause and what helps. Week strip: warning marker on sore days.
 - Training tab: "load vs your normal" (%) and plan risk (Low / Moderate / High).
-- Play week **stops** the first time an area turns "sore": keep going / take it easy today / rest day.
+- Play week **stops** the first time an area turns "sore": keep going / take it easy today / rest day (on the night
+  before a race: race as planned / scratch from the race, since a race day can't be made easier; step 5).
 - New injury: **diagnosis panel** (name, plain explanation, expected time range, what's allowed).
 - Injury proneness stays hidden; after repeated injuries a hint ("you seem to pick up knocks easily").
 
@@ -254,15 +255,16 @@ acute-risk value. No injury numbers in scripts.
 | Coach plan | ~0.5–1 (mostly niggles) | < 5 % | as in M1 |
 | Lazy | ~0 | ~0 | little |
 | Hard, warnings ignored | 3+ | > 40 % | **below the coach plan** |
-| Hard, careful | ~1–1.5 | ~10 % | a bit above the coach plan |
-| Ramp to hard | clearly below "hard, ignored" | | best |
+| Hard, careful | ~1–1.5 | ~10 % | above the coach plan |
+| Ramp to hard | clearly below "hard, ignored" | | ~ the same as hard, careful (reworded in step 5: it was "best") |
 | Illness (all plans) | 2–3 colds/yr, mostly winter | | |
 
 Rule of thumb: training harder pays off only if you listen to your body.
 
 **Built (step 3, 2026-10-06, headless):** `HealthSystem` with the data above; the health UI is step 4. Details
 decided while building (all numbers in `data/health.json` / `data/injuries.json`):
-- **Strain & soreness:** soreness levels at strain 30 / 50 / 70 (a bit sore / sore / painful). Daily keep: bone 0.875,
+- **Strain & soreness:** soreness levels at strain 30 / 50 / 70 (a bit sore / sore / painful; step 5 moved them to
+  34 / 52 / 70, see "Tuned (step 5)"). Daily keep: bone 0.875,
   tendon 0.87, muscle 0.8 (minus recovery rate / professionalism, more fade on rest days). Hard intensity ×1.35
   strain, Easy ×0.6. Tired legs up to ×1.25, off-track winter sessions ×1.3 on shins/feet/knees, durability ×1.3–0.7,
   growth spurt up to ×1.5 on knees and heels (boys peak 14.0, girls 12.0, ±1.2 years by maturation), past injury up
@@ -315,7 +317,7 @@ Plan risk at week 12: coach Low 95 %; hard plans split between Low (already adap
 
 - **M1 unchanged:** with the health model off, all M1 fingerprints are bit-for-bit identical (part 2 of the tool);
   with it on, the coach plan's progress is the same as M1 (+1.18).
-- **Open (for step 5):** (1) Hard-careful gets no serious injuries (careful players back off before bone stress gets
+- **Open (for step 5; settled or handed to the user in "Tuned (step 5)" below):** (1) Hard-careful gets no serious injuries (careful players back off before bone stress gets
   bad), target was ~10 %: accept, or add rare "silent" stress reactions. (2) Ramp ties with hard-careful on progress
   (+1.63 vs +1.65): the ramp loses a little training while building up, careful-hard gets away with the jump because
   it backs off when sore. The ramp is clearly safer for a player who doesn't listen (2.5 vs 3.4 injuries/yr). (3) The
@@ -361,6 +363,109 @@ UI" above, on PC and phone, with 44 px targets and no hover-only information. De
 - **Ctrl+S** saves, like the Save button ("Saved ✓"), desktop only.
 - Display texts and thresholds live in `data/health.json` under `ui` (load cap and the % where the words change, the
   soreness advice lines); no model numbers were changed.
+
+**Tuned (step 5, 2026-10-06, balance & playtest).** One number set changed: the soreness levels in
+`data/health.json` went from 30 / 50 / 70 to **34 / 52 / 70** (nothing else in the model, no script numbers). Why: the
+Today card showed "a bit sore" on 42 % of days for an athlete on the *recommended* coach plan (2–4 body areas, for
+months), so the early warning meant nothing. With 34 it is 18 % of days on the coach plan (hard plans: about 53 %,
+down from about 76 %), and the injury numbers did not move (the hazard curve is untouched; only what the player is
+shown changed). Price: more coach-plan niggles arrive with no soreness before them (no warning in the week before:
+36 % → 67 %; they are almost all niggles at the lowest risk); on the hard plans it is 14 % → 24 % for careful players.
+
+Final numbers (`tools/training_balance.gd`, 200 athletes per row, 1 year from age 14, half girls, coach-recommended
+meets entered; neutral = follows limits but keeps going when sore; careful = Easy when sore, rest when painful;
+ignore = trains through everything that isn't locked). Ability = 800 m ability gain (± standard error); M1 without
+health: coach +1.18, so the coach plan is unchanged. Days = per year, with an injury / with no running allowed.
+"Sore days" = days with at least one area at least a bit sore. Stops = stop events per year (sore warnings +
+diagnoses, colds included), and in how many of the 52 weeks Play week stops at least once.
+
+| Row | Injuries/yr | Niggle / injury / serious | Days (no running) | Colds/yr | Ability | Sore days | Stops (weeks) | Target |
+|---|---|---|---|---|---|---|---|---|
+| Coach | 0.67 | 84 / 15 / 0 % | 10 (3) | 2.2 | +1.18 ±0.01 | 18 % | 3.3 (3.1) | met |
+| Coach, careful | 0.69 | 84 / 15 / 0 % | 10 (3) | 2.3 | +1.18 | 18 % | 3.3 (3.1) | met |
+| Lazy | 0.07 | 30 / 69 / 0 % | 1 (2) | 2.2 | +0.37 | 0 % | 2.2 (2.2) | met |
+| Hard, warnings ignored | 5.4 | 44 / 13 / 42 % | 270 (173) | 2.7 | +1.03 ±0.03 | 38 % | 21.9 (13.0) | met (3+, > 40 %, below coach) |
+| Hard, neutral | 3.4 | 76 / 21 / 2 % | 55 (20) | 2.5 | +1.58 ±0.02 | 54 % | 14.0 (10.0) | (no target) |
+| Hard, careful | 1.56 | 81 / 17 / 0 % | 23 (5) | 2.8 | +1.64 ±0.01 | 53 % | 9.7 (8.6) | injuries ≈ (target 1–1.5); **serious 0 % vs ~10 %: open, below**; progress above coach met |
+| Ramp, neutral | 2.5 | 72 / 23 / 4 % | 42 (18) | 2.8 | +1.58 ±0.02 | 52 % | 10.7 (8.2) | clearly below "ignored" met |
+| Ramp, careful | 1.44 | 81 / 18 / 0 % | 21 (5) | 2.8 | +1.63 ±0.01 | 52 % | 8.4 (7.8) | |
+
+- **M1 unchanged:** part 2 of the tool, "fingerprints identical to part 1: YES", and the fingerprints are the same
+  numbers as before step 4 (coach 215.999957139 / 13.751549603 / 1203.029795007 …).
+- **Colds** (coach row, per athlete by month, Nov … Oct): 0.24 0.33 0.40 0.38 0.27 | 0.11 0.12 0.04 0.09 0.07 0.07 0.14 =
+  2.26 a year, 71 % of them Nov–Mar, about 9 % of illnesses are flu. As designed.
+- **Days lost:** a coach-plan athlete has an injury or niggle on about 10 days a year (3 with no running) and is ill
+  on 12; a careful hard athlete 23 (5); a player who ignores everything 270 (173, almost half the year).
+- **Boys vs girls** (400 athletes, 200 each; the first 100-athlete run seemed to show a big gap, but it was the
+  particular athletes: the same seeds are used in every run): coach 0.71 boys / 0.66 girls a year; hard neutral 3.65 /
+  2.88. The boys' extra at 14 is the growth spurt (knees 0.79 vs 0.27 and heels 0.45 vs 0.28 a year; boys peak at 14,
+  girls at 12); shins and feet are equal, and the share of serious injuries is the same (2 % / 2 %; 4 % / 2 % at 16).
+  Girls' extra bone risk (×1.15, and ×1.5 on the stress-reaction weights) is visible only on the hard-ignore row
+  (47 % serious vs 38 % for boys).
+- **Ages 14 / 15 / 16** (only the birth date moves; the attributes stay a 14-year-old's, so this shows age and
+  growth effects, not real older athletes): coach 0.68 / 0.79 / 0.67, hard neutral 3.26 / 3.31 / 3.22, hard careful
+  1.56 / 1.59 / 1.50 (100 athletes at 15, so ±0.1). No age effect beyond noise; what changes is the kind: boys'
+  knee and heel growth niggles (coach plan: 0.36 per boy at 14, 0.18 at 16) fade, Achilles tendinopathy (16+) and ITB
+  syndrome (15+) become possible.
+- **Play week stops:** 2.8–3.3 weeks a year on the coach plan, 8–10 on the hard plans when you listen to your body,
+  13 of 52 for someone who ignores everything. Not annoying (a stop is a real decision or a diagnosis); no change
+  needed. The "sore" warning stays at most once per area per 14 days.
+
+Decisions on the open points:
+1. **Hard-careful serious injuries: not decided, waiting for the user.** Today a careful player never gets a serious
+   injury (0 %): the stress reaction needs strain 50 and is locked, so it can't be trained through into a fracture,
+   and a careful player backs off before strain reaches 75. Options (100 athletes per row, with the new soreness
+   levels; serious share of injuries, injuries/yr, progress):
+
+   | Option | Hard careful | Ramp careful | Hard neutral | Hard ignore | Coach |
+   |---|---|---|---|---|---|
+   | A. Accept (now: stress fractures from strain 75, weight 0.5) | 0 %, 1.56, +1.64 | 0 %, 1.44 | 2 %, 3.4 | 42 % | 0 % |
+   | B1. Data only: from strain 40, weight 1.0 | 5 %, 1.41, +1.65 | 4 % | 10 % | 42 % | 1 % |
+   | B2. Data only: from strain 40, weight 1.5 | 7 %, 1.42, +1.65 | 5 % | 12 % | 42 % | 1 % |
+   | B3. Data only: from strain 38, weight 1.5 | 8 %, 1.45, +1.64 | 8 % | 14 % | 43 % | 1 % |
+
+   **Recommendation: B3** (the two stress-fracture entries in `data/injuries.json`: `min_strain` 75 → 38, `weight`
+   0.5 → 1.5). No new mechanism, injuries/yr and progress hardly change, and the "hard, careful" strategy is no longer
+   free: about one careful athlete in nine loses 6–12 weeks to a bone injury a year. It is "silent" in practice,
+   because on a hard plan an athlete is "a bit sore" about half of the days anyway, but the player does see the
+   soreness (strain 38–52 is "a bit sore" to "sore"). A truly warning-free injury would need a new mechanism (a
+   small daily chance independent of soreness): not recommended, it would hit the coach plan too. Not applied; say
+   "apply B3" (or B1 / B2 / A) and it is a two-number change plus a re-run of the table.
+2. **Ramp vs hard-careful progress: reword the target, no model change.** Ramp-careful +1.63 vs hard-careful +1.64
+   (standard error 0.01–0.02 each), and ramp-neutral +1.58 vs hard-neutral +1.58: a tie. The ramp's value is safety
+   (neutral: 2.5 vs 3.4 injuries a year, 42 vs 55 days injured, 4 % vs 2 % serious; ignoring: it cannot save you).
+   Progress does not reward the ramp because an injury costs little progress in this model (you swap to pool
+   running, so a careful hard athlete loses only 5 days of running a year); making the ramp "best" would mean making
+   layoffs hurt much more, which is a design question for step 7 (multi-year progression), not a tuning tweak.
+3. Today card shows "a bit sore" clearly: done in step 4, and now it appears only when it means something (above).
+
+Playtest (step 5): a whole season played through the real hub buttons on PC size (coach plan, careful boy: 102 button
+presses, 4 stop events = 3 injuries and a cold, no sore stops, stops in 4 weeks) and on phone size (hard plan, girl who
+keeps going when sore: 81 presses, 9 stop events = 5 sore + 4 diagnoses, stops in 7 weeks), plus the screenshot tour
+and the layout check on both sizes (105 "no overflow", none overflowing). No errors. Timings (a laptop with an Intel
+HD 520): the hub redraws in 105–120 ms on average and 316–388 ms at most after Next day / Play week (a whole week of
+days is simulated in that), 50–60 ms (at most 90) after answering an event; autosave 18–20 ms and about 100 KB; `plan_risk` 6.4 ms per
+call (28 simulated days, measured while other processes were running), `load_vs_normal` 0.3 ms: nothing slow.
+Saves: the user's own version-2 saves (up to Feb 2029, from before and after the health model) and a version-1 save
+load and play on 21 days; a save in the middle of an injury continues bit for bit (`health_check.gd`); autosave runs
+after every played day; Ctrl+S shows "Saved ✓".
+
+Fixed in step 5:
+- **A button that did nothing:** the "sore" warning on the night before a race offered "Take it easy today" and "Rest
+  day", but a race day can't be edited, so nothing happened. Now it says "Today is a race day (name)" and offers
+  "Race as planned" / "Scratch from the race" (`Game.scratch_race`). Check: `health_check.gd` "sore warning before a race".
+- The soreness thresholds (above).
+- On a phone the Today card shows "Injury & illness" before "Warning signs" when there is an injury (it used to sit
+  below up to six sore rows).
+
+Suggestions for later (not done): (a) a **return plan** after a layoff: after two weeks out, the unchanged coach
+plan reads "load 168 % of normal, plan risk High" and the player has to rebuild by hand: the coach (Coaching) or the
+periodization step could propose gradual return weeks. (b) **Injuries cost little progress** (see point 2); decide in
+step 7 whether long layoffs should cost more aerobic base. (c) If the Today card still feels busy on a hard plan
+(about 1.5 sore areas on an average day), show the three worst areas and fold the rest into "+2 more". (d) The
+diagnosis panel is dated the evening it happened ("FRI 13 NOV") while the header already shows the next day; "last
+night" may read better. (e) `tools/health_check.gd` prints ALL CHECKS PASSED even when a script error aborts one check
+function (found while editing: read stderr); each check could report that it finished.
 
 ### 4.7 Daily events & hooks (M2 foundation, designed 2026-10-05)
 

@@ -31,6 +31,7 @@ func _run() -> void:
 	_check_data()
 	_check_determinism()
 	_check_stop_events()
+	_check_sore_before_race()
 	_check_restrictions()
 	_check_override()
 	_check_locked_race()
@@ -130,6 +131,45 @@ func _check_stop_events() -> void:
 	_ok("'Take it easy today' makes today Easy (by you)", seen.get("sore_answered", false))
 	_ok("Play week stops on a new injury (diagnosis)", seen.has("diagnosis"))
 	_ok("the diagnosis says the expected time", seen.has("diagnosis") and seen.diagnosis.text.contains("Expected time"))
+
+
+## The "sore" warning on the night before a race: easy / rest can't change a race day, so the choices are
+## race as planned / scratch (step 5: the two buttons used to do nothing there).
+func _check_sore_before_race() -> void:
+	print("-- sore warning before a race")
+	_new_career(14, 3)
+	var meet := {}
+	for m in Cal.meets_between(game.date, game.add_days(game.date, 120)):
+		if Cal.coach_recommends(game.athlete, m, game.date):
+			meet = m
+			break
+	game.enter(meet.key)
+	while Cal.days_between(game.date, meet.date) > 2:
+		_advance()
+	var health = game.get_system("health")
+	_advance()   # the day before the day before the race: today is now the day before the race
+	health.strain.shins = 60.0
+	health.levels.shins = 0
+	health.warned.clear()
+	var before: int = game.events.size()
+	health._update_soreness(true, game.date)   # as if today was just played: tomorrow is the race
+	_ok("a sore warning was posted", game.events.size() == before + 1 and game.pending_event().get("kind", "") == "sore")
+	var e: Dictionary = game.pending_event()
+	_ok("it names the race and offers race as planned / scratch",
+			e.get("meet", "") == meet.key and e.choices.map(func(c): return c.id) == ["keep", "scratch"])
+	game.date = game.add_days(game.date, 1)   # the night is over: race day
+	game.answer_event(e.id, "scratch")
+	_ok("'Scratch from the race' withdraws the entry", not meet.key in game.entries)
+	_ok("… and the day is a training day", not game.current_week().is_race_day(game.current_week().day))
+	_new_career(14, 3)
+	health = game.get_system("health")
+	_advance()
+	health.strain.shins = 60.0
+	health.levels.shins = 0
+	health.warned.clear()
+	health._update_soreness(true, game.date)
+	_ok("no race tomorrow: the usual three choices", game.pending_event().choices.map(func(c): return c.id) == ["keep", "easy", "rest"])
+	game.answer_event(game.pending_event().id, "keep")
 
 
 ## While injured, banned sessions are swapped as day changes "by" injury; when it heals, the days go back.

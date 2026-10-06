@@ -35,8 +35,8 @@
  },
 
  "soreness": {
-  "_note": "How strain shows to the player. levels = strain where 'a bit sore', 'sore' and 'painful' start.",
-  "levels": [30, 50, 70],
+  "_note": "How strain shows to the player. levels = strain where 'a bit sore', 'sore' and 'painful' start. (Step 5: 'a bit sore' moved from 30 to 34 so the recommended coach plan is no longer 'a bit sore' on 4 days out of 10; the injury risk curve below is unchanged.)",
+  "levels": [34, 52, 70],
   "names": ["None", "A bit sore", "Sore", "Painful"]
  },
 
