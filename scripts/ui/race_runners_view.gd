@@ -1,11 +1,17 @@
 extends Control
 ## Runners as dots on the track. Outdoors it sits over the stadium drawing (track_drawing.gd, same size and
-## scale) so the busy stadium isn't redrawn every frame; indoors it draws the simple 200 m hall track itself.
+## scale) so the busy stadium isn't redrawn every frame. Indoors the 200 m hall track is drawn by a second
+## instance of this script with `track_only` (drawn once, not every frame); the instance with the dots draws
+## only the dots (`indoor_floor_below`).
 
 const TD := preload("res://scripts/ui/track_drawing.gd")
 const INDOOR_MARGIN := 7.0       # metres of hall floor around the indoor track
 
 var race: Race
+## Indoors: draw only the (static) hall track, no runners. Never redrawn after the first time.
+var track_only := false
+## Indoors: the hall track is a separate view underneath, so this one draws just the runners.
+var indoor_floor_below := false
 
 var _k := 1.0
 var _center := Vector2.ZERO
@@ -19,7 +25,8 @@ func _draw() -> void:
 		var extent := Vector2(race.straight + 2.0 * (r_out + INDOOR_MARGIN), 2.0 * (r_out + INDOOR_MARGIN))
 		_k = minf(size.x / extent.x, size.y / extent.y)
 		_center = size / 2.0
-		_draw_indoor_track(r_out)
+		if not indoor_floor_below:
+			_draw_indoor_track(r_out)
 	else:
 		# Same scale as TrackDrawing._draw().
 		var r_out: float = TD.R_IN + TD.LANE * 8
@@ -27,7 +34,8 @@ func _draw() -> void:
 		var extent := Vector2(TD.STRAIGHT + 2.0 * (r_stand_out + 6.0), 2.0 * (r_stand_out + 6.0))
 		_k = minf(size.x / extent.x, size.y / extent.y)
 		_center = size / 2.0
-	_draw_runners()
+	if not track_only:
+		_draw_runners()
 
 
 func _draw_runners() -> void:

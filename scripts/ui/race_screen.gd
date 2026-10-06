@@ -28,6 +28,7 @@ var _runners_view: Control
 var _clock: Label
 var _info: Label
 var _standings: VBoxContainer
+var _stand_rows := []   # [name label, gap label] per position, reused every frame
 var _commentary: VBoxContainer
 var _decision: Control   # full-screen dimmed overlay holding the decision card
 
@@ -271,15 +272,25 @@ func _show_running() -> void:
 		stadium.set_script(preload("res://scripts/ui/track_drawing.gd"))
 		stadium.set_anchors_preset(Control.PRESET_FULL_RECT)
 		track_area.add_child(stadium)
+	else:
+		# The hall track never changes: its own view, drawn once (the dots view redraws every frame).
+		var floor_view := Control.new()
+		floor_view.set_script(preload("res://scripts/ui/race_runners_view.gd"))
+		floor_view.set_anchors_preset(Control.PRESET_FULL_RECT)
+		floor_view.set("race", _race)
+		floor_view.set("track_only", true)
+		track_area.add_child(floor_view)
 	_runners_view = Control.new()
 	_runners_view.set_script(preload("res://scripts/ui/race_runners_view.gd"))
 	_runners_view.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_runners_view.set("race", _race)
+	_runners_view.set("indoor_floor_below", true)
 	track_area.add_child(_runners_view)
 
 	_clock = UIKit.label("0.0", "TitleLabel")
 	_info = UIKit.wrapped("")
 	_standings = UIKit.vbox(2)
+	_stand_rows.clear()
 	_commentary = UIKit.vbox(4)
 	var side := UIKit.vbox(8)
 	if Layout.compact:
@@ -357,23 +368,35 @@ func _refresh_running() -> void:
 	var order := _race.standings()
 	_info.text = "You: %s of %d · %d m to go" % [Race._ordinal(order.find(p) + 1), order.size(),
 			maxi(0, roundi(Race.DISTANCE - p.d))]
-	for child in _standings.get_children():
-		child.queue_free()
+	# The rows are made once and only their text changes: rebuilding them every frame re-lays-out the whole
+	# side panel (including the wrapped commentary) 60 times a second.
+	if _stand_rows.size() != order.size():
+		for child in _standings.get_children():
+			child.queue_free()
+		_stand_rows.clear()
+		for i in order.size():
+			var line := UIKit.hbox(6)
+			var n := UIKit.label("")
+			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			n.clip_text = true
+			line.add_child(n)
+			var g := UIKit.label("", "MutedLabel")
+			line.add_child(g)
+			_standings.add_child(line)
+			_stand_rows.append([n, g])
 	var lead := order[0].d
 	for i in order.size():
 		var r: Race.Runner = order[i]
 		var gap := "" if i == 0 else ("+%.1f m" % (lead - r.d) if not r.done else Calendar.format_time(r.t))
 		if i == 0 and r.done:
 			gap = Calendar.format_time(r.t)
-		var line := UIKit.hbox(6)
-		var n := UIKit.label("%d. %s" % [i + 1, r.name])
-		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		n.clip_text = true
+		var n: Label = _stand_rows[i][0]
+		n.text = "%d. %s" % [i + 1, r.name]
 		if r.is_player:
 			n.add_theme_color_override("font_color", Palette.ACCENT)
-		line.add_child(n)
-		line.add_child(UIKit.label(gap, "MutedLabel"))
-		_standings.add_child(line)
+		else:
+			n.remove_theme_color_override("font_color")
+		(_stand_rows[i][1] as Label).text = gap
 	_runners_view.queue_redraw()
 
 

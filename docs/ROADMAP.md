@@ -93,7 +93,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 
 - **Playtest notes (user, 2026-10-06):**
   - *Coach gives only one program:* the coach should offer several plans (fits Coaching + periodization, steps 6 and Part 2).
-  - *Race is jittery and lags after the first decision:* a **bug to investigate first** (profile `race_screen.gd` / `race_runners_view.gd` / `track_drawing.gd`, probably redraw or overlay rebuild per frame; check on PC and phone). *(Sonnet)*
+  - [x] *Race is jittery and lags after the first decision:* fixed. Two causes, found with `tools/race_perf.gd`: the indoor hall track (antialiased arcs) was redrawn every frame together with the runners (~4.6 ms of drawing per frame, 40 → 20 ms/frame on the dev laptop's Intel GPU), and the POSITIONS rows were deleted and rebuilt every frame, which re-laid-out the whole side panel with its wrapped commentary labels (the lag grew as the commentary filled up, i.e. after the first decisions). Now the hall track is its own view drawn once and the position rows are reused; steady 60 fps (16.7 ms) on PC and phone size, indoor and outdoor.
   - *More immersive races:* more in-race options, and commentary in its own box that reacts to what happens and to the player's choices (e.g. "someone kicks with 229 m to go" should be something the player can answer), less repetition, more realism. Needs a design session (Opus), then build; belongs before or inside M3 (stadium view).
 
 ## M3 — Stadium view
