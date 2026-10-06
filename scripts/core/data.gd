@@ -11,7 +11,8 @@ var names: Dictionary = {}             # data/names_fi.json
 var training: Dictionary = {}          # data/training.json: sessions, season rules, coach plan
 var competitions: Dictionary = {}      # data/competitions.json: meets, standards, race training effect
 var races: Dictionary = {}             # data/races.json: 800 m race model tuning
-var health: Dictionary = {}            # data/health.json: day intensity (later body strain, injuries, illness)
+var health: Dictionary = {}            # data/health.json: day intensity, body areas, strain, illness, risks
+var injuries: Array = []               # data/injuries.json: the injury and illness catalogue
 
 
 func _ready() -> void:
@@ -30,6 +31,7 @@ func _ready() -> void:
 	competitions = _load("res://data/competitions.json")
 	races = _load("res://data/races.json")
 	health = _load("res://data/health.json")
+	injuries = _load("res://data/injuries.json").get("injuries", [])
 
 
 func get_event(id: String) -> Dictionary:
@@ -42,6 +44,10 @@ func get_club(id: String) -> Dictionary:
 
 func get_session(id: String) -> Dictionary:
 	return _find(training.get("sessions", []), id)
+
+
+func get_injury(id: String) -> Dictionary:
+	return _find(injuries, id)
 
 
 ## Attribute definitions of one category ("physical", "technical", "mental", "hidden").

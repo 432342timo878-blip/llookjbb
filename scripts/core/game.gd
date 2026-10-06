@@ -30,6 +30,8 @@ var events: Array = []
 ## What was actually done each day, oldest first:
 ## {date, day_type, sessions, intensity, race (meet key or ""), load, fatigue, events (ids)}
 var day_log: Array = []
+## Autosave after every played day. Dev tools that play thousands of days switch it off.
+var autosave := true
 
 var _week: WeekSim
 var _playing_week := false   # the current day is being played by advance_week (it goes on after a race)
@@ -51,7 +53,8 @@ func start_career(new_athlete: Athlete) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	rivals = Rivals.generate(athlete, rng)
-	SaveGame.save(SaveGame.AUTOSAVE)
+	if autosave:
+		SaveGame.save(SaveGame.AUTOSAVE)
 
 
 func _make_systems() -> Array:
@@ -147,11 +150,15 @@ func week_monday() -> Dictionary:
 ## The week being played (made when first needed), kept in step with the weekly plan and race entries.
 ## Day changes for this week go through it: Game.current_week().set_intensity(day, "easy") etc.
 func current_week() -> WeekSim:
-	if _week == null:
+	var created := _week == null
+	if created:
 		_week = WeekSim.new(athlete, training_plan, week_monday())
 		_week.day = Calendar.weekday(date)   # 0 unless an old save was made mid-week
 	_week.plan = training_plan
 	_week.races = Calendar.races_in_week(entries, _week.monday)
+	if created:
+		for s in systems:
+			s.on_week_start(_week)
 	return _week
 
 
@@ -202,6 +209,7 @@ func _play_day() -> String:
 		_hook("on_day_start", _day_context())
 		if not pending_event().is_empty():
 			return STOP   # the day isn't played yet; the next press carries on from here
+	week = current_week()   # a system may have changed the entries (e.g. withdrawn an injured athlete)
 	if week.is_race_day(week.day):
 		race_day = RaceDay.new(week.races[week.day], athlete, rivals)
 		return RACE
@@ -218,6 +226,10 @@ func _end_day() -> String:
 	var rec: Dictionary = ctx.record
 	var entry := {"date": date.duplicate(), "day_type": ctx.day_type, "sessions": rec.sessions,
 			"intensity": rec.intensity, "race": rec.race, "load": rec.load, "fatigue": rec.fatigue, "events": []}
+	# Systems can add their own fields to the day log (health: soreness and active injuries).
+	var extra: Dictionary = ctx.get("log_extra", {})
+	for key in extra:
+		entry[key] = extra[key]
 	day_log.append(entry)
 	var result := DAY_DONE
 	if _week.is_over():
@@ -228,7 +240,8 @@ func _end_day() -> String:
 			entry.events.append(e.id)
 	date = add_days(date, 1)
 	_prune()
-	SaveGame.save(SaveGame.AUTOSAVE)
+	if autosave:
+		SaveGame.save(SaveGame.AUTOSAVE)
 	return STOP if not pending_event().is_empty() else result
 
 

@@ -45,8 +45,11 @@
   }
  },
  "race_session": {
-  "_note": "Training effect and fatigue of racing an 800 m (replaces that day's planned sessions).",
+  "_note": "Training effect and fatigue of racing an 800 m (replaces that day's planned sessions). strain / acute / tags: as for training sessions (GDD 4.6).",
   "load": 18,
-  "effects": {"speed_endurance": 1.0, "race_tactics": 0.6, "composure": 0.4, "competitiveness": 0.3, "pain_tolerance": 0.3}
+  "effects": {"speed_endurance": 1.0, "race_tactics": 0.6, "composure": 0.4, "competitiveness": 0.3, "pain_tolerance": 0.3},
+  "tags": ["run", "hard", "speed", "race"],
+  "strain": {"shins": 5, "feet": 6, "knees": 3, "achilles": 7, "hamstrings": 7, "calves": 8},
+  "acute": {"hamstring_pull": 0.001, "calf_pull": 0.0007}
  }
 }

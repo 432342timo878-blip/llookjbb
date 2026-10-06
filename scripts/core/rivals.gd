@@ -37,11 +37,14 @@ static func generate(a: Athlete, rng: RandomNumberGenerator) -> Array:
 
 ## One week of training for every rival (similar growth model to the player's: slows near the ceiling).
 ## They also race elsewhere: each week a rival may run an 800 m of their own (more often in summer),
-## which feeds their season best for the rankings.
+## which feeds their season best for the rankings. Injured rivals (out_weeks > 0, set by HealthSystem)
+## neither train nor race.
 static func train_week(pool: Array, gender: String, monday: Dictionary) -> void:
 	var chances: Array = Data.races.rivals.race_chance_by_month
 	var chance := float(chances[int(monday.month) - 1])
 	for r in pool:
+		if is_out(r):
+			continue
 		var headroom := clampf((float(r.ceiling) - float(r.ability)) / 5.0, 0.05, 1.0)
 		r.ability = float(r.ability) + 0.055 * float(r.trainability) * headroom * randf_range(0.4, 1.6)
 		r.speed = float(r.speed) + 0.03 * randf()
@@ -65,7 +68,7 @@ static func record_time(r: Dictionary, time: float, date: Dictionary) -> void:
 ## Opponents for a race at a meet of this level.
 static func pick_field(pool: Array, level: String, rng: RandomNumberGenerator, standard_ability := 0.0) -> Array:
 	var cfg: Dictionary = Data.races.fields.get(level, Data.races.fields.local)
-	var sorted := pool.duplicate()
+	var sorted := pool.filter(func(r): return not is_out(r))   # injured rivals don't race
 	sorted.sort_custom(func(x, y): return x.ability < y.ability)
 	var lo := int(float(cfg.pool_range[0]) * sorted.size())
 	var hi := int(float(cfg.pool_range[1]) * sorted.size())
@@ -78,6 +81,11 @@ static func pick_field(pool: Array, level: String, rng: RandomNumberGenerator, s
 	if level == "national" and standard_ability > 0.0:
 		size = 40   # championships take everyone who enters (then run heats)
 	return candidates.slice(0, mini(size, candidates.size()))
+
+
+## Injured: out for this many more weeks (GDD 4.6, HealthSystem rolls it every week).
+static func is_out(r: Dictionary) -> bool:
+	return int(r.get("out_weeks", 0)) > 0
 
 
 static func full_name(r: Dictionary) -> String:

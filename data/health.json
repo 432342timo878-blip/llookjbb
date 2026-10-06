@@ -1,18 +1,119 @@
 {
- "_note": "Health and day-intensity tuning (GDD 4.5–4.6). M2 step 1 only uses the intensity settings; body areas, strain rates, thresholds, illness rates and the rival injury chance come with the health model (step 3).",
+ "_note": "Health and day-intensity tuning (GDD 4.5–4.6). The health model (HealthSystem) reads everything below; injuries and illnesses themselves are in data/injuries.json, session strain in data/training.json. Strain is a hidden number per body area (0 = fresh, ~30 a bit sore, ~50 sore, ~70 painful).",
  "intensity": {
-  "_note": "Per-day intensity (this week's day changes). load = multiplier on the fatigue a session adds; effect = multiplier on its training stimulus. Normal must stay 1.0 / 1.0 so the weekly plan behaves as before. Races ignore intensity.",
+  "_note": "Per-day intensity (this week's day changes). load = multiplier on the fatigue a session adds; effect = multiplier on its training stimulus; strain = multiplier on the body strain it adds. Normal must stay 1.0 / 1.0 / 1.0 so the weekly plan behaves as before. Races ignore intensity.",
   "easy": {
-   "name": "Easy", "load": 0.7, "effect": 0.8,
+   "name": "Easy", "load": 0.7, "effect": 0.8, "strain": 0.6,
    "description": "Run the sessions gently: less tiring, a bit less training effect."
   },
   "normal": {
-   "name": "Normal", "load": 1.0, "effect": 1.0,
+   "name": "Normal", "load": 1.0, "effect": 1.0, "strain": 1.0,
    "description": "The sessions as planned."
   },
   "hard": {
-   "name": "Hard", "load": 1.3, "effect": 1.15,
+   "name": "Hard", "load": 1.3, "effect": 1.15, "strain": 1.35,
    "description": "Push harder than planned: a bit more training effect, but much more tiring."
   }
+ },
+
+ "areas": {
+  "_note": "The six body areas, in a fixed order. keep = share of the strain still there the next day (bone fades slowly, muscle fast).",
+  "list": [
+   {"id": "shins", "name": "Shins", "kind": "bone", "keep": 0.875,
+    "helps": "Less running on hard roads, fewer long runs for a while, softer surfaces, and a gradual build-up."},
+   {"id": "feet", "name": "Feet", "kind": "bone", "keep": 0.875,
+    "helps": "Less running volume for a few days, softer surfaces, and calf stretching."},
+   {"id": "knees", "name": "Knees", "kind": "tendon", "keep": 0.87,
+    "helps": "Fewer hill sprints and bounding drills, and an easier day or two."},
+   {"id": "achilles", "name": "Heels & Achilles", "kind": "tendon", "keep": 0.87,
+    "helps": "No hills or fast running for a few days, and calf exercises."},
+   {"id": "hamstrings", "name": "Hamstrings", "kind": "muscle", "keep": 0.8,
+    "helps": "No sprinting until it feels loose again, and mobility work."},
+   {"id": "calves", "name": "Calves", "kind": "muscle", "keep": 0.8,
+    "helps": "A couple of easy days without fast running, and mobility work."}
+  ]
+ },
+
+ "soreness": {
+  "_note": "How strain shows to the player. levels = strain where 'a bit sore', 'sore' and 'painful' start.",
+  "levels": [30, 50, 70],
+  "names": ["None", "A bit sore", "Sore", "Painful"]
+ },
+
+ "strain": {
+  "_note": "What adds strain on top of the session's own numbers, and what makes it fade faster. Every multiplier is 1.0 for an average athlete on a normal day.",
+  "fatigue_from": 30, "fatigue_extra": 0.25,
+  "_fatigue_note": "Tired legs: ×(1 + fatigue_extra × (fatigue − fatigue_from) / (100 − fatigue_from)) above fatigue_from.",
+  "hard_surface_areas": ["shins", "feet", "knees"], "hard_surface": 1.3,
+  "_hard_surface_note": "Track sessions done on roads/snow in winter (no indoor hall) hit these areas harder.",
+  "durability_at_1": 1.3, "durability_at_20": 0.7,
+  "rest_day_extra_fade": 0.05,
+  "fade_per_recovery_point": 0.002, "fade_per_professionalism_point": 0.001,
+  "_fade_note": "Each point of recovery rate / professionalism above 10 takes this much off 'keep' (below 10 adds it).",
+  "spike": {
+   "_note": "Acute vs chronic load (impact = the strain sessions add before multipliers). The body adapts to its last ~4 weeks: an acute:chronic ratio above free_ratio adds per_ratio × (ratio − free_ratio) to every area's strain, up to max. A new career starts as if it had done start_daily_impact a day (about the coach plan).",
+   "acute_days": 7, "chronic_days": 28, "free_ratio": 1.2, "per_ratio": 0.7, "max": 1.8,
+   "start_daily_impact": 19, "min_chronic": 4
+  },
+  "adaptation": {
+   "_note": "Capacity: a body used to more load takes each session better. Strain added is divided by the capacity, which follows (chronic daily impact / start_daily_impact)^power (kept between min and max) slowly: bone and tendon need weeks to adapt. Each day it moves 1/days_up of the way up or 1/days_down of the way down. So a gradual build-up to a hard plan is safe, a sudden jump isn't, and weeks off make the body lose it again.",
+   "power": 1.15, "min": 0.6, "max": 2.5, "days_up": 28, "days_down": 28
+  },
+  "growth": {
+   "_note": "Growth spurt: peak at this age (gender) shifted by maturation; within half_width years of it the listed areas take up to ×(1 + extra) strain.",
+   "peak_age": {"male": 14.0, "female": 12.0},
+   "maturation_shift": {"early": -1.2, "average": 0.0, "late": 1.2},
+   "half_width": 1.0,
+   "areas": {"knees": 0.5, "achilles": 0.5}
+  },
+  "history": {"_note": "A past injury makes its area take up to ×(1 + extra) strain, fading over this many days after it healed.", "days": 182, "extra": 0.3}
+ },
+
+ "injury_risk": {
+  "_note": "Daily overuse-injury chance per area: at_sore × 2^((strain − sore_strain) / doubling): it doubles every `doubling` points of strain. Zero below zero_below, fading in up to full_from (so near zero below 'a bit sore'). × hidden injury proneness (1 → proneness[0], 20 → proneness[1]); girls × female_bone in bone areas. When it hits, the injury is picked from the catalogue: candidates whose min_strain is reached, weight × (1 + (strain − min_strain) / pick_bias) so overloaded areas give worse injuries.",
+  "at_sore": 0.0024, "sore_strain": 50, "doubling": 9, "zero_below": 20, "full_from": 30,
+  "proneness": [0.6, 1.8],
+  "female_bone": 1.15,
+  "pick_bias": 20
+ },
+
+ "acute": {
+  "_note": "Bad luck per session: the session's own 'acute' chances (data/training.json), × (1 + fatigue_extra × (fatigue − 30) / 70) when tired, × proneness. Running on icy roads in winter (road sessions, and track sessions done off-track) adds an ankle-sprain chance.",
+  "fatigue_extra": 1.0,
+  "winter_roads": {"months": [12, 1, 2], "injury": "ankle_sprain", "chance": 0.0003}
+ },
+
+ "escalation": {
+  "_note": "Daily chance that an injury that can get worse (escalates_to) does: after a day trained through its limits (a banned session done), after racing on it, or when its area is painful anyway. The trained-through and raced chances are × (area strain / 'sore' level)², kept between strain_min and strain_max, so training through on a calm area is a smaller gamble. Each day an injury (not an illness) is trained through also adds extend_days to its current phase.",
+  "trained_through": 0.3, "raced": 0.2, "painful": 0.02, "strain_min": 0.25, "strain_max": 3.0, "extend_days": 2
+ },
+
+ "illness": {
+  "_note": "Daily chance of falling ill (then cold or flu by catalogue weight): daily × month_weight (Jan..Dec) × tiredness × after a race × professionalism (1 → professionalism[0], 20 → professionalism[1]).",
+  "daily": 0.0052,
+  "month_weight": [2.0, 1.9, 1.5, 0.8, 0.5, 0.3, 0.3, 0.3, 0.6, 1.0, 1.7, 2.0],
+  "fatigue_from": 30, "fatigue_extra": 0.7,
+  "after_race_days": 3, "after_race": 1.8,
+  "professionalism": [1.2, 0.8]
+ },
+
+ "warning": {"_note": "The 'sore' stop event comes when an area turns sore, at most once per area in this many days.", "repeat_days": 14},
+
+ "detraining": {"_note": "Extra loss for every physical attribute that got no training stimulus this week, per day beyond after_days in a row with no training at all.", "after_days": 10, "per_day": 0.01},
+
+ "plan_risk": {"_note": "The weekly plan's risk word: expected overuse injuries over `weeks` weeks of it from the current body state (average proneness, so it never gives the hidden value away).", "weeks": 4, "moderate": 0.1, "high": 0.18},
+
+ "proneness_hint": {"_note": "After this many injuries (not illnesses) within this many days, the game hints that the athlete picks up knocks easily.", "injuries": 3, "days": 365},
+
+ "rivals": {"_note": "Each week a fit rival has this chance to get injured and miss training and races for a number of weeks drawn inside `weeks`.", "weekly_chance": 0.006, "weeks": [2, 6]},
+
+ "restrictions": {
+  "_note": "What an injury phase allows. bans = session tags (data/training.json) that can't be done; allow_only = only these sessions; intensity = the most the day may be. A banned session is swapped for the first of its 'instead' sessions that is allowed, otherwise dropped.",
+  "limits": {"name": "Train with limits", "bans": ["speed", "plyo"], "text": "train, but no sprinting or jumping"},
+  "easy_running": {"name": "Easy running only", "bans": ["hard", "speed", "plyo", "long"], "text": "easy running only"},
+  "no_running": {"name": "No running", "bans": ["run", "drills", "plyo", "speed"], "text": "no running: cross-training instead"},
+  "no_impact": {"name": "No impact", "bans": ["run", "drills", "plyo", "speed", "legs", "ski"], "text": "no impact at all: pool, swimming and upper body only"},
+  "easy_day": {"name": "Easy training", "bans": ["hard", "speed"], "intensity": "easy", "text": "easy training only"},
+  "rest": {"name": "Rest", "allow_only": ["mobility"], "text": "no training"}
  }
 }

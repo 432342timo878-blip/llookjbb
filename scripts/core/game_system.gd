@@ -8,8 +8,14 @@ extends RefCounted
 ## "report" (the weekly report). A system can change today or later days of this week through ctx.week
 ## (e.g. set_sessions(d, ids, "injury")) and post events with Game.post_event(id, ...). The player's answer
 ## to one of its events comes back in on_answer. Each system saves its own state (to_dict / from_dict).
+## on_week_start comes when a new week is set up (before its first day starts), so a system can put its
+## day changes into the new week straight away (e.g. injury limits).
 
 var id := ""   # also the event `source` this system answers for
+
+
+func on_week_start(_week: WeekSim) -> void:
+	pass
 
 
 func on_day_start(_ctx: Dictionary) -> void:

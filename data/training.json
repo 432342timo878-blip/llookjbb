@@ -1,5 +1,5 @@
 {
- "_note": "Ready-made training sessions (GDD D25). load = fatigue added (before durability). effects = training stimulus per attribute; several sessions on the same attribute in one week give diminishing returns. needs_track: needs a running track; in the months the outdoor track is closed, athletes without an indoor hall do it on roads/snow at reduced effect. months: only possible in these months (e.g. skiing needs snow).",
+ "_note": "Ready-made training sessions (GDD D25). load = fatigue added (before durability). effects = training stimulus per attribute; several sessions on the same attribute in one week give diminishing returns. needs_track: needs a running track; in the months the outdoor track is closed, athletes without an indoor hall do it on roads/snow at reduced effect. months: only possible in these months (e.g. skiing needs snow). Health (GDD 4.6): strain = hidden strain added per body area (data/health.json); acute = chance per session of a bad-luck injury (data/injuries.json); tags = what kind of session it is, which injury restrictions ban by tag; instead = what it is swapped for when an injury bans it (the first allowed one).",
  "season": {
   "track_closed_months": [11, 12, 1, 2, 3, 4],
   "track_access_bases": ["indoor_hall", "sports_class"],
@@ -9,67 +9,123 @@
   {
    "id": "easy_run", "name": "Easy run", "load": 8,
    "description": "30–40 min at a relaxed, chatty pace.",
-   "effects": {"aerobic_capacity": 1.0, "running_economy": 0.5, "durability": 0.3}
+   "effects": {"aerobic_capacity": 1.0, "running_economy": 0.5, "durability": 0.3},
+   "tags": ["run"], "instead": ["aqua_jog", "stationary_bike", "swimming"],
+   "strain": {"shins": 4, "feet": 3, "knees": 3, "achilles": 2, "hamstrings": 1, "calves": 3}
   },
   {
    "id": "long_run", "name": "Long run", "load": 14,
    "description": "50–70 min easy. Builds the engine.",
-   "effects": {"aerobic_capacity": 1.4, "running_economy": 0.5, "durability": 0.5, "lactate_threshold": 0.3, "determination": 0.15}
+   "effects": {"aerobic_capacity": 1.4, "running_economy": 0.5, "durability": 0.5, "lactate_threshold": 0.3, "determination": 0.15},
+   "tags": ["run", "long"], "instead": ["easy_run", "aqua_jog", "swimming"],
+   "strain": {"shins": 7, "feet": 5, "knees": 5, "achilles": 3, "hamstrings": 2, "calves": 5}
   },
   {
    "id": "fartlek", "name": "Fartlek", "load": 13,
    "description": "40 min on forest trails with free surges.",
-   "effects": {"aerobic_capacity": 0.7, "lactate_threshold": 0.6, "speed_endurance": 0.5, "race_tactics": 0.15, "determination": 0.1}
+   "effects": {"aerobic_capacity": 0.7, "lactate_threshold": 0.6, "speed_endurance": 0.5, "race_tactics": 0.15, "determination": 0.1},
+   "tags": ["run", "hard"], "instead": ["easy_run", "aqua_jog", "stationary_bike"],
+   "strain": {"shins": 3, "feet": 4, "knees": 3, "achilles": 4, "hamstrings": 4, "calves": 5},
+   "acute": {"ankle_sprain": 0.0006}
   },
   {
    "id": "tempo_run", "name": "Tempo run", "load": 17,
    "description": "3 × 8 min at a comfortably hard pace.",
-   "effects": {"lactate_threshold": 1.4, "aerobic_capacity": 0.5, "running_economy": 0.3, "pain_tolerance": 0.15}
+   "effects": {"lactate_threshold": 1.4, "aerobic_capacity": 0.5, "running_economy": 0.3, "pain_tolerance": 0.15},
+   "tags": ["run", "hard"], "instead": ["easy_run", "aqua_jog", "stationary_bike"],
+   "strain": {"shins": 7, "feet": 5, "knees": 4, "achilles": 4, "hamstrings": 3, "calves": 6}
   },
   {
    "id": "intervals_800", "name": "800 m intervals", "load": 26, "needs_track": true,
    "description": "6 × 300 m fast with long recoveries. Race-specific and very hard.",
-   "effects": {"speed_endurance": 1.5, "lactate_threshold": 0.4, "pain_tolerance": 0.4, "race_tactics": 0.15}
+   "effects": {"speed_endurance": 1.5, "lactate_threshold": 0.4, "pain_tolerance": 0.4, "race_tactics": 0.15},
+   "tags": ["run", "hard", "speed"], "instead": ["easy_run", "aqua_jog", "stationary_bike"],
+   "strain": {"shins": 7, "feet": 8, "knees": 4, "achilles": 6, "hamstrings": 7, "calves": 8},
+   "acute": {"hamstring_pull": 0.0004, "calf_pull": 0.0003}
   },
   {
    "id": "speed_strides", "name": "Speed & strides", "load": 9, "needs_track": true,
    "description": "Flying 30 m sprints and relaxed strides on the straight.",
-   "effects": {"speed": 1.2, "acceleration": 0.5, "running_technique": 0.4}
+   "effects": {"speed": 1.2, "acceleration": 0.5, "running_technique": 0.4},
+   "tags": ["run", "speed"], "instead": ["easy_run", "stationary_bike", "gym_core"],
+   "strain": {"shins": 2, "feet": 4, "knees": 2, "achilles": 4, "hamstrings": 7, "calves": 5},
+   "acute": {"hamstring_pull": 0.0002}
   },
   {
    "id": "hill_sprints", "name": "Hill sprints", "load": 11,
    "description": "8 × 10 s uphill, walk back down to recover.",
-   "effects": {"power": 1.2, "acceleration": 0.6, "strength": 0.5}
+   "effects": {"power": 1.2, "acceleration": 0.6, "strength": 0.5},
+   "tags": ["run", "speed", "plyo"], "instead": ["strength", "stationary_bike", "gym_core"],
+   "strain": {"shins": 2, "feet": 3, "knees": 5, "achilles": 6, "hamstrings": 6, "calves": 7},
+   "acute": {"calf_pull": 0.0003, "hamstring_pull": 0.0002}
   },
   {
    "id": "start_practice", "name": "Start practice", "load": 5, "needs_track": true,
    "description": "Standing and crouch starts, reaction games.",
-   "effects": {"starts": 1.4, "acceleration": 0.5}
+   "effects": {"starts": 1.4, "acceleration": 0.5},
+   "tags": ["run", "speed"], "instead": ["gym_core"],
+   "strain": {"feet": 2, "achilles": 3, "hamstrings": 4, "calves": 2},
+   "acute": {"hamstring_pull": 0.0002}
   },
   {
    "id": "club_session", "name": "Club group session", "load": 13, "needs_track": true,
    "description": "Mixed session with your training group: relays, races and games.",
-   "effects": {"race_tactics": 0.8, "competitiveness": 0.6, "speed_endurance": 0.5, "composure": 0.3, "consistency": 0.2}
+   "effects": {"race_tactics": 0.8, "competitiveness": 0.6, "speed_endurance": 0.5, "composure": 0.3, "consistency": 0.2},
+   "tags": ["run", "hard", "speed"], "instead": ["easy_run", "aqua_jog", "gym_core"],
+   "strain": {"shins": 4, "feet": 4, "knees": 3, "achilles": 4, "hamstrings": 4, "calves": 4},
+   "acute": {"hamstring_pull": 0.0002, "ankle_sprain": 0.0002}
   },
   {
    "id": "strength", "name": "Strength & core", "load": 10,
    "description": "Bodyweight circuit, core and light gym work.",
-   "effects": {"strength": 1.2, "durability": 0.5, "power": 0.3}
+   "effects": {"strength": 1.2, "durability": 0.5, "power": 0.3},
+   "tags": ["legs"], "instead": ["gym_core"],
+   "strain": {"knees": 3, "achilles": 1, "hamstrings": 2}
   },
   {
    "id": "drills", "name": "Running drills", "load": 6,
    "description": "Skips, A-march and bounding drills for better form.",
-   "effects": {"running_technique": 1.4, "running_economy": 0.3, "mobility": 0.3, "starts": 0.2}
+   "effects": {"running_technique": 1.4, "running_economy": 0.3, "mobility": 0.3, "starts": 0.2},
+   "tags": ["drills", "plyo"], "instead": ["mobility"],
+   "strain": {"shins": 3, "feet": 3, "knees": 2, "achilles": 3, "hamstrings": 1, "calves": 3}
   },
   {
    "id": "mobility", "name": "Mobility & stretching", "load": 1, "recovery": 4,
    "description": "Stretching, foam rolling and mobility work. Helps recovery.",
-   "effects": {"mobility": 1.3, "durability": 0.15}
+   "effects": {"mobility": 1.3, "durability": 0.15},
+   "tags": []
   },
   {
    "id": "xc_skiing", "name": "Cross-country skiing", "load": 12, "months": [12, 1, 2, 3],
    "description": "60–90 min on the ski trails. A big engine without the pounding.",
-   "effects": {"aerobic_capacity": 1.3, "lactate_threshold": 0.3, "strength": 0.3, "durability": 0.2}
+   "effects": {"aerobic_capacity": 1.3, "lactate_threshold": 0.3, "strength": 0.3, "durability": 0.2},
+   "tags": ["ski"], "instead": ["aqua_jog", "swimming"],
+   "strain": {"knees": 1, "hamstrings": 1, "calves": 1}
+  },
+  {
+   "id": "aqua_jog", "name": "Aqua jogging", "load": 9,
+   "description": "Running in deep water with a float belt. Keeps the most running fitness with no impact at all.",
+   "effects": {"aerobic_capacity": 0.9, "lactate_threshold": 0.4, "running_economy": 0.1},
+   "tags": ["cross"], "instead": ["swimming", "gym_core"]
+  },
+  {
+   "id": "stationary_bike", "name": "Stationary bike", "load": 8,
+   "description": "45 min on the gym bike, steady with a few harder blocks. No pounding, but the knees work.",
+   "effects": {"aerobic_capacity": 0.7, "lactate_threshold": 0.4, "strength": 0.2},
+   "tags": ["cross", "legs"], "instead": ["aqua_jog", "swimming"],
+   "strain": {"knees": 2}
+  },
+  {
+   "id": "swimming", "name": "Swimming", "load": 7,
+   "description": "Easy lengths in the pool. Good for the engine and the upper body.",
+   "effects": {"aerobic_capacity": 0.6, "mobility": 0.3},
+   "tags": ["cross"], "instead": ["gym_core"]
+  },
+  {
+   "id": "gym_core", "name": "Upper body & core", "load": 6,
+   "description": "Core, back and upper-body work that spares the legs.",
+   "effects": {"strength": 0.6, "durability": 0.2},
+   "tags": ["cross"], "instead": ["mobility"]
   }
  ],
  "coach_plan": {

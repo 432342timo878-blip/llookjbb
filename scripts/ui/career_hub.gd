@@ -42,8 +42,9 @@ func _ready() -> void:
 	_show_pending_event()
 
 
-## Debug builds only: T arms a test stop event for the end of the next played day (see DevEvents).
-## (Not an F key: when the game runs from the editor, F7/F8 pause/stop the game.)
+## Debug builds only: T arms a test stop event for the end of the next played day (see DevEvents);
+## H prints the hidden health numbers (strain, injuries, risk) to the Output panel (HealthSystem.debug_text).
+## (Not F keys: when the game runs from the editor, F7/F8 pause/stop the game.)
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
@@ -58,6 +59,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			get_tree().create_timer(1.5).timeout.connect(func():
 				if is_instance_valid(_date_label):
 					_refresh_header())
+	elif key == KEY_H and OS.is_debug_build():
+		var health := Game.get_system("health") as HealthSystem
+		if health:
+			print(health.debug_text())
 
 
 ## Header, week strip, tab bar, scrolling content, day editor. Rebuilt when the window switches between

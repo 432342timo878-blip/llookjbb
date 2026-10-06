@@ -1,7 +1,9 @@
 extends SceneTree
 ## Dev tool: headless checks for the day-by-day engine (GDD 4.5 / 4.7). Prints PASS / FAIL per check.
 ## Run: godot --headless --path . -s res://tools/day_engine_check.gd [-- <a version-1 save file to also load>]
-## Uses its own save folder, never the player's saves.
+## Uses its own save folder, never the player's saves. The health model is switched off here (these checks
+## compare day-by-day play with the plain weekly simulation; a random cold would change that): the health
+## model has its own checks in tools/health_check.gd.
 
 var game
 var saves
@@ -23,6 +25,7 @@ func _run() -> void:
 	Cal = load("res://scripts/core/calendar.gd")
 	T = load("res://scripts/core/training.gd")
 	A = load("res://scripts/core/athlete.gd")
+	load("res://scripts/core/health_system.gd").model_enabled = false
 
 	_check_exact_numbers()
 	_check_same_as_weekly()

@@ -160,7 +160,13 @@ static func format_time(seconds: float) -> String:
 	return "%d:%05.2f" % [m, s]
 
 
+## Built once (the data doesn't change while the game runs). Callers only read the meets.
+static var _meets_cache: Array = []
+
+
 static func _all_meets() -> Array:
+	if not _meets_cache.is_empty():
+		return _meets_cache
 	var meets := []
 	for season in SEASONS_AHEAD + 1:
 		for c in Data.competitions.competitions:
@@ -174,4 +180,5 @@ static func _all_meets() -> Array:
 					m.erase("venue")
 			meets.append(m)
 	meets.sort_custom(func(x, y): return date_key(x.date) < date_key(y.date))
+	_meets_cache = meets
 	return meets

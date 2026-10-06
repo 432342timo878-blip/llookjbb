@@ -15,6 +15,7 @@ var final_entrants: Array = []
 var player_results: Array = []    # [{round, place, field, time}]
 var all_results: Array = []       # every race run here (for rival PBs)
 var current: Race
+var slowdown := 0.0               # share slower because of a niggle or illness (HealthSystem.race_slowdown)
 
 var _rng := RandomNumberGenerator.new()
 var _gender := "male"
@@ -158,8 +159,15 @@ func _rival_entrant(r: Dictionary) -> Dictionary:
 			"consistency": r.consistency, "composure": r.composure, "rival": r}
 
 
+## Racing with a niggle or a cold (GDD 4.6): the athlete runs this share slower (0 when healthy).
+## The health system also counts the race as running on the problem (it may get worse).
 func _player_entrant() -> Dictionary:
 	var e := RacePerformance.player_profile(athlete)
+	var health := Game.get_system("health") as HealthSystem
+	slowdown = health.race_slowdown() if health else 0.0
+	if slowdown > 0.0:
+		var time := RacePerformance.time_for(e.ability, athlete.gender) * (1.0 + slowdown)
+		e.ability = RacePerformance.ability_for_time(time, athlete.gender)
 	e.name = athlete.full_name()
 	e.club = Data.get_club(athlete.club_id).get("name", "")
 	e.is_player = true

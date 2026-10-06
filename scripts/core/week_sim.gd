@@ -114,6 +114,11 @@ func end_week() -> Dictionary:
 	}
 
 
+## The training stimulus collected so far this week (attribute id -> amount). Read-only.
+func stimulus_so_far() -> Dictionary:
+	return _stimulus
+
+
 # --- Day changes (this week only) --------------------------------------------------------------
 
 ## The session ids planned for day `d`: the day change if there is one, otherwise the weekly plan.

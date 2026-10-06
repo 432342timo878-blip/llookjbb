@@ -1,0 +1,201 @@
+{
+ "_note": "Injury and illness catalogue for youth runners (GDD 4.6). tier: niggle / injury / serious / illness. area: the body area (data/health.json) it belongs to. cause: overuse (picked when an area's strain causes an injury), acute (bad luck in a session, see the sessions' 'acute' risks) or illness. min_strain: the area strain from which an overuse injury can be the one picked (higher = only when the area is very overloaded; the mildest niggles start where the overuse risk starts, injury_risk.zero_below in data/health.json); weight: how common it is among the eligible ones. min_age / max_age: age in years. growth: only around the growth spurt (more likely the closer to it). female: weight multiplier for girls (bone stress). phases: what is allowed, in order, each lasting a number of days drawn inside 'days'; after the last phase the athlete is fully fit. restriction: a preset from data/health.json, bans: extra session tags that are banned, locked: the player can't override the limits. escalates_to: what it can turn into when trained or raced through (if the athlete is old enough for it). race_slowdown: share slower when racing with it. Time ranges follow real-world return-to-run guidance for adolescents.",
+ "injuries": [
+  {
+   "id": "shin_splints", "name": "Shin splints", "tier": "niggle", "area": "shins", "cause": "overuse",
+   "min_strain": 20, "weight": 3.0, "female": 1.3,
+   "description": "Medial tibial stress syndrome: the bone and the tissue along the inside of the shin are irritated by too much pounding. Common when running volume goes up quickly or on hard roads.",
+   "phases": [{"restriction": "limits", "bans": ["hard", "long"], "days": [7, 21]}],
+   "escalates_to": "tibial_stress_reaction", "race_slowdown": 0.015
+  },
+  {
+   "id": "foot_pain", "name": "Sore foot (plantar fascia)", "tier": "niggle", "area": "feet", "cause": "overuse",
+   "min_strain": 20, "weight": 2.0, "female": 1.2,
+   "description": "The thick band under the foot is irritated, worst in the first steps of the morning. It settles with less running volume, calf stretching and softer surfaces.",
+   "phases": [{"restriction": "limits", "bans": ["hard"], "days": [7, 21]}],
+   "escalates_to": "metatarsal_stress_reaction", "race_slowdown": 0.015
+  },
+  {
+   "id": "osgood_schlatter", "name": "Osgood-Schlatter flare", "tier": "niggle", "area": "knees", "cause": "overuse",
+   "min_strain": 20, "weight": 3.0, "growth": true, "max_age": 16,
+   "description": "The growth plate below the kneecap, where the knee tendon attaches, is irritated. Very common in growing teenagers who run and jump. It flares with jumping and sprinting and calms down when the load drops.",
+   "phases": [{"restriction": "limits", "bans": ["plyo", "speed"], "days": [10, 28]}],
+   "race_slowdown": 0.01
+  },
+  {
+   "id": "severs", "name": "Sever's disease (heel)", "tier": "niggle", "area": "achilles", "cause": "overuse",
+   "min_strain": 20, "weight": 3.0, "growth": true, "max_age": 15,
+   "description": "The growth plate at the back of the heel, where the Achilles tendon pulls on it, is irritated. A growth-spurt problem: it hurts after running and jumping and settles with less load.",
+   "phases": [{"restriction": "limits", "bans": ["plyo", "speed", "hard"], "days": [7, 28]}],
+   "race_slowdown": 0.015
+  },
+  {
+   "id": "patellofemoral_pain", "name": "Runner's knee (patellofemoral pain)", "tier": "niggle", "area": "knees", "cause": "overuse",
+   "min_strain": 20, "weight": 2.0, "female": 1.3,
+   "description": "A dull ache around or behind the kneecap, worse on hills, stairs and after sitting. Strength work for the hips and thighs and a short break from hard running help.",
+   "phases": [{"restriction": "limits", "bans": ["plyo", "hard"], "days": [7, 21]}],
+   "race_slowdown": 0.01
+  },
+  {
+   "id": "achilles_tightness", "name": "Tight Achilles", "tier": "niggle", "area": "achilles", "cause": "overuse",
+   "min_strain": 20, "weight": 2.0,
+   "description": "The Achilles tendon feels stiff and sore, especially in the morning. Easing off fast running and hills for a while lets it settle.",
+   "phases": [{"restriction": "limits", "bans": ["speed", "plyo", "hard"], "days": [7, 21]}],
+   "escalates_to": "achilles_tendinopathy", "race_slowdown": 0.015
+  },
+  {
+   "id": "calf_tightness", "name": "Tight calf", "tier": "niggle", "area": "calves", "cause": "overuse",
+   "min_strain": 20, "weight": 3.0,
+   "description": "The calf muscle is tight and sore after hard sessions. A few easier days with no fast running usually sort it out.",
+   "phases": [{"restriction": "limits", "bans": ["speed", "plyo", "hard"], "days": [4, 12]}],
+   "escalates_to": "calf_strain", "race_slowdown": 0.015
+  },
+  {
+   "id": "hamstring_tightness", "name": "Tight hamstring", "tier": "niggle", "area": "hamstrings", "cause": "overuse",
+   "min_strain": 20, "weight": 3.0,
+   "description": "The back of the thigh feels tight and tender. Fast running is the risk: keep it easy for a while and it settles.",
+   "phases": [{"restriction": "limits", "bans": ["speed", "plyo"], "days": [4, 12]}],
+   "escalates_to": "hamstring_strain", "race_slowdown": 0.015
+  },
+
+  {
+   "id": "hamstring_strain", "name": "Hamstring strain (grade 1–2)", "tier": "injury", "area": "hamstrings", "cause": "overuse",
+   "min_strain": 50, "weight": 1.5,
+   "description": "Some fibres of the hamstring muscle are torn, usually while sprinting. It needs a break from running, then a gradual return to speed.",
+   "phases": [
+    {"restriction": "no_running", "days": [7, 14], "locked": true},
+    {"restriction": "easy_running", "days": [7, 14]}
+   ],
+   "escalates_to": "hamstring_tear", "race_slowdown": 0.05
+  },
+  {
+   "id": "calf_strain", "name": "Calf strain (grade 1–2)", "tier": "injury", "area": "calves", "cause": "overuse",
+   "min_strain": 50, "weight": 1.5,
+   "description": "A small tear in the calf muscle, often felt as a sudden sharp pain on push-off. Rest from running first, then build back up gently.",
+   "phases": [
+    {"restriction": "no_running", "days": [5, 14], "locked": true},
+    {"restriction": "easy_running", "days": [5, 10]}
+   ],
+   "race_slowdown": 0.05
+  },
+  {
+   "id": "tibial_stress_reaction", "name": "Shin stress reaction", "tier": "injury", "area": "shins", "cause": "overuse",
+   "min_strain": 50, "weight": 1.0, "female": 1.5,
+   "description": "The shin bone is overloaded and starting to break down faster than it can rebuild: one step before a stress fracture. It needs weeks without running so the bone can catch up.",
+   "phases": [
+    {"restriction": "no_running", "days": [21, 35], "locked": true},
+    {"restriction": "easy_running", "days": [7, 14]}
+   ],
+   "escalates_to": "tibial_stress_fracture", "race_slowdown": 0.04
+  },
+  {
+   "id": "metatarsal_stress_reaction", "name": "Foot stress reaction (metatarsal)", "tier": "injury", "area": "feet", "cause": "overuse",
+   "min_strain": 50, "weight": 1.0, "female": 1.5,
+   "description": "One of the long bones in the foot is overloaded and sore to press. Without running for a few weeks it heals; running on it can crack it.",
+   "phases": [
+    {"restriction": "no_running", "days": [21, 35], "locked": true},
+    {"restriction": "easy_running", "days": [7, 14]}
+   ],
+   "escalates_to": "metatarsal_stress_fracture", "race_slowdown": 0.04
+  },
+  {
+   "id": "achilles_tendinopathy", "name": "Achilles tendinopathy", "tier": "injury", "area": "achilles", "cause": "overuse",
+   "min_strain": 50, "weight": 1.0, "min_age": 16,
+   "description": "The Achilles tendon is overloaded and thickened. It recovers slowly: a break from running, then calf strengthening and easy running for weeks.",
+   "phases": [
+    {"restriction": "no_running", "days": [7, 21], "locked": true},
+    {"restriction": "easy_running", "days": [14, 28]}
+   ],
+   "race_slowdown": 0.04
+  },
+  {
+   "id": "itb_syndrome", "name": "ITB syndrome (outer knee)", "tier": "injury", "area": "knees", "cause": "overuse",
+   "min_strain": 50, "weight": 1.0, "min_age": 15,
+   "description": "The band along the outside of the thigh rubs and irritates the outer knee, usually after a few kilometres of running. A break from running and hip strength work fix it.",
+   "phases": [
+    {"restriction": "no_running", "days": [7, 14], "locked": true},
+    {"restriction": "easy_running", "days": [7, 21]}
+   ],
+   "race_slowdown": 0.04
+  },
+
+  {
+   "id": "tibial_stress_fracture", "name": "Shin stress fracture", "tier": "serious", "area": "shins", "cause": "overuse",
+   "min_strain": 75, "weight": 0.5, "female": 1.5,
+   "description": "A small crack in the shin bone from repeated overload. No running for weeks; pool running and swimming keep the fitness while it heals, then a slow return.",
+   "phases": [
+    {"restriction": "no_impact", "days": [14, 21], "locked": true},
+    {"restriction": "no_running", "days": [28, 42], "locked": true},
+    {"restriction": "easy_running", "days": [14, 21], "locked": true}
+   ],
+   "race_slowdown": 0.08
+  },
+  {
+   "id": "metatarsal_stress_fracture", "name": "Foot stress fracture (metatarsal)", "tier": "serious", "area": "feet", "cause": "overuse",
+   "min_strain": 75, "weight": 0.5, "female": 1.5,
+   "description": "A crack in one of the long foot bones. It needs a protected period with no impact at all, then weeks of cross-training before running again.",
+   "phases": [
+    {"restriction": "no_impact", "days": [14, 28], "locked": true},
+    {"restriction": "no_running", "days": [14, 28], "locked": true},
+    {"restriction": "easy_running", "days": [14, 21], "locked": true}
+   ],
+   "race_slowdown": 0.08
+  },
+  {
+   "id": "hamstring_tear", "name": "Hamstring tear (grade 2–3)", "tier": "serious", "area": "hamstrings", "cause": "overuse",
+   "min_strain": 75, "weight": 0.5,
+   "description": "A bigger tear in the hamstring muscle. Weeks of rehab: first no running at all, then a careful, step-by-step return to fast running.",
+   "phases": [
+    {"restriction": "no_impact", "days": [14, 21], "locked": true},
+    {"restriction": "no_running", "days": [14, 28], "locked": true},
+    {"restriction": "easy_running", "days": [14, 28], "locked": true}
+   ],
+   "race_slowdown": 0.08
+  },
+
+  {
+   "id": "ankle_sprain", "name": "Ankle sprain", "tier": "injury", "area": "feet", "cause": "acute",
+   "description": "You turned your ankle and stretched its ligaments. A few days of no impact, then easy running on flat ground while it firms up.",
+   "phases": [
+    {"restriction": "no_impact", "days": [3, 7], "locked": true},
+    {"restriction": "no_running", "days": [3, 7]},
+    {"restriction": "easy_running", "days": [5, 10]}
+   ],
+   "race_slowdown": 0.04
+  },
+  {
+   "id": "hamstring_pull", "name": "Pulled hamstring", "tier": "injury", "area": "hamstrings", "cause": "acute",
+   "description": "A sudden grab at the back of the thigh at full speed: a grade 1–2 hamstring strain. Rest from running, then a gradual return to speed.",
+   "phases": [
+    {"restriction": "no_running", "days": [7, 14], "locked": true},
+    {"restriction": "easy_running", "days": [7, 14]}
+   ],
+   "escalates_to": "hamstring_tear", "race_slowdown": 0.05
+  },
+  {
+   "id": "calf_pull", "name": "Pulled calf", "tier": "injury", "area": "calves", "cause": "acute",
+   "description": "A sudden sharp pain in the calf on push-off: a small muscle tear. Rest from running, then build back gently.",
+   "phases": [
+    {"restriction": "no_running", "days": [5, 12], "locked": true},
+    {"restriction": "easy_running", "days": [5, 10]}
+   ],
+   "race_slowdown": 0.05
+  },
+
+  {
+   "id": "cold", "name": "Cold", "tier": "illness", "area": "", "cause": "illness", "weight": 88,
+   "description": "A common cold without fever. Easy training is fine (symptoms above the neck only), but hard sessions slow the recovery.",
+   "phases": [{"restriction": "easy_day", "days": [3, 7]}],
+   "race_slowdown": 0.02
+  },
+  {
+   "id": "flu", "name": "Flu with fever", "tier": "illness", "area": "", "cause": "illness", "weight": 12,
+   "description": "A fever and aching body. Training with a fever is dangerous for the heart, so: no training until it has gone, then a few easy days.",
+   "phases": [
+    {"restriction": "rest", "days": [4, 7], "locked": true},
+    {"restriction": "easy_day", "days": [3, 7]}
+   ],
+   "race_slowdown": 0.04
+  }
+ ]
+}

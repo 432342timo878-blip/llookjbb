@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.4 — 2026-10-05 (M2 design: day-by-day mode, injuries & health). Living document: updated after each design discussion.
+Version 0.5 — 2026-10-06 (M2 step 3: health model built, first tuning pass in 4.6). Living document: updated after each design discussion.
 
 ## 1. Vision
 
@@ -259,6 +259,69 @@ acute-risk value. No injury numbers in scripts.
 | Illness (all plans) | 2–3 colds/yr, mostly winter | | |
 
 Rule of thumb: training harder pays off only if you listen to your body.
+
+**Built (step 3, 2026-10-06, headless):** `HealthSystem` with the data above; the health UI is step 4. Details
+decided while building (all numbers in `data/health.json` / `data/injuries.json`):
+- **Strain & soreness:** soreness levels at strain 30 / 50 / 70 (a bit sore / sore / painful). Daily keep: bone 0.875,
+  tendon 0.87, muscle 0.8 (minus recovery rate / professionalism, more fade on rest days). Hard intensity ×1.35
+  strain, Easy ×0.6. Tired legs up to ×1.25, off-track winter sessions ×1.3 on shins/feet/knees, durability ×1.3–0.7,
+  growth spurt up to ×1.5 on knees and heels (boys peak 14.0, girls 12.0, ±1.2 years by maturation), past injury up
+  to ×1.3 for 6 months.
+- **Adaptation (how "the body adapts to its last ~4 weeks" works):** besides the acute:chronic spike (above 1.2 adds
+  strain, up to ×1.8), the body has a **capacity** that follows the chronic load slowly (about 4 weeks to catch up, up
+  to 2.5× the coach plan's load): strain added is divided by it. So a gradual build-up is safe, a sudden jump isn't,
+  and after weeks out (capacity drops) going straight back to full training is itself a big risk. Without this the
+  hard plan was permanently 3× the coach plan's strain and every target was out of reach.
+- **Risk curve:** overuse risk per area doubles every 9 strain points (0.24 %/day at "sore"), zero below 20, fading in
+  up to 30; × injury proneness 0.6–1.8, girls ×1.15 on bone. Injury picked from the catalogue by strain (niggles from
+  20, injuries from 50, serious from 75). One injury per area at a time, several areas can be hurt at once.
+- **Locks & overrides:** niggles, colds and the later "easy running" phase of injuries can be trained through;
+  serious injuries (all phases), the first phase of injuries (no running) and fever are locked. A locked athlete is
+  withdrawn from that day's race automatically (the player's own scratch button is step 4). Training through: +2 days
+  per day (not for illness) and an escalation chance of 30 %/day × (area strain / 50)² (kept between ×0.25 and ×3), racing on it 20 %.
+- **Restrictions:** presets limits / easy running / no running / no impact / easy day / rest; banned sessions are
+  swapped for their first allowed `instead` session (e.g. 800 m intervals → aqua jogging), as day changes "by injury"
+  from today to Sunday, and put into a new week before its Monday.
+- **Catalogue additions:** sore foot (plantar fascia), tight Achilles, and separate acute "pulled hamstring/calf".
+  Achilles tendinopathy (16+) and ITB syndrome (15+) as in the table, so heel problems of 14–15-year-olds don't escalate.
+- **Illness:** 0.52 %/day × month (Jan 2.0 … Jul 0.3), × tiredness (up to ×1.7), ×1.8 for 3 days after a race, × professionalism 1.2–0.8; 88 % colds, 12 % flu.
+- **Other:** "sore" stop event at most once per area per 14 days; extra detraining 0.01/day after 10 days in a row
+  without any training; rivals 0.6 %/week chance to be out 2–6 weeks (≈2 % of rivals out at any time); plan risk =
+  expected overuse injuries in the next 4 weeks of the plan at average proneness: Low < 0.1 ≤ Moderate < 0.18 ≤ High.
+  "Load vs your normal" can be huge right after a layoff (normal ≈ 0): the UI should cap it (e.g. "over 300 %").
+
+**First tuning pass** (`tools/training_balance.gd`, 200 athletes per row, 1 year from 14, random backgrounds, half
+girls, coach-recommended meets entered; neutral = follows limits but keeps going when sore, careful = Easy when sore and
+rest when painful, ignore = keeps going and trains through every unlocked limit). M1 coach plan without health: 800 m
+ability +1.18.
+
+| Row | Injuries/yr | Niggle / injury / serious | Days injured (no running) | Illness/yr (Nov–Mar) | 800 m ability | Target met? |
+|---|---|---|---|---|---|---|
+| Coach | 0.67 | 84 / 15 / 0 % | 10 (3) | 2.2 (71 %) | +1.18 | yes (as M1) |
+| Coach, careful | 0.69 | 86 / 13 / 0 % | 10 (2) | 2.2 | +1.18 | (careful hardly matters: rarely "sore") |
+| Lazy | 0.07 | (bad luck only) | 1 (2) | 2.2 | +0.37 | yes |
+| Hard, warnings ignored | 5.3 | 43 / 12 / 44 % | 270 (173) | 2.7 | +1.51 | 3+ yes, > 40 % serious yes, **progress not below coach** |
+| Hard, neutral | 3.4 | 76 / 21 / 2 % | 55 (20) | 2.5 | +1.62 | (no target) |
+| Hard, careful | 1.58 | 78 / 21 / 0 % | 24 (6) | 2.9 | +1.65 | ~1–1.5 nearly; **~10 % serious not reached (0 %)**; progress above coach yes |
+| Ramp to hard | 2.5 | 73 / 23 / 3 % | 42 (17) | 2.8 | +1.62 | clearly below "ignored" yes; **best progress no (tie)** |
+| Ramp, careful | 1.52 | 80 / 19 / 0 % | 22 (5) | 2.7 | +1.64 | |
+
+Warnings: on the hard plans 70–90 % of overuse injuries came after the area had been "sore" (the rest after "a bit
+sore"); on the coach plan, which rarely makes anyone sore, most niggles came after only "a bit sore" (59 %) or none.
+Plan risk at week 12: coach Low 95 %; hard plans split between Low (already adapted) and High (not yet / after a layoff).
+
+- **M1 unchanged:** with the health model off, all M1 fingerprints are bit-for-bit identical (part 2 of the tool);
+  with it on, the coach plan's progress is the same as M1 (+1.18).
+- **Open (for step 5):** (1) Ignoring warnings on the hard plan still out-progresses the coach plan (+1.51 vs +1.18), although it costs ~270
+  injured days: M1's progression gives the hard plan so much per week that ~half a year of it wins, and cross-training
+  plus puberty growth keep the athlete improving while out. Options: running fitness (speed endurance, lactate
+  threshold, economy, speed) fades faster after ~10 days without *running* while cross-training keeps only the
+  aerobic engine (Claude's recommendation), and/or sessions trained through pain give less effect. Needs the user's
+  decision (it extends "stronger loss after ~10 days with no training"). (2) Hard-careful gets no serious injuries
+  (careful players back off before bone stress gets bad); accept, or add rare "silent" stress reactions. (3) Ramp ties
+  with hard-careful on progress (it loses a little training while building up); (1) would also fix this, as ramping
+  avoids layoffs. (4) The coach plan's niggles mostly come with only a slight warning ("a bit sore"), so step 4 should
+  show "a bit sore" clearly on the Today card.
 
 ### 4.7 Daily events & hooks (M2 foundation, designed 2026-10-05)
 

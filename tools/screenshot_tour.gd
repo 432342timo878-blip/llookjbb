@@ -19,6 +19,8 @@ func _initialize() -> void:
 func _run() -> void:
 	# Keep the tour's saves away from the player's real saves (loaded here: autoloads exist now).
 	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
+	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4).
+	load("res://scripts/core/health_system.gd").model_enabled = false
 	await _frames(10)
 	await _shot("0_main_menu")
 	var main := current_scene

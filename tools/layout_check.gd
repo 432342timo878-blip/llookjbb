@@ -20,6 +20,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
+	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4).
+	load("res://scripts/core/health_system.gd").model_enabled = false
 	await _frames(10)
 	var main := current_scene
 	var router = main.get_node("/root/Router")

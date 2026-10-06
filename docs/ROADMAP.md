@@ -31,10 +31,14 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       Done: engine untouched (balance fingerprints identical); `layout_check.gd` now flags overflow, the tour and
       `day_engine_check.gd` cover the new UI. Left for later steps: warning-sign slot on the Today card and
       the scratch-race button (step 4), coach Veto (coaching).
-- [ ] **3. Health model:** body-area strain, soreness, injury and illness rolls, catalogue with phases
+- [x] **3. Health model:** body-area strain, soreness, injury and illness rolls, catalogue with phases
       (`data/injuries.json`), growth spurt, history, cross-training sessions, detraining when out, rival injuries;
       `training_balance.gd` with 200 athletes, injuries/illness/days lost, careful policy and ramp plan; first tuning
       pass. Headless only. *(Opus)*
+      Done: `HealthSystem` + data; M1 fingerprints identical with the model off; checks in `tools/health_check.gd`;
+      watch a season with `tools/health_season.gd`, H key in the hub prints the hidden numbers. First-pass numbers
+      and the open balance questions (hard plan still out-progresses the coach plan when warnings are ignored) in
+      GDD 4.6 "Built (step 3)"; they go to step 5.
 - [ ] **4. Health UI:** soreness on Today card + strip markers, diagnosis panel, "sore" stop decision, banned
       sessions + override warnings, scratch / race injured (slower, may worsen), load vs normal and plan risk in
       the Training tab. *(Sonnet)*
@@ -52,11 +56,12 @@ Part 2 (design later, plugs into the step-1 hooks):
   that waits until more age classes exist (M4+). Small character-creation task after step 5. *(Sonnet)*
 - **Choice of coaches / coaching groups / coaches per sub-area** (e.g. speed, endurance, strength, mental, physio):
   belongs to M2 part 2 "Coaching". Needs a design session first (Opus); it plugs into the step-1 hooks (`by = "coach"`,
-  Accept / Veto in the day editor, coach events). Design it together with School, since both compete for the athlete's time.
+  Accept / Veto in the day editor, coach events, and `on_week_start` from step 3 for a coach's weekly changes); a
+  physio could read the health model (`HealthSystem.soreness_info`, `plan_risk`). Design it together with School, since both compete for the athlete's time.
 - **Profiles for all other athletes + profile pictures:** two stages. (1) After M2 part 1: a rival profile screen
   (tap a name in Rankings or a race field: club, age, PB / season best, results history, scouting-style attribute
   hints) with procedurally drawn avatars (generated in code, never real photos) for the fictional youth rivals.
-  Needs rival results history stored. (2) With senior level (M4+): real athletes with data from `data/*.json` and, where a
+  Needs rival results history stored; it can also show "injured" (rivals have `out_weeks` since step 3). (2) With senior level (M4+): real athletes with data from `data/*.json` and, where a
   properly licensed photo exists (e.g. Wikimedia Commons CC BY-SA, needs the Credits screen), a real photo.
   Youth stay fictional (minors). The player's own avatar can come with stage 1 too.
 
