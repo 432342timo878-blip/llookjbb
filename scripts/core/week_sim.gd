@@ -11,7 +11,8 @@ const CHANGED_BY := ["player", "coach", "injury"]
 const NORMAL := "normal"
 
 var a: Athlete
-var plan: Array                 # the weekly template: Mon..Sun, each an Array of session ids
+var plan: Array                 # the weekly template's days: Mon..Sun, each an Array of session ids
+var plan_intensity: Array       # the weekly template's intensity per day: 7 × "easy" / "normal" / "hard"
 var monday: Dictionary
 var races: Dictionary           # day index -> meet
 var day := 0                    # the next day to play (0 = Monday; 7 = the whole week is played)
@@ -33,9 +34,12 @@ var _load := 0.0
 var _off_track := []
 
 
-func _init(athlete: Athlete, week_plan: Array, week_monday: Dictionary, week_races := {}) -> void:
+## `week_plan` is a week plan (see WeekPlan); the old plain Array of days works too (every day Normal).
+func _init(athlete: Athlete, week_plan: Variant, week_monday: Dictionary, week_races := {}) -> void:
 	a = athlete
-	plan = week_plan
+	var p := WeekPlan.of(week_plan)
+	plan = p.days
+	plan_intensity = p.intensity
 	monday = week_monday
 	races = week_races
 	_month = Game.add_days(monday, 3).month   # the month most of the week is in
@@ -60,6 +64,22 @@ func run_until_race() -> Dictionary:
 			return races[day]
 		play_day()
 	return {}
+
+
+## Follows a (changed) weekly plan: the game calls this every time it hands out the week. A day change that has
+## become the same as the plan is dropped, like a change made equal to it.
+func set_plan(week_plan: Variant) -> void:
+	var p := WeekPlan.of(week_plan)
+	plan = p.days
+	plan_intensity = p.intensity
+	for d in range(day, 7):
+		var c: Dictionary = changes.get(d, {})
+		if c.has("sessions") and c.sessions.value == plan[d]:
+			c.erase("sessions")
+		if c.has("intensity") and c.intensity.value == plan_intensity[d]:
+			c.erase("intensity")
+		if c.is_empty():
+			changes.erase(d)
 
 
 ## Plays today (`day`) as a training day: its sessions and intensity, with any day changes.
@@ -129,10 +149,10 @@ func session_ids(d: int) -> Array:
 	return plan[d]
 
 
-## The intensity id for day `d` ("easy" / "normal" / "hard").
+## The intensity id for day `d` ("easy" / "normal" / "hard"): the day change, otherwise the weekly plan's.
 func intensity(d: int) -> String:
 	var c: Dictionary = changes.get(d, {})
-	return c.intensity.value if c.has("intensity") else NORMAL
+	return c.intensity.value if c.has("intensity") else plan_intensity[d]
 
 
 ## Who changed what on day `d`: {"sessions": who, "intensity": who}, only for the parts that were changed.
@@ -192,7 +212,7 @@ func make_rest_day(d: int, by := "player") -> bool:
 func set_intensity(d: int, level: String, by := "player") -> bool:
 	if not can_change(d) or not by in CHANGED_BY or not level in Data.health.intensity or level.begins_with("_"):
 		return false
-	_set_change(d, "intensity", level, by, level == NORMAL)
+	_set_change(d, "intensity", level, by, level == plan_intensity[d])
 	return true
 
 
@@ -232,7 +252,7 @@ func to_dict() -> Dictionary:
 
 
 ## A week in progress from a save. `week_plan` is the game's weekly plan; race days are set by the game.
-static func from_dict(athlete: Athlete, week_plan: Array, d: Dictionary) -> WeekSim:
+static func from_dict(athlete: Athlete, week_plan: Variant, d: Dictionary) -> WeekSim:
 	var w := WeekSim.new(athlete, week_plan, Game.int_date(d.monday))
 	w.day = int(d.day)
 	w.day_started = bool(d.get("day_started", false))

@@ -548,11 +548,20 @@ func _build_profile(a: Athlete) -> void:
 func _build_training() -> void:
 	var a := Game.athlete
 	var month: int = Game.add_days(Game.week_monday(), 3).month
+	var plan: Dictionary = Game.season.repeat_week   # {days, intensity}: edited in place (see WeekPlan)
 	_content.add_child(UIKit.label("Weekly plan", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
 			("Your plan repeats every week until you change it. Up to %d sessions a day; an empty day is a rest day. "
 			% Training.MAX_SESSIONS_PER_DAY)
+			+ "Easy, Normal or Hard sets how hard you do the day's sessions. "
 			+ "To change just one day of this week, tap it in the week strip above."))
+	var level_notes := []
+	for level in Training.INTENSITIES:
+		if level != WeekSim.NORMAL:
+			var m := Training.intensity(level)
+			level_notes.append("%s: tiring ×%s, training effect ×%s" % [m.name, String.num(float(m.load), 2),
+					String.num(float(m.effect), 2)])
+	_content.add_child(UIKit.wrapped(" · ".join(level_notes) + ". Normal is the sessions as planned."))
 
 	var summary := UIKit.vbox(8)
 	var refresh_summary := func(): _fill_plan_summary(summary, a, month)
@@ -567,19 +576,19 @@ func _build_training() -> void:
 	for day in 7:
 		if day > 0 and Layout.compact:
 			days.add_child(HSeparator.new())
-		days.add_child(_day_row(day, a, month, on_plan_edited))
+		days.add_child(_day_row(plan, day, a, month, on_plan_edited))
 	_content.add_child(UIKit.panel(days, 16))
 
 	var buttons := UIKit.hbox(8)
 	var coach := UIKit.button("Coach's plan", false, 160)
 	coach.pressed.connect(func():
-		Game.training_plan = Training.coach_plan()
+		Game.season.repeat_week = WeekPlan.coach()   # every day Normal
 		HealthUI.refresh()
 		_refresh_week_ui()
 		_show("training"))
 	var clear := UIKit.button("Clear week", false, 160)
 	clear.pressed.connect(func():
-		Game.training_plan = Training.empty_plan()
+		Game.season.repeat_week = WeekPlan.empty()
 		HealthUI.refresh()
 		_refresh_week_ui()
 		_show("training"))
@@ -596,9 +605,10 @@ func _build_training() -> void:
 	_content.add_child(_session_library(a, month))
 
 
-## One day of the plan. Wide: day, two pickers and the load on one row. Phone: a header line
-## (day + load) with the two pickers stacked under it.
-func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> Control:
+## One day of the plan (`plan` = the week plan being edited). Wide: day, two pickers, the load and the
+## Easy / Normal / Hard buttons on one row. Phone: a header line (day + load) with the two pickers stacked
+## under it, then the three intensity buttons.
+func _day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_change: Callable) -> Control:
 	var date := Game.add_days(Game.week_monday(), day)
 	var day_label := UIKit.label("%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month],
 			"SubheadingLabel" if Layout.compact else "")
@@ -621,7 +631,7 @@ func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> Control:
 	var slots := []
 	for slot in Training.MAX_SESSIONS_PER_DAY:
 		var pick := _session_picker(a, month)
-		var current: Array = Game.training_plan[day]
+		var current: Array = plan.days[day]
 		var id: String = current[slot] if slot < current.size() else ""
 		for i in pick.item_count:
 			if pick.get_item_metadata(i) == id:
@@ -632,19 +642,40 @@ func _day_row(day: int, a: Athlete, month: int, on_change: Callable) -> Control:
 		load_label.custom_minimum_size.x = 80
 		row.add_child(load_label)
 
+	# Easy / Normal / Hard for the day (44 px high; on a phone they share the width).
+	var group := ButtonGroup.new()
+	var level_buttons := {}
+	var level_row := UIKit.hbox(6)
+	for level in Training.INTENSITIES:
+		var b := UIKit.toggle(Training.intensity(level).name, group)
+		b.custom_minimum_size.x = 0 if Layout.compact else 72
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_END
+		b.button_pressed = level == plan.intensity[day]
+		level_buttons[level] = b
+		level_row.add_child(b)
+	row.add_child(level_row)
+
 	var update := func():
 		var ids := []
 		for p in slots:
 			var sid: String = p.get_item_metadata(p.selected)
 			if sid != "":
 				ids.append(sid)
-		Game.training_plan[day] = ids
+		plan.days[day] = ids
 		var load := 0.0
+		var mult := float(Training.intensity(plan.intensity[day]).load)
 		for sid in ids:
-			load += Training.session_load(a, Data.get_session(sid))
+			load += Training.session_load(a, Data.get_session(sid)) * mult
 		load_label.text = "Rest day" if ids.is_empty() else "Load %d" % roundi(load)
+		for b in level_buttons.values():
+			b.disabled = ids.is_empty()   # intensity changes nothing on a rest day
 	for p in slots:
 		p.item_selected.connect(func(_i): update.call(); on_change.call())
+	for level in level_buttons:
+		level_buttons[level].pressed.connect(func():
+			plan.intensity[day] = level
+			update.call()
+			on_change.call())
 	update.call()
 	return row
 
@@ -673,8 +704,9 @@ func _session_picker(a: Athlete, month: int) -> OptionButton:
 func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
 	for child in box.get_children():
 		child.queue_free()
-	var p := Training.preview(a, Game.training_plan, month)
-	var expected := Training.expected_fatigue(a, Game.training_plan, Game.week_monday())
+	var plan := Game.season.week_for(Game.week_monday())
+	var p := Training.preview(a, plan, month)
+	var expected := Training.expected_fatigue(a, plan, Game.week_monday())
 	var verdict: String
 	if expected.avg < 15.0:
 		verdict = "Light: easy to recover from, but slower progress."
@@ -693,7 +725,7 @@ func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
 	box.add_child(_fact_row("Expected fatigue", fat))
 	box.add_child(UIKit.wrapped(verdict, ""))
 	# Body strain of this plan: load vs your normal and injury risk (works for any plan passed in).
-	var strain := HealthUI.plan_section(Game.training_plan, Game.current_week())
+	var strain := HealthUI.plan_section(plan, Game.current_week())
 	if strain != null:
 		box.add_child(strain)
 

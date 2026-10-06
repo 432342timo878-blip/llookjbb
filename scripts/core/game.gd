@@ -17,7 +17,9 @@ const LOG_DAYS := 28
 
 var athlete: Athlete
 var date := START_DATE.duplicate()   # today: the next day to be played
-var training_plan: Array = []    # Mon..Sun, each an Array of session ids; repeats every week
+## The training plan over time (GDD 4.8). Repeat mode for now: one week plan that repeats every week
+## (season.repeat_week = {days, intensity}, see WeekPlan). Ask it for a week: season.week_for(monday).
+var season := SeasonPlan.new()
 var entries: Array = []          # meet keys (see Calendar) the athlete has entered
 var rivals: Array = []           # fictional runners of the athlete's age and gender (see Rivals)
 var last_report: Dictionary = {} # result of the most recent week, for the weekly report
@@ -41,7 +43,7 @@ var _next_event := 1
 func start_career(new_athlete: Athlete) -> void:
 	athlete = new_athlete
 	date = START_DATE.duplicate()
-	training_plan = Training.coach_plan()
+	season = SeasonPlan.repeating(WeekPlan.coach())
 	entries = []
 	last_report = {}
 	race_day = null
@@ -77,17 +79,21 @@ func to_dict() -> Dictionary:
 	var system_states := {}
 	for s in systems:
 		system_states[s.id] = s.to_dict()
-	return {"athlete": athlete.to_dict(), "date": date, "training_plan": training_plan, "entries": entries,
+	return {"athlete": athlete.to_dict(), "date": date, "season": season.to_dict(), "entries": entries,
 			"rivals": rivals, "week": _week.to_dict() if _week else {}, "last_report": last_report,
 			"events": events, "next_event": _next_event, "day_log": day_log, "systems": system_states}
 
 
 ## Works for every save version: version 1 is always on a Monday with no week in progress, so the
-## newer parts simply start empty.
+## newer parts simply start empty. Versions 1 and 2 have a plain `training_plan` (Mon..Sun session ids):
+## it becomes the repeating week with every day Normal. Version 3 has the `season`.
 func from_dict(d: Dictionary) -> void:
 	athlete = Athlete.from_dict(d.athlete)
 	date = int_date(d.date)
-	training_plan = d.training_plan
+	if d.has("season"):
+		season = SeasonPlan.from_dict(d.season)
+	else:
+		season = SeasonPlan.repeating(d.training_plan)
 	entries = d.entries
 	rivals = d.get("rivals", [])
 	if rivals.is_empty():
@@ -98,7 +104,7 @@ func from_dict(d: Dictionary) -> void:
 	open_report = false
 	_playing_week = false
 	var week: Dictionary = d.get("week", {})
-	_week = null if week.is_empty() else WeekSim.from_dict(athlete, training_plan, week)
+	_week = null if week.is_empty() else WeekSim.from_dict(athlete, season.week_for(int_date(week.monday)), week)
 	last_report = d.get("last_report", {})
 	if not last_report.is_empty():
 		last_report.monday = int_date(last_report.monday)
@@ -164,14 +170,14 @@ func week_monday() -> Dictionary:
 	return Calendar.monday_of(date)
 
 
-## The week being played (made when first needed), kept in step with the weekly plan and race entries.
+## The week being played (made when first needed), kept in step with the season plan and race entries.
 ## Day changes for this week go through it: Game.current_week().set_intensity(day, "easy") etc.
 func current_week() -> WeekSim:
 	var created := _week == null
 	if created:
-		_week = WeekSim.new(athlete, training_plan, week_monday())
+		_week = WeekSim.new(athlete, season.week_for(week_monday()), week_monday())
 		_week.day = Calendar.weekday(date)   # 0 unless an old save was made mid-week
-	_week.plan = training_plan
+	_week.set_plan(season.week_for(_week.monday))
 	_week.races = Calendar.races_in_week(entries, _week.monday)
 	if created:
 		for s in systems:

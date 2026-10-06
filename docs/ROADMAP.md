@@ -66,7 +66,10 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       lighter weeks, coach's Steady / Balanced / Ambitious plans, taper for up to 3 targets, easy day before races, a
       return block after a layoff, Form ±1.5 %). Build in these sessions, in order; each ends with the checks named,
       a commit, and "Push origin":
-  - [ ] **6a. Week plan storage + intensity in the plan** (repeat mode only, no phases yet): `week_plan.gd`;
+  - [x] **6a. Week plan storage + intensity in the plan** (repeat mode only, no phases yet; **done 2026-10-06**, details
+        in GDD 4.8 "Built (step 6a)": all of the below, `training_balance.gd -- 0` runs only parts 1–2 + a new 2b,
+        `day_engine_check` / `health_check` have the new checks, all 4 of the user's v2 saves load and play, tour +
+        layout check clean at all sizes): `week_plan.gd`;
         `Game.season` with `mode = "repeat"` and `repeat_week` replacing `Game.training_plan`; `WeekSim.plan_intensity`;
         `plan_risk` / `load_vs_normal` / `Training.preview / expected_fatigue / simulate_week` / `HealthUI.plan_section`
         take a week plan (`WeekPlan.of` accepts the old Array); Training tab: Easy / Normal / Hard per day (44 px, phone

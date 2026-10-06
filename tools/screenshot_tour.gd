@@ -256,12 +256,12 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	await _frames(6)
 	await _scroll_to_label(hub, "BODY STRAIN")
 	await _shot("22_health_training_coach_plan")
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	hub._show("training")
 	await _frames(6)
 	await _scroll_to_label(hub, "BODY STRAIN")
 	await _shot("22b_health_training_hard_plan")
-	game.training_plan = load("res://scripts/core/training.gd").coach_plan()
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(load("res://scripts/core/training.gd").coach_plan())
 
 	# 5. The Report tab: an injury and sore days in the log, and the proneness hint (two earlier injuries).
 	for i in 2:

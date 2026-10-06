@@ -25,7 +25,7 @@ const FATIGUE_LIMIT := 35.0
 const FATIGUED_MIN_EFFECT := 0.1
 
 
-## The club coach's starter plan (Mon..Sun, each an Array of session ids).
+## The club coach's starter days (Mon..Sun, each an Array of session ids); WeekPlan.coach() is the week plan.
 static func coach_plan() -> Array:
 	return Data.training.coach_plan.days.duplicate(true)
 
@@ -73,29 +73,34 @@ static func daily_keep(a: Athlete) -> float:
 
 
 ## Planned stimulus per attribute and total load, without fatigue effects. Used for the plan preview.
-static func preview(a: Athlete, plan: Array, month: int) -> Dictionary:
+## `plan` is a week plan (see WeekPlan; the old plain Array of days works too): each day's intensity counts.
+static func preview(a: Athlete, plan: Variant, month: int) -> Dictionary:
+	var p := WeekPlan.of(plan)
 	var stimulus := {}
 	var load := 0.0
-	for day in plan:
-		for id in day:
+	for d in 7:
+		var mult := intensity(p.intensity[d])
+		var load_mult := float(mult.load)
+		var effect_mult := float(mult.effect)
+		for id in p.days[d]:
 			var s := Data.get_session(id)
 			var eff := effectiveness(a, s, month)
 			if eff == 0.0:
 				continue
-			load += session_load(a, s)
+			load += session_load(a, s) * load_mult
 			for attr in s.effects:
-				stimulus[attr] = stimulus.get(attr, 0.0) + float(s.effects[attr]) * eff
+				stimulus[attr] = stimulus.get(attr, 0.0) + float(s.effects[attr]) * eff * effect_mult
 	return {"stimulus": stimulus, "load": load}
 
 
 ## Runs a whole week of the plan starting on `monday` (race days count as races without a result).
 ## Changes the athlete; returns the weekly report. The game itself plays WeekSim a day at a time (Game.advance_day).
-static func simulate_week(a: Athlete, plan: Array, monday: Dictionary, races := {}) -> Dictionary:
+static func simulate_week(a: Athlete, plan: Variant, monday: Dictionary, races := {}) -> Dictionary:
 	return WeekSim.new(a, plan, monday, races).finish()
 
 ## Typical fatigue once the athlete has followed `plan` for a few weeks: {avg, peak}.
 ## Simulated on a copy, so the real athlete is untouched.
-static func expected_fatigue(a: Athlete, plan: Array, monday: Dictionary) -> Dictionary:
+static func expected_fatigue(a: Athlete, plan: Variant, monday: Dictionary) -> Dictionary:
 	var copy := Athlete.from_dict(a.to_dict().duplicate(true))
 	var r := {}
 	for w in 4:

@@ -61,7 +61,7 @@ func _run() -> void:
 	var health = _game.get_system("health")
 	health.rng.seed = seed_value
 	if plan_id == "hard":
-		_game.training_plan = HARD.duplicate(true)
+		_game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	for m in _cal.meets_between(_game.START_DATE, _game.add_days(_game.START_DATE, 364)):
 		if _cal.coach_recommends(a, m, _game.START_DATE):
 			_game.enter(m.key)

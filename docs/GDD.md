@@ -528,6 +528,26 @@ before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected
 - Save version 3 stores `season`; a version-2 / version-1 save becomes repeat mode with its `training_plan` and all
   days Normal (it plays exactly as before), and the Training tab offers the coach's season plans.
 
+**Built (step 6a, 2026-10-06):** week plan storage, repeat mode only. As designed above, plus these details:
+- `WeekPlan` also has `coach()`, `empty()` and `copy_of()`. `WeekSim` keeps the days in `plan` (unchanged, so code that
+  reads `week.plan[d]` still works) and the intensities in `plan_intensity`. Unknown or missing intensities count as Normal.
+- `SeasonPlan.week_for(monday)` returns the plan itself, not a copy (the Training tab edits it in place; later steps
+  return a freshly built week plan with `why` and the rest of the fields listed above). `Game.current_week()` hands it to
+  the week through `WeekSim.set_plan`, which also drops any day change that has become equal to the plan (e.g. you made a
+  Tuesday Easy for this week, then set Tuesday to Easy in the plan).
+- Injury limits and "train through it" give the *plan's* intensity back when they end (before: always Normal), so a
+  Hard day in the plan stays Hard after a cold. A cold on a Hard day still caps it at Easy while it lasts.
+- `HealthSystem.load_vs_normal` takes a `WeekSim` or a week plan (a plan = this week with nothing played).
+- Training tab: Easy / Normal / Hard buttons per day (a segmented row on PC, a full-width row under the pickers on a
+  phone; disabled on a rest day, where intensity changes nothing). A line under the intro lists the multipliers from
+  `data/health.json`; the day's load and the summary (weekly load, expected fatigue, body strain) include them.
+- Save version 3 stores `season = {mode, repeat_week}`; saves of version 1–2 load as repeat mode with every day Normal.
+- Verified: `training_balance.gd` parts 1–2 fingerprints unchanged (coach 215.999957139 / 13.751549603 /
+  1203.029795007) and a new part 2b shows plan-level intensity gives the same fingerprints as day changes; all 4 of the
+  user's version-2 saves load and play. Measured with `health_check` for one athlete after 28 coach days: load vs normal
+  Easy 60 % / Normal 100 % / Hard 135 % (the Hard strain multiplier); plan risk of a middle plan Low at Normal and High at
+  Hard, of the hard plan Low at Easy and High at Normal; coach plan stays Low even all-Hard.
+
 **Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
 
 | Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |

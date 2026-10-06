@@ -22,6 +22,7 @@ var Cal
 var T
 var F
 var W
+var WP
 var RP
 var H
 
@@ -35,6 +36,7 @@ func _run() -> void:
 	T = load("res://scripts/core/training.gd")
 	F = load("res://scripts/core/athlete_factory.gd")
 	W = load("res://scripts/core/week_sim.gd")
+	WP = load("res://scripts/core/week_plan.gd")
 	Cal = load("res://scripts/core/calendar.gd")
 	RP = load("res://scripts/core/race_performance.gd")
 	H = load("res://scripts/core/health_system.gd")
@@ -64,10 +66,23 @@ func _run() -> void:
 	H.model_enabled = true
 	print("   fingerprints identical to part 1: %s" % ("YES" if same else "NO  <-- the M1 balance changed!"))
 
+	# Step 6a: intensity stored in the week plan (instead of as day changes) gives exactly the same results.
+	print("\n== 2b. Intensity in the week plan (M2 step 6a) instead of day changes: same fingerprints")
+	H.model_enabled = false
+	var same_plan := true
+	for i in runs.size():
+		same_plan = same_plan and _m1_row(runs[i], plans, true, true) == fingerprints[i]
+	H.model_enabled = true
+	print("   fingerprints identical to part 1: %s" % ("YES" if same_plan else "NO  <-- plan-level intensity differs!"))
+
 	var n := 200
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():
 		n = args[0].to_int()
+	if n == 0:
+		print("\n(0 athletes asked for: part 3 skipped)")
+		quit()
+		return
 	print("\n== 3. Health model ON: %d athletes per row, 1 year from age 14, coach-recommended meets entered" % n)
 	print("   inj/yr = injuries (not illness) per athlete, an escalated one counts once at its worst tier; nig/inj/ser =")
 	print("   share by tier; warned = overuse injuries that came after the area had been sore / only a bit sore (week")
@@ -103,7 +118,8 @@ func _m1_athlete():
 
 
 ## One M1 row; through_game = play it day by day with Game.advance_day(). Returns the fingerprint line.
-func _m1_row(run: Array, plans: Dictionary, through_game: bool) -> String:
+## plan_level: the row's intensity is stored in the week plan (WeekPlan) instead of set as day changes.
+func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := false) -> String:
 	var a = _m1_athlete()
 	var start := {}
 	for id in ["aerobic_capacity", "lactate_threshold", "speed_endurance", "speed", "strength", "running_technique", "race_tactics"]:
@@ -113,12 +129,12 @@ func _m1_row(run: Array, plans: Dictionary, through_game: bool) -> String:
 	var fat_sum := 0.0
 	if through_game:
 		game.start_career(a)
-		game.training_plan = plans[run[1]].duplicate(true)
+		game.season.repeat_week = WP.make(plans[run[1]], [run[2], run[2], run[2], run[2], run[2], run[2], run[2]] if plan_level else [])
 	for w in 52:
 		var r: Dictionary
 		if through_game:
 			var week = game.current_week()
-			if run[2] != "normal":
+			if run[2] != "normal" and not plan_level:
 				for d in 7:
 					week.set_intensity(d, run[2])
 			while game.advance_day() != game.WEEK_DONE:
@@ -205,10 +221,10 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 			if Cal.weekday(game.date) == 0 and game.current_week().day == 0:
 				s.stop_weeks += 1 if stopped_this_week else 0
 				stopped_this_week = false
-				game.training_plan = _plan_for(row[1], w, plans)
+				game.season.repeat_week = WP.make(_plan_for(row[1], w, plans))
 				game.current_week()
 				if w == 12:
-					s.risk[health.plan_risk(game.training_plan)] += 1
+					s.risk[health.plan_risk(game.season.repeat_week)] += 1
 				w += 1
 			_before_day(health, policy)
 			var r: String = game.advance_day()

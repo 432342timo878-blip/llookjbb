@@ -1,13 +1,13 @@
 class_name SaveGame
 ## Save slots as JSON files in user://saves/. "autosave" is rewritten after every played day; other slots
 ## are snapshots the player makes with the Save button and never change.
-## Version 2 (M2) adds the week in progress, day log, events and system states; version 1 saves still load
-## (see Game.from_dict).
+## Version 2 (M2) adds the week in progress, day log, events and system states; version 3 (M2 step 6a) replaces
+## the plain `training_plan` with the `season` plan. Older saves still load (see Game.from_dict).
 
 ## Where saves go. Dev tools point this elsewhere so they never touch the player's saves.
 static var DIR := "user://saves/"
 const AUTOSAVE := "autosave"
-const VERSION := 2
+const VERSION := 3
 
 
 static func save(slot: String) -> void:

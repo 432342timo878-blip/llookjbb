@@ -116,12 +116,15 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 
 	var summary := UIKit.vbox(6)
 	var load_text := "%d" % roundi(info.load)
-	var plan_load := DayInfo.planned_load(w.plan[day], WeekSim.NORMAL, month)
+	var plan_load := DayInfo.planned_load(w.plan[day], w.plan_intensity[day], month)
 	if info.changed and roundi(plan_load) != roundi(info.load):
 		load_text += "  (plan %d)" % roundi(plan_load)
 	summary.add_child(UIKit.fact_row("Load for the day", UIKit.label(load_text)))
 	if info.changed:
-		summary.add_child(UIKit.fact_row("Weekly plan", _wrapped_value(_names_or_rest(w.plan[day]))))
+		var plan_text := _names_or_rest(w.plan[day])
+		if not w.plan[day].is_empty() and w.plan_intensity[day] != WeekSim.NORMAL:
+			plan_text += " · " + DayInfo.intensity_name(w.plan_intensity[day])
+		summary.add_child(UIKit.fact_row("Weekly plan", _wrapped_value(plan_text)))
 		summary.add_child(UIKit.wrapped(DayInfo.changed_text(info), ""))
 		# The coach's Veto button goes here, next to "Back to plan", once coaching exists (GDD 4.7:
 		# changes remember who made them, and a coach change shows Accept / Veto).

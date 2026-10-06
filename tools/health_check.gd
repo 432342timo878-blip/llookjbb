@@ -41,6 +41,7 @@ func _run() -> void:
 	_check_model_off()
 	_check_detraining()
 	_check_ui_data()
+	_check_plan_intensity()
 	_check_health_ui()
 	_check_rivals()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
@@ -90,12 +91,12 @@ func _check_determinism() -> void:
 	var runs := []
 	for i in 2:
 		_new_career(11, 77)
-		game.training_plan = HARD.duplicate(true)
+		game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 		_play_days(150)
 		runs.append(_json(game.get_system("health").to_dict()) + _json(game.athlete.to_dict()))
 	_ok("same seed → bit-for-bit the same 150 days", runs[0] == runs[1])
 	_new_career(11, 78)
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	_play_days(150)
 	_ok("another seed → a different story", _json(game.get_system("health").to_dict()) + _json(game.athlete.to_dict()) != runs[0])
 
@@ -104,7 +105,7 @@ func _check_determinism() -> void:
 func _check_stop_events() -> void:
 	print("-- stop events")
 	_new_career(12, 5)
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	var seen := {}
 	var sore_stop_midweek := false
 	var guard := 0
@@ -176,7 +177,7 @@ func _check_sore_before_race() -> void:
 func _check_restrictions() -> void:
 	print("-- restrictions")
 	_new_career(13, 9)
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	var health = game.get_system("health")
 	health._start(data.get_injury("tibial_stress_reaction"), game.date, [])
 	health._apply_restrictions(game.current_week())
@@ -211,7 +212,7 @@ func _check_restrictions() -> void:
 func _check_override() -> void:
 	print("-- training through a niggle")
 	_new_career(14, 3)
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	var health = game.get_system("health")
 	health._start(data.get_injury("shin_splints"), game.date, [])
 	health._apply_restrictions(game.current_week())
@@ -293,7 +294,7 @@ func _check_illness_and_racing() -> void:
 func _check_midinjury_save() -> void:
 	print("-- save / load mid-injury")
 	_new_career(17, 21)
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	var health = game.get_system("health")
 	var guard := 0
 	while (health.injuries.is_empty() or health.injuries[0].tier == "illness") and guard < 300:
@@ -327,9 +328,11 @@ func _check_old_saves() -> void:
 	var g: Dictionary = game.to_dict()
 	H.model_enabled = true
 	var v1 := {"version": 1, "saved_at": "2026-10-01 12:00:00", "summary": "old",
-			"game": {"athlete": g.athlete, "date": game.START_DATE, "training_plan": g.training_plan, "entries": g.entries,
+			"game": {"athlete": g.athlete, "date": game.START_DATE, "training_plan": g.season.repeat_week.days, "entries": g.entries,
 					"rivals": g.rivals}}
 	g.systems = {"health": {}}   # what step 1–2 saved: an empty health state
+	g["training_plan"] = g.season.repeat_week.days   # versions 1–2 have a plain plan and no season
+	g.erase("season")
 	var v2 := {"version": 2, "saved_at": "2026-10-05 12:00:00", "summary": "step 2", "game": g}
 	for save in [["v1", v1], ["v2 (step 2)", v2]]:
 		var f := FileAccess.open(saves.DIR + "old.json", FileAccess.WRITE)
@@ -348,7 +351,7 @@ func _check_model_off() -> void:
 	print("-- health model off")
 	H.model_enabled = false
 	_new_career(19, 2)
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	_play_days(60)
 	var health = game.get_system("health")
 	_ok("nothing tracked", not health.started and health.strain.is_empty())
@@ -364,7 +367,7 @@ func _check_detraining() -> void:
 	for on in [false, true]:
 		H.model_enabled = on
 		_new_career(20, 8)
-		game.training_plan = [[], [], [], [], [], [], []]
+		game.season.repeat_week = load("res://scripts/core/week_plan.gd").make([[], [], [], [], [], [], []])
 		_play_days(21)
 		var total := 0.0
 		for attr in data.attributes_in("physical"):
@@ -381,7 +384,7 @@ func _check_detraining() -> void:
 	for on in [false, true]:
 		H.model_enabled = on
 		_new_career(20, 8)
-		game.training_plan = [["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"]]
+		game.season.repeat_week = load("res://scripts/core/week_plan.gd").make([["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"], ["aqua_jog"]])
 		_play_days(21)
 		values.append({"se": game.athlete.get_attr("speed_endurance"), "aero": game.athlete.get_attr("aerobic_capacity")})
 	H.model_enabled = true
@@ -399,9 +402,9 @@ func _check_ui_data() -> void:
 	_play_days(28)
 	var load_coach: int = health.load_vs_normal(game.current_week())
 	_ok("coach plan: load vs your normal ≈ 100%% (%d%%)" % load_coach, load_coach >= 75 and load_coach <= 130)
-	_ok("coach plan risk: Low (%s)" % health.plan_risk(game.training_plan), health.plan_risk(game.training_plan) == "low")
+	_ok("coach plan risk: Low (%s)" % health.plan_risk(game.season.repeat_week), health.plan_risk(game.season.repeat_week) == "low")
 	_ok("hard plan risk now: not Low (%s)" % health.plan_risk(HARD), health.plan_risk(HARD) != "low")
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	_ok("hard plan: load vs your normal > 150%% (%d%%)" % health.load_vs_normal(game.current_week()),
 			health.load_vs_normal(game.current_week()) > 150)
 	var list: Array = health.soreness()
@@ -415,6 +418,71 @@ func _check_ui_data() -> void:
 			and act[0].phase_name == "No impact" and act[0].allowed != "" and act[0].locked and act[0].days_left >= 11
 			and act[0].range == "2–3 weeks")
 	_ok("proneness stays hidden until repeated injuries", not health.proneness_hint())
+
+
+## M2 step 6a: Easy / Normal / Hard stored in the week plan feeds load vs your normal and the plan risk, and the
+## injury limits put the plan's own intensity back when they end.
+func _check_plan_intensity() -> void:
+	print("-- intensity in the week plan (step 6a)")
+	var WP = load("res://scripts/core/week_plan.gd")
+	var Tr = load("res://scripts/core/training.gd")
+	var UI = load("res://scripts/ui/health_ui.gd")
+	_new_career(24, 15)
+	var health = game.get_system("health")
+	_play_days(28)
+	var days: Array = Tr.coach_plan()
+	var normal: Dictionary = WP.make(days)
+	var hard: Dictionary = WP.make(days, ["hard", "hard", "hard", "hard", "hard", "hard", "hard"])
+	var easy: Dictionary = WP.make(days, ["easy", "easy", "easy", "easy", "easy", "easy", "easy"])
+	var l_normal: int = health.load_vs_normal(normal)
+	var l_hard: int = health.load_vs_normal(hard)
+	var l_easy: int = health.load_vs_normal(easy)
+	_ok("load vs your normal: Easy %d%% < Normal %d%% < Hard %d%%" % [l_easy, l_normal, l_hard], l_easy < l_normal and l_normal < l_hard)
+	var strain_ratio := float(data.health.intensity.hard.strain)
+	_ok("Hard days: about ×%.2f the strain of Normal (%.2f)" % [strain_ratio, float(l_hard) / l_normal],
+			absf(float(l_hard) / l_normal - strain_ratio) < 0.03)
+	_ok("the old plain Array is the Normal plan", health.load_vs_normal(days) == l_normal and health.load_vs_normal(WP.of(days)) == l_normal)
+	var order := ["low", "moderate", "high"]
+	var risk_normal: String = health.plan_risk(normal)
+	var risk_hard: String = health.plan_risk(hard)
+	_ok("plan risk: Hard days are never safer (%s → %s)" % [risk_normal, risk_hard], order.find(risk_hard) >= order.find(risk_normal))
+	# The same days, only the intensity differs: the risk word rises with it (numbers found with a probe: this
+	# athlete after 28 days of the coach plan; a middle plan is Low at Normal and High at Hard).
+	var mix := [HARD[0], days[1], HARD[2], days[3], HARD[4], days[5], []]
+	var mix_normal: String = health.plan_risk(WP.make(mix))
+	var mix_hard: String = health.plan_risk(WP.make(mix, ["hard", "hard", "hard", "hard", "hard", "hard", "hard"]))
+	_ok("plan risk rises with Hard days: a middle plan %s at Normal → %s at Hard" % [mix_normal, mix_hard],
+			order.find(mix_hard) > order.find(mix_normal))
+	var harsh_easy: String = health.plan_risk(WP.make(HARD, ["easy", "easy", "easy", "easy", "easy", "easy", "easy"]))
+	var harsh_normal: String = health.plan_risk(WP.make(HARD))
+	_ok("… and falls with Easy days: the hard plan %s at Easy → %s at Normal" % [harsh_easy, harsh_normal],
+			order.find(harsh_normal) > order.find(harsh_easy))
+	_ok("plan_risk takes the old Array too", health.plan_risk(days) == risk_normal)
+
+	# The current week follows the plan: Hard days in the plan are in "this week" too.
+	game.season.repeat_week = WP.make(days, ["hard", "hard", "hard", "hard", "hard", "hard", "hard"])
+	_ok("this week's load vs normal follows the plan's intensity", health.load_vs_normal(game.current_week()) > l_normal)
+	var section = UI.plan_section(hard)
+	_ok("the body strain section builds for a week plan", section != null and section.get_child_count() >= 3)
+	section.free()
+
+	# Injury limits cap the intensity, and give the plan's own intensity back when they end.
+	var easy_days := [["easy_run"], ["easy_run"], ["easy_run"], ["easy_run"], ["easy_run"], ["easy_run"], ["easy_run"]]
+	game.season.repeat_week = WP.make(easy_days, ["hard", "hard", "hard", "hard", "hard", "hard", "hard"])
+	var w = game.current_week()
+	health.injuries.clear()
+	health._start(data.get_injury("cold"), game.date, [])
+	health._apply_restrictions(w)
+	var day: int = w.day
+	_ok("a cold caps Hard at Easy, by the injury", w.intensity(day) == "easy" and w.changed_by(day).get("intensity", "") == "injury")
+	health.injuries.clear()
+	health._apply_restrictions(w)
+	_ok("recovered: back to the plan's Hard, no change left", w.intensity(day) == "hard" and not w.changes.has(day))
+	health._start(data.get_injury("cold"), game.date, [])
+	health._apply_restrictions(w)
+	_ok("train through it: the plan's Hard comes back", health.override_day(day) and w.intensity(day) == "hard" and not w.changes.has(day))
+	health.injuries.clear()
+	health.overrides.clear()
 
 
 ## The health UI (M2 step 4): the pieces build, read the model correctly, and the actions work (scratching a race,
@@ -472,7 +540,7 @@ func _check_health_ui() -> void:
 	_ok("… with a warning card", _made(UI.race_card(outlook, true)))
 	_ok("banned session: reason shown (Long run)", UI.ban_reason("long_run", 0).begins_with("Shin splints"))
 	_ok("training through offered for a niggle", _made(UI.through_control(0, func(): pass)))
-	game.training_plan = HARD.duplicate(true)   # Monday has hard intervals: banned with shin splints
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))   # Monday has hard intervals: banned with shin splints
 	health.refresh()
 	var restricted_ids: Array = game.current_week().session_ids(0).duplicate()
 	_ok("niggle: Monday is restricted", restricted_ids != HARD[0])
@@ -482,7 +550,7 @@ func _check_health_ui() -> void:
 	_ok("take it back: the limits are in the day again", health.cancel_override(0) and not UI.is_overridden(0)
 			and game.current_week().session_ids(0) == restricted_ids)
 	_ok("… and a day that wasn't trained through can't be 'taken back'", not health.cancel_override(0))
-	game.training_plan = Tr.coach_plan()
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(Tr.coach_plan())
 	health.refresh()
 	health.injuries.clear()
 	health._start(data.get_injury("tibial_stress_reaction"), game.date, [])
@@ -493,7 +561,7 @@ func _check_health_ui() -> void:
 	health.overrides.clear()
 
 	# Day info and the strip: sore and injured days are marked.
-	game.training_plan = HARD.duplicate(true)
+	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(HARD.duplicate(true))
 	health.strain["shins"] = 40.0
 	health._start(data.get_injury("shin_splints"), game.date, [])
 	health._apply_restrictions(game.current_week())

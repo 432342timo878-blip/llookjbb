@@ -272,10 +272,11 @@ static func warning_sections(open: Dictionary) -> Control:
 
 # --- The plan: load vs normal and risk (Training tab) ------------------------------------------------
 
-## "BODY STRAIN" for a weekly plan (any plan: the repeating weekly one now, a phase's plan with periodization):
-## load vs your normal (a %, capped), the plan risk word Low / Moderate / High, each explained. With `week`
-## (the current week, with its day changes) a third line shows how this week stands. Null when the model is off.
-static func plan_section(plan: Array, week: WeekSim = null) -> Control:
+## "BODY STRAIN" for a weekly plan (any week plan: the repeating one now, a phase's plan with periodization;
+## the old plain Array of days works too): load vs your normal (a %, capped), the plan risk word Low / Moderate /
+## High, each explained. With `week` (the current week, with its day changes) a third line shows how this week
+## stands. Null when the model is off.
+static func plan_section(plan: Variant, week: WeekSim = null) -> Control:
 	var h := system()
 	if h == null:
 		return null

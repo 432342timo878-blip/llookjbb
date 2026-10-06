@@ -721,7 +721,7 @@ func _apply_restrictions(week: WeekSim) -> void:
 			if Training.INTENSITIES.find(week.intensity(d)) > Training.INTENSITIES.find(rule.intensity):
 				week.set_intensity(d, rule.intensity, "injury")
 		elif intensity_by_injury:
-			week.set_intensity(d, WeekSim.NORMAL, "injury")
+			week.set_intensity(d, week.plan_intensity[d], "injury")   # back to the plan's own intensity
 
 
 # --- For the UI (M2 step 4) ----------------------------------------------------------------------
@@ -835,7 +835,7 @@ func override_day(d: int) -> bool:
 	if c.has("sessions") and c.sessions.by == "injury":
 		week.set_sessions(d, week.plan[d], "player")
 	if c.has("intensity") and c.intensity.by == "injury":
-		week.set_intensity(d, WeekSim.NORMAL, "player")
+		week.set_intensity(d, week.plan_intensity[d], "player")
 	return true
 
 
@@ -872,9 +872,13 @@ func race_slowdown() -> float:
 
 ## The week's load against the athlete's normal (the average week of the last 4), in percent:
 ## played days as done, the rest as planned now. 100 = as usual.
-func load_vs_normal(week: WeekSim) -> int:
+## `week_or_plan` is a WeekSim, or a week plan (see WeekPlan; the old plain Array works too): a plan is taken as
+## this week with nothing played and no day changes.
+func load_vs_normal(week_or_plan: Variant) -> int:
 	if impacts.is_empty():
 		return 100
+	var week: WeekSim = week_or_plan if week_or_plan is WeekSim \
+			else WeekSim.new(Game.athlete, week_or_plan, Game.week_monday())
 	var total := 0.0
 	for d in 7:
 		if d < week.day:
@@ -905,9 +909,10 @@ func _impact(sessions: Array, level: String, is_race: bool) -> float:
 
 
 ## The weekly plan's injury risk from the body's current state: "low" / "moderate" / "high" (RISK_NAMES).
+## `plan` is a week plan (days and intensity, see WeekPlan; the old plain Array of days works too).
 ## Plays the plan for a few weeks on copies (no dice), counting expected overuse injuries at average
 ## injury proneness, so it never gives the hidden value away.
-func plan_risk(plan: Array) -> String:
+func plan_risk(plan: Variant) -> String:
 	var cfg: Dictionary = Data.health.plan_risk
 	var copy := HealthSystem.new()
 	copy.from_dict(to_dict().duplicate(true))
@@ -955,7 +960,7 @@ func debug_text() -> String:
 	lines.append("Strain: " + ", ".join(parts))
 	lines.append("Capacity ×%.2f, load ratio %.2f (spike ×%.2f), load vs normal this week %d%%, plan risk %s" % [
 			capacity(), load_ratio(), spike_mult(), load_vs_normal(Game.current_week()),
-			RISK_NAMES[plan_risk(Game.training_plan)]])
+			RISK_NAMES[plan_risk(Game.season.week_for(Game.week_monday()))]])
 	for x in active():
 		lines.append("Active: %s (%s): %s, %d days left (%s)%s" % [x.name, x.tier, x.allowed, x.days_left, x.range,
 				", locked" if x.locked else ""])

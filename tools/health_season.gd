@@ -67,7 +67,7 @@ func _run() -> void:
 	var w := 0
 	for i in days:
 		if Cal.weekday(game.date) == 0 and game.current_week().day == 0:
-			game.training_plan = _plan(plan_id, w)
+			game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(_plan(plan_id, w))
 			game.current_week()
 			health.refresh()
 			w += 1
@@ -101,7 +101,7 @@ func _run() -> void:
 		if Cal.weekday(e.date) == 6:
 			print("   -- week %d: fatigue avg %d, 800 m ability %.2f (%+.2f), plan risk %s, load vs normal %d%%" % [w,
 					roundi(game.last_report.get("fatigue_avg", 0.0)), RP.ability(a), RP.ability(a) - start_ability,
-					H.RISK_NAMES[health.plan_risk(game.training_plan)], health.load_vs_normal(game.current_week())])
+					H.RISK_NAMES[health.plan_risk(game.season.repeat_week)], health.load_vs_normal(game.current_week())])
 	print("\n" + health.debug_text())
 	print("800 m ability %.2f → %.2f (%+.2f)" % [start_ability, RP.ability(a), RP.ability(a) - start_ability])
 	quit()

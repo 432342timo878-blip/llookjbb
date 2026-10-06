@@ -10,6 +10,7 @@ var saves
 var Cal
 var T
 var A
+var WP
 var _fails := 0
 
 
@@ -25,13 +26,16 @@ func _run() -> void:
 	Cal = load("res://scripts/core/calendar.gd")
 	T = load("res://scripts/core/training.gd")
 	A = load("res://scripts/core/athlete.gd")
+	WP = load("res://scripts/core/week_plan.gd")
 	load("res://scripts/core/health_system.gd").model_enabled = false
 
 	_check_exact_numbers()
 	_check_same_as_weekly()
 	_check_day_changes()
 	_check_midweek_save()
+	_check_week_plan()
 	_check_v1_save()
+	_check_v2_save()
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		_check_real_v1_file(args[0])
@@ -82,7 +86,7 @@ func _check_same_as_weekly() -> void:
 	var copy = A.from_dict(game.athlete.to_dict().duplicate(true))
 	var monday: Dictionary = game.date.duplicate()
 	for w in 8:
-		T.simulate_week(copy, game.training_plan, monday)
+		T.simulate_week(copy, game.season.repeat_week, monday)
 		monday = game.add_days(monday, 7)
 	for d in 8 * 7:
 		game.advance_day()
@@ -95,7 +99,7 @@ func _check_day_changes() -> void:
 	print("-- day changes")
 	_new_career(2)
 	var w = game.current_week()
-	var plan_before: String = _json(game.training_plan)
+	var plan_before: String = _json(game.season.repeat_week)
 	_ok("swap Mon slot 0", w.swap_session(0, 0, "tempo_run") and w.session_ids(0) == ["tempo_run", "drills"])
 	_ok("remembers who changed it", w.changed_by(0) == {"sessions": "player"})
 	_ok("no 3rd session on a day", not w.add_session(0, "mobility"))
@@ -108,7 +112,7 @@ func _check_day_changes() -> void:
 	_ok("unknown session refused", not w.add_session(6, "teleport"))
 	_ok("unknown 'by' refused", not w.make_rest_day(2, "alien"))
 	_ok("back to the plan = no change", w.swap_session(0, 0, "easy_run") and not w.changes.has(0))
-	_ok("weekly plan untouched", _json(game.training_plan) == plan_before)
+	_ok("weekly plan untouched", _json(game.season.repeat_week) == plan_before)
 	var fartlek_normal: float = T.session_load(game.athlete, game.get_node("/root/Data").get_session("fartlek"))
 	for d in 4:
 		game.advance_day()
@@ -155,6 +159,102 @@ func _check_midweek_save() -> void:
 	saves.delete("mid")
 
 
+## M2 step 6a: the week plan {days, intensity}, intensity in the plan, the season plan and save version 3.
+func _check_week_plan() -> void:
+	print("-- week plan (days + intensity in the plan)")
+	var coach_days: Array = T.coach_plan()
+	var wp: Dictionary = WP.of(coach_days)
+	_ok("the old plain Array becomes a week plan, every day Normal",
+			wp.days == coach_days and wp.intensity == ["normal", "normal", "normal", "normal", "normal", "normal", "normal"])
+	_ok("WeekPlan.of leaves a week plan as it is", WP.of(wp) == wp and WP.equals(wp, coach_days))
+	_ok("equals tells Hard from Normal", not WP.equals(wp, WP.make(coach_days, ["normal", "normal", "normal", "hard"])))
+	_ok("make fills in missing and unknown parts", WP.make([["easy_run"]], ["extreme"]).intensity[0] == "normal"
+			and WP.make().days.size() == 7)
+
+	# Normal plan vs a plan with Hard days: load, the day's real load and the training effect all go up.
+	_new_career(11)
+	var normal_plan: Dictionary = WP.coach()
+	var hard_plan: Dictionary = WP.make(coach_days, ["normal", "hard", "normal", "hard", "normal", "normal", "normal"])
+	var month := 11
+	var pn: Dictionary = T.preview(game.athlete, normal_plan, month)
+	var ph: Dictionary = T.preview(game.athlete, hard_plan, month)
+	_ok("preview: Hard days raise the plan's load (%d → %d)" % [roundi(pn.load), roundi(ph.load)], ph.load > pn.load)
+	_ok("preview of the old Array = the Normal week plan", T.preview(game.athlete, coach_days, month).load == pn.load)
+	var fn: Dictionary = T.expected_fatigue(game.athlete, normal_plan, game.date)
+	var fh: Dictionary = T.expected_fatigue(game.athlete, hard_plan, game.date)
+	_ok("expected fatigue is higher with Hard days (%d → %d)" % [roundi(fn.avg), roundi(fh.avg)], fh.avg > fn.avg)
+
+	# The game plays the plan's intensity, and a day change equal to the plan is dropped.
+	game.season.repeat_week = hard_plan.duplicate(true)
+	var w = game.current_week()
+	_ok("the week takes its intensity from the plan", w.intensity(1) == "hard" and w.intensity(0) == "normal"
+			and w.plan_intensity == hard_plan.intensity)
+	_ok("Tue is not a day change (it is the plan)", not w.changes.has(1) and not w.changed_by(1).has("intensity"))
+	_ok("a change equal to the plan's Hard is dropped", w.set_intensity(1, "hard") and not w.changes.has(1))
+	_ok("Easy on Tue is a change", w.set_intensity(1, "easy") and w.intensity(1) == "easy" and w.changed_by(1).intensity == "player")
+	_ok("back to the plan's Hard drops it again", w.set_intensity(1, "hard") and not w.changes.has(1))
+	_ok("Normal on Tue is now a change (the plan says Hard)", w.set_intensity(1, "normal") and w.changes.has(1))
+	_ok("Back to plan = Hard", w.reset_day(1) and w.intensity(1) == "hard")
+	_ok("Mon Normal equals the plan: no change", w.set_intensity(0, "normal") and not w.changes.has(0))
+	# Editing the plan: the week follows, and a change that has become the plan is dropped.
+	w.set_intensity(2, "hard")
+	game.season.repeat_week.intensity[2] = "hard"
+	w = game.current_week()
+	_ok("the week follows an edited plan, and the change that now equals it is gone", w.intensity(2) == "hard" and not w.changes.has(2))
+	# Played: Tue is Hard (fartlek-like club session at ×hard).
+	var data = game.get_node("/root/Data")
+	var club_normal: float = T.session_load(game.athlete, data.get_session(coach_days[1][0]))
+	game.advance_day()
+	var fatigue_after_mon: float = game.athlete.fatigue
+	game.advance_day()
+	var tue: Dictionary = game.day_log[-1]
+	_ok("Tue was played at Hard: load ×%.2f" % _mult("hard", "load"),
+			tue.intensity == "hard" and is_equal_approx(tue.load, club_normal * _mult("hard", "load")) and fatigue_after_mon > 0.0)
+	_ok("Mon was played at Normal", game.day_log[-2].intensity == "normal")
+
+	# Save version 3 stores the season plan and brings it back exactly.
+	var before: String = _json(game.season.to_dict())
+	saves.save("v3")
+	game.season = load("res://scripts/core/season_plan.gd").new()   # scramble
+	_ok("load the version-3 save", saves.load_slot("v3"))
+	_ok("the season plan comes back the same (repeat mode, Hard days)", game.season.mode == "repeat"
+			and _json(game.season.to_dict()) == before and game.season.repeat_week.intensity[1] == "hard")
+	_ok("the week in progress follows it", game.current_week().intensity(3) == "hard" and game.current_week().plan_intensity[1] == "hard")
+	var text := FileAccess.get_file_as_string(saves.DIR + "v3.json")
+	_ok("the file says version 3 and has no training_plan", text.contains("\"version\": 3") and text.contains("\"season\"")
+			and not text.contains("\"training_plan\""))
+	saves.delete("v3")
+
+
+## A version-2 save has a plain `training_plan` and no season: it loads as repeat mode, every day Normal, and
+## from there plays bit for bit like the same game that was never saved.
+func _check_v2_save() -> void:
+	print("-- version-2 save (plain training_plan)")
+	_new_career(12)
+	for d in 10:
+		game.advance_day()   # a week in progress (Thursday), some days of log
+	var g: Dictionary = game.to_dict().duplicate(true)
+	var days: Array = g.season.repeat_week.days
+	g.erase("season")
+	g["training_plan"] = days
+	var v2 := {"version": 2, "saved_at": "2026-10-05 12:00:00", "summary": "old", "game": g}
+	var f := FileAccess.open(saves.DIR + "v2.json", FileAccess.WRITE)
+	f.store_string(JSON.stringify(v2, " ", true, true))   # as version 2 wrote it
+	f.close()
+	game.advance_week()
+	game.advance_week()
+	var continued: String = _json(game.athlete.to_dict()) + _json(game.last_report) + _json(game.day_log)
+	_ok("loads", saves.load_slot("v2"))
+	_ok("repeat mode with its old plan, every day Normal", game.season.mode == "repeat" and game.season.repeat_week.days == days
+			and game.season.repeat_week.intensity == ["normal", "normal", "normal", "normal", "normal", "normal", "normal"])
+	_ok("the week in progress is kept", game.current_week().day == Cal.weekday(game.date) and game.current_week().plan == days)
+	game.advance_week()
+	game.advance_week()
+	var loaded: String = _json(game.athlete.to_dict()) + _json(game.last_report) + _json(game.day_log)
+	_ok("plays on bit for bit like the game that was never saved", loaded == continued)
+	saves.delete("v2")
+
+
 ## A version-1 save (Monday, no week in progress) loads and plays.
 func _check_v1_save() -> void:
 	print("-- version-1 save")
@@ -163,7 +263,7 @@ func _check_v1_save() -> void:
 	game.advance_week()
 	var g: Dictionary = game.to_dict()
 	var v1 := {"version": 1, "saved_at": "2026-10-01 12:00:00", "summary": "old",
-			"game": {"athlete": g.athlete, "date": g.date, "training_plan": g.training_plan, "entries": g.entries,
+			"game": {"athlete": g.athlete, "date": g.date, "training_plan": g.season.repeat_week.days, "entries": g.entries,
 					"rivals": g.rivals}}
 	var f := FileAccess.open(saves.DIR + "v1.json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(v1, " "))   # as M1 wrote it
