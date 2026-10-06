@@ -51,6 +51,10 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       the autumn base plan: phases (general base Nov–Jan, specific / indoor racing Feb–Mar, base again Apr, race
       season May–Aug with lighter weeks, autumn break Sep–Oct), the club coach's plan per phase, deload weeks, and a
       **taper** before a target championship (form peak on the day). Player still edits; changes apply per phase.
+      **Also (user decision, 2026-10-06):** an optional intensity (Easy / Normal / Hard) per weekday *in the plan
+      itself* (the Training tab has none today: intensity is only a this-week day change), default Normal so the
+      M1 balance stays identical; it feeds "Load vs your normal" and plan risk (`HealthUI.plan_section(plan)`).
+      Design the plan storage once for both (phase plans + per-day intensity).
       Realism gap found in the step-3 review (2026-10-06). Design session first. *(Opus)*
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
