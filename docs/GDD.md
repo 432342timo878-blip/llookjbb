@@ -798,7 +798,8 @@ days with easy running allowed after 4–7); **races in the block stay** (the ev
   **Decide later in the Training tab**; a season with edited phases shows "This replaces your changes to N phases" first.
 - **Rollover:** on the evening before a new season's first Monday (`on_day_end`, so the new week is built from the new record):
   without a choice the season is put on the coach's ★ of that day; its targets are entered where allowed; once per season, never
-  the career's first. Repeat mode has no offers and no rollover; **switching the season plan back on in a season that started while
+  the career's first. Repeat mode has no offers and no rollover (confirmed by the user after the playtest: a player on one
+  repeating week plans their own week, so the coach stays quiet); **switching the season plan back on in a season that started while
   it was off rolls that season over at once** (found in the user's playtest: their test of easing back in left the career in repeat
   mode over 1 Nov 2027). The new age class needs nothing new: the coach's targets are worked out per season (2027–28: SM-hallit
   M/N17-19-22 and Nuorten SM 16-17; 2028–29 the same, age 17). Old saves load with an empty state (the next autumn offer comes).
