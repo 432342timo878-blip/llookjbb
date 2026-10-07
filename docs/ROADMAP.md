@@ -113,7 +113,11 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         strip / calendar / report)*
         Check: tour + layout check (no overflow at the 5 sizes) with phases, a taper week and a lighter week seeded;
         `season_plan_check.gd` still passes; look at the screenshots.
-  - [ ] **6f. Coach events, season rollover, return block, multi-season check, playtest:** `SeasonSystem` (GameSystem
+  - [x] **6f. Coach events, season rollover, return block, multi-season check, playtest (done 2026-10-07**, details in GDD 4.8
+        "Built (step 6f)": the autumn offer stops Play week, then a Next season box in the Training tab until the season starts (★ if
+        no choice); targets kept and entered; "Easing back in" after any 14+ days without running, stoppable, races stay; `season_check`
+        50 × 3 seasons: injuries 0.70 / 0.78 / 0.54, ability +1.17 / +1.14 / +1.06 a season, save/load at the boundary bit for bit**)**
+        `SeasonSystem` (GameSystem
         id `season`): the "three plans" offer at career start and each autumn (★ if ignored), next season's phases and
         targets, the return block (Accept / No thanks); new `tools/season_check.gd` (50 athletes × 3 seasons);
         a season played through the hub on PC and phone (`season_playtest.gd`); update docs and CLAUDE.md.
@@ -159,8 +163,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   words. Help texts live in `data/help.json` (one entry per screen, with sections), shown by one shared `HelpPanel` (phone: bottom sheet,
   PC: side panel, 44 px, no hover). Each new feature step adds its help entry; a small "new" dot on the "?" could mark unread help.
   Best started right after step 6e (season UI) so the big screens exist; the entries for the existing tabs can be written earlier. *(Opus for the text outline, then Sonnet)*
-  **Done:** 13 screen entries + 9 topics, `HelpButton` / `HelpPanel` / `HelpOverlay`, `tools/help_check.gd`; 6f adds the return block's entry
-  (and the coach's offer event's) to `data/help.json`.
+  **Done:** 13 screen entries + 9 topics, `HelpButton` / `HelpPanel` / `HelpOverlay`, `tools/help_check.gd`; 6f added `season_offer`,
+  `return_block` and the topic `easing_back_in` (now 15 screens + 10 topics).
 - **Track visuals (user, 2026-10-07):** the user is starting to dislike how the track looks in the main menu and in the races (the
   drawn stadium / hall track). Worth a look later: get reference images of real tracks first (CLAUDE.md: realism, no guessing), then
   redraw. Could go together with M3 (stadium view). *(Opus for the look, then Sonnet)*

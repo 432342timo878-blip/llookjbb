@@ -11,6 +11,7 @@ signal plan_changed
 
 static var cards_open := false       # the three plan cards are shown (kept while the tab is rebuilt)
 static var pending_variant := ""     # a plan card waiting for "This replaces your changes to N phases"
+static var next_pending := ""        # the same for next season's cards (the autumn window)
 
 var year := 0
 
@@ -26,7 +27,13 @@ func _build() -> void:
 	add_child(UIKit.label("Season plan %d–%s" % [year, str(year + 1).right(2)], "HeadingLabel"))
 	add_child(UIKit.wrapped("Your club coach's training year: phases that build up to your target meets, a lighter "
 			+ "week every so often, an easy day before races and a taper before each target. Tap a phase to see or change it."))
+	var easing := SeasonUI.return_box(func(): plan_changed.emit())
+	if easing:
+		add_child(easing)
 	add_child(_plan_section())
+	var next := _next_season_section()
+	if next:
+		add_child(next)
 	add_child(_season_section())
 	add_child(_targets_section())
 	_this_week()
@@ -58,49 +65,17 @@ func _plan_section() -> Control:
 		pending_variant = ""
 		cards.visible = cards_open
 		toggle.text = "Hide plans" if cards_open else "Change plan")
-	var row := UIKit.flex(10)
-	var group := ButtonGroup.new()
-	var by_id := {}
-	for id in ["steady", "balanced", "ambitious"]:
-		var var_data: Dictionary = Data.periodization.variants[id]
-		var card_info: Dictionary = var_data.get("card", {})
-		var detail := "Weekly load about %d · typical risk %s\nFocus: %s\n%s" % [
-				roundi(SeasonUI.variant_load(a, id, year)),
-				HealthSystem.RISK_NAMES.get(str(card_info.get("risk", "low")), "Low"),
-				card_info.get("focus", ""), var_data.text]
-		var title: String = var_data.name + (" ★" if id == pick else "") + ("  ·  in use" if id == current else "")
-		var card := ChoiceCard.new(title, detail, group)
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.size_flags_stretch_ratio = 1.0
-		card.custom_minimum_size.y = 120 if not Layout.stacked() else 52
-		card.selected = id == (pending_variant if pending_variant != "" else current)
-		by_id[id] = card
-		card.button.pressed.connect(func(): _choose(id))
-		row.add_child(card)
-	cards.add_child(row)
-	cards.add_child(UIKit.wrapped("★ = your coach's pick for you now (from your durability, professionalism and injuries "
-			+ "in the last year). Weekly load is the season's average week; the risk word is what most weeks of the plan read."))
+	cards.add_child(PlanCards.build(year, pending_variant if pending_variant != "" else current, pick, current,
+			func(id: String): _choose(id)))
 	if pending_variant != "":
-		var n := s.edited_phases(year)
-		var confirm := UIKit.vbox(8)
-		confirm.add_child(UIKit.wrapped("This replaces your changes to %d phase%s with the coach's %s plan. Your targets and moved edges stay."
-				% [n, "" if n == 1 else "s", Data.periodization.variants[pending_variant].name], ""))
-		var buttons := UIKit.hbox(8)
-		var yes := UIKit.button("Use %s" % Data.periodization.variants[pending_variant].name, true, 180)
-		yes.pressed.connect(func():
-			s.set_variant(year, pending_variant)
-			pending_variant = ""
-			plan_changed.emit())
-		var no := UIKit.button("Keep my plan", false, 160)
-		no.pressed.connect(func():
-			pending_variant = ""
-			plan_changed.emit())
-		for b in [yes, no]:
-			if Layout.stacked():
-				b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			buttons.add_child(b)
-		confirm.add_child(buttons)
-		cards.add_child(UIKit.alert_panel(confirm, Palette.RISK_MODERATE))
+		cards.add_child(PlanCards.replace_warning(s.edited_phases(year), pending_variant,
+				func():
+					_set_plan(year, pending_variant)
+					pending_variant = ""
+					plan_changed.emit(),
+				func():
+					pending_variant = ""
+					plan_changed.emit()))
 	box.add_child(cards)
 	return UIKit.panel(box, 16)
 
@@ -115,8 +90,59 @@ func _choose(id: String) -> void:
 	elif s.edited_phases(year) > 0:
 		pending_variant = id
 	else:
-		s.set_variant(year, id)
+		_set_plan(year, id)
 	plan_changed.emit()
+
+
+## The player's choice of a plan for a season (the season system enters its targets and remembers the choice).
+static func _set_plan(for_year: int, id: String) -> void:
+	var ss := Game.get_system("season") as SeasonSystem
+	if ss:
+		ss.choose(for_year, id)
+	else:
+		Game.season.set_variant(for_year, id)
+
+
+# --- Next season (the autumn window, GDD 4.8 "Offer") ------------------------------------------------------
+
+## From the coach's autumn offer until next season starts: next season's plan, with the three cards.
+func _next_season_section() -> Control:
+	var next := SeasonSystem.next_season_open(Game.date)
+	if next == 0:
+		return null
+	var cfg: Dictionary = Data.periodization.offer
+	var s := Game.season
+	var ss := Game.get_system("season") as SeasonSystem
+	var decided: bool = ss != null and ss.decided.has(next)
+	var pick := SeasonPlan.coach_pick(Game.athlete, Game.date, HealthUI.system())
+	var shown := s.variant(next) if decided else pick
+	var fill := {"season": SeasonSystem.season_label(next), "date": Calendar.format_day(SeasonPlan.season_start(next)),
+			"plan": Data.periodization.variants[shown].name}
+	var box := UIKit.vbox(10)
+	box.add_child(UIKit.label(str(cfg.next_caption).format(fill), "CaptionLabel"))
+	box.add_child(UIKit.wrapped(str(cfg.next_chosen if decided else cfg.next_open).format(fill), ""))
+	box.add_child(UIKit.wrapped(str(cfg.text_next).format({"age_class": Calendar.age_class(Game.athlete, next + 1),
+			"targets": SeasonSystem.targets_text(next)})))
+	box.add_child(PlanCards.build(next, next_pending if next_pending != "" else shown, pick,
+			s.variant(next) if decided else "", func(id: String):
+				if decided and id == s.variant(next):
+					next_pending = ""
+				elif s.edited_phases(next) > 0:
+					next_pending = id
+				else:
+					next_pending = ""
+					_set_plan(next, id)
+				plan_changed.emit()))
+	if next_pending != "":
+		box.add_child(PlanCards.replace_warning(s.edited_phases(next), next_pending,
+				func():
+					_set_plan(next, next_pending)
+					next_pending = ""
+					plan_changed.emit(),
+				func():
+					next_pending = ""
+					plan_changed.emit()))
+	return UIKit.panel(box, 16)
 
 
 # --- The season: bar (PC) and the phases -------------------------------------------------------------------

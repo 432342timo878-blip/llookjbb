@@ -125,11 +125,15 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 		load_text += "  (plan %d)" % roundi(plan_load)
 	summary.add_child(UIKit.fact_row("Load for the day", UIKit.label(load_text)))
 	# The season plan's reason for the day (GDD 4.8 UI): "Easy: race tomorrow", "Taper: … in 3 days", "Lighter week".
+	# Easing back in after a layoff gives its reason in both modes, with "Stop easing back in…".
 	var season_plan := Game.season.mode == SeasonPlan.PHASES
-	if season_plan:
-		var why: String = Game.season.week_for(w.monday).why[day]
-		if why != "":
-			summary.add_child(UIKit.fact_row("Season plan", _wrapped_value(why)))
+	var plan_why: Array = Game.season.week_for(w.monday).get("why", [])
+	if not plan_why.is_empty() and plan_why[day] != "":
+		summary.add_child(UIKit.fact_row("Season plan" if season_plan else "Plan", _wrapped_value(plan_why[day])))
+	if Game.season.return_day(Game.add_days(w.monday, day)) >= 0 and day >= w.day:
+		summary.add_child(SeasonUI.return_stop_control(func():
+			HealthUI.refresh()
+			_after_change()))
 	if info.changed:
 		var plan_text := _names_or_rest(w.plan[day])
 		if not w.plan[day].is_empty() and w.plan_intensity[day] != WeekSim.NORMAL:

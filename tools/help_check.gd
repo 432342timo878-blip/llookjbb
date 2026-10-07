@@ -59,6 +59,15 @@ func _run() -> void:
 	wizard._on_next()   # start the career
 	await _frames(6)
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	# A new career opens with the coach's offer of the three plans (M2 step 6f).
+	hub._show_pending_event()
+	await _frames(4)
+	_check(game.pending_event().get("kind", "") == "offer", "a new career starts with the coach's offer")
+	await _press_help(hub._event_overlay, "offer panel", "season_offer", false)
+	_check(_overlay_on_top(hub), "the offer's help sheet is above the stop-event layer")
+	_close_overlays(hub)
+	game.answer_event(game.pending_event().id, "later")
+	hub._show_pending_event()
 	game.advance_day()
 	hub._refresh_week_ui()
 
@@ -164,6 +173,16 @@ func _run() -> void:
 		health.strain[area] = 0.0
 	health.levels.clear()
 	health._apply_restrictions(game.current_week())
+	# Easing back in after a layoff (M2 step 6f).
+	health.days_without_running = 20
+	game.get_system("season")._post_return(health, game.add_days(game.date, 1))
+	hub._show_pending_event()
+	await _frames(4)
+	await _press_help(hub._event_overlay, "easing back in panel", "return_block", false)
+	_close_overlays(hub)
+	game.answer_event(game.pending_event().id, "decline")
+	hub._show_pending_event()
+	health.days_without_running = 0
 	load("res://scripts/core/health_system.gd").model_enabled = false
 
 	# The race: before, a decision, the result.

@@ -6,7 +6,9 @@ extends SceneTree
 ## long the hub took to redraw after each button press, and how big and slow the autosave is.
 ## Run (needs a window, so not --headless; add `--resolution 390x844` before `-s` for the phone layout):
 ##   godot --path . --rendering-driver opengl3 -s res://tools/season_playtest.gd -- <out_dir> [plan] [policy] [seed] [days]
-##   plan: coach (default) / hard     policy: careful (default: easy when sore) / neutral (keeps going when sore)
+##   plan: coach (default, the repeating coach week) / hard (a hard repeating week) / season (the coach's season plan on
+##         the ★, with the coach's offers: they take the ★ plan; easing back in is accepted)
+##   policy: careful (default: easy when sore) / neutral (keeps going when sore)
 ##   seed: another athlete and other luck (default 1); days: how long (default 364).
 ## Uses its own save folder (user://tour_saves/), never the player's saves.
 
@@ -57,7 +59,10 @@ func _run() -> void:
 		"hometown": "Tampere", "club_id": "tap", "main_event": "800m",
 		"birth_date": {"year": 2012, "month": rng.randi_range(1, 10), "day": rng.randi_range(1, 28)},
 		"answers": answers}, rng)
-	_game.start_career(a, "repeat")
+	if plan_id == "season":
+		_game.start_career(a)   # the coach's season plan on the ★, with the coach's offer first (M2 step 6f)
+	else:
+		_game.start_career(a, "repeat")
 	var health = _game.get_system("health")
 	health.rng.seed = seed_value
 	if plan_id == "hard":
@@ -87,6 +92,8 @@ func _run() -> void:
 			stops[kind] = int(stops.get(kind, 0)) + 1
 			stop_weeks[_cal.date_key(_game.week_monday())] = true
 			await _frames(3)
+			if kind == "offer":   # the career-start offer and the autumn offer for next season both get a shot
+				kind += "_first" if e.get("first", false) else "_next"
 			await _shot_once("event_" + kind)
 			var choice := _choice(e, policy)
 			var t0 := Time.get_ticks_usec()
@@ -104,6 +111,10 @@ func _run() -> void:
 			hub._show("overview")
 			await _frames(3)
 			await _shot_once("today_card_" + health.injuries[0].tier)
+		if _game.season.return_week_on(_game.date) > 0 and not _shots.has("easing_back_in_week"):
+			hub._show("overview")
+			await _frames(3)
+			await _shot_once("easing_back_in_week")
 		var injured: bool = not health.injuries.is_empty()
 		var t0 := Time.get_ticks_usec()
 		hub._on_advance(not injured)
@@ -131,8 +142,13 @@ func _run() -> void:
 	quit()
 
 
-## What the player answers: the sore warning by policy, everything else OK. A race tomorrow: race.
+## What the player answers: the sore warning by policy, the coach's offer the ★, easing back in accepted, everything
+## else OK. A race tomorrow: race.
 func _choice(e: Dictionary, policy: String) -> String:
+	if e.get("kind", "") == "offer":
+		return str(e.pick)
+	if e.get("kind", "") == "return":
+		return "accept"
 	if e.get("kind", "") == "sore":
 		var ids: Array = e.choices.map(func(c): return c.id)
 		if "easy" in ids:

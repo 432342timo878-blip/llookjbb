@@ -18,15 +18,17 @@
   },
   "training_season": {
    "title": "Training: season plan",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
     {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
+    {"heading": "Next season", "text": "Three weeks before a new season your coach offers the three plans again. Until the season starts, the Next season box here lets you choose or change. If you don't choose, the season starts on the coach's ★ plan, and you're entered in its target meets."},
+    {"heading": "Easing back in", "text": "After two weeks or more without running, your coach suggests a few easier weeks before your full plan. While they run, a box at the top shows the weeks, and you can stop them early.", "see": ["easing_back_in"]},
     {"heading": "The phases", "text": "General base builds your engine in winter. Indoor specific sharpens you for the indoor target. Spring base builds again before summer. Pre-competition and race season are for racing. Transition is a few easy weeks of rest, and autumn general starts the new year gently. Tap a phase to see or change it."},
     {"heading": "Lighter weeks and easing in", "text": "In the base phases every fourth week is lighter, so your body can catch up. A new phase doesn't start all at once: its sessions come in a day at a time over the first weeks.", "see": ["lighter_weeks", "easing_in"]},
     {"heading": "Target meets ◆", "text": "Up to three a season. Your plan builds up to them, and the last ten days before each one are a taper so you arrive fresh and sharp.", "see": ["targets"]},
     {"heading": "Body strain", "text": "Under this week's plan: how much you train compared with your usual weeks, and how risky the plan is for your body right now.", "see": ["load_vs_normal", "plan_risk"]},
-    {"heading": "Over the week strip", "text": "The line above the week strip shows the phase and week you are in, or how many days are left before a target."},
+    {"heading": "Over the week strip", "text": "The line above the week strip shows the phase and week you are in, how many days are left before a target, or the week of easing back in."},
     {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."}
    ]
   },
@@ -44,8 +46,9 @@
   },
   "training_repeat": {
    "title": "Training: one repeating week",
-   "version": 1,
+   "version": 2,
    "sections": [
+    {"heading": "Easing back in", "text": "After two weeks or more without running, your coach can put a few easier weeks over your plan. While they run, a box at the top shows them, and you can stop them early.", "see": ["easing_back_in"]},
     {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in the week strip."},
     {"heading": "Easy, Normal, Hard", "text": "How hard you do the day's sessions. Hard trains you a bit more but tires you and strains your body much more. Easy keeps most of the training effect for much less strain, which makes it a good way to train more without getting hurt."},
     {"heading": "Coach's plan and Clear week", "text": "Coach's plan puts back the starter week your club coach suggests. Clear week empties every day so you can start from scratch."},
@@ -82,12 +85,12 @@
   },
   "day_editor": {
    "title": "Changing a day",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "This week only", "text": "Changes here are for this one day of this week. Days already played and race days can't be changed. To change every week, use the Training tab."},
     {"heading": "Sessions", "text": "Swap a session, remove it, add a second one (two at most) or make the day a rest day. A greyed-out session isn't possible this time of year, or with your injury; the reason is in its name."},
     {"heading": "Easy, Normal, Hard", "text": "How hard you do the day. The day's load is shown next to what your plan has. Hard trains a bit more but strains the body much more.", "see": ["fatigue"]},
-    {"heading": "Back to plan", "text": "A changed day says who changed it. Back to plan returns the day to your plan. In a season plan, the \"Season plan\" line says why the day looks as it does: a lighter week, easing in, an easy day before a race or the taper."},
+    {"heading": "Back to plan", "text": "A changed day says who changed it. Back to plan returns the day to your plan. The \"Season plan\" line says why the day looks as it does: a lighter week, easing in, an easy day before a race, the taper or easing back in after a layoff.", "see": ["easing_back_in"]},
     {"heading": "Injury limits", "text": "An injury or illness takes out what you shouldn't do. With a minor problem you can train through it, but it can make it worse and take longer to heal. \"Locked\" means it isn't allowed at all.", "see": ["injuries"]},
     {"heading": "Race day", "text": "On a race day you see the meet and your race form. If you are injured or ill, you can scratch (not start). A played day only shows what you did."}
    ]
@@ -137,6 +140,24 @@
     {"heading": "Locked or \"may get worse\"", "text": "Locked means you can't train or race against the limits. Otherwise you may, but it strains the area more and can turn into something worse."},
     {"heading": "A soreness warning", "text": "An area just turned sore. Keep going trains as planned. Take it easy makes today Easy. A rest day gives the body the most time. Before a race, you choose between racing and scratching.", "see": ["soreness"]}
    ]
+  },
+  "season_offer": {
+   "title": "Your coach's three plans",
+   "version": 1,
+   "sections": [
+    {"heading": "Choosing a plan", "text": "Steady, Balanced and Ambitious are the same training year with more or less work. Tap a card to see it chosen, then press Use. ★ is the plan your coach would pick for you now, from your durability, professionalism and recent injuries."},
+    {"heading": "What the cards say", "text": "Weekly load is the season's average week. The risk word is what most weeks of the plan read for an athlete like you. More load brings more progress, but only if you listen to your body.", "see": ["plan_risk"]},
+    {"heading": "Decide later", "text": "Nothing is lost: you can choose in the Training tab until the season starts. If you never choose, the season runs on the ★ plan. Choosing never removes your target meets.", "see": ["targets"]}
+   ]
+  },
+  "return_block": {
+   "title": "Easing back in",
+   "version": 1,
+   "sections": [
+    {"heading": "Why the coach suggests it", "text": "While you weren't running, your body lost some of what it was used to. Your old plan is now a big jump, and big jumps are when injuries happen. The risk line shows what your plan would mean with and without easing back in.", "see": ["plan_risk"]},
+    {"heading": "The weeks", "text": "The first week is one easy session a day, with no hard or fast running. Then one session a day at Normal with one hard session kept. A long break ends with a lighter week. Your races stay as they are.", "see": ["easing_back_in"]},
+    {"heading": "Accept or No thanks", "text": "Accept puts the weeks over your plan from tomorrow; you can stop them early in the Training tab or the day editor. No thanks keeps your plan as it is."}
+   ]
   }
  },
  "topics": {
@@ -160,12 +181,12 @@
   },
   "injuries": {
    "title": "Injuries and illness",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Kinds", "text": "A niggle is a small problem you can train with. An injury means no running for a while, then easy running. A serious injury means weeks to months out. A cold allows easy training; with a fever you rest."},
     {"heading": "While you are out", "text": "Banned sessions are swapped for ones that are allowed, such as pool running or the bike, which keep much of your fitness. Your abilities don't drop for good; you lose time."},
     {"heading": "Training through it", "text": "With a minor problem you may ignore the limits, but each day of it adds healing time and can turn the problem into something worse."},
-    {"heading": "Coming back", "text": "After time off, your body is no longer used to full training. Jumping straight back into your old plan is itself a big risk: build up again.", "see": ["load_vs_normal"]}
+    {"heading": "Coming back", "text": "After time off, your body is no longer used to full training. Jumping straight back into your old plan is itself a big risk: build up again. After two weeks or more without running, your coach offers a few weeks of easing back in.", "see": ["load_vs_normal", "easing_back_in"]}
    ]
   },
   "load_vs_normal": {
@@ -203,10 +224,20 @@
   },
   "easing_in": {
    "title": "Easing in",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "What it is", "text": "When a new phase starts, its sessions come in a day at a time over its first weeks, while the rest of the week stays as in the phase before."},
-    {"heading": "Why", "text": "The first weeks of new hard work, such as the first 800 m intervals of the winter, are when injuries are most likely. A gentle change lets the body get used to it."}
+    {"heading": "Why", "text": "The first weeks of new hard work, such as the first 800 m intervals of the winter, are when injuries are most likely. A gentle change lets the body get used to it."},
+    {"heading": "Not the same as easing back in", "text": "Easing in belongs to every new phase. Easing back in is the coach's few easier weeks after a layoff of two weeks or more without running.", "see": ["easing_back_in"]}
+   ]
+  },
+  "easing_back_in": {
+   "title": "Easing back in",
+   "version": 1,
+   "sections": [
+    {"heading": "What it is", "text": "After two weeks or more without running, for any reason, your club coach offers two to four easier weeks, longer after a longer break. They sit over your plan, in a season plan and in a repeating week."},
+    {"heading": "How the weeks work", "text": "Week one: one easy session a day, hard and fast sessions become an easy run. Week two: one session a day at Normal, one hard session kept. A long break ends with a lighter week. Race days stay, with an easy day before."},
+    {"heading": "Where you see it", "text": "The line over the week strip, the day editor's plan line and the Report show the week you are in. The Training tab has a box with the weeks and Stop easing back in, which returns you to your full plan from today."}
    ]
   },
   "targets": {

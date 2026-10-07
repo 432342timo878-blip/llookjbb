@@ -482,11 +482,16 @@ func _show_pending_event() -> void:
 	center.add_child(card)
 
 	# Logical window width (the screen may not be laid out yet), minus screen margin and panel padding.
-	var width := minf(480.0, Layout.logical_width - 32.0 - 36.0 - 12.0)
+	var widest := SeasonEventPanel.max_width(e) if SeasonEventPanel.handles(e) else 480.0
+	var width := minf(widest, Layout.logical_width - 32.0 - 36.0 - 12.0)
 	var box: Control
 	if HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels (with a "?")
 		box = HealthEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, HealthEventPanel.HELP))
+	elif SeasonEventPanel.handles(e):   # the coach's offer of the three plans, easing back in
+		var panel := SeasonEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
+				func(): HelpOverlay.open(self, SeasonEventPanel.help_id(e)))
+		box = panel
 	else:
 		box = UIKit.vbox(10)
 		box.custom_minimum_size.x = width
@@ -511,6 +516,8 @@ func _show_pending_event() -> void:
 	_event_overlay.visible = true
 	_raise_overlays()
 	_fit_event_card(scroll, box)
+	if box is SeasonEventPanel:   # its content changes (a plan card chosen): fit the card again
+		box.rebuilt.connect(func(): _fit_event_card(scroll, box))
 
 
 ## Sizes the scrolling event panel to its content, at most the screen height minus the margins.
@@ -771,6 +778,11 @@ func _build_training_repeat() -> void:
 	var a := Game.athlete
 	var month: int = Game.add_days(Game.week_monday(), 3).month
 	var plan: Dictionary = Game.season.repeat_week   # {days, intensity}: edited in place (see WeekPlan)
+	var easing := SeasonUI.return_box(func():   # easing back in after a layoff works in this mode too
+		_after_plan_change()
+		_rebuild_view())
+	if easing:
+		_content.add_child(easing)
 	_content.add_child(UIKit.label("Weekly plan", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
 			("Your plan repeats every week until you change it. Up to %d sessions a day; an empty day is a rest day. "

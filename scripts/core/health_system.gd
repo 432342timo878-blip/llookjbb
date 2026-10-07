@@ -851,6 +851,11 @@ func cancel_override(d: int) -> bool:
 	return true
 
 
+## Running is allowed `k` days from now (k = 1: the next day to be played): the limits don't ban an easy run.
+func running_allowed(k: int) -> bool:
+	return _ban_in(Data.get_session(str(Data.periodization.return_block.easy_session)), rule_at(k)) == ""
+
+
 ## Racing today: {ok, reason}. A niggle or a cold allows it (slower, may get worse); locked limits don't.
 func can_race() -> Dictionary:
 	var rule := rule_at(1)
@@ -918,6 +923,25 @@ func _impact(sessions: Array, level: String, is_race: bool) -> float:
 ## injury proneness, so it never gives the hidden value away.
 ## `from` = a lead-in (see `projected`): the risk of switching into the plan when the lead-in ends.
 func plan_risk(plan: Variant, from := {}) -> String:
+	return weeks_risk([plan], from)
+
+
+## As plan_risk, for a run of different weeks (week w plays plans[w], the last one repeats), e.g. the weeks of
+## easing back in after a layoff (GDD 4.8 "Return block").
+func weeks_risk(plans: Array, from := {}) -> String:
+	return risk_word(weeks_expected(plans, from))
+
+
+## "low" / "moderate" / "high" for a number of weeks_expected.
+static func risk_word(expected: float) -> String:
+	var cfg: Dictionary = Data.health.plan_risk
+	if expected >= float(cfg.high):
+		return "high"
+	return "moderate" if expected >= float(cfg.moderate) else "low"
+
+
+## The hidden number behind weeks_risk: expected overuse injuries over the plan_risk weeks (never shown to the player).
+func weeks_expected(plans: Array, from := {}) -> float:
 	var cfg: Dictionary = Data.health.plan_risk
 	var copy := HealthSystem.new()
 	var base: HealthSystem = from.get("health", self)
@@ -928,7 +952,7 @@ func plan_risk(plan: Variant, from := {}) -> String:
 	var monday: Dictionary = from.get("monday", Game.week_monday())
 	var expected := 0.0
 	for w in int(cfg.weeks):
-		var week := WeekSim.new(a, plan, monday)
+		var week := WeekSim.new(a, plans[mini(w, plans.size() - 1)], monday)
 		while not week.is_over():
 			var rec := week.play_day()
 			copy._body_day(a, copy._done_sessions(rec), rec.intensity, false, Game.add_days(monday, int(rec.day)), float(rec.fatigue))
@@ -936,9 +960,7 @@ func plan_risk(plan: Variant, from := {}) -> String:
 			for area in areas():
 				expected += copy.hazard(a, area, false)
 		monday = Game.add_days(monday, 7)
-	if expected >= float(cfg.high):
-		return "high"
-	return "moderate" if expected >= float(cfg.moderate) else "low"
+	return expected
 
 
 ## The lead-in for a future phase (GDD 4.8 UI, "Future phases"): the body and the athlete as they would be on the

@@ -49,6 +49,8 @@ func _run() -> void:
 	_check_save_load()
 	_check_play()
 	_check_season_ui()
+	_check_coach_events()
+	_check_return_block()
 	_check_speed()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
@@ -779,6 +781,159 @@ func _check_speed() -> void:
 	var per_call := (Time.get_ticks_usec() - t0) / 2000.0
 	print("    week_for: %.0f µs per call" % per_call)
 	_ok("week_for is cheap (< 1 ms)", per_call < 1000.0)
+
+
+# --- Step 6f: the coach's offers and the rollover ---------------------------------------------------------
+
+func _check_coach_events() -> void:
+	print("-- the coach's offers and the season rollover (step 6f)")
+	var SS = load("res://scripts/core/season_system.gd")
+	game.start_career(_athlete(2012, "800m"))   # on the ★: the offer comes
+	var e: Dictionary = game.pending_event()
+	_ok("a new career on the ★ starts with the offer", e.get("kind", "") == "offer" and e.source == "season" and e.stop)
+	_ok("the offer is about the first season", int(e.get("year", 0)) == 2026 and e.get("first", false))
+	_ok("the ★ is the first choice, Decide later the last", e.choices[0].id == e.pick and e.choices[-1].id == "later"
+			and e.choices.size() == 4)
+	game.answer_event(e.id, "steady")
+	var ss = game.get_system("season")
+	_ok("answering a plan puts the season on it", game.season.variant(2026) == "steady" and ss.decided.has(2026))
+	game.start_career(_athlete(2012, "800m"), "phases", "balanced")
+	_ok("a career started on a named plan gets no offer", game.pending_event().is_empty())
+	SS.offers_enabled = false
+	game.start_career(_athlete(2012, "800m"))
+	_ok("offers switched off (tools): no offer at career start", game.pending_event().is_empty())
+	SS.offers_enabled = true
+	game.start_career(_athlete(2012, "800m"), "repeat")
+	ss = game.get_system("season")
+	ss.on_day_start({"date": _d(2027, 10, 11)})
+	_ok("repeat mode: no autumn offer", game.pending_event().is_empty())
+
+	_new_career(1, "phases")
+	ss = game.get_system("season")
+	ss.on_day_start({"date": _d(2027, 10, 10)})
+	_ok("no autumn offer before 3 weeks ahead of the season (10 Oct 2027)", game.pending_event().is_empty())
+	_ok("the Training tab's Next season box is closed then", SS.next_season_open(_d(2027, 10, 10)) == 0)
+	game.date = _d(2027, 10, 11)
+	ss.on_day_start({"date": _d(2027, 10, 11)})
+	e = game.pending_event()
+	_ok("the autumn offer on Mon 11 Oct 2027, for 2027–28", e.get("kind", "") == "offer" and int(e.get("year", 0)) == 2027
+			and not e.get("first", true))
+	_ok("the Next season box is open from that day", SS.next_season_open(_d(2027, 10, 11)) == 2027)
+	_ok("the offer names the new age class", "16" in str(e.text))
+	game.answer_event(e.id, "later")
+	ss.on_day_start({"date": _d(2027, 10, 12)})
+	_ok("the offer comes once", game.pending_event().is_empty())
+	_ok("Decide later makes no choice", not ss.decided.has(2027))
+	# The rollover on the evening of Sun 31 Oct 2027.
+	game.date = _d(2027, 10, 31)
+	ss.on_day_end({"date": _d(2027, 10, 31)})
+	_ok("the rollover made a record on the ★", game.season.seasons.has(2027) and ss.rolled.has(2027)
+			and game.season.variant(2027) == SP.coach_pick(game.athlete, game.date))
+	var targets: Array = game.season.targets(2027)
+	_ok("next season has the coach's targets for the new age class (%s)" % [targets], targets.size() == 2
+			and targets.all(func(k): return game.season.can_target(Cal.get_meet(k))))
+	_ok("and they are entered", targets.all(func(k): return k in game.entries))
+	var before: String = _json(game.season.to_dict())
+	ss.on_day_end({"date": _d(2027, 10, 31)})
+	_ok("the rollover happens once", _json(game.season.to_dict()) == before)
+	# Choosing in the Training tab (Next season box): a season with edited phases gets the new plan's weeks.
+	game.season.edit_phase(2028, "general_base").intensity[0] = "hard"
+	_ok("an edited phase of 2028–29 counts", game.season.edited_phases(2028) == 1)
+	ss.choose(2028, "ambitious")
+	_ok("choosing a plan replaces the edited phases and remembers the choice", game.season.edited_phases(2028) == 0
+			and game.season.variant(2028) == "ambitious" and ss.decided.has(2028))
+	game.season.add_target(2028, game.season.target_candidates(2028, game.date)[0].key)
+	var with_extra: Array = game.season.targets(2028)
+	game.date = _d(2028, 10, 29)
+	ss.on_day_end({"date": _d(2028, 10, 29)})
+	_ok("a chosen plan survives the rollover, and so do the player's targets", game.season.variant(2028) == "ambitious"
+			and game.season.targets(2028) == with_extra)
+	# Save / load of the season system.
+	var copy = SS.new()
+	copy.from_dict(JSON.parse_string(JSON.stringify(ss.to_dict())))
+	_ok("the season system's state saves and loads", _json(copy.to_dict()) == _json(ss.to_dict()))
+	_ok("an empty season system saves as {}", SS.new().to_dict().is_empty())
+
+
+# --- Step 6f: easing back in (the return block) -------------------------------------------------------------
+
+func _check_return_block() -> void:
+	print("-- easing back in (step 6f)")
+	var lengths := {13: 0, 14: 2, 27: 2, 28: 3, 55: 3, 56: 4, 120: 4}
+	for days in lengths:
+		_ok("%d days out: %d weeks" % [days, lengths[days]], SP.return_kinds_for(days).size() == lengths[days])
+	_new_career(2, "phases")
+	game.entries = []
+	var plan = game.season
+	var none = plan.copy()   # the same plan without a block
+	plan.start_return(_d(2027, 3, 4), 30)   # Thursday, spring base
+	var levels := ["easy", "normal", "hard"]
+	var cfg: Dictionary = data.periodization.return_block
+	var bad_first := 0
+	var bad_second := 0
+	var hard_in_week2 := 0
+	for w in 4:
+		var monday: Dictionary = game.add_days(_d(2027, 3, 1), 7 * w)
+		var wk: Dictionary = plan.week_for(monday)
+		var base: Dictionary = none.week_for(monday)
+		for d in 7:
+			var date: Dictionary = game.add_days(monday, d)
+			var i: int = plan.return_day(date)
+			if i < 0:
+				if wk.days[d] != base.days[d] or wk.intensity[d] != base.intensity[d]:
+					bad_first += 100   # a day outside the block changed
+				continue
+			var kind: String = plan.return_block.kinds[i / 7]
+			var ids: Array = wk.days[d]
+			match kind:
+				"first":
+					if ids.size() > 1 or (not ids.is_empty() and wk.intensity[d] != "easy") \
+							or ids.any(func(s): return data.get_session(s).get("tags", []).any(func(t): return t in cfg.kinds.first.swap_tags)):
+						bad_first += 1
+				"second":
+					if ids.size() > 1 or levels.find(wk.intensity[d]) > 1:
+						bad_second += 1
+					hard_in_week2 += ids.filter(func(s): return "hard" in data.get_session(s).get("tags", [])).size()
+				"lighter":
+					if not ids.is_empty() and levels.find(wk.intensity[d]) != maxi(0, levels.find(base.intensity[d]) - 1):
+						bad_second += 1
+			if wk.why[d] == "" and not ids.is_empty():
+				bad_first += 1000   # a block day without its reason
+		_ok("week of %s: kind 'return' while the block has days in it" % Cal.format_day(monday),
+				(wk.kind == "return") == (w < 3 or plan.return_day(monday) >= 0 or plan.return_day(game.add_days(monday, 6)) >= 0))
+	_ok("week 1: one session a day, all Easy, no hard / fast / long sessions; days outside the block unchanged", bad_first == 0)
+	_ok("week 2: one session a day at most Normal; the lighter week one step easier", bad_second == 0)
+	_ok("week 2 (a block week over a Monday) keeps exactly one hard session", hard_in_week2 == 1)
+	_ok("the strip caption's week: week 1 of 3 on the first day", plan.return_week_on(_d(2027, 3, 4)) == 1
+			and plan.return_week_on(_d(2027, 3, 3)) == 0 and plan.return_week_on(_d(2027, 3, 24)) == 3
+			and plan.return_week_on(_d(2027, 3, 25)) == 0)
+	# The caption over the strip: the phase on a day before the block in the same week, the block on its days.
+	game.season = plan
+	game.date = _d(2027, 3, 3)
+	game._week = null
+	var SU = load("res://scripts/ui/season_ui.gd")
+	_ok("caption the day before the block: the phase (%s)" % SU.week_caption(), not "Easing" in SU.week_caption())
+	game.date = _d(2027, 3, 4)
+	game._week = null
+	_ok("caption on its first day: %s" % SU.week_caption(), SU.week_caption() == "Easing back in · week 1 of 3")
+	# Save / load, stopping early, repeat mode.
+	var again = SP.from_dict(JSON.parse_string(JSON.stringify(plan.to_dict())))
+	_ok("the block saves and loads", _json(again.to_dict()) == _json(plan.to_dict()) and again.return_block.kinds.size() == 3)
+	_ok("a plan without a block saves no return_block key", not none.to_dict().has("return_block"))
+	plan.stop_return(_d(2027, 3, 10))
+	_ok("stopping early: from that day the full plan", plan.return_day(_d(2027, 3, 10)) == -1 and plan.return_day(_d(2027, 3, 9)) >= 0
+			and Cal.date_key(plan.return_last_day()) == 20270309)
+	_ok("stopping early saves and loads", SP.from_dict(JSON.parse_string(JSON.stringify(plan.to_dict()))).return_day(_d(2027, 3, 10)) == -1)
+	plan.stop_return(_d(2027, 3, 1))
+	_ok("stopping before it starts removes it", plan.return_block.is_empty())
+	var rep = SP.repeating(WP.coach())
+	rep.start_return(_d(2026, 11, 5), 20)
+	var rw: Dictionary = rep.week_for(_d(2026, 11, 2))
+	_ok("repeat mode: a block week is a new plan with kind 'return'", rw.kind == "return" and rw != rep.repeat_week
+			and rw.days[3].size() <= 1 and rw.intensity[3] == "easy")
+	_ok("repeat mode: outside the block the repeating week itself", rep.week_for(_d(2026, 12, 7)) == rep.repeat_week
+			and is_same(rep.week_for(_d(2026, 12, 7)), rep.repeat_week))
+	game.entries = []
 
 
 # --- Helpers -------------------------------------------------------------------------------------

@@ -64,12 +64,16 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	rivals = Rivals.generate(athlete, rng)
+	# A career on the coach's ★ plan starts with the coach's offer of the three plans (GDD 4.8; tools that name a
+	# plan don't get it).
+	if mode == SeasonPlan.PHASES and variant == "" and SeasonSystem.offers_enabled:
+		(get_system("season") as SeasonSystem).offer(season.first_season)
 	if autosave:
 		SaveGame.save(SaveGame.AUTOSAVE)
 
 
 func _make_systems() -> Array:
-	var list: Array = [HealthSystem.new(), FormSystem.new()]
+	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list
@@ -297,10 +301,16 @@ func _end_day() -> String:
 ## Sunday night: attribute progression and the weekly report, week-end hooks, rivals' training week.
 func _end_week(ctx: Dictionary) -> void:
 	last_report = _week.end_week()
-	if season.mode == SeasonPlan.PHASES:   # the week's phase and kind for the Report (GDD 4.8 UI)
-		var plan := season.week_for(_week.monday)
+	# The week's phase and kind for the Report (GDD 4.8 UI); in repeat mode only a week of easing back in.
+	var plan := season.week_for(_week.monday)
+	if season.mode == SeasonPlan.PHASES:
 		last_report.plan = {"phase": plan.phase, "phase_week": plan.phase_week, "phase_weeks": plan.phase_weeks,
 				"kind": plan.kind, "target": plan.target}
+	if plan.get("kind", "") == "return":
+		if not last_report.has("plan"):
+			last_report.plan = {"kind": "return"}
+		last_report.plan.return_week = plan.return_week
+		last_report.plan.return_weeks = plan.return_weeks
 	ctx.report = last_report
 	_hook("on_week_end", ctx)
 	Rivals.train_week(rivals, athlete.gender, _week.monday)

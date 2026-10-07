@@ -774,6 +774,73 @@ ran long; everything was finished, so it went in as one commit.)
   day editor's reason, the Report's phase line, the Calendar's Target button, the mode switch both ways) looked at; `layout_check` at all 5 sizes
   (new views: cards + warning, phases, phase editor, its strain, the phase running now, lighter and taper weeks, the Report) no OVERFLOW.
 
+**Built (step 6f, 2026-10-07):** the coach's offers, the season rollover, easing back in (the return block), the multi-season
+check. User decisions this session (all of Claude's recommendations accepted): **the autumn offer stops Play week** (once a year);
+it is **not re-opened**: from the offer day until the season starts the Training tab has a **"NEXT SEASON 2027–28" box** with the
+three cards, and without a choice the season starts on **the coach's ★ of that day**; **targets the player set for next season are
+kept** (a plan choice only replaces phase weeks) and choosing a plan (or the rollover) **enters the season's targets where allowed**;
+easing back in **can be stopped early** ("Stop easing back in…", asks once more: Training tab and day editor), there is no switch to
+turn it off ("No thanks" is enough); **any 14+ days without running count** (an illness alone never gets there: flu is at most 14
+days with easy running allowed after 4–7); **races in the block stay** (the event lists them, the day before is Easy); the name stays
+**"Easing back in"** (the phase ramp keeps "Easing in", the help topic explains both). Claude's defaults, accepted:
+- **Files:** `SeasonSystem` (`scripts/core/season_system.gd`, GameSystem id `season`, in `Game.systems`; static `offers_enabled`
+  for tools), `SeasonEventPanel` (`scripts/ui/season_event_panel.gd`, the two stop panels), `PlanCards` (`scripts/ui/plan_cards.gd`,
+  the three cards + the replace warning, shared by the Training tab and the offer). Data: `data/periodization.json` `offer` and
+  `return_block` (rules, numbers, all texts). New model functions: `SeasonPlan.return_block / start_return / stop_return /
+  return_day / return_week_on / return_weeks / return_ahead / return_last_day / return_kinds_for / copy`,
+  `HealthSystem.running_allowed(k) / weeks_risk(plans) / weeks_expected(plans) / risk_word(expected)` (`plan_risk` = `weeks_risk([plan])`,
+  bit for bit as before).
+- **The offer:** posted by `Game.start_career` for a career on the ★ (no plan named; tools that name one never get it), and by
+  `SeasonSystem.on_day_start` on the Monday 3 weeks before the next season (Mon 11 Oct 2027, Mon 9 Oct 2028, Mon 8 Oct 2029), before
+  that day is played, season mode only, once per season. Event `{kind "offer", year, pick, first}`; choices = the three plans (★ first)
+  + "later"; any other answer counts as "later". The panel: caption + "?" (`season_offer`), the text with the season's age class and
+  the coach's targets, the cards (a row on PC in an 860 px panel, stacked on a phone), **Use <plan>** (the ★ chosen at first) and
+  **Decide later in the Training tab**; a season with edited phases shows "This replaces your changes to N phases" first.
+- **Rollover:** on the evening before a new season's first Monday (`on_day_end`, so the new week is built from the new record):
+  without a choice the season is put on the coach's ★ of that day; its targets are entered where allowed; once per season, never
+  the career's first. The new age class needs nothing new: the coach's targets are worked out per season (2027–28: SM-hallit
+  M/N17-19-22 and Nuorten SM 16-17; 2028–29 the same, age 17). Old saves load with an empty state (the next autumn offer comes).
+- **Easing back in:** `SeasonSystem.on_day_end` offers it on the evening when the athlete has had ≥ 14 days without running (any
+  reason), tomorrow an easy run is allowed by the injury limits and tomorrow's plan has a run (or an entered race); once per layoff.
+  The event: the weeks (7-day spans from the first day back) with what each means, what comes after ("Then your season plan (Spring
+  base) as usual"), **plan risk for the next 4 weeks with and without the block** (from the body now, the days before the first day
+  back as rest in both), entered races in the block, Accept / No thanks. The words are coarse: in 4 of 12 layoffs in `season_check`
+  both read High; in 3 of them the block cut the expected injuries 2–5 times, in one hardly (a 2-week block after 26 days, then
+  straight into indoor-specific intervals). So when both words are the same a line says "much the safer of the two" (block ≤ 0.6 × the full plan, `much_safer` in the data) or, when it isn't, that the weeks after it are still
+  a big step (Easy days or Steady help). No numbers are shown.
+- **The block's weeks** (data): 14–27 days out first + second; 28–55 first + second + lighter; 56+ first + first + second + lighter.
+  *First*: one session a day (a run if there is one), all Easy, hard / speed / plyo / long sessions become an easy run. *Second*: one
+  session a day, at most Normal, the first `hard` session of each 7-day span kept (a span can run over a Monday: the week before is
+  counted). *Lighter*: every day one step easier. Race days untouched; the day before a race Easy. It replaces the lighter week,
+  the easy day before a race and the taper on its days (ramp first, then the block); this week's day changes and the injury limits
+  apply on top as always. Works in both modes (`week_for` in repeat mode returns a new plan for a block week, the repeating week
+  itself otherwise). `kind` "return" with `return_week` / `return_weeks`; every block day has its `why` ("Easing back in, week 1
+  of 3: one easy session").
+- **UI:** week strip caption "EASING BACK IN · WEEK 1 OF 3" (only on the block's days; the rest of that week shows the phase); the
+  day editor's plan row in both modes ("Season plan" / "Plan") + **Stop easing back in…**; the Training tab's box at the top (both
+  modes): caption, sentence, the weeks (past ones dimmed) and Stop; the Report's last-week line ("Plan" in repeat mode). Help:
+  new screens `season_offer` and `return_block`, new topic `easing_back_in`; `training_season`, `training_repeat`, `day_editor`,
+  topics `easing_in` and `injuries` raised to version 2.
+- **Multi-season check** (`tools/season_check.gd`, 50 athletes × 3 seasons, 2 Nov 2026 – 28 Oct 2029, Balanced, health and form on,
+  offers answered "balanced", easing back in accepted, neutral policy, ~160 s): the seasons start 2 Nov 2026 / 1 Nov 2027 / 30 Oct
+  2028 / 29 Oct 2029, 1092 days each in one season, 29 Feb 2028 played; offers on 2 Nov 2026, 11 Oct 2027, 9 Oct 2028, 8 Oct 2029;
+  every rollover makes a Balanced record with the new age class's targets entered; every Monday has a plan with a phase; save /
+  load on the Sunday before a new season (3 athletes × 2 boundaries) plays the next 28 days bit for bit; 12 easing-back-in blocks
+  (2 / 3 / 4 weeks: 4 / 7 / 1), 221 block days follow their rules. **Per season** (per athlete): injuries 0.70 / 0.78 / 0.54 (serious
+  0.08 / 0.04 / 0.00), illnesses 2.1 / 2.5 / 2.5, 800 m ability +1.17 / +1.14 / +1.06 (± 0.02), stops 6.1 / 5.1 / 4.6, blocks 0.14 /
+  0.04 / 0.06; running banned 5.2 days a year. No drift: the ability gain falls a little with age as the weekly diminishing returns
+  bite (step 7 looks at longer careers), injuries stay in the band.
+- **Verified:** `season_check` 2279 checks, `season_plan_check` (new sections "the coach's offers and the season rollover", "easing
+  back in"), `form_check`, `day_engine_check`, `health_check`, `help_check` (466 checks: the offer's and the block's "?") ALL CHECKS
+  PASSED, stderr clean; `training_balance.gd -- 0` fingerprints identical (215.999957139 / 13.751549603 / 1203.029795007); the user's
+  autosave (version 3, season plan) plays 120 days (`saves_check` now accepts a version-3 save in its own mode); `season_playtest.gd`
+  with the new plan `season` through the hub on PC (seed 3: 102 presses, 5 diagnoses, 1 sore, both offers) and at 390×844 (seed 8: 88
+  presses), no errors, hub redraw ≈ 118 ms on average; tour shots `5b_`–`5c_` (the first offer), `33_`–`33c_` (the autumn offer, the
+  replace warning, the Next season box), `34_`–`34e_` (easing back in, its help, the day editor, the Training box, the Report line,
+  the next week's strip) at 1600×900 and 390×844; `layout_check` at all 5 sizes (6 new views each) no OVERFLOW, no SQUEEZED.
+  Tools that play days: in repeat mode they never get an offer, and every tool that answers stop events answers the new ones
+  ("ok" = later / no thanks); `training_balance` part 3–4 count them as stops.
+
 **Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
 
 | Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |

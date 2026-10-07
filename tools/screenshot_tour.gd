@@ -53,9 +53,19 @@ func _run() -> void:
 		await _frames(5)
 		await _shot("%d_%s" % [i + 2, wizard.STEPS[i + 1].to_lower().replace(" ", "_")])
 	wizard._on_next()
+	await _frames(6)
+	# A new career opens with the coach's offer of the three plans (M2 step 6f), its help, then "Decide later".
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	await _shot("5b_coach_offer")
+	await _scroll_event_to_end(hub)
+	await _shot("5b2_coach_offer_buttons")
+	load("res://scripts/ui/help_overlay.gd").open(hub, "season_offer")
+	await _frames(6)
+	await _shot("5c_help_coach_offer")
+	_close_help_overlays(main)
+	hub._on_event_answer(main.get_node("/root/Game").pending_event().id, "later")
 	await _frames(5)
 	await _shot("6_career_hub")
-	var hub: Control = main.get_node("ScreenHost").get_child(-1)
 	# The header "?": Overview's help (PC: the side slot; phone: a sheet), then its "See also: Race form" topic.
 	hub._toggle_help()
 	await _frames(6)
@@ -352,6 +362,85 @@ func _season_tour(main: Node) -> void:
 	print("season tour: back in phases mode ", game.season.mode == "phases", ", spring base still edited ",
 			game.season.is_edited(year, "spring_base"))
 	await _shot("32b_training_back_to_season")
+
+	# 8. The coach's autumn offer for next season (M2 step 6f): with a changed phase of next season, Ambitious chosen
+	#    shows the warning; "Decide later": the Training tab's Next season box.
+	_jump(game, {"year": 2027, "month": 10, "day": 11})
+	game.season.edit_phase(year + 1, "general_base").intensity[0] = "hard"
+	game.get_system("season").offer(year + 1)
+	hub._refresh_week_ui()
+	hub._show("overview")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("33_coach_offer_next_season")
+	var panel = _find_script(hub._event_overlay, load("res://scripts/ui/season_event_panel.gd"))
+	if panel:
+		panel._selected = "ambitious"
+		panel._confirm = true
+		panel._build()
+		await _frames(6)
+		await _scroll_event_to_end(hub)
+		await _shot("33b_coach_offer_replace_warning")
+	hub._on_event_answer(game.pending_event().id, "later")
+	hub._show("training")
+	await _frames(6)
+	await _scroll_to_label(hub, "NEXT SEASON 2027–28")
+	await _shot("33c_training_next_season")
+
+	# 9. Easing back in (M2 step 6f): 33 days without running after a shin stress reaction; the coach's event on
+	#    Wednesday evening (the body seeded as after a layoff: low capacity), its help; accepted: Thursday's day editor,
+	#    the strip caption, the Training tab's box, the Report line and the next week's strip.
+	_jump(game, {"year": 2027, "month": 3, "day": 1})
+	game.date = {"year": 2027, "month": 3, "day": 3}
+	game._week = null
+	game.current_week()
+	load("res://scripts/core/health_system.gd").model_enabled = true
+	var health = game.get_system("health")
+	health._ensure_started()
+	_reset_health(game, health)
+	health.days_without_running = 33
+	health.capacity_now = 0.55
+	for k in health.impacts.size():
+		health.impacts[k] = 2.0
+	health.history.append({"id": "tibial_stress_reaction", "first": "tibial_stress_reaction", "tier": "injury", "area": "shins",
+			"cause": "overuse", "started": {"year": 2027, "month": 1, "day": 29}, "days": [28, 6], "phase": 2, "left": 0,
+			"through_days": 0, "warning": 1, "escalated": false, "healed": {"year": 2027, "month": 3, "day": 2},
+			"healed_no": health.day_no - 1})
+	game.get_system("season")._post_return(health, game.add_days(game.date, 1))
+	print("tour: easing back in risk ", game.pending_event().risk_full, " -> ", game.pending_event().risk_block)
+	load("res://scripts/core/health_system.gd").model_enabled = false
+	hub._refresh_week_ui()
+	hub._show("overview")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("34_easing_back_in")
+	await _scroll_event_to_end(hub)
+	await _shot("34a_easing_back_in_buttons")
+	load("res://scripts/ui/help_overlay.gd").open(hub, "return_block")
+	await _frames(6)
+	await _shot("34a2_help_easing_back_in")
+	_close_help_overlays(main)
+	hub._on_event_answer(game.pending_event().id, "accept")
+	_quiet_day(game)   # Wednesday
+	hub._refresh_week_ui()
+	hub._open_day(cal.weekday(game.date))
+	await _frames(6)
+	await _scroll_editor_to(hub, "Season plan")
+	await _shot("34b_easing_day_editor")
+	hub._close_day()
+	hub._show("training")
+	await _frames(6)
+	await _shot("34c_training_easing_box")
+	while cal.weekday(game.date) != 0:
+		_quiet_day(game)
+	hub._refresh_week_ui()
+	hub._show("report")
+	await _frames(6)
+	await _scroll_to_label(hub, "Last week")
+	await _shot("34d_report_easing_line")
+	hub._show("overview")
+	await _frames(6)
+	await _shot("34e_strip_easing_next_week")
 
 	load("res://scripts/core/health_system.gd").model_enabled = false
 	saves.load_slot(slot)
@@ -692,6 +781,40 @@ func _close_help_overlays(node: Node) -> void:
 		return
 	for c in node.get_children():
 		_close_help_overlays(c)
+
+
+## The first node under `node` with this script, or null.
+func _find_script(node: Node, script):
+	if node == null:
+		return null
+	if node.get_script() == script:
+		return node
+	for c in node.get_children():
+		var found = _find_script(c, script)
+		if found:
+			return found
+	return null
+
+
+## Scrolls the stop-event card to its end (the buttons), when it scrolls.
+func _scroll_event_to_end(hub: Control) -> void:
+	await _frames(3)
+	if hub._event_overlay == null:
+		return
+	var scroll = _find_class(hub._event_overlay, "ScrollContainer")
+	if scroll:
+		scroll.scroll_vertical = 100000
+	await _frames(3)
+
+
+func _find_class(node: Node, cls: String):
+	if node.get_class() == cls:
+		return node
+	for c in node.get_children():
+		var found = _find_class(c, cls)
+		if found:
+			return found
+	return null
 
 
 func _find_button(node: Node, text: String) -> Button:

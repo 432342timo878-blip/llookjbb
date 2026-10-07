@@ -152,7 +152,7 @@ func _add_last_week(r: Dictionary) -> void:
 		var phase := UIKit.wrapped(SeasonUI.week_text(r.plan), "")
 		phase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		facts.add_child(UIKit.fact_row("Season plan", phase))
+		facts.add_child(UIKit.fact_row("Season plan" if r.plan.has("phase") else "Plan", phase))
 	facts.add_child(UIKit.fact_row("Sessions", UIKit.label(str(r.sessions))))
 	facts.add_child(UIKit.fact_row("Training load", UIKit.label(str(roundi(r.load)))))
 	var fat := UIKit.hbox(6)

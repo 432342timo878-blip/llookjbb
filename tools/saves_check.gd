@@ -59,7 +59,10 @@ func _run() -> void:
 		print("    %s: %s, %s → %s, mode %s, %d days played, plan has %d day entries" % [athlete,
 				load("res://scripts/core/calendar.gd").format_day(start), version, load("res://scripts/core/calendar.gd").format_day(game.date),
 				mode, played, week.days.size()])
-		_ok("%s plays %d days in repeat mode" % [slot, days], mode == "repeat" and played == days and week.days.size() == 7)
+		# Version 1–2 saves come back as repeat mode; version 3 (6a on) keeps its mode (a season plan since 6b).
+		_ok("%s plays %d days (%s)" % [slot, days, "repeat mode" if version < 3 else mode],
+				(mode == "repeat" or version >= 3) and played == days and week.days.size() == 7
+				and (mode != "phases" or str(week.get("phase", "")) != ""))
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 

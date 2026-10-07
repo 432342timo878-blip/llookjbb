@@ -24,6 +24,10 @@ var first_season := 0
 ## {"variant": id, "targets": null (the coach's) or [meet keys], "shifts": {phase id: weeks},
 ##  "phases": {phase id: {"week": a week plan, "lighter": bool, "ramp_weeks": int}}} (only what was changed)
 var seasons := {}
+## Easing back in after a layoff (GDD 4.8 "Return block"), in both modes: {} or {"start": the first day back,
+## "kinds": one week kind per 7-day span ("first" / "second" / "lighter", data/periodization.json return_block),
+## "days_out": the days without running before it, "end": (only when stopped early) the first day it no longer applies}.
+var return_block := {}
 
 var _derived := {}   # season year -> {"targets": [...], "layout": [...]}; worked out on demand, never saved
 
@@ -77,7 +81,7 @@ static func _injuries_within(health: HealthSystem, today: Dictionary, months: in
 
 
 ## The coach's plan a season runs on ("steady" / "balanced" / "ambitious"). A season nobody has touched keeps
-## the plan of the season before it (until the autumn offer, step 6f, makes a record for it).
+## the plan of the season before it (the autumn offer or the rollover, SeasonSystem, makes its record).
 func variant(year: int) -> String:
 	return str(_record(year).variant)
 
@@ -157,14 +161,23 @@ static func phase_type(id: String) -> Dictionary:
 
 
 ## The week plan for the week starting on `monday`. Repeat mode: the repeating plan itself (edits go straight
-## into it). Phases mode: a new week plan {days, intensity, why (per day, "" or a reason), phase, phase_week
-## (1-based), phase_weeks, kind (normal / lighter / taper), target (the meet a taper counts down to, or "")},
-## built in this order: the phase's week, ramp, lighter week, easy day before a race, taper.
+## into it), or in a return block a new week plan {days, intensity, why, kind "return", return_week, return_weeks}.
+## Phases mode: a new week plan {days, intensity, why (per day, "" or a reason), phase, phase_week
+## (1-based), phase_weeks, kind (normal / lighter / taper / return), target (the meet a taper counts down to, or
+## ""), and in a return block return_week / return_weeks (the block's week of its first day in this week)},
+## built in this order: the phase's week, ramp, lighter week, easy day before a race, taper; the return block
+## replaces the last three on its days.
 func week_for(monday: Dictionary, entries: Variant = null) -> Dictionary:
-	if mode != PHASES:
-		return repeat_week
-	var cfg: Dictionary = Data.periodization
 	var ents: Array = entries if entries != null else Game.entries
+	var ret := _return_days(monday)
+	if mode != PHASES:
+		if ret.is_empty():
+			return repeat_week
+		var plan := WeekPlan.copy_of(repeat_week)
+		plan.why = ["", "", "", "", "", "", ""]
+		_apply_return(monday, plan, ret, Calendar.races_in_week(ents, monday), ents)
+		return plan
+	var cfg: Dictionary = Data.periodization
 	var year := maxi(year_of(monday), first_season)
 	var w := maxi(0, week_no(year, monday))
 	var lay := layout(year)
@@ -198,6 +211,8 @@ func week_for(monday: Dictionary, entries: Variant = null) -> Dictionary:
 	var taper := _taper_days(year, monday)
 	if _lighter(year, ph.id) and taper.is_empty() and (k + 1) % int(cfg.lighter.every) == 0:
 		for d in 7:
+			if ret.has(d):
+				continue
 			var lower := clampi(Training.INTENSITIES.find(level[d]) - int(cfg.lighter.step_down), 0, Training.INTENSITIES.size() - 1)
 			if Training.INTENSITIES[lower] != level[d]:
 				level[d] = Training.INTENSITIES[lower]
@@ -209,6 +224,8 @@ func week_for(monday: Dictionary, entries: Variant = null) -> Dictionary:
 	if type.get("race_phase", false):
 		var easy: Dictionary = cfg.easy_day_before_race
 		for d in 6:
+			if ret.has(d):
+				continue
 			if races.has(d + 1) and not races.has(d) and not days[d].is_empty() and level[d] != easy.intensity:
 				level[d] = easy.intensity
 				_add_why(why, d, str(easy.why))
@@ -218,12 +235,16 @@ func week_for(monday: Dictionary, entries: Variant = null) -> Dictionary:
 	if not taper.is_empty():
 		kind = "taper"
 		for d in taper:
-			if not races.has(d):
+			if not races.has(d) and not ret.has(d):
 				_apply_taper(days, level, why, d, taper[d], cfg.taper)
 		target = str(taper[taper.keys()[0]].meet.key)
 
-	return {"days": days, "intensity": level, "why": why, "phase": ph.id, "phase_week": k + 1,
+	var plan := {"days": days, "intensity": level, "why": why, "phase": ph.id, "phase_week": k + 1,
 			"phase_weeks": int(ph.weeks), "kind": kind, "target": target}
+	# 6. Return block.
+	if not ret.is_empty():
+		_apply_return(monday, plan, ret, races, ents)
+	return plan
 
 
 ## The phase's own week for the week starting on `monday`, before any rule (ramp, lighter, taper…): what
@@ -321,6 +342,160 @@ func _best_session(ids: Array, keep_tags: Array) -> String:
 			best = id
 			best_rank = rank
 	return best
+
+
+# --- Return block (easing back in after a layoff) -----------------------------------------------------
+
+## The week kinds of a block after `days_out` days without running (data: return_block.lengths).
+static func return_kinds_for(days_out: int) -> Array:
+	var kinds := []
+	for row in Data.periodization.return_block.lengths:
+		if days_out >= int(row.min_days):
+			kinds = row.weeks.map(func(k): return str(k))
+	return kinds
+
+
+## Starts easing back in on `start` (the first day back) after `days_out` days without running.
+func start_return(start: Dictionary, days_out: int) -> void:
+	return_block = {"start": Game.int_date(start), "kinds": return_kinds_for(days_out), "days_out": days_out}
+
+
+## The player stops easing back in: from `today` on the full plan applies (the days before keep the block).
+func stop_return(today: Dictionary) -> void:
+	if return_block.is_empty():
+		return
+	if Calendar.date_key(today) <= Calendar.date_key(return_block.start):
+		return_block = {}
+	else:
+		return_block.end = Game.int_date(today)
+
+
+## The day's index in the block (0 = the first day back), or -1 when the day isn't in it.
+func return_day(date: Dictionary) -> int:
+	if return_block.is_empty():
+		return -1
+	var i := Calendar.days_between(return_block.start, date)
+	if i < 0 or i >= return_block.kinds.size() * 7:
+		return -1
+	if return_block.has("end") and Calendar.date_key(date) >= Calendar.date_key(return_block.end):
+		return -1
+	return i
+
+
+## The block's week (1-based) the day is in, or 0.
+func return_week_on(date: Dictionary) -> int:
+	var i := return_day(date)
+	return 0 if i < 0 else i / 7 + 1
+
+
+func return_weeks() -> int:
+	return 0 if return_block.is_empty() else return_block.kinds.size()
+
+
+## The block still has days from `today` on (running now, or starting tomorrow).
+func return_ahead(today: Dictionary) -> bool:
+	if return_block.is_empty():
+		return false
+	var last := return_last_day()
+	return Calendar.date_key(last) >= Calendar.date_key(today) and Calendar.date_key(last) >= Calendar.date_key(return_block.start)
+
+
+## The block's last day (the day before it was stopped, when it was).
+func return_last_day() -> Dictionary:
+	var last := Game.add_days(return_block.start, return_block.kinds.size() * 7 - 1)
+	if return_block.has("end") and Calendar.date_key(return_block.end) <= Calendar.date_key(last):
+		last = Game.add_days(return_block.end, -1)
+	return last
+
+
+## day (0–6) -> the day's index in the block, for the days of the week starting `monday` that are in it.
+func _return_days(monday: Dictionary) -> Dictionary:
+	var result := {}
+	if return_block.is_empty():
+		return result
+	for d in 7:
+		var i := return_day(Game.add_days(monday, d))
+		if i >= 0:
+			result[d] = i
+	return result
+
+
+## The block's rules on its days of a week plan (`plan` has days, intensity and why; it gets kind "return",
+## return_week and return_weeks). Race days stay as they are; the day before a race is Easy.
+func _apply_return(monday: Dictionary, plan: Dictionary, ret: Dictionary, races: Dictionary, ents: Array) -> void:
+	var cfg: Dictionary = Data.periodization.return_block
+	var kinds: Array = return_block.kinds
+	var days: Array = plan.days
+	var level: Array = plan.intensity
+	var kept := {}   # block week -> hard sessions kept so far
+	var first_d: int = ret.keys().min()
+	var first_week: int = int(ret[first_d]) / 7
+	if first_d == 0 and int(ret[0]) % 7 != 0 and int(cfg.kinds[kinds[first_week]].get("keep_hard", 0)) > 0:
+		# The block week began last week: count the hard sessions it kept there.
+		kept[first_week] = _kept_last_week(monday, first_week, ents)
+	for d in range(7):
+		if not ret.has(d):
+			continue
+		var bw: int = int(ret[d]) / 7
+		var rule: Dictionary = cfg.kinds[kinds[bw]]
+		plan.why[d] = ""
+		if races.has(d) or days[d].is_empty():
+			continue
+		if rule.has("step_down"):
+			var lower := clampi(Training.INTENSITIES.find(level[d]) - int(rule.step_down), 0, Training.INTENSITIES.size() - 1)
+			level[d] = Training.INTENSITIES[lower]
+		else:
+			var out := []
+			var hard_kept := ""
+			for sid in days[d]:
+				var tags: Array = Data.get_session(sid).get("tags", [])
+				var id: String = sid
+				if tags.any(func(t): return t in rule.swap_tags):
+					if int(kept.get(bw, 0)) < int(rule.keep_hard) and tags.any(func(t): return t in rule.keep_tags):
+						kept[bw] = int(kept.get(bw, 0)) + 1
+						hard_kept = id
+					else:
+						id = str(cfg.easy_session)
+				if not id in out:
+					out.append(id)
+			if out.size() > int(rule.max_sessions):
+				var keep: String = hard_kept
+				if keep == "":
+					for id in out:
+						if str(cfg.run_tag) in Data.get_session(id).get("tags", []):
+							keep = id
+							break
+				if keep == "":
+					keep = out[0]
+				out = [keep]
+			days[d] = out
+			if Training.INTENSITIES.find(level[d]) > Training.INTENSITIES.find(rule.intensity_max):
+				level[d] = str(rule.intensity_max)
+		if races.has(d + 1) and level[d] != "easy":
+			level[d] = "easy"
+			plan.why[d] = str(cfg.race_eve_why)
+		var text := str(rule.why).format({"week": bw + 1, "weeks": kinds.size()})
+		plan.why[d] = text if plan.why[d] == "" else text + WHY_JOINER + plan.why[d]
+	plan.kind = "return"
+	plan.return_week = first_week + 1
+	plan.return_weeks = kinds.size()
+
+
+## How many hard sessions the block kept last week in block week `bw` (a block week can run over a Monday).
+func _kept_last_week(monday: Dictionary, bw: int, ents: Array) -> int:
+	var prev := Game.add_days(monday, -7)
+	var plan := week_for(prev, ents)
+	var ret := _return_days(prev)
+	var races := Calendar.races_in_week(ents, prev)
+	var rule: Dictionary = Data.periodization.return_block.kinds[return_block.kinds[bw]]
+	var n := 0
+	for d in ret:
+		if int(ret[d]) / 7 != bw or races.has(d):
+			continue
+		for sid in plan.days[d]:
+			if Data.get_session(sid).get("tags", []).any(func(t): return t in rule.get("keep_tags", [])):
+				n += 1
+	return n
 
 
 # --- Phases of a season --------------------------------------------------------------------------
@@ -643,8 +818,16 @@ func to_dict() -> Dictionary:
 	var records := {}
 	for year in seasons:
 		records[str(year)] = seasons[year]
-	return {"mode": mode, "repeat_week": repeat_week, "birth_year": birth_year, "event": event,
+	var d := {"mode": mode, "repeat_week": repeat_week, "birth_year": birth_year, "event": event,
 			"first_season": first_season, "seasons": records}
+	if not return_block.is_empty():   # (only then, so a save without one is as before)
+		d.return_block = return_block
+	return d
+
+
+## An independent copy (e.g. to try a plan change out without touching the game's plan).
+func copy() -> SeasonPlan:
+	return SeasonPlan.from_dict(to_dict().duplicate(true))
 
 
 static func from_dict(d: Dictionary) -> SeasonPlan:
@@ -659,6 +842,12 @@ static func from_dict(d: Dictionary) -> SeasonPlan:
 	s.birth_year = int(d.get("birth_year", 0))
 	s.event = str(d.get("event", ""))
 	s.first_season = int(d.get("first_season", 0))
+	var rb = d.get("return_block", {})
+	if rb is Dictionary and rb.has("start") and rb.has("kinds"):
+		s.return_block = {"start": Game.int_date(rb.start), "kinds": rb.kinds.map(func(k): return str(k)),
+				"days_out": int(rb.get("days_out", 0))}
+		if rb.has("end"):
+			s.return_block.end = Game.int_date(rb.end)
 	# Phases mode needs the seasons and who it is for; anything else (older saves too) is repeat mode.
 	s.mode = PHASES if str(d.get("mode", REPEAT)) == PHASES and s.seasons.has(s.first_season) and s.birth_year > 0 else REPEAT
 	return s

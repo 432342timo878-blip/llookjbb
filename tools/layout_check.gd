@@ -48,6 +48,8 @@ func _run() -> void:
 	wizard._on_next()   # start the career
 	await _frames(5)
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	game.answer_event(game.pending_event().id, "later")   # the coach's offer (its panel is checked in _coach_views)
+	hub._show_pending_event()
 	game.advance_day()   # a mid-week date in the header (Wednesday)
 	game.advance_day()
 	hub._refresh_week_ui()
@@ -90,6 +92,8 @@ func _run() -> void:
 		await _health_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _season_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
+		await _coach_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
@@ -401,6 +405,104 @@ func _season_views(main: Node, game, tag: String) -> void:
 	hub._refresh_week_ui()
 	hub._show("overview")
 	await _frames(4)
+
+
+# --- The club coach's events (M2 step 6f) at this window size ----------------------------------------------------
+
+## The offer of the three plans (with the replace warning), the Training tab's Next season box (the date moved into
+## the autumn window), the "Easing back in" panel, then the block accepted: the Training tab's box, tomorrow's day
+## editor with its reason and the stop question. Everything is put back afterwards.
+func _coach_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var year: int = game.season.plan_year(game.week_monday())
+	var season_sys = game.get_system("season")
+	season_sys.offer(year)
+	hub._show("overview")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_coach_offer" % tag)
+	_check_overflow(hub, "%s coach_offer" % tag)
+	var panel = _find_script(hub._event_overlay, load("res://scripts/ui/season_event_panel.gd"))
+	if panel:
+		panel._selected = "ambitious"
+		panel._confirm = true
+		panel._build()
+		await _frames(6)
+		await _shot("%s_coach_offer_warning" % tag)
+		_check_overflow(hub, "%s coach_offer_warning" % tag)
+	hub._on_event_answer(game.pending_event().id, "later")
+	await _frames(3)
+
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_week = game._week
+	game.date = {"year": year + 1, "month": 10, "day": 13}
+	game._week = null
+	game.current_week()
+	hub._refresh_week_ui()
+	hub._show("training")
+	await _frames(5)
+	var next := _find_label(hub, "NEXT SEASON %d–%s" % [year + 1, str(year + 2).right(2)])
+	if next:
+		hub._scroll.ensure_control_visible(next)
+		await _frames(3)
+	await _shot("%s_next_season_box" % tag)
+	_check_overflow(hub, "%s next_season_box" % tag)
+	game.date = saved_date
+	game._week = saved_week
+	game.current_week()
+
+	# Easing back in: the event (health numbers from the body now), accepted, then its box and the day editor.
+	var health = game.get_system("health")
+	health._ensure_started()
+	health.days_without_running = 30
+	season_sys._post_return(health, game.add_days(game.date, 1))
+	hub._refresh_week_ui()
+	hub._show("overview")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_easing_back_in" % tag)
+	_check_overflow(hub, "%s easing_back_in" % tag)
+	hub._on_event_answer(game.pending_event().id, "accept")
+	hub._show("training")
+	await _frames(5)
+	await _shot("%s_easing_box" % tag)
+	_check_overflow(hub, "%s easing_box" % tag)
+	var tomorrow: int = load("res://scripts/core/calendar.gd").weekday(game.date) + 1
+	if tomorrow < 7:
+		hub._show("overview")
+		hub._open_day(tomorrow)
+		await _frames(6)
+		var stop := _find_button_prefix(hub._editor, "Stop easing back in")
+		if stop:
+			stop.pressed.emit()
+			var p := stop.get_parent()
+			while p and not p is ScrollContainer:
+				p = p.get_parent()
+			await _frames(3)
+			if p:
+				(p as ScrollContainer).scroll_vertical = 100000
+			await _frames(3)
+		await _shot("%s_easing_day_editor" % tag)
+		_check_overflow(hub, "%s easing_day_editor" % tag)
+		hub._close_day()
+	health.days_without_running = 0
+	game.season.return_block = {}
+	game.current_week()
+	hub._refresh_week_ui()
+	hub._show("overview")
+	await _frames(4)
+
+
+func _find_script(node: Node, script):
+	if node == null:
+		return null
+	if node.get_script() == script:
+		return node
+	for c in node.get_children():
+		var found = _find_script(c, script)
+		if found:
+			return found
+	return null
 
 
 # --- The help (GDD 5 "Help") at this window size ----------------------------------------------------------
