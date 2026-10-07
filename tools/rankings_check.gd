@@ -20,11 +20,15 @@ func _run() -> void:
 			"answers": {}}, rng)
 	game.start_career(a, "repeat")
 	for w in 40:
-		game.advance_week()
+		var result: String = game.advance_week()
+		while result == game.STOP:   # a health stop event (random): answer it, or the date never moves on
+			game.answer_event(game.pending_event().id, "ok")
+			result = game.advance_week()
 		if w in [3, 15, 39]:
 			var season: int = rankings.season_of(game.date)
 			var rows: Array = rankings.season_list(game.athlete, game.rivals, season)
-			print("--- week %d, season %s: %d on the list" % [w + 1, rankings.season_label(season), rows.size()])
+			print("--- week %d (%s), season %s: %d on the list" % [w + 1, Cal.format_day(game.date),
+					rankings.season_label(season), rows.size()])
 			for r in rows.slice(0, 5):
 				print("%2d. %-22s %s" % [r.rank, r.name, Cal.format_time(r.time)])
 	quit()

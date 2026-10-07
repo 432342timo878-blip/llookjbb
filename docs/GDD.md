@@ -134,7 +134,7 @@ on aggregate result standards only, with no individual names or results. Real at
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
   and commentary. See 4.3.1; it replaces the plan lap factors, the fixed decision points and the commentary above.
 
-### 4.3.1 Race realism (designed 2026-10-07, not built yet)
+### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2–R5 to come)
 
 Playtest (user, 2026-10-07): the order seems settled early, while real 800 m races are often one bunch with moves
 anywhere. Wanted: pack racing (staying together, drafting, being boxed in), rival moves at any point that can change the
@@ -317,6 +317,71 @@ Card (dimmed overlay)                         Phone
   `help_check` pass; `race_perf.gd` keeps 60 fps on PC and phone size; the tour and layout check get seeded race states
   (action bar, banner, ticker, card with the coach's shout, race story).
 - Build order and sessions: ROADMAP "Race realism".
+
+**Built (step R1, 2026-10-07): the pack engine (headless).** `Race` (`scripts/core/race.gd`), all numbers in
+`data/races.json` `engine` / `shapes` / `personalities`, all dice from the race's own RNG (the lane draw used the global
+dice before; `day_engine_check` now checks that the same seed gives the same race).
+- **Shape** rolled at the first step (after the player's plan is known): mix by `RaceDay.shape_mix()` (local / district
+  by level, championships by round: heat / final; tools without a meet use `default_mix` district), ±10 points
+  fast/tactical for a front runner / none. The leader runs `ref_speed` × lap 1 / lap 2 factor (fast 1.03–1.05 /
+  0.97–0.99, honest 1.01–1.02 / 0.98–1.00, tactical 0.93–0.97 / 1.00–1.02). **The field's even pace** =
+  `pace_ref_quantile` 0.25 = the 3rd strongest of 8 (Claude's tuning: the median left the strong runners so much
+  spare that every race ended in a huge kick; the strongest strung the field out like M1).
+- **Following:** within 10 m of the runner ahead a runner runs their speed, closing to 1 m behind (0 = alongside in
+  another line); **drafting** 2 % of speed (≤ 1.5 m behind; diagonally ×0.5; on a bend ×0.7); the leader pays full price.
+  **Tuck in on bends** (Claude's addition): on a bend or 15 m before one, a runner alongside on the outside drops in
+  behind and moves to the rail; two-wide on a tight bend costs 3–6.5 % of distance, and this rule also bunched the
+  finish (senior final 1st→4th 2.6 → 1.8 s).
+- **Places:** lanes before the break at the race pace × 1.015 (lead) / 1.0 (pack) / 0.99 (back); until 600 m lead
+  runners move to the front and pack runners up to 4th, when they have the energy for 2 % more speed; anyone passes a
+  runner slower than 98.5 % of the race pace.
+- **Hanging on / dropped:** a runner follows while the reserve they *feel* they will have at their kick point is at
+  least 0.125 × kick metres / 100 × reserve (= even spending), less by `dig` (personality + (competitiveness − 10) ×
+  0.02, the player's determination, max 0.5) and never more than the kick can use; otherwise they slow to the speed
+  that keeps it, never below 97 % of the speed that empties the reserve at the line (their own pace). Dropped = over
+  5 m behind the runner ahead (they stop digging).
+- **Misjudged energy:** felt reserve = reserve + error × reserve, error sd 6 % (race tactics 1) … 1 % (20), fixed per
+  race. Kick timing noise 40 … 10 m.
+- **Kick speed** (Claude's tuning): at most the runner's even speed × (1.12 + 0.01 × (speed − ability)), from the
+  ability *before* the day's form (sprint speed hardly changes day to day), max 95 % of top speed. The old 95 % of top
+  speed meant a 26 s last 200 m for a 2:20 youth runner.
+- **Personalities** on every rival (`personality`, `met`): made from `anaerobic` + a hash of the id (no dice), so a
+  new pool and an old save get the same ones; first pool: front 27 %, pack 35 %, kicker 19 %, surger 18 %. Front:
+  lead, kick 300–400; pack: 2nd–4th, kick 150–200; kicker: back, kick 100–150; surger: pack, kick 150–250 (surges in R2).
+  `met` counts races run together with the player (heat + final = 2). Tag hidden until R4.
+- **Plan lap factors removed;** the pre-race plan is the place (labels now *Lead / Sit in the pack / Wait at the
+  back*, help `race_before` v2). The old fixed cards still work (break = the place; bell push / ease = ×1.03 / ×0.97
+  until the kick; the old "back" ×0.99 is gone). Checked: 100–200 races per plan × answer policy (first / last /
+  random / quick), nothing stuck, every card still comes up.
+- **Calibration:** `cs_scale` 1.003.
+- **Measured after** (`race_shape.gd -- 100`, same rows and seed as "Measured before"; the tool now passes each row's
+  shape mix: even field / indoor / girls district, local wide local, finals and identical final):
+
+| Row | 1st→last 200/400/600 m | 1st→4th at 400 | Within 5 m at 400 | Leader at 400 / 600 wins | r 400 / 600 | Finish 1st→2nd / 4th / last | Won by < 0.2 s | Time / table |
+|---|---|---|---|---|---|---|---|---|
+| Youth even field | 15 / 32 / 51 (was 23 / 46 / 65) | 7 (19) | 3.4 (1.7) | 61 / 66 % (62 / 71) | 0.86 / 0.90 (0.84 / 0.88) | 2.0 / 5.9 / 16.4 s (2.5 / 7.0 / 17.5) | 11 % (6) | 0.996 (0.996) |
+| Youth local meet, wide | 27 / 55 / 85 (37 / 74 / 108) | 12 (31) | 3.1 (1.4) | 54 / 65 % (85 / 94) | 0.90 / 0.93 (0.93 / 0.94) | 2.4 / 8.3 / 27.9 s (4.6 / 11.7 / 33.0) | 12 % (3) | 1.002 (0.995) |
+| Youth championship final | 7 / 16 / 28 (17 / 35 / 47) | 4 (16) | 5.1 (1.9) | 29 / 39 % (50 / 69) | 0.59 / 0.76 (0.75 / 0.82) | 0.7 / 3.0 / 9.5 s (2.0 / 4.9 / 11.9) | 24 % (7) | 1.002 (0.997) |
+| Youth indoor | 16 / 33 / 52 (24 / 46 / 65) | 10 (21) | 2.8 (1.6) | 60 / 71 % (79 / 88) | 0.79 / 0.87 (0.85 / 0.88) | 2.3 / 6.6 / 17.0 s (3.1 / 8.4 / 18.3) | 7 % (5) | 1.014 (1.012) |
+| Girls even field | 14 / 29 / 44 (21 / 42 / 60) | 7 (18) | 3.4 (1.8) | 49 / 53 % (66 / 81) | 0.83 / 0.87 (0.82 / 0.87) | 1.7 / 5.4 / 15.7 s (2.9 / 7.6 / 17.8) | 10 % (4) | 1.001 (0.997) |
+| Senior national final | 5 / 11 / 19 (13 / 28 / 36) | 3 (12) | 5.6 (2.1) | 34 / 46 % (53 / 67) | 0.52 / 0.73 (0.62 / 0.73) | 0.7 / 2.1 / 5.6 s (1.0 / 2.8 / 7.0) | 25 % (8) | 1.001 (0.997) |
+| 8 identical runners | 3 / 6 / 12 (10 / 21 / 24) | 2 (9) | 6.1 (2.7) | 26 / 44 % (38 / 47) | 0.44 / 0.73 (0.41 / 0.51) | 0.5 / 1.7 / 4.5 s (0.5 / 1.8 / 4.1) | 27 % (25) | 1.001 (0.999) |
+
+  Winner's laps by shape (youth final): fast 67.7 + 66.9, honest 69.1 + 67.0, tactical 73.1 + 64.7 s (lap 1 includes
+  the ~1.5 s start).
+- **Targets:** time / table within ±0.5 % in every outdoor row ✓ (indoor 1.014, slower by design as before); youth
+  championship final 0.7 / 3.0 / 9.5 s ✓ (targets 0.6–1.5 / 2.5–4.5 / 9–15); even finals ≥ 4 within 5 m at 400 ✓
+  (5.1 / 5.6); leader at 400 wins 29 % / 34 % ✓ (30–50); r 0.59 / 0.76 (youth) ✓, 0.52 / 0.73 (senior, a little low);
+  wide local fields strung out ✓ (27.9 s). **Left for R2:** the senior final finish (0.7 / 2.1 / 5.6 s, 25 % under
+  0.2 s; targets 0.1–0.5 / 0.7–1.5 / 3–5.5, 30–60 %): every kick is still pre-rolled and nobody answers one, so a long
+  kick opens 15–20 m; the kick chain and covering moves are R2. Upsets and falls: R2.
+- **`race_balance.gd`** (median vs anchor, 12 races per row): girls −0.9…+0.1 s, boys −0.6…+1.1 s (ability 5; with 60
+  races per row every outdoor row is within −0.9…+0.3 s), indoor +0.8…+4.1 s (60 races: +2.1…+3.0 s; before
+  +1.1…+2.4: pack running on tight indoor bends costs a little more).
+- **Unchanged:** `form_check`, `health_check`, `help_check`, `day_engine_check` (+ new: personalities, old save,
+  `met`, repeatable race) all pass with clean stderr; `rankings_check` fills its list (it now answers health stop
+  events, which could freeze it before); `training_balance.gd -- 0` fingerprints identical (215.999957139 /
+  13.751549603 / 1203.029795007); `race_perf.gd` (see ROADMAP R1).
 
 ### 4.4 Season calendar (first version built)
 

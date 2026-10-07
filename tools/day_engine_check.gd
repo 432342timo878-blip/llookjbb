@@ -41,6 +41,8 @@ func _run() -> void:
 		_check_real_v1_file(args[0])
 	_check_race_week(false)
 	_check_race_week(true)
+	_check_rival_personalities()
+	_check_race_repeatable()
 	_check_stop_events()
 	_check_day_start_stop()
 	_check_ui_models()
@@ -312,9 +314,22 @@ func _check_race_week(play_week: bool) -> void:
 	_ok("race day can't be changed", not game.current_week().can_change(d))
 	_ok("pressing again doesn't skip the race", (game.advance_day() if not play_week else game.advance_week()) == game.RACE
 			and game.date == meet.date)
+	var rd = game.race_day
 	_run_race()
 	r = game.finish_race()
 	_ok("result recorded", game.athlete.results.size() >= 1 and game.athlete.results[-1].meet_key == meet.key)
+	var expected := {}   # rival id -> races run together with the player today (heat + final can be 2)
+	var rivals_here := {}
+	for res in rd.all_results:
+		var with_player: bool = res.any(func(row): return row.is_player)
+		for row in res:
+			if not row.rival.is_empty():
+				rivals_here[row.rival.id] = row.rival
+				expected[row.rival.id] = int(expected.get(row.rival.id, 0)) + (1 if with_player else 0)
+	var met_ok := not expected.is_empty()
+	for id in expected:
+		met_ok = met_ok and int(rivals_here[id].met) == expected[id]
+	_ok("the rivals have met the player once per race run together (%d rivals)" % expected.size(), met_ok)
 	_ok("race in the day log", game.day_log.any(func(e): return e.race == meet.key and e.date == meet.date))
 	if play_week:
 		_ok("Play week goes on to Sunday night", r == game.WEEK_DONE and Cal.weekday(game.date) == 0)
@@ -324,6 +339,57 @@ func _check_race_week(play_week: bool) -> void:
 			r = game.advance_day()
 		_ok("rest of the week by Next day", r == game.WEEK_DONE)
 	_ok("race in the weekly report", game.last_report.races.size() == 1 and game.last_report.races[0].meet_key == meet.key)
+
+
+## Race personalities (GDD 4.3.1, step R1): every rival has one; a save from before R1 gets the same one on
+## every load (made from anaerobic + a hash of the id, no dice) and a met count of 0.
+func _check_rival_personalities() -> void:
+	print("-- rival personalities")
+	_new_career(6)
+	var types: Dictionary = game.get_node("/root/Data").races.personalities
+	var counts := {}
+	for rv in game.rivals:
+		counts[rv.personality] = counts.get(rv.personality, 0) + 1
+	print("    ", counts)
+	var known: bool = game.rivals.all(func(rv): return types.has(rv.personality) and int(rv.met) == 0)
+	_ok("every rival has a known personality and met 0", known)
+	_ok("all four kinds occur", counts.size() == 4)
+	var before: Array = game.rivals.map(func(rv): return rv.personality)
+	var g: Dictionary = game.to_dict().duplicate(true)
+	for rv in g.rivals:
+		rv.erase("personality")
+		rv.erase("met")
+	var old := {"version": 3, "saved_at": "2026-10-07 12:00:00", "summary": "old", "game": g}
+	var f := FileAccess.open(saves.DIR + "pre_r1.json", FileAccess.WRITE)
+	f.store_string(JSON.stringify(old, " ", true, true))
+	f.close()
+	_ok("a save without personalities loads", saves.load_slot("pre_r1"))
+	var first: Array = game.rivals.map(func(rv): return rv.personality)
+	var met_zero: bool = game.rivals.all(func(rv): return int(rv.met) == 0)
+	_ok("... and gets the same personalities as made at the start, met 0", first == before and met_zero)
+	saves.load_slot("pre_r1")
+	_ok("... the same again on the next load", game.rivals.map(func(rv): return rv.personality) == first)
+	saves.delete("pre_r1")
+
+
+## All of a race's dice come from its own RNG: the same seed gives the same race, step by step.
+func _check_race_repeatable() -> void:
+	print("-- race repeatable")
+	var RaceScript = load("res://scripts/core/race.gd")
+	var out := []
+	for k in 2:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 77
+		var entrants := []
+		for i in 8:
+			entrants.append({"name": "R%d" % i, "club": "", "ability": 9.0 + rng.randfn(0, 0.6), "speed": 9.0,
+					"anaerobic": rng.randfn(0, 2), "tactics": 9.0, "consistency": 9.0, "composure": 9.0})
+		seed(k * 1000 + 3)   # the global dice differ: they must not matter
+		var race = RaceScript.new()
+		race.setup(entrants, "male", false, 10.0, rng, false, "final")
+		race.run()
+		out.append([race.shape, race.results().map(func(x): return [x.name, x.time, x.split_400])])
+	_ok("same seed, same shape and results (%s)" % out[0][0], out[0] == out[1])
 
 
 ## A stop event at day end pauses Play week; answering it changes tomorrow.

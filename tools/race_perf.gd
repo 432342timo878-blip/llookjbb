@@ -49,14 +49,15 @@ func _run() -> void:
 	for m in cal.meets_between(game.date, game.add_days(game.date, 330)):
 		if cal.coach_recommends(game.athlete, m, game.date):
 			game.enter(m.key)
-	while game.advance_week() != game.RACE:
-		pass
+	_to_race(game)
 	if _outdoor:   # skip the indoor season: quick-run races until an outdoor meet comes up
 		while game.race_day.meet.get("indoor", false):
-			game.race_day.start_round(false, "pack").run()
+			var rd = game.race_day
+			while not rd.is_done():
+				rd.start_round(false, "pack").run()
+				rd.finish_round()
 			game.finish_race()
-			while game.advance_week() != game.RACE:
-				pass
+			_to_race(game)
 	router.go("race")
 	await _frames(5)
 	var screen: Control = main.get_node("ScreenHost").get_child(-1)
@@ -102,8 +103,19 @@ func _run() -> void:
 	quit()
 
 
+## Plays weeks until a race day; stop events (the coach's "three plans" offer since step 6f) are answered
+## "ok" (= later), or the loop would never end.
+func _to_race(game) -> void:
+	var r: String = game.advance_week()
+	while r != game.RACE:
+		if r == game.STOP:
+			game.answer_event(game.pending_event().id, "ok")
+		r = game.advance_week()
+
+
+## The card's first answer button (not its "?" help button, which would open the help and pause the race).
 func _first_button(n: Node) -> Button:
-	if n is Button:
+	if n is Button and not (n.get_script() and n.get_script().resource_path.ends_with("help_button.gd")):
 		return n
 	for c in n.get_children():
 		if c.is_queued_for_deletion():

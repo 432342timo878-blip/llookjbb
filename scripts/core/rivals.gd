@@ -32,7 +32,40 @@ static func generate(a: Athlete, rng: RandomNumberGenerator) -> Array:
 			"competitiveness": clampf(rng.randfn(9.0, 3.0), 1.0, 20.0),
 			"pb": 0.0,
 		})
+	ensure_personalities(pool)
 	return pool
+
+
+## Every rival gets a race personality (GDD 4.3.1) and a "met" count (races against the player). Old saves
+## have neither: the personality is made from the rival's anaerobic value and a hash of its id, so it needs no
+## dice and is the same every time the save loads.
+static func ensure_personalities(pool: Array) -> void:
+	for r in pool:
+		if not r.has("personality"):
+			var h := String(r.id).hash()
+			h = (h * 2654435761) & 0xffffffff   # spread the hash of similar ids ("r1", "r2", ...)
+			r.personality = personality_from(float(r.anaerobic), float(h) / 4294967296.0)
+		if not r.has("met"):
+			r.met = 0
+
+
+## The personality for this anaerobic value; u in [0, 1) picks from the weights in data/races.json.
+static func personality_from(anaerobic: float, u: float) -> String:
+	var types: Dictionary = Data.races.personalities
+	var weights := {}
+	var total := 0.0
+	for id in types:
+		if id.begins_with("_"):
+			continue
+		var w := maxf(0.02, float(types[id].base) + float(types[id].per_anaerobic) * anaerobic)
+		weights[id] = w
+		total += w
+	var x := u * total
+	for id in weights:
+		x -= weights[id]
+		if x < 0.0:
+			return id
+	return weights.keys().back()
 
 
 ## One week of training for every rival (similar growth model to the player's: slows near the ceiling).

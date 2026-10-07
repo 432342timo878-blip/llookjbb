@@ -3,9 +3,9 @@ extends Control
 ## Works on Game.race_day; when it's all done, Game.finish_race() completes the race day.
 
 const PLANS := [
-	["front", "Run from the front", "Go out hard and make the others chase. Suits strong, even runners."],
-	["pack", "Stay with the pack", "Sit near the front and react. The safe, flexible choice."],
-	["back", "Start easy, kick late", "Hang back and save energy for a big finish. Suits fast finishers."],
+	["front", "Lead", "Go to the front and set the pace. No traffic, but no shelter either. Suits strong runners."],
+	["pack", "Sit in the pack", "Run behind others near the front and save energy. The safe, flexible choice."],
+	["back", "Wait at the back", "Save the most for a late kick. Suits fast finishers; you may get boxed in."],
 ]
 const SPEEDS := [2.0, 4.0, 8.0]
 

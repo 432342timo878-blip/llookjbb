@@ -52,4 +52,5 @@ static func player_profile(a: Athlete) -> Dictionary:
 		"consistency": a.get_attr("consistency"),
 		"composure": a.get_attr("composure"),
 		"competitiveness": a.get_attr("competitiveness"),
+		"determination": a.get_attr("determination"),   # how deep you dig to hang on (rivals: competitiveness)
 	}

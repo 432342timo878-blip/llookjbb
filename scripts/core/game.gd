@@ -113,6 +113,7 @@ func from_dict(d: Dictionary) -> void:
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
 		rivals = Rivals.generate(athlete, rng)
+	Rivals.ensure_personalities(rivals)   # saves from before step R1
 	race_day = null
 	open_report = false
 	_playing_week = false
@@ -384,10 +385,13 @@ func _record(rd: RaceDay) -> void:
 		athlete.results.append({"date": rd.meet.date, "meet": rd.meet.name, "meet_key": rd.meet.key,
 				"event": event, "round": r.round, "place": r.place, "field": r.field, "time": r.time, "pb": is_pb})
 	for res in rd.all_results:
+		var with_player: bool = res.any(func(row): return row.is_player)
 		for row in res:
 			var rival: Dictionary = row.get("rival", {})
 			if not rival.is_empty():
 				Rivals.record_time(rival, row.time, rd.meet.date)
+				if with_player:
+					rival.met = int(rival.get("met", 0)) + 1   # raced the player (the tag shows from 2, step R4)
 
 
 static func add_days(d: Dictionary, days: int) -> Dictionary:

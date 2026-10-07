@@ -23,5 +23,53 @@
   "ceiling_mean": 13.0, "ceiling_sd": 2.5,
   "race_chance_by_month": [0.08, 0.10, 0.10, 0.12, 0.25, 0.30, 0.25, 0.30, 0.25, 0.10, 0.06, 0.06]
  },
- "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2}
+ "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2},
+ "engine": {
+  "_note": "Pack racing (GDD 4.3.1, step R1). Each runner has a cruising speed cs and a reserve (metres above cs); running behind someone costs less, the leader pays full price. cs_scale is the one calibration number: it keeps the median race time on the time table.",
+  "cs_scale": 1.003,
+  "start_cost": 1.5,
+  "reserve_share": {"base": 0.18, "per_anaerobic": 0.006, "min": 0.13, "max": 0.23},
+  "recover": 0.25,
+  "accel": {"start": 4.0, "start_until": 30.0, "up": 1.2, "down": 1.5},
+  "_draft": "Drafting: up to draft_dist metres behind a runner in the same line (lateral gap under draft_lat) the cost is lower by `draft` of speed; diagonally behind (lateral gap up to draft_lat_max) x second_row; on a bend x bend.",
+  "draft": 0.02, "draft_dist": 1.5, "draft_lat": 0.6, "draft_lat_max": 1.5, "draft_second_row": 0.5, "draft_bend": 0.7,
+  "_follow": "Following: a runner within follow_range of the runner ahead runs that runner's speed, closing the gap to follow_gap (0 when running alongside in another line) at close_rate per metre, at most close_max x their speed.",
+  "follow_range": 10.0, "follow_gap": 1.0, "close_rate": 0.15, "close_max": 1.04,
+  "_tuck": "On a bend (or tuck_ahead metres before one) a runner alongside on the outside drops tuck_gap metres behind and moves in.",
+  "tuck_gap": 2.0, "tuck_ahead": 15.0,
+  "_hang": "Hanging on: a runner follows while the reserve they FEEL they will have at their kick point is at least kick_need_per_100 x kick distance / 100 x reserve (less by `dig`: personality + (competitiveness - 10) x dig_per_point, up to dig_max). Otherwise they drop to the speed that keeps it (never below own_floor x the speed that would empty the reserve at the line). Dropped = more than drop_gap metres behind the runner ahead.",
+  "kick_need_per_100": 0.125, "dig_per_point": 0.02, "dig_max": 0.5, "own_floor": 0.97, "drop_gap": 5.0,
+  "_misjudge": "Each runner feels their reserve with an error (share of the reserve, fixed for the race), sd from at_1 (race tactics 1) to at_20 (race tactics 20). Kick timing noise in metres likewise.",
+  "misjudge_sd": {"at_1": 0.06, "at_20": 0.01},
+  "kick_noise_sd": {"at_1": 40.0, "at_20": 10.0},
+  "_kick": "The fastest a runner can kick at the end of an 800 m: their even speed x (kick_vs_even + kick_per_speed x (speed - ability)), at most kick_top_vmax x their top speed.",
+  "kick_vs_even": 1.12, "kick_per_speed": 0.01, "kick_top_vmax": 0.95,
+  "tie_up": {"speed": 0.97, "extra": 0.05, "over": 20.0},
+  "_place": "The plan (the place a runner wants): speed in lanes before the break; until lead_until metres lead runners move up to the front and pack runners up to pack_place (if they have the energy for pass_speed). Anyone passes a runner slower than pass_margin x the pace the race should be going.",
+  "place_speed": {"lead": 1.015, "pack": 1.0, "back": 0.99},
+  "lead_until": 600.0, "pack_place": 4, "pass_speed": 1.02, "pass_margin": 0.985,
+  "player_kick": {"base": 210.0, "per_anaerobic": -15.0, "min": 100.0, "max": 330.0}
+ },
+ "shapes": {
+  "_note": "Race shapes (GDD 4.3.1): the leader's pace as a share of the field's even speed (the runner at pace_ref_quantile of the field by ability, 0 = strongest, 0.5 = median), lap 1 and lap 2 ranges. The mix per meet level / round in percent; a front runner in the field moves front_runner_shift points from tactical to fast, no front runner from fast to tactical.",
+  "pace_ref_quantile": 0.25,
+  "fast":     {"name": "fast from the gun", "lap1": [1.03, 1.05], "lap2": [0.97, 0.99]},
+  "honest":   {"name": "honest", "lap1": [1.01, 1.02], "lap2": [0.98, 1.0]},
+  "tactical": {"name": "tactical", "lap1": [0.93, 0.97], "lap2": [1.0, 1.02]},
+  "mix": {
+   "local":    {"fast": 50, "honest": 35, "tactical": 15},
+   "district": {"fast": 40, "honest": 40, "tactical": 20},
+   "heat":     {"fast": 30, "honest": 50, "tactical": 20},
+   "final":    {"fast": 20, "honest": 35, "tactical": 45}
+  },
+  "default_mix": "district",
+  "front_runner_shift": 10
+ },
+ "personalities": {
+  "_note": "Rival personalities (GDD 4.3.1), kept on the rival. weight = base + per_anaerobic x anaerobic (at least 0.02): low anaerobic -> front runner / surger, high -> kicker. want = the place they run for; kick_at = metres to go when they start their kick (range); dig = how deep they dig to hang on. Surges come in step R2.",
+  "front":  {"name": "Front runner", "want": "lead", "kick_at": [300, 400], "dig": 0.0,  "base": 0.30, "per_anaerobic": -0.06},
+  "pack":   {"name": "Pack runner",  "want": "pack", "kick_at": [150, 200], "dig": 0.1,  "base": 0.35, "per_anaerobic": 0.0},
+  "kicker": {"name": "Kicker",       "want": "back", "kick_at": [100, 150], "dig": 0.0,  "base": 0.20, "per_anaerobic": 0.06},
+  "surger": {"name": "Surger",       "want": "pack", "kick_at": [150, 250], "dig": 0.05, "base": 0.15, "per_anaerobic": -0.02}
+ }
 }

@@ -3,9 +3,13 @@ extends RefCounted
 ## One 800 m race, simulated in small time steps on a real track: outdoor 400 m (8 lanes) or indoor 200 m (6 lanes).
 ##
 ## Each runner has a sustainable speed (cs) and an anaerobic reserve (dprime, in metres): running faster than
-## cs drains the reserve, running behind someone (drafting) drains it a little slower, and an empty reserve
-## means tying up. The player's choices (detailed mode) arrive at decision points; in quick mode the athlete
-## decides on their own based on race tactics.
+## cs drains the reserve, running close behind someone (drafting) costs less, and an empty reserve means tying
+## up. Pack racing (GDD 4.3.1, step R1): the race has a shape (fast / honest / tactical) and the leader runs its
+## pace; everyone else follows the runner ahead while the reserve they *feel* they will have at their kick point
+## is enough, and is dropped when it isn't. The plan is the place a runner wants (lead / pack / back).
+## The player's choices (detailed mode) arrive at decision points; in quick mode the athlete decides on their
+## own based on race tactics. All numbers in data/races.json (`engine`, `shapes`, `personalities`); all dice
+## from the race's own RNG.
 
 const DISTANCE := 800.0
 const LANE_W := 1.22
@@ -34,8 +38,16 @@ var interactive := false          # detailed mode: pause at decision points
 var pending: Dictionary = {}      # decision waiting for the player
 var log_lines: Array[String] = []
 
+var shape := ""                   # fast / honest / tactical (rolled at the start)
+var lap1_pace := 1.0              # the leader's pace as a share of the field's even speed: lap 1 ...
+var lap2_pace := 1.0              # ... and lap 2 (until the kicks)
+var ref_speed := 0.0              # the field's even speed (m/s)
+
 var _asked := {}
 var _rng: RandomNumberGenerator
+var _eng: Dictionary              # data/races.json "engine"
+var _mix := ""
+var _leader: Runner
 var _box_timer := 0.0
 var _announced := {}
 
@@ -54,25 +66,36 @@ class Runner:
 	var dprime := 0.0             # anaerobic reserve, metres above cs
 	var dleft := 0.0
 	var vmax := 0.0
-	var d := 0.0                  # distance run (lane 1 equivalent)
+	var kick_v := 0.0             # the fastest they can kick at the end of the race
+	var d := 0.0                 # distance run (lane 1 equivalent)
 	var v := 0.0
 	var lat := 0.0                # metres outside the lane 1 line
 	var lat_target := 0.0
-	var plan := "pack"            # front / pack / back
-	var pace_factor := 1.0
+	var personality := ""         # front / pack / kicker / surger (data/races.json); "" = the player
+	var want := "pack"            # the place they run for: lead / pack / back (the player's plan)
+	var pace_factor := 1.0        # the player's bell choice (push / hold / ease)
 	var kick_at := 200.0          # metres to go when the kick starts
 	var kicking := false
 	var drafting := false
+	var draft := 0.0              # share of speed saved this step by running behind someone
+	var err := 0.0                # misjudged reserve, share of dprime (fixed for the race)
+	var dig := 0.0                # how much of the kick reserve they give up to hang on
+	var dropped := false          # more than drop_gap metres behind the runner ahead
 	var t := 0.0                  # finish time
 	var done := false
 	var split_400 := 0.0
 
 
 ## `entrants`: Dictionaries with name, club, ability, speed, anaerobic, tactics, consistency, composure
-## (+ is_player, rival). `big_meet` makes composure matter. `player_fatigue` 0–100.
+## (+ is_player, rival, personality, competitiveness / determination). `big_meet` makes composure matter.
+## `player_fatigue` 0–100. `mix` = the race-shape mix (data/races.json shapes.mix: local / district / heat /
+## final; "" = the default).
 func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: float, rng: RandomNumberGenerator,
-		indoor_track := false) -> void:
+		indoor_track := false, mix := "") -> void:
 	_rng = rng
+	_eng = Data.races.engine
+	_mix = mix
+	var e_cfg := _eng
 	if indoor_track:
 		# A standard 200 m indoor track with 6 lanes.
 		indoor = true
@@ -84,7 +107,11 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 		lanes = 6
 		break_line = bend
 	var lane_order := range(1, lanes + 1)
-	lane_order.shuffle()
+	for k in range(lane_order.size() - 1, 0, -1):   # shuffled with the race's own dice
+		var j := rng.randi_range(0, k)
+		var tmp = lane_order[k]
+		lane_order[k] = lane_order[j]
+		lane_order[j] = tmp
 	var i := 0
 	for e in entrants:
 		var r := Runner.new()
@@ -107,22 +134,42 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 				form += 0.1
 		r.ability = float(e.ability) + form
 		r.even_time = RacePerformance.time_for(r.ability, gender)
-		var share := clampf(0.18 + 0.006 * float(e.anaerobic), 0.13, 0.23)
+		var rs: Dictionary = e_cfg.reserve_share
+		var share := clampf(float(rs.base) + float(rs.per_anaerobic) * float(e.anaerobic), float(rs.min), float(rs.max))
 		r.dprime = DISTANCE * share
 		r.dleft = r.dprime
-		# The standing start costs ~1.5 s, so the cruising speed is set a little higher.
-		r.cs = (DISTANCE - r.dprime) / (r.even_time - 1.5)
+		# The standing start costs ~1.5 s, so the cruising speed is set a little higher. cs_scale calibrates the
+		# engine (drafting and race shapes) back onto the time table.
+		r.cs = (DISTANCE - r.dprime) / (r.even_time - float(e_cfg.start_cost)) * float(e_cfg.cs_scale)
 		var top := (6.4 + 0.17 * r.speed) if gender == "male" else (5.9 + 0.15 * r.speed)
 		r.vmax = maxf(top, r.cs * 1.2)
-		# Kickers (big reserve) wait; grinders go long. Better tacticians time it better.
-		r.kick_at = clampf(210.0 - float(e.anaerobic) * 15.0 + rng.randfn(0.0, 45.0 - r.tactics * 1.5), 100.0, 330.0)
-		var roll := rng.randf()
-		if float(e.anaerobic) < -1.5 and roll < 0.5:
-			r.plan = "front"
-		elif float(e.anaerobic) > 1.5 and roll < 0.5:
-			r.plan = "back"
+		# Sprint speed hardly changes from day to day: the kick comes from the ability before the day's form.
+		var base_time := RacePerformance.time_for(float(e.ability), gender)
+		var base_v := DISTANCE / base_time * float(e_cfg.cs_scale)
+		r.kick_v = minf(r.vmax * float(e_cfg.kick_top_vmax), base_v * (float(e_cfg.kick_vs_even)
+				+ float(e_cfg.kick_per_speed) * (r.speed - float(e.ability))))
+		# Race tactics: how well they feel their reserve and time their kick.
+		var skill := clampf((r.tactics - 1.0) / 19.0, 0.0, 1.0)
+		r.err = rng.randfn(0.0, lerpf(float(e_cfg.misjudge_sd.at_1), float(e_cfg.misjudge_sd.at_20), skill))
+		var kick_sd := lerpf(float(e_cfg.kick_noise_sd.at_1), float(e_cfg.kick_noise_sd.at_20), skill)
+		var dig := 0.0
+		if r.is_player:
+			# Kickers (big reserve) wait; grinders go long. The place comes from the plan (set_player_plan).
+			var pk: Dictionary = e_cfg.player_kick
+			r.kick_at = clampf(float(pk.base) + float(pk.per_anaerobic) * float(e.anaerobic) + rng.randfn(0.0, kick_sd),
+					float(pk.min), float(pk.max))
 		else:
-			r.plan = ["front", "pack", "pack", "back"][rng.randi() % 4]
+			var types: Dictionary = Data.races.personalities
+			r.personality = e.get("personality", "")
+			if not types.has(r.personality):   # tools' made-up fields: rolled like the rival pool's
+				r.personality = Rivals.personality_from(float(e.anaerobic), rng.randf())
+			var p: Dictionary = types[r.personality]
+			r.want = p.want
+			r.kick_at = clampf(rng.randf_range(float(p.kick_at[0]), float(p.kick_at[1])) + rng.randfn(0.0, kick_sd),
+					80.0, 450.0)
+			dig = float(p.dig)
+		var grit := float(e.get("determination", e.get("competitiveness", 10.0)))
+		r.dig = clampf(dig + (grit - 10.0) * float(e_cfg.dig_per_point), 0.0, float(e_cfg.dig_max))
 		r.lat = (r.lane - 1) * LANE_W
 		r.d = 0.0
 		r.lat_target = r.lat
@@ -131,10 +178,46 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 			player = r
 
 
-## The player's pre-race plan: "front", "pack" or "back".
+## The player's pre-race plan: "front" (lead), "pack" or "back": the place they run for.
 func set_player_plan(plan: String) -> void:
 	if player:
-		player.plan = plan
+		player.want = "lead" if plan == "front" else plan
+
+
+## Rolled when the race starts (after the player's plan is known): the race shape from the mix, moved
+## towards fast when someone wants to lead and towards tactical when nobody does, and the field's even speed.
+func _roll_shape() -> void:
+	var cfg: Dictionary = Data.races.shapes
+	var mix: Dictionary = cfg.mix.get(_mix, cfg.mix[cfg.default_mix]).duplicate()
+	var shift := float(cfg.front_runner_shift)
+	if runners.any(func(x): return x.want == "lead"):
+		shift = minf(shift, float(mix.tactical))
+		mix.tactical = float(mix.tactical) - shift
+		mix.fast = float(mix.fast) + shift
+	else:
+		shift = minf(shift, float(mix.fast))
+		mix.fast = float(mix.fast) - shift
+		mix.tactical = float(mix.tactical) + shift
+	var total := 0.0
+	for k in mix:
+		total += float(mix[k])
+	var x := _rng.randf() * total
+	shape = mix.keys().back()
+	for k in mix:
+		x -= float(mix[k])
+		if x < 0.0:
+			shape = k
+			break
+	var s: Dictionary = cfg[shape]
+	lap1_pace = _rng.randf_range(float(s.lap1[0]), float(s.lap1[1]))
+	lap2_pace = _rng.randf_range(float(s.lap2[0]), float(s.lap2[1]))
+	# The field's even speed: the runner at pace_ref_quantile of the field (0 = the strongest).
+	var speeds := []
+	for r in runners:
+		speeds.append((r.cs * (r.even_time - float(_eng.start_cost)) + r.dprime) / r.even_time)
+	speeds.sort()
+	speeds.reverse()
+	ref_speed = speeds[clampi(roundi(float(cfg.pace_ref_quantile) * (speeds.size() - 1)), 0, speeds.size() - 1)]
 
 
 ## Runs until a decision is needed (detailed mode) or the race is over.
@@ -144,8 +227,15 @@ func run() -> void:
 
 
 func step() -> void:
+	if shape == "":
+		_roll_shape()
 	time += DT
 	var order := standings()
+	_leader = null
+	for r in order:
+		if not r.done:
+			_leader = r
+			break
 	for r in order:
 		if r.done:
 			continue
@@ -185,24 +275,67 @@ func choose(option_id: String) -> void:
 # --- Movement ---------------------------------------------------------------------------
 
 func _move(r: Runner, order: Array[Runner]) -> void:
+	var e := _eng
 	var rem := DISTANCE - r.d
-	var lap_factor: float
-	if r.d < 400.0:
-		lap_factor = {"front": 1.05, "pack": 1.03, "back": 1.01}[r.plan]
+	var top := r.kick_v
+	r.draft = _draft_of(r, order)
+	r.drafting = r.draft > 0.0
+	var front := _runner_in_front(r, order)          # nearest runner ahead in any line
+	var gap_front := front.d - r.d if front else INF
+	r.dropped = r != _leader and r.d >= break_line and gap_front > float(e.drop_gap)
+	var wants_past := false
+
+	if not r.kicking and rem <= r.kick_at:
+		r.kicking = true
+	var target: float
+	if r.kicking:
+		# Fastest speed the reserve they feel they have can hold to the line: rem / (rem - felt) times cs.
+		var felt := _felt(r)
+		if rem <= felt + 1.0:
+			target = top
+		else:
+			target = minf(top, maxf(r.cs * rem / (rem - felt), r.cs))
 	else:
-		lap_factor = 0.985
-	var target := DISTANCE / r.even_time * lap_factor * r.pace_factor
-	r.drafting = false
+		var pace := ref_speed * (lap1_pace if r.d < DISTANCE / 2.0 else lap2_pace)
+		var follow: Runner = front if gap_front <= float(e.follow_range) else null
+		var cap := _cap(r, float(e.draft) if follow else 0.0)
+		if r.d < break_line:
+			# In lanes: the race's pace, a little quicker for those who want the lead.
+			target = minf(pace * float(e.place_speed[r.want]), cap)
+		elif follow == null:
+			# Leading: the race's pace. Detached: their own pace, closing in no faster than close_max.
+			target = minf(pace if r == _leader else pace * float(e.close_max), cap)
+		else:
+			# Following: the runner ahead's speed, closing to follow_gap behind (or alongside in another line).
+			var same_line := absf(follow.lat - r.lat) < 0.9
+			var want_gap := float(e.follow_gap) if same_line else 0.0
+			# Lead runners work to the front, pack runners up to pack_place (when they have the energy to spare).
+			var moving_up: bool = r.want == "lead" or (r.want == "pack" and order.find(r) + 1 > int(e.pack_place))
+			var to_front: bool = moving_up and r.d < float(e.lead_until) and cap >= follow.v * float(e.pass_speed)
+			var past_fader: bool = follow.v < pace * float(e.pass_margin) and cap > follow.v * float(e.pass_speed)
+			# Running wide on a bend costs distance: on (or just before) a bend, a runner alongside on the
+			# outside drops in behind and moves to the inside.
+			if not same_line and not to_front and not past_fader and r.lat > follow.lat \
+					and (is_bend(r.d) or is_bend(r.d + float(e.tuck_ahead))):
+				want_gap = float(e.tuck_gap)
+				r.lat_target = _inside_target(r, order)
+			target = clampf(follow.v + (gap_front - want_gap) * float(e.close_rate), follow.v * 0.9,
+					follow.v * float(e.close_max))
+			if to_front:
+				target = follow.v * float(e.pass_speed)          # working to the front
+				wants_past = true
+			elif past_fader:
+				target = minf(cap, maxf(pace, follow.v * float(e.pass_speed)))   # past a runner who is fading
+				wants_past = true
+			target = minf(target, cap)   # can't hold it: dropped
+		target *= r.pace_factor
 
 	if r.d >= break_line:
 		var ahead := _runner_ahead(r, order)
-		if r.plan == "front" and ahead != null and r.d < 600.0:
-			target *= 1.02   # work towards the front
 		if ahead != null:
 			var gap := ahead.d - r.d
 			if gap < 2.0 and absf(ahead.lat - r.lat) < 0.9:
-				r.drafting = true
-				var wants_past := r.kicking or target > ahead.v * 1.02
+				wants_past = wants_past or r.kicking or target > ahead.v * 1.02
 				if wants_past and _outside_clear(r, ahead.lat + 1.0, order):
 					r.lat_target = ahead.lat + 1.0
 				elif gap < 1.2:
@@ -214,27 +347,23 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 		else:
 			r.lat_target = _inside_target(r, order)
 
-	if not r.kicking and rem <= r.kick_at:
-		r.kicking = true
-	if r.kicking:
-		# Fastest speed the remaining reserve can hold to the line: rem / (rem - dleft) times cs.
-		if rem <= r.dleft + 1.0:
-			target = r.vmax * 0.95
-		else:
-			target = minf(r.vmax * 0.95, maxf(r.cs * rem / (rem - r.dleft), r.cs))
 	if r.dleft <= 0.0:
-		target = minf(target, r.cs * (0.97 - 0.05 * clampf(-r.dleft / 20.0, 0.0, 1.0)))
+		var tie: Dictionary = e.tie_up
+		target = minf(target, r.cs * (float(tie.speed) - float(tie.extra) * clampf(-r.dleft / float(tie.over), 0.0, 1.0)))
 
-	var accel := 4.0 if r.d < 30.0 else 1.2
+	var acc: Dictionary = e.accel
+	var up := float(acc.start) if r.d < float(acc.start_until) else float(acc.up)
 	if r.v < target:
-		r.v = minf(target, r.v + accel * DT)
+		r.v = minf(target, r.v + up * DT)
 	else:
-		r.v = maxf(target, r.v - 1.5 * DT)
+		r.v = maxf(target, r.v - float(acc.down) * DT)
 
-	if r.v > r.cs:
-		r.dleft -= (r.v - r.cs) * DT * (0.93 if r.drafting else 1.0)
+	# Running behind someone costs `draft` of speed less; the leader pays full price.
+	var cost := r.v * (1.0 - r.draft)
+	if cost > r.cs:
+		r.dleft -= (cost - r.cs) * DT
 	else:
-		r.dleft = minf(r.dprime, r.dleft + (r.cs - r.v) * DT * 0.25)
+		r.dleft = minf(r.dprime, r.dleft + (r.cs - cost) * DT * float(e.recover))
 
 	var progress := r.v * DT
 	if indoor and is_bend(r.d):
@@ -248,6 +377,66 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 		r.d += progress
 	if r.split_400 == 0.0 and r.d >= 400.0:
 		r.split_400 = time
+
+
+## The reserve the runner thinks they have (misjudged by `err`, GDD 4.3.1).
+func _felt(r: Runner) -> float:
+	return r.dleft + r.err * r.dprime
+
+
+## The fastest speed the runner is willing to run now (before the kick): following at it leaves the reserve
+## they want at their kick point (kick_need_per_100 per 100 m of kick, less by how deep they dig; dropped
+## runners stop digging). `dr` = the drafting they expect. Never below own_floor x the speed that would empty
+## their reserve at the line: a dropped runner falls back to their own pace, not to a jog.
+func _cap(r: Runner, dr: float) -> float:
+	var e := _eng
+	var rem := DISTANCE - r.d
+	var felt := _felt(r)
+	var v_line := r.cs * rem / maxf(rem - maxf(felt, 0.0), 1.0)
+	var to_kick := rem - r.kick_at
+	var v := v_line
+	if to_kick > 1.0:
+		var need := float(e.kick_need_per_100) * r.kick_at / 100.0 * r.dprime * (1.0 - (0.0 if r.dropped else r.dig))
+		# No point saving more than the kick can use at full speed.
+		need = minf(need, r.kick_at * (1.0 - r.cs / r.kick_v))
+		var avail := felt - need
+		var v_hang := r.cs / (1.0 - clampf(avail / to_kick, 0.0, 0.5))
+		v = maxf(v_hang, v_line * float(e.own_floor))
+	return minf(v / (1.0 - dr), r.kick_v)
+
+
+## Share of speed saved by running close behind someone (same line: full, diagonally behind: second_row;
+## less on a bend). No drafting in lanes.
+func _draft_of(r: Runner, order: Array[Runner]) -> float:
+	if r.d < break_line:
+		return 0.0
+	var e := _eng
+	var best := 0.0
+	for o in order:
+		if o == r or o.done:
+			continue
+		var gap := o.d - r.d
+		if gap <= 0.0 or gap > float(e.draft_dist):
+			continue
+		var lat := absf(o.lat - r.lat)
+		if lat < float(e.draft_lat):
+			best = maxf(best, float(e.draft))
+		elif lat < float(e.draft_lat_max):
+			best = maxf(best, float(e.draft) * float(e.draft_second_row))
+	if best > 0.0 and is_bend(r.d):
+		best *= float(e.draft_bend)
+	return best
+
+
+## The nearest runner ahead in any line (still running).
+func _runner_in_front(r: Runner, order: Array[Runner]) -> Runner:
+	var best: Runner = null
+	for o in order:
+		if o == r or o.done or o.d <= r.d:
+			continue
+		if best == null or o.d < best.d:
+			best = o
+	return best
 
 
 func _runner_ahead(r: Runner, order: Array[Runner]) -> Runner:
@@ -343,7 +532,7 @@ func _auto_choice(id: String) -> String:
 	var smart := p.tactics / 20.0
 	match id:
 		"break":
-			return {"front": "lead", "pack": "shoulder", "back": "back"}[p.plan]
+			return {"lead": "lead", "pack": "shoulder", "back": "back"}[p.want]
 		"bell":
 			return "hold"
 		"move":
@@ -358,14 +547,13 @@ func _auto_choice(id: String) -> String:
 func _apply_choice(p: Runner, id: String, option: String) -> void:
 	match [id, option]:
 		["break", "lead"]:
-			p.plan = "front"
+			p.want = "lead"
 			_say("You go to the front.")
 		["break", "shoulder"]:
-			p.plan = "pack"
+			p.want = "pack"
 			_say("You settle on the leader's shoulder.")
 		["break", "back"]:
-			p.plan = "back"
-			p.pace_factor = 0.99
+			p.want = "back"
 			_say("You tuck in at the back of the field.")
 		["bell", "push"]:
 			p.pace_factor = 1.03

@@ -86,9 +86,18 @@ func start_round(interactive: bool, plan: String) -> Race:
 	var entrants := current_entrants()
 	current = Race.new()
 	current.interactive = interactive
-	current.setup(entrants, _gender, is_big_meet(), fatigue, _rng, meet.get("indoor", false))
+	current.setup(entrants, _gender, is_big_meet(), fatigue, _rng, meet.get("indoor", false), shape_mix())
 	current.set_player_plan(plan)
 	return current
+
+
+## Which race-shape mix (data/races.json shapes.mix) fits this meet and round: local and district meets by
+## level, championships by round (heats are run more honestly, finals more tactically).
+func shape_mix() -> String:
+	var level: String = meet.get("level", "")
+	if level in ["local", "district"]:
+		return level
+	return "heat" if rounds[round_index] == "heat" else "final"
 
 
 ## Call when the player's current race is over.
@@ -107,7 +116,7 @@ func finish_round() -> void:
 				heat_results.append(res)
 			else:
 				var other := Race.new()
-				other.setup(heats[h], _gender, is_big_meet(), 0.0, _rng, meet.get("indoor", false))
+				other.setup(heats[h], _gender, is_big_meet(), 0.0, _rng, meet.get("indoor", false), shape_mix())
 				other.run()
 				heat_results.append(other.results())
 				all_results.append(heat_results[h])
@@ -157,7 +166,8 @@ func summary() -> String:
 func _rival_entrant(r: Dictionary) -> Dictionary:
 	return {"name": Rivals.full_name(r), "club": Data.get_club(r.club_id).get("name", ""),
 			"ability": r.ability, "speed": r.speed, "anaerobic": r.anaerobic, "tactics": r.tactics,
-			"consistency": r.consistency, "composure": r.composure, "rival": r}
+			"consistency": r.consistency, "composure": r.composure,
+			"competitiveness": r.get("competitiveness", 10.0), "personality": r.get("personality", ""), "rival": r}
 
 
 ## Racing with a niggle or a cold (GDD 4.6): the athlete runs this share slower (0 when healthy).

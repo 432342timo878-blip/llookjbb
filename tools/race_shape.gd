@@ -1,6 +1,6 @@
 extends SceneTree
 ## Dev tool: how the field spreads out during an 800 m and how often the order changes late.
-## Run: godot --headless --path . -s res://tools/race_shape.gd [-- races_per_row]
+## Run: godot --headless --path . -s res://tools/race_shape.gd [-- races_per_row [rows, e.g. 2,5]]
 ## Prints per row: gap 1st-last and 1st-4th (metres) when the leader passes 200 / 400 / 600 m, runners within
 ## 5 m of the leader at 400 m, how often the leader at 400 / 600 m wins, pair swaps between the 600 m order and
 ## the finish (out of 28 pairs for 8 runners), the rank correlation of the 400 / 600 m order with the finish (real
@@ -21,18 +21,23 @@ func _run() -> void:
 	if args.size() > 0:
 		n = int(args[0])
 	var rows := [
-		# name, gender, indoor, ability, field spread (sd of ability), tactics like the rival pool
-		["youth even field (race_balance)", "male", false, 7.0, 0.8, false],
-		["youth local meet, wide field", "male", false, 7.0, 1.6, true],
-		["youth championship final", "male", false, 9.0, 0.5, true],
-		["youth indoor", "male", true, 7.0, 0.8, true],
-		["girls even field", "female", false, 7.0, 0.8, true],
-		["senior national final", "male", false, 15.0, 0.4, true],
-		# Equal ability and consistency 20: what is left is the pace plans (front / pack / back) and kick timing.
-		["identical runners", "male", false, 9.0, 0.0, false],
+		# name, gender, indoor, ability, field spread (sd of ability), tactics like the rival pool, race-shape mix
+		["youth even field (race_balance)", "male", false, 7.0, 0.8, false, ""],
+		["youth local meet, wide field", "male", false, 7.0, 1.6, true, "local"],
+		["youth championship final", "male", false, 9.0, 0.5, true, "final"],
+		["youth indoor", "male", true, 7.0, 0.8, true, "district"],
+		["girls even field", "female", false, 7.0, 0.8, true, "district"],
+		["senior national final", "male", false, 15.0, 0.4, true, "final"],
+		# Equal ability and consistency 20: what is left is the race shape, the places, drafting and kick timing.
+		["identical runners", "male", false, 9.0, 0.0, false, "final"],
 	]
 	print("%-32s | %-18s | %-17s | %4s | %-9s | %5s | %-11s | %-11s | %-22s | %5s | %s" % ["row", "1st-last 200/400/600",
 			"1st-4th", "pack", "lead wins", "swaps", "r 400/600", "winner laps", "median gaps 2nd/4th/last", "<0.2s", "time/table"])
+	if args.size() > 1:   # only some rows, e.g. `-- 50 2,5` (0 = the first)
+		var keep := []
+		for k in args[1].split(","):
+			keep.append(rows[int(k)])
+		rows = keep
 	for row in rows:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = 11
@@ -42,6 +47,7 @@ func _run() -> void:
 		var g4 := []
 		var glast := []
 		var ratios := []
+		var shapes := {}
 		for i in n:
 			var entrants := []
 			for k in 8:
@@ -50,9 +56,9 @@ func _run() -> void:
 						"speed": ab + rng.randfn(0, 2), "anaerobic": rng.randfn(0, 2),
 						"tactics": clampf(rng.randfn(8.0, 3.0), 1.0, 20.0) if row[5] else 10.0,
 						"consistency": clampf(rng.randfn(9.0, 3.0), 1.0, 20.0) if row[5] else (20.0 if row[4] == 0.0 else 10.0),
-						"composure": 10.0})
+						"composure": 10.0, "competitiveness": clampf(rng.randfn(9.0, 3.0), 1.0, 20.0) if row[5] else 10.0})
 			var race = RaceScript.new()
-			race.setup(entrants, row[1], false, 20.0, rng, row[2])
+			race.setup(entrants, row[1], false, 20.0, rng, row[2], row[6])
 			var marks := [200.0, 400.0, 600.0]
 			var orders := {}
 			var mi := 0
@@ -71,6 +77,12 @@ func _run() -> void:
 						orders[marks[mi]] = order.map(func(r): return r.name)
 						mi += 1
 			var res: Array = race.results()
+			var sh: Array = shapes.get(race.shape, [0, 0.0, 0.0, 0.0])
+			sh[0] += 1   # races, winner's lap 1 and lap 2, 1st-4th finish gap
+			sh[1] += res[0].split_400
+			sh[2] += res[0].time - res[0].split_400
+			sh[3] += res[3].time - res[0].time
+			shapes[race.shape] = sh
 			var fin: Array = res.map(func(r): return r.name)
 			if orders[400.0][0] == fin[0]:
 				acc.w400 += 1.0
@@ -104,6 +116,12 @@ func _run() -> void:
 				acc.fourth[2] / n, acc.pack / n, acc.w400 / n * 100.0, acc.w600 / n * 100.0, acc.swaps / n,
 				acc.r400 / n, acc.r600 / n, acc.lap1 / n, acc.lap2 / n, _median(g2), _median(g4), _median(glast),
 				acc.photo / n * 100.0, _median(ratios)])
+		var parts := []
+		for k in shapes:
+			var sh: Array = shapes[k]
+			parts.append("%s %d%% (winner %.1f + %.1f, 1st-4th %.1f s)" % [k, roundi(100.0 * sh[0] / n),
+					sh[1] / sh[0], sh[2] / sh[0], sh[3] / sh[0]])
+		print("    shapes: ", ", ".join(parts))
 	quit()
 
 

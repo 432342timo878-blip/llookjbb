@@ -97,11 +97,11 @@
   },
   "race_before": {
    "title": "Before the race",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "The field", "text": "The runners in your race, fastest personal best first."},
     {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
-    {"heading": "Race plan", "text": "Run from the front: set the pace, no traffic, but it costs energy. Stay with the pack: near the front, ready to react. Start easy, kick late: save energy for a fast finish, at the risk of getting boxed in."},
+    {"heading": "Race plan", "text": "The plan is where you want to run. Lead: set the pace, no traffic, but no shelter from the wind. Sit in the pack: run behind others near the front and save energy. Wait at the back: save the most for a late kick, at the risk of getting boxed in or left behind."},
     {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan. Watch and decide shows the race and stops for your decisions. If you are injured, you can still scratch before the first round."}
    ]
   },

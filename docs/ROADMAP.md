@@ -128,13 +128,20 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       race times. From the playtest notes "Races are decided too early" and "More immersive races". Each session ends
       with the checks named, a commit and "Push origin"; `race_shape.gd` + `race_balance.gd` numbers before and after
       go into GDD 4.3.1:
-  - [ ] **R1. Pack engine (headless):** race shapes (`races.json` `shapes`, mix per level / round), the leader's pace,
+  - [x] **R1. Pack engine (headless):** race shapes (`races.json` `shapes`, mix per level / round), the leader's pace,
         following a group, drafting (~2 % of speed), hanging on and being dropped, misjudged energy, rival
         `personality` (+ made on load for old saves, `met` count), plan lap factors replaced by the wanted place,
         the cruising-speed scale calibrated; the player's cards stay the old fixed ones for now. *(Opus, high)*
         Check: `race_balance.gd` medians ±1 s of the anchors, `race_shape.gd` time / table within ±0.5 % and the shape
         targets of GDD 4.3.1 (tight front group, long tail; wide local fields still strung out), `form_check.gd`,
         `rankings_check.gd`, the race screen still runs (`race_perf.gd`).
+        Done 2026-10-07 (GDD 4.3.1 "Built (step R1)", before/after table there): `cs_scale` 1.003, field pace = 3rd
+        strongest of 8, tuck in on bends, pack runners move up to 4th, kick ≤ 1.12 × even speed (pre-form ability);
+        youth final 0.7 / 3.0 / 9.5 s ✓, 5 of 8 within 5 m at 400 ✓, time / table 0.996–1.002 outdoors ✓; the senior
+        final finish (0.7 / 2.1 / 5.6 s, 25 % under 0.2 s) is left for R2's kick chain. `day_engine_check` has new
+        personality / `met` / repeatable-race checks; fixed old tool problems: `rankings_check` and `race_perf` now
+        answer stop events (both could hang since health / step 6f), `race_perf` no longer presses the card's "?".
+        `race_perf` 60 fps on PC (indoor) and phone (outdoor) at 4x.
   - [ ] **R2. Moves, boxes, falls (headless):** surges at any point, covering / letting go, the kick chain, boxed in +
         the three ways out, contact / stumble / fall (+ a fall bringing down the runner behind), race injuries in
         `injuries.json` through the health model, the obstruction DQ, heats easing in, the engine's race event list
