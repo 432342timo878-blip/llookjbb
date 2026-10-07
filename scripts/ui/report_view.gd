@@ -147,6 +147,12 @@ func _add_last_week(r: Dictionary) -> void:
 			r.monday.day, r.monday.month, sunday.day, sunday.month, sunday.year], "MutedLabel"))
 
 	var facts := UIKit.vbox(6)
+	# The season plan's phase and kind of that week (saved with the report; not there in repeat mode).
+	if r.get("plan") is Dictionary and not r.plan.is_empty():
+		var phase := UIKit.wrapped(SeasonUI.week_text(r.plan), "")
+		phase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		facts.add_child(UIKit.fact_row("Season plan", phase))
 	facts.add_child(UIKit.fact_row("Sessions", UIKit.label(str(r.sessions))))
 	facts.add_child(UIKit.fact_row("Training load", UIKit.label(str(roundi(r.load)))))
 	var fat := UIKit.hbox(6)

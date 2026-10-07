@@ -84,10 +84,11 @@
   "ambitious": {"durability_min": 9, "professionalism_min": 11, "injury_free_months": 6}
  },
  "variants": {
-  "_note": "The club coach's three season plans (GDD 4.8; tuned in M2 step 6d with tools/training_balance.gd part 4, numbers in GDD 4.8 'Built (step 6d)'). Per variant: name, text, ramp_weeks per phase and one week template per phase (days = Mon..Sun session lists, intensity = 7 x easy / normal / hard). Every plan keeps a full rest day each week. Balanced's general base is exactly the coach's starter week (data/training.json), so a new career starts as before. Easy days are the cheap way to train: Easy cuts body strain to 0.6 but keeps 0.8 of the effect (data/health.json).",
+  "_note": "The club coach's three season plans (GDD 4.8; tuned in M2 step 6d with tools/training_balance.gd part 4, numbers in GDD 4.8 'Built (step 6d)'). Per variant: name, text, card (the Training tab's plan card: focus, and the typical week's plan risk as measured in 6d: most weeks of the season read this word), ramp_weeks per phase and one week template per phase (days = Mon..Sun session lists, intensity = 7 x easy / normal / hard). Every plan keeps a full rest day each week. Balanced's general base is exactly the coach's starter week (data/training.json), so a new career starts as before. Easy days are the cheap way to train: Easy cuts body strain to 0.6 but keeps 0.8 of the effect (data/health.json).",
   "steady": {
    "name": "Steady",
    "text": "The coach's normal sessions, but most days easy. Low risk, slower progress.",
+   "card": {"focus": "Fresh legs and few injuries", "risk": "low"},
    "ramp_weeks": {"general_base": 2, "indoor_specific": 3, "spring_base": 2, "pre_competition": 2, "race_season": 2, "transition": 1, "autumn_general": 3},
    "templates": {
     "general_base": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "normal", "easy", "normal"]},
@@ -102,6 +103,7 @@
   "balanced": {
    "name": "Balanced",
    "text": "The club coach's normal year.",
+   "card": {"focus": "All-round progress", "risk": "low"},
    "ramp_weeks": {"general_base": 2, "indoor_specific": 3, "spring_base": 2, "pre_competition": 2, "race_season": 2, "transition": 1, "autumn_general": 3},
    "templates": {
     "general_base": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
@@ -116,6 +118,7 @@
   "ambitious": {
    "name": "Ambitious",
    "text": "A big year: two sessions on most days, built up gradually. Faster progress, but it pays only if you listen to your body.",
+   "card": {"focus": "The most progress", "risk": "moderate"},
    "ramp_weeks": {"general_base": 3, "indoor_specific": 2, "spring_base": 3, "pre_competition": 2, "race_season": 2, "transition": 1, "autumn_general": 3},
    "templates": {
     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["tempo_run", "speed_strides"], ["fartlek"], ["easy_run", "drills"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},

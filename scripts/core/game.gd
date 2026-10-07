@@ -143,6 +143,22 @@ func enter(meet_key: String) -> void:
 		entries.append(meet_key)
 
 
+## The Training tab's switch back to the season plan (GDD 4.8). The season keeps the player's earlier changes; a
+## career that never had a season plan (an older save) gets the coach's ★ plan, and its coming targets are
+## entered where allowed, as for a new career.
+func use_season_plan() -> void:
+	var fresh := season.switch_to_phases(athlete, week_monday(), SeasonPlan.coach_pick(athlete, date, get_system("health") as HealthSystem))
+	if fresh:
+		for key in season.targets(season.first_season):
+			var m := Calendar.get_meet(key)
+			if not m.is_empty() and Calendar.can_enter(athlete, m, date).ok:
+				enter(key)
+	current_week()
+	var health := get_system("health") as HealthSystem
+	if health:
+		health.refresh()
+
+
 func withdraw(meet_key: String) -> void:
 	entries.erase(meet_key)
 	season.on_withdraw(meet_key)   # a target the player no longer races is no target
@@ -281,6 +297,10 @@ func _end_day() -> String:
 ## Sunday night: attribute progression and the weekly report, week-end hooks, rivals' training week.
 func _end_week(ctx: Dictionary) -> void:
 	last_report = _week.end_week()
+	if season.mode == SeasonPlan.PHASES:   # the week's phase and kind for the Report (GDD 4.8 UI)
+		var plan := season.week_for(_week.monday)
+		last_report.plan = {"phase": plan.phase, "phase_week": plan.phase_week, "phase_weeks": plan.phase_weeks,
+				"kind": plan.kind, "target": plan.target}
 	ctx.report = last_report
 	_hook("on_week_end", ctx)
 	Rivals.train_week(rivals, athlete.gender, _week.monday)

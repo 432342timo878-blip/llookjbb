@@ -104,7 +104,9 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         (season rows × neutral / careful, form at targets, season best at targets); tune the templates to the GDD 4.8
         targets and write the numbers into the GDD. No model changes without asking. *(Opus, high: tuning)*
         Check: part 4 table against the targets; parts 1–2 identical; run rows in parallel (~4 at a time).
-  - [ ] **6e. Season UI:** Training tab mode switch, coach plan cards, season bar (PC) / phase list (phone), phase
+  - [x] **6e. Season UI (done 2026-10-07**, details in GDD 4.8 "Built (step 6e)": phase editor = a full page in the Training tab,
+        targets marked ◆, plan cards behind "Change plan", the lead-in cached per opened phase (~33 ms), an edge in this week or
+        before can't move; `season_plan_check` section "season UI (step 6e)"**)** Training tab mode switch, coach plan cards, season bar (PC) / phase list (phone), phase
         editor (days + intensity, lighter weeks, ramp, edges, Back to coach's), targets (Training tab + Calendar
         Target toggle), `plan_section` for future phases with the lead-in (cached), week strip caption, `why` in the day
         editor, phase line in the Report. *(Sonnet, high; split into two sessions if big: Training tab first, then

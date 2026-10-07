@@ -32,6 +32,8 @@ var _sheet: Control             # phone: the dimmed layer + bottom sheet around 
 var _sheet_scroll: ScrollContainer
 var _today_card: TodayCard      # on Overview only
 var _overview_columns := 0      # columns the wide Overview was built with (0 = not built yet)
+var _phase_open := ""           # Training tab: the season phase open in the PhaseEditor ("" = the season view)
+var _strip_caption: Label       # above the week strip: the season plan's phase and week (empty in repeat mode)
 
 
 func _ready() -> void:
@@ -89,6 +91,10 @@ func _build_shell() -> void:
 	_margin.add_child(column)
 
 	column.add_child(_build_header())
+	_strip_caption = UIKit.label("", "CaptionLabel")
+	_strip_caption.clip_text = true
+	_strip_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(_strip_caption)
 	_strip = WeekStrip.new()
 	_strip.selected = _selected_day
 	_strip.day_pressed.connect(_on_day_pressed)
@@ -116,7 +122,9 @@ func _build_shell() -> void:
 		b.custom_minimum_size = Vector2(0 if Layout.compact else 130, 48 if Layout.compact else 44)
 		if Layout.compact:
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.pressed.connect(_show.bind(v[0]))
+		b.pressed.connect(func():
+			_phase_open = ""   # a tab button opens the tab at its top level (the season view, not a phase)
+			_show(v[0]))
 		bar.add_child(b)
 		_tabs[v[0]] = b
 	if Layout.compact:
@@ -231,6 +239,10 @@ func _refresh_header() -> void:
 	_info_label.text = "%s · %d years · %s · %s" % [
 		Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", ""), a.hometown]
 	_date_label.text = Calendar.format_day(Game.date)
+	# The season plan's caption over the week strip (GDD 4.8 UI): "General base · week 3 of 10 · lighter week".
+	var caption := SeasonUI.week_caption()
+	_strip_caption.text = caption.to_upper()
+	_strip_caption.visible = caption != ""
 
 
 ## After days were played or an event was answered: header, week strip and the open day.
@@ -545,64 +557,90 @@ func _build_profile(a: Athlete) -> void:
 
 # --- Training plan ----------------------------------------------------------------------
 
-## Phases mode, until the season editor arrives (GDD 4.8, step 6e): what the coach's plan does this week, and
-## a way to take the plan over as one repeating week.
-func _build_training_season() -> void:
-	var a := Game.athlete
-	var month: int = Game.add_days(Game.week_monday(), 3).month
-	var plan := Game.season.week_for(Game.week_monday())
-	var phase := SeasonPlan.phase_type(plan.phase)
-	_content.add_child(UIKit.label("Season plan", "HeadingLabel"))
-	# Which of the coach's three plans this season runs (the cards to choose one come in step 6e); ★ = the coach's pick now.
-	var variant_id := Game.season.variant(SeasonPlan.year_of(Game.week_monday()))
-	var variant: Dictionary = Data.periodization.variants[variant_id]
-	var star := variant_id == SeasonPlan.coach_pick(a, Game.date, HealthUI.system())
-	_content.add_child(UIKit.wrapped("Coach's plan: %s%s. %s" % [variant.name, " ★" if star else "", variant.text]))
-	_content.add_child(UIKit.wrapped(
-			"Your club coach is running your training year: %s, week %d of %d%s. The phases, lighter weeks, an easy day before "
-			% [phase.name, plan.phase_week, plan.phase_weeks, " (a lighter week)" if plan.kind == "lighter" else (" (taper)" if plan.kind == "taper" else "")]
-			+ "races and a taper before your main championships are built in. Editing the season plan comes in a later version. "
-			+ "To plan every week yourself now, switch to one repeating week."))
-
-	var days := UIKit.vbox(6)
-	days.add_child(UIKit.label("THIS WEEK", "CaptionLabel"))
-	for d in 7:
-		var names := []
-		for id in plan.days[d]:
-			names.append(Data.get_session(id).name)
-		var line := "%s: %s" % [Training.DAY_NAMES[d], ", ".join(names) if not names.is_empty() else "Rest day"]
-		if not names.is_empty() and plan.intensity[d] != WeekPlan.NORMAL:
-			line += " (%s)" % Training.intensity(plan.intensity[d]).name
-		days.add_child(UIKit.wrapped(line, ""))
-		if plan.why[d] != "":
-			days.add_child(UIKit.wrapped(plan.why[d], "CaptionLabel"))
-	_content.add_child(UIKit.panel(days, 16))
-
-	var summary := UIKit.vbox(8)
-	_content.add_child(UIKit.panel(summary, 16))
-	_fill_plan_summary(summary, a, month)
-
-	var switch := UIKit.button("Use one repeating week instead", false, 260)
-	var stage := [0]
-	switch.pressed.connect(func():
-		if stage[0] == 0:
-			stage[0] = 1
-			switch.text = "Tap again to confirm"
-			return
-		Game.season.switch_to_repeat(Game.week_monday())   # this week's phase week repeats from now on
-		HealthUI.refresh()
-		_refresh_week_ui()
-		_show("training"))
-	if Layout.compact:
-		switch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_content.add_child(switch)
-	_content.add_child(UIKit.wrapped("The repeating week starts as this phase's week. You can't go back to the season plan until the editor comes."))
-
-
+## The Training tab: the switch Season plan / One repeating week (GDD 4.8 UI), then the season (SeasonView, or the
+## PhaseEditor of the phase that was tapped) or the repeating week's editor.
 func _build_training() -> void:
-	if Game.season.mode == SeasonPlan.PHASES:
-		_build_training_season()
+	if Game.season.mode != SeasonPlan.PHASES:
+		_phase_open = ""
+	if _phase_open == "":   # the phase editor is a page of its own, with "◀ Season plan" instead
+		_content.add_child(_mode_switch())
+	if Game.season.mode != SeasonPlan.PHASES:
+		_build_training_repeat()
 		return
+	if _phase_open != "":
+		var editor := PhaseEditor.new(SeasonUI.current_year(), _phase_open)
+		editor.back_pressed.connect(func():
+			_phase_open = ""
+			_show("training"))
+		editor.plan_changed.connect(_after_plan_change)
+		editor.rebuild.connect(func():
+			_after_plan_change()
+			_rebuild_view())
+		_content.add_child(editor)
+		return
+	var view := SeasonView.new()
+	view.phase_opened.connect(func(id: String):
+		_phase_open = id
+		_show("training"))
+	view.plan_changed.connect(func():
+		_after_plan_change()
+		_rebuild_view())
+	_content.add_child(view)
+
+
+## Season plan / One repeating week. Both ways keep the other side: the season's changes stay while the repeating
+## week is used, and the repeating week starts as this phase's week.
+func _mode_switch() -> Control:
+	var phases := Game.season.mode == SeasonPlan.PHASES
+	var box := UIKit.vbox(6)
+	var row := UIKit.hbox(6)
+	var group := ButtonGroup.new()
+	var season := UIKit.toggle("Season plan", group)
+	var repeat := UIKit.toggle("Repeating week" if Layout.compact else "One repeating week", group)
+	for b in [season, repeat]:
+		b.custom_minimum_size.x = 0 if Layout.compact else 220
+		if Layout.compact:
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(b)
+	season.button_pressed = phases
+	repeat.button_pressed = not phases
+	season.pressed.connect(func():
+		if Game.season.mode != SeasonPlan.PHASES:
+			Game.use_season_plan()
+			_after_plan_change()
+			_show("training"))
+	repeat.pressed.connect(func():
+		if Game.season.mode == SeasonPlan.PHASES:
+			Game.season.switch_to_repeat(Game.week_monday())   # this phase's week repeats from now on
+			_phase_open = ""
+			_after_plan_change()
+			_show("training"))
+	box.add_child(row)
+	box.add_child(UIKit.wrapped(
+			"Or plan one week yourself that repeats every week (it starts as this phase's week; your season plan is kept)."
+			if phases else
+			"Or follow your coach's season plan: a year in phases, built up to your target meets (your earlier changes to it are kept)."))
+	return box
+
+
+## After the plan changed: the injury limits go into this week again, and the strip, its caption and the open day
+## follow the plan.
+func _after_plan_change() -> void:
+	HealthUI.refresh()
+	_refresh_week_ui()
+
+
+## Rebuilds the current tab and keeps the scroll position (for edits inside a long page).
+func _rebuild_view() -> void:
+	var at := _scroll.scroll_vertical
+	_show(_view)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(_scroll):
+		_scroll.scroll_vertical = at
+
+
+func _build_training_repeat() -> void:
 	var a := Game.athlete
 	var month: int = Game.add_days(Game.week_monday(), 3).month
 	var plan: Dictionary = Game.season.repeat_week   # {days, intensity}: edited in place (see WeekPlan)
@@ -621,33 +659,31 @@ func _build_training() -> void:
 	_content.add_child(UIKit.wrapped(" · ".join(level_notes) + ". Normal is the sessions as planned."))
 
 	var summary := UIKit.vbox(8)
-	var refresh_summary := func(): _fill_plan_summary(summary, a, month)
+	var refresh_summary := func(): _fill_plan_summary(summary, a)
 	# After every edit of the weekly plan: the injury limits go into this week again, the week strip and the
 	# open day follow the plan, and the summary (with load vs normal and risk) is worked out again.
 	var on_plan_edited := func():
-		HealthUI.refresh()
-		_refresh_week_ui()
+		_after_plan_change()
 		refresh_summary.call()
 
 	var days := UIKit.vbox(14 if Layout.compact else 8)
 	for day in 7:
 		if day > 0 and Layout.compact:
 			days.add_child(HSeparator.new())
-		days.add_child(_day_row(plan, day, a, month, on_plan_edited))
+		var date := Game.add_days(Game.week_monday(), day)
+		days.add_child(PlanUI.day_row(plan, day, a, month, on_plan_edited, "%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month]))
 	_content.add_child(UIKit.panel(days, 16))
 
 	var buttons := UIKit.hbox(8)
 	var coach := UIKit.button("Coach's plan", false, 160)
 	coach.pressed.connect(func():
 		Game.season.repeat_week = WeekPlan.coach()   # every day Normal
-		HealthUI.refresh()
-		_refresh_week_ui()
+		_after_plan_change()
 		_show("training"))
 	var clear := UIKit.button("Clear week", false, 160)
 	clear.pressed.connect(func():
 		Game.season.repeat_week = WeekPlan.empty()
-		HealthUI.refresh()
-		_refresh_week_ui()
+		_after_plan_change()
 		_show("training"))
 	buttons.add_child(coach)
 	buttons.add_child(clear)
@@ -662,146 +698,10 @@ func _build_training() -> void:
 	_content.add_child(_session_library(a, month))
 
 
-## One day of the plan (`plan` = the week plan being edited). Wide: day, two pickers, the load and the
-## Easy / Normal / Hard buttons on one row. Phone: a header line (day + load) with the two pickers stacked
-## under it, then the three intensity buttons.
-func _day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_change: Callable) -> Control:
-	var date := Game.add_days(Game.week_monday(), day)
-	var day_label := UIKit.label("%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month],
-			"SubheadingLabel" if Layout.compact else "")
-	var load_label := UIKit.label("", "MutedLabel")
-	var row: BoxContainer
-	var slot_parent: Control
-	if Layout.compact:
-		row = UIKit.vbox(6)
-		var head := UIKit.hbox(8)
-		day_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		head.add_child(day_label)
-		head.add_child(load_label)
-		row.add_child(head)
-		slot_parent = row
-	else:
-		row = UIKit.hbox(10)
-		day_label.custom_minimum_size.x = 100
-		row.add_child(day_label)
-		slot_parent = row
-	var slots := []
-	for slot in Training.MAX_SESSIONS_PER_DAY:
-		var pick := _session_picker(a, month)
-		var current: Array = plan.days[day]
-		var id: String = current[slot] if slot < current.size() else ""
-		for i in pick.item_count:
-			if pick.get_item_metadata(i) == id:
-				pick.select(i)
-		slots.append(pick)
-		slot_parent.add_child(pick)
-	if not Layout.compact:
-		load_label.custom_minimum_size.x = 80
-		row.add_child(load_label)
-
-	# Easy / Normal / Hard for the day (44 px high; on a phone they share the width).
-	var group := ButtonGroup.new()
-	var level_buttons := {}
-	var level_row := UIKit.hbox(6)
-	for level in Training.INTENSITIES:
-		var b := UIKit.toggle(Training.intensity(level).name, group)
-		b.custom_minimum_size.x = 0 if Layout.compact else 72
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_END
-		b.button_pressed = level == plan.intensity[day]
-		level_buttons[level] = b
-		level_row.add_child(b)
-	row.add_child(level_row)
-
-	var update := func():
-		var ids := []
-		for p in slots:
-			var sid: String = p.get_item_metadata(p.selected)
-			if sid != "":
-				ids.append(sid)
-		plan.days[day] = ids
-		var load := 0.0
-		var mult := float(Training.intensity(plan.intensity[day]).load)
-		for sid in ids:
-			load += Training.session_load(a, Data.get_session(sid)) * mult
-		load_label.text = "Rest day" if ids.is_empty() else "Load %d" % roundi(load)
-		for b in level_buttons.values():
-			b.disabled = ids.is_empty()   # intensity changes nothing on a rest day
-	for p in slots:
-		p.item_selected.connect(func(_i): update.call(); on_change.call())
-	for level in level_buttons:
-		level_buttons[level].pressed.connect(func():
-			plan.intensity[day] = level
-			update.call()
-			on_change.call())
-	update.call()
-	return row
-
-
-func _session_picker(a: Athlete, month: int) -> OptionButton:
-	var pick := OptionButton.new()
-	pick.custom_minimum_size = Vector2(0 if Layout.compact else 200, 44)
-	pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pick.add_item("—")
-	pick.set_item_metadata(0, "")
-	for s in Data.training.sessions:
-		var eff := Training.effectiveness(a, s, month)
-		var text: String = s.name
-		if eff > 0.0 and eff < 1.0:
-			text += " (no track)"
-		pick.add_item(text)
-		var i := pick.item_count - 1
-		pick.set_item_metadata(i, s.id)
-		pick.set_item_tooltip(i, s.description)
-		if eff == 0.0:
-			pick.set_item_disabled(i, true)
-			pick.set_item_tooltip(i, "Not possible this time of year")
-	return pick
-
-
-func _fill_plan_summary(box: VBoxContainer, a: Athlete, month: int) -> void:
-	for child in box.get_children():
-		child.queue_free()
+## The repeating week's summary (this week's plan, with load vs normal and risk).
+func _fill_plan_summary(box: VBoxContainer, a: Athlete) -> void:
 	var plan := Game.season.week_for(Game.week_monday())
-	var p := Training.preview(a, plan, month)
-	var expected := Training.expected_fatigue(a, plan, Game.week_monday())
-	var verdict: String
-	if expected.avg < 15.0:
-		verdict = "Light: easy to recover from, but slower progress."
-	elif expected.avg < 45.0:
-		verdict = "Balanced: you should recover well between sessions."
-	elif expected.avg < 65.0:
-		verdict = "Hard: heavy legs, and training gives less when you're tired. Plan lighter weeks too."
-	else:
-		verdict = "Too much: you'll be exhausted, so most of the training is wasted."
-
-	box.add_child(UIKit.label("THIS PLAN", "CaptionLabel"))
-	box.add_child(_fact_row("Weekly load", UIKit.label(str(roundi(p.load)))))
-	var fat := UIKit.hbox(6)
-	fat.add_child(_fatigue_label(expected.avg))
-	fat.add_child(UIKit.label("on average", "MutedLabel"))
-	box.add_child(_fact_row("Expected fatigue", fat))
-	box.add_child(UIKit.wrapped(verdict, ""))
-	# Body strain of this plan: load vs your normal and injury risk (works for any plan passed in).
-	var strain := HealthUI.plan_section(plan, Game.current_week())
-	if strain != null:
-		box.add_child(strain)
-
-	box.add_child(UIKit.label("TRAINING FOCUS", "CaptionLabel"))
-	var focus: Array = p.stimulus.keys()
-	focus.sort_custom(func(x, y): return p.stimulus[x] > p.stimulus[y])
-	if focus.is_empty():
-		box.add_child(UIKit.wrapped("Nothing planned: a full rest week."))
-	for id in focus:
-		var row := UIKit.hbox(10)
-		var l := UIKit.label(_attr_name(id))
-		l.custom_minimum_size.x = 150 if Layout.compact else 200
-		row.add_child(l)
-		var bar := ColorRect.new()
-		bar.color = Palette.ACCENT
-		bar.custom_minimum_size = Vector2(minf(p.stimulus[id], 6.0) * (30.0 if Layout.compact else 50.0), 12)
-		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(bar)
-		box.add_child(row)
+	PlanUI.fill_summary(box, a, plan, Game.week_monday(), HealthUI.plan_section(plan, Game.current_week()))
 
 
 func _session_library(a: Athlete, month: int) -> PanelContainer:
@@ -835,7 +735,9 @@ func _build_calendar() -> void:
 	_content.add_child(UIKit.wrapped(
 			"Enter the meets you want to race; a race replaces that day's training. Tap \"Entered\" again to withdraw. "
 			+ "★ = your coach recommends it. "
-			+ "\"Estimated\" dates are believable guesses for small meets whose real dates aren't published."))
+			+ "\"Estimated\" dates are believable guesses for small meets whose real dates aren't published."
+			+ (" \"Make target\" makes a meet one of your season's target meets (at most %d): your season plan builds up to it and tapers before it."
+				% int(Data.periodization.season.max_targets) if Game.season.mode == SeasonPlan.PHASES else "")))
 
 	# The rest of this season and the whole next one.
 	var meets := Calendar.meets_between(Game.date, {"year": Game.date.year + 1, "month": 10, "day": 31})
@@ -884,24 +786,62 @@ func _meet_row(a: Athlete, m: Dictionary) -> Control:
 		info.add_child(UIKit.wrapped(check.reason, "MutedLabel"))
 	row.add_child(info)
 
-	if check.ok:
-		var b := UIKit.button("", false, 150)
-		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		var refresh := func():
-			var entered: bool = m.key in Game.entries
+	# Enter / Entered ✓, and in season-plan mode the Target toggle (GDD 4.8): marking a target enters the meet
+	# when allowed; withdrawing takes the target off too. Both buttons follow each other.
+	var season := Game.season
+	var year := SeasonPlan.year_of(m.date)
+	var targetable: bool = season.mode == SeasonPlan.PHASES and year >= season.first_season and season.can_target(m) \
+			and Calendar.date_key(m.date) >= Calendar.date_key(Game.date)
+	if not check.ok and not targetable:
+		return row
+	var buttons: BoxContainer = UIKit.hbox(8) if Layout.compact else UIKit.vbox(6)
+	buttons.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	# (Lambdas capture the variables' values when they are made, so the buttons exist before the closures.)
+	var b: Button = UIKit.button("", false, 150) if check.ok else null
+	var t: Button = UIKit.button("", false, 150) if targetable else null
+	var note := UIKit.wrapped("", "MutedLabel")
+	note.visible = false
+	var refresh := func():
+		var entered: bool = m.key in Game.entries
+		if b:
 			b.text = "Entered ✓" if entered else "Enter"
 			b.theme_type_variation = "PrimaryButton" if entered else ""
+		if t:
+			var is_target: bool = m.key in season.targets(year)
+			t.text = "Target %s" % SeasonUI.TARGET_MARK if is_target else "Make target"
+			t.theme_type_variation = "PrimaryButton" if is_target else ""
+	var after := func():
+		Game.current_week()   # this week's race days follow the entries
+		HealthUI.refresh()    # a race day that was withdrawn is a training day again: injury limits apply to it
+		_refresh_week_ui()
+		refresh.call()
+	if b:
 		b.pressed.connect(func():
 			if m.key in Game.entries:
 				Game.withdraw(m.key)
 			else:
 				Game.enter(m.key)
-			Game.current_week()   # this week's race days follow the entries
-			HealthUI.refresh()    # a race day that was withdrawn is a training day again: injury limits apply to it
-			_refresh_week_ui()
-			refresh.call())
-		refresh.call()
-		row.add_child(b)
+			after.call())
+		buttons.add_child(b)
+	if t:
+		t.pressed.connect(func():
+			note.visible = false
+			if m.key in season.targets(year):
+				season.remove_target(year, m.key)
+			elif season.add_target(year, m.key):
+				if Calendar.can_enter(a, m, Game.date).ok:
+					Game.enter(m.key)
+			else:
+				note.text = "You have %d targets this season, the most. Remove one first (Training tab)." % int(Data.periodization.season.max_targets)
+				note.visible = true
+			after.call())
+		buttons.add_child(t)
+	if Layout.compact:
+		for x in buttons.get_children():
+			x.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_child(note)
+	refresh.call()
+	row.add_child(buttons)
 	return row
 
 

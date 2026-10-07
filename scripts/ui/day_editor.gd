@@ -120,6 +120,12 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	if info.changed and roundi(plan_load) != roundi(info.load):
 		load_text += "  (plan %d)" % roundi(plan_load)
 	summary.add_child(UIKit.fact_row("Load for the day", UIKit.label(load_text)))
+	# The season plan's reason for the day (GDD 4.8 UI): "Easy: race tomorrow", "Taper: … in 3 days", "Lighter week".
+	var season_plan := Game.season.mode == SeasonPlan.PHASES
+	if season_plan:
+		var why: String = Game.season.week_for(w.monday).why[day]
+		if why != "":
+			summary.add_child(UIKit.fact_row("Season plan", _wrapped_value(why)))
 	if info.changed:
 		var plan_text := _names_or_rest(w.plan[day])
 		if not w.plan[day].is_empty() and w.plan_intensity[day] != WeekSim.NORMAL:
@@ -138,7 +144,8 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 					_after_change())
 			summary.add_child(back)
 	else:
-		summary.add_child(UIKit.wrapped("This is the weekly plan. Changes here apply to this day only.", "MutedLabel"))
+		summary.add_child(UIKit.wrapped("This is your season plan's day. Changes here apply to this day only." if season_plan
+				else "This is the weekly plan. Changes here apply to this day only.", "MutedLabel"))
 	add_child(UIKit.panel(summary, 14))
 
 

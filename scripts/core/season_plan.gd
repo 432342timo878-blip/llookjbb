@@ -97,11 +97,31 @@ func edited_phases(year: int) -> int:
 	return layout(year).filter(func(p): return is_edited(year, p.id)).size()
 
 
-## The player turns off the season plan: this week's phase plan becomes the repeating week.
+## The player turns off the season plan: this week's phase plan becomes the repeating week. The season records
+## stay, so switching back finds the plan as it was.
 func switch_to_repeat(monday: Dictionary) -> void:
 	if mode == PHASES:
 		repeat_week = phase_base(monday)
 	mode = REPEAT
+
+
+## The player turns the season plan (back) on. A plan that never had a season (a career from an older save)
+## gets one now, on `variant` from the season `monday` is in; returns true then (the caller enters its targets).
+func switch_to_phases(athlete: Athlete, monday: Dictionary, variant: String) -> bool:
+	mode = PHASES
+	if birth_year > 0 and seasons.has(first_season):
+		return false
+	birth_year = int(athlete.birth_date.year)
+	event = athlete.main_event
+	first_season = year_of(monday)
+	seasons[first_season] = _new_record(variant)
+	_derived = {}
+	return true
+
+
+## The season the plan uses for the week starting `monday` (never before the career's first season).
+func plan_year(monday: Dictionary) -> int:
+	return maxi(year_of(monday), first_season)
 
 
 # --- Seasons and weeks -------------------------------------------------------------------------
@@ -329,6 +349,18 @@ func layout(year: int) -> Array:
 	return result
 
 
+## The phases of a season with their dates, for the UI: [{id, start (week no.), weeks, first (its Monday),
+## last (its Sunday)}].
+func phase_dates(year: int) -> Array:
+	var origin := season_start(year)
+	var result := []
+	for p in layout(year):
+		var first := Game.add_days(origin, int(p.start) * 7)
+		result.append({"id": p.id, "start": int(p.start), "weeks": int(p.weeks), "first": first,
+				"last": Game.add_days(first, int(p.weeks) * 7 - 1)})
+	return result
+
+
 ## Where each phase would start before the minimum length is enforced: [{id, start}].
 func _raw_starts(year: int) -> Array:
 	var anchors := {"season_start": {"week": 0, "real": true}, "indoor": _anchor_week(year, "indoor"),
@@ -474,7 +506,22 @@ func _pick_main(meets: Array, kind: String) -> String:
 	return best
 
 
+## The meets of a season that could become a target from `today` on (the athlete's event and age class, not
+## watch-only, not yet a target), in date order.
+func target_candidates(year: int, today: Dictionary) -> Array:
+	var from := season_start(year)
+	if Calendar.date_key(today) > Calendar.date_key(from):
+		from = today
+	var have := targets(year)
+	return Calendar.meets_between(from, Game.add_days(season_start(year + 1), -1)).filter(
+			func(m): return _can_target(m) and not m.key in have)
+
+
 ## A meet the athlete could race in their main event (not a watch-only one).
+func can_target(meet: Dictionary) -> bool:
+	return _can_target(meet)
+
+
 func _can_target(meet: Dictionary) -> bool:
 	if meet.get("watch", false) or not event in meet.events:
 		return false
@@ -521,6 +568,15 @@ func set_lighter(year: int, phase_id: String, on: bool) -> void:
 
 func set_ramp_weeks(year: int, phase_id: String, weeks: int) -> void:
 	_phase_state(year, phase_id).ramp_weeks = maxi(1, weeks)
+
+
+## For the phase editor: lighter weeks on, and the ramp weeks, as the season uses them.
+func lighter_on(year: int, phase_id: String) -> bool:
+	return _lighter(year, phase_id)
+
+
+func ramp_of(year: int, phase_id: String) -> int:
+	return _ramp_weeks(year, phase_id)
 
 
 func _lighter(year: int, phase_id: String) -> bool:

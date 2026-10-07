@@ -173,9 +173,180 @@ func _run() -> void:
 	await _frames(6)
 	await _shot("18_day_editor_after_load")
 	hub._close_day()
+	await _season_tour(main)
+	hub = main.get_node("ScreenHost").get_child(-1)
 	await _health_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- The season plan UI (M2 step 6e): plan cards, the season, targets, the phase editor, strip caption, -----------
+# --- the day editor's reason, the Report's phase line, the Calendar's Target button, the mode switch. -------------
+# Seeded: an edited phase, a lighter week and a taper week (the date is moved there), a future phase with the
+# lead-in (health model on). Everything is put back afterwards by loading a snapshot.
+
+func _season_tour(main: Node) -> void:
+	var game = main.get_node("/root/Game")
+	var router = main.get_node("/root/Router")
+	var cal = load("res://scripts/core/calendar.gd")
+	var saves = load("res://scripts/core/save_game.gd")
+	var SeasonView = load("res://scripts/ui/season_view.gd")
+	var slot: String = saves.save_snapshot()
+	load("res://scripts/core/health_system.gd").model_enabled = true
+	game.get_system("health")._ensure_started()
+	router.go("career_hub")
+	await _frames(5)
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var year: int = game.season.plan_year(game.week_monday())
+
+	# 1. The Training tab in season mode; then the three plan cards.
+	hub._show("training")
+	await _frames(6)
+	await _shot("28_season_plan_top")
+	SeasonView.cards_open = true
+	hub._show("training")
+	await _frames(6)
+	await _scroll_to_label(hub, "COACH'S PLAN")
+	await _shot("28b_season_plan_cards")
+	# 2. An edited phase (spring base: Tuesday Hard, a second session on Thursday), then another plan is chosen:
+	#    the warning "This replaces your changes to 1 phase".
+	var week: Dictionary = game.season.edit_phase(year, "spring_base")
+	week.intensity[1] = "hard"
+	week.days[3] = ["fartlek", "strength"]
+	SeasonView.pending_variant = "balanced"
+	hub._show("training")
+	await _frames(6)
+	await _scroll_to_label(hub, "COACH'S PLAN")
+	hub._scroll.scroll_vertical += 200
+	await _frames(4)
+	await _shot("28c_season_plan_confirm")
+	SeasonView.pending_variant = ""
+	SeasonView.cards_open = false
+	hub._show("training")
+	await _frames(6)
+	await _scroll_to_label(hub, "THE SEASON")
+	await _shot("28d_season_phases")
+	await _scroll_to_label(hub, "TARGET MEETS (2 OF 3)")
+	await _shot("28e_season_targets")
+
+	# 3. The phase editor: a future phase with your changes (body strain after the lead-in), its rules and edges,
+	#    then the phase running now, and a phase that is over.
+	hub._phase_open = "spring_base"
+	hub._show("training")
+	await _frames(6)
+	await _shot("29_phase_editor_top")
+	await _scroll_to_label(hub, "WEEKS OF THE PHASE")
+	await _shot("29b_phase_editor_rules")
+	await _scroll_to_label(hub, "BODY STRAIN")
+	await _shot("29c_phase_editor_strain")
+	var now_id: String = game.season.week_for(game.week_monday()).phase
+	hub._phase_open = now_id
+	hub._show("training")
+	await _frames(6)
+	await _shot("29d_phase_editor_now")
+	hub._phase_open = "general_base"
+	hub._show("training")
+	await _frames(6)
+	print("season tour: phase now ", now_id, ", general base over: ", now_id != "general_base")
+	await _shot("29e_phase_editor_past")
+	hub._phase_open = ""
+
+	# 4. A lighter week: the strip caption, the day editor's reason; then the week is played: the Report's phase line.
+	#    (Health model off again from here: no random cold in these shots.)
+	load("res://scripts/core/health_system.gd").model_enabled = false
+	var lighter := _find_week(game, "lighter")
+	var taper := _find_week(game, "taper")
+	print("season tour: lighter week ", lighter, ", taper week ", taper)
+	if not lighter.is_empty():
+		_jump(game, lighter)
+		hub._refresh_week_ui()
+		hub._show("overview")
+		hub._open_day(_day_with_why(game))
+		await _frames(6)
+		await _scroll_editor_to(hub, "Season plan")
+		await _shot("30_strip_lighter_week")
+		hub._close_day()
+		var monday: Dictionary = game.week_monday()
+		while game.week_monday() == monday:
+			_quiet_day(game)
+		hub._refresh_week_ui()
+		hub._show("report")
+		await _frames(6)
+		await _shot("30b_report_phase_line")
+	# 5. A taper week: the caption counts down to the target, and the day editor shows the taper day's reason.
+	if not taper.is_empty():
+		_jump(game, taper)
+		hub._refresh_week_ui()
+		hub._show("overview")
+		hub._open_day(_day_with_why(game))
+		await _frames(6)
+		await _scroll_editor_to(hub, "Season plan")
+		await _shot("30c_strip_taper_week")
+		hub._close_day()
+
+	# 6. The Calendar: Make target / Target ◆ next to Enter.
+	hub._show("calendar")
+	await _frames(6)
+	await _scroll_to_label(hub, "FEBRUARY 2027")
+	await _shot("31_calendar_targets")
+
+	# 7. The mode switch: one repeating week, and back to the season plan (the changes are still there).
+	hub._show("training")
+	await _frames(4)
+	_find_button(hub, "Repeating week" if load("res://ui/layout.gd").compact else "One repeating week").pressed.emit()
+	await _frames(6)
+	await _shot("32_training_repeat_mode")
+	_find_button(hub, "Season plan").pressed.emit()
+	await _frames(6)
+	print("season tour: back in phases mode ", game.season.mode == "phases", ", spring base still edited ",
+			game.season.is_edited(year, "spring_base"))
+	await _shot("32b_training_back_to_season")
+
+	load("res://scripts/core/health_system.gd").model_enabled = false
+	saves.load_slot(slot)
+	saves.delete(slot)
+	router.go("career_hub")
+	await _frames(6)
+
+
+## Scrolls the open day editor (side panel or bottom sheet) so the label with this text is in view.
+func _scroll_editor_to(hub: Control, text: String) -> void:
+	var label := _find_label(hub._editor, text)
+	if label == null:
+		print("tour: editor label not found: ", text)
+		return
+	var p := label.get_parent()
+	while p and not p is ScrollContainer:
+		p = p.get_parent()
+	if p:
+		(p as ScrollContainer).ensure_control_visible(label)
+	await _frames(4)
+
+
+## The first day of this week (from today) that the season plan gives a reason for (lighter week, taper…), else today.
+func _day_with_why(game) -> int:
+	var plan: Dictionary = game.season.week_for(game.week_monday())
+	for d in range(load("res://scripts/core/calendar.gd").weekday(game.date), 7):
+		if plan.why[d] != "":
+			return d
+	return load("res://scripts/core/calendar.gd").weekday(game.date)
+
+
+## The Monday of the first coming week of this kind ("lighter" / "taper"), or {}.
+func _find_week(game, kind: String) -> Dictionary:
+	var monday: Dictionary = game.add_days(game.week_monday(), 7)
+	for i in 60:
+		if game.season.week_for(monday).kind == kind:
+			return monday
+		monday = game.add_days(monday, 7)
+	return {}
+
+
+## Moves the game to a week's Monday (a new week, nothing played).
+func _jump(game, monday: Dictionary) -> void:
+	game.date = monday.duplicate()
+	game._week = null
+	game.current_week()
 
 
 # --- Race form (M2 step 6c): the Today card row for each word, one explanation open ---------------------------
@@ -286,12 +457,9 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	await _scroll_to_label(hub, "BODY STRAIN")
 	await _shot("22a_health_training_season_plan")
 	# The rest of the tour plans its own repeating weeks: press the switch button (it asks once more).
-	var switch := _find_button(hub, "Use one repeating week instead")
+	var switch := _find_button(hub, "Repeating week" if load("res://ui/layout.gd").compact else "One repeating week")
 	print("tour: switch button found: ", switch != null)
 	switch.pressed.emit()
-	await _frames(3)
-	await _shot("22a2_health_training_switch_confirm")
-	_find_button(hub, "Tap again to confirm").pressed.emit()
 	await _frames(3)
 	print("tour: repeat mode after the button: ", game.season.mode == "repeat")
 	hub = main.get_node("ScreenHost").get_child(-1)

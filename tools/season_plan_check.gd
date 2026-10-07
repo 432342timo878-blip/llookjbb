@@ -48,6 +48,7 @@ func _run() -> void:
 	_check_repeat_mode()
 	_check_save_load()
 	_check_play()
+	_check_season_ui()
 	_check_speed()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
@@ -671,6 +672,101 @@ func _check_play() -> void:
 	if d_now < 6:
 		cw.make_rest_day(d_now + 1)
 		_ok("a day change on top of the season plan", cw.session_ids(d_now + 1).is_empty() and game.current_week().changed_by(d_now + 1).has("sessions"))
+
+
+## M2 step 6e: the model functions behind the season UI (switching both ways, target candidates, phase dates, the
+## report's phase, the lead-in for a future phase) and the UI pieces building without errors.
+func _check_season_ui() -> void:
+	print("-- season UI (step 6e)")
+	_new_career(7, "phases")
+	var plan = game.season
+	plan.edit_phase(2026, "spring_base").intensity[1] = "hard"
+	plan.set_shift(2026, "race_season", 1)
+	var before: String = _json(plan.to_dict())
+	plan.switch_to_repeat(game.week_monday())
+	_ok("switch to one repeating week: repeat mode, the week = this phase's week",
+			plan.mode == "repeat" and WP.equals(plan.repeat_week, data.periodization.variants.balanced.templates.general_base))
+	game.use_season_plan()
+	_ok("...and back: phases mode with the season's changes kept",
+			plan.mode == "phases" and plan.is_edited(2026, "spring_base")
+			and plan.shift_of(2026, "race_season") == 1)
+	plan.switch_to_repeat(game.week_monday())
+	game.use_season_plan()
+	var after: Dictionary = plan.to_dict()
+	var was: Dictionary = JSON.parse_string(before)
+	_ok("...the season records are exactly as before", _json(after.seasons) == _json(was.seasons))
+
+	var old = SP.repeating(WP.coach())
+	game.season = old
+	game.entries = []
+	game.use_season_plan()
+	_ok("an old repeat-mode career switched on: phases mode, first season 2026, the ★ plan, targets entered",
+			old.mode == "phases" and old.first_season == 2026 and old.birth_year == int(game.athlete.birth_date.year)
+			and old.variant(2026) == SP.coach_pick(game.athlete, game.date) and not game.entries.is_empty()
+			and game.entries.all(func(k): return k in old.targets(2026)))
+
+	_new_career(8, "phases")
+	plan = game.season
+	var dates: Array = plan.phase_dates(2026)
+	var joined: bool = dates.size() == 7 and dates[0].first == SP.season_start(2026)
+	for i in range(1, dates.size()):
+		joined = joined and game.add_days(dates[i - 1].last, 1) == dates[i].first
+	_ok("phase_dates: 7 phases from Mon 2 Nov, each starting the day after the one before ends",
+			joined and dates[dates.size() - 1].last == game.add_days(SP.season_start(2027), -1))
+	var cands: Array = plan.target_candidates(2026, game.date)
+	var fine := not cands.is_empty()
+	for m in cands:
+		fine = fine and not m.key in plan.targets(2026) and not m.get("watch", false) and "800m" in m.events \
+				and Cal.date_key(m.date) >= Cal.date_key(game.date)
+	_ok("target candidates: this season's 800 m meets from today, no watch-only meets, no targets (%d)" % cands.size(), fine)
+	_ok("a third target can be added, a fourth can't", plan.add_target(2026, cands[0].key)
+			and not plan.add_target(2026, plan.target_candidates(2026, game.date)[0].key))
+
+	# The report keeps the week's phase; repeat mode has none.
+	while game.advance_day() != game.WEEK_DONE:
+		pass
+	_ok("last week's report has its phase and kind", game.last_report.get("plan", {}).get("phase", "") == "general_base"
+			and game.last_report.plan.kind == "normal" and int(game.last_report.plan.phase_week) == 1)
+
+	# The lead-in (health on, no dice): the same answer twice, the game untouched, and today's state for this week.
+	load("res://scripts/core/health_system.gd").model_enabled = true
+	var health = game.get_system("health")
+	health._ensure_started()
+	var keep_health: String = _json(health.to_dict())
+	var keep_athlete: String = _json(game.athlete.to_dict())
+	var spring: Dictionary = plan.phase_dates(2026)[2]
+	var t0 := Time.get_ticks_msec()
+	var lead1: Dictionary = health.projected(spring.first)
+	var ms := Time.get_ticks_msec() - t0
+	var lead2: Dictionary = health.projected(spring.first)
+	_ok("lead-in to spring base: repeatable (no dice), %d ms" % ms, _json(lead1.health.to_dict()) == _json(lead2.health.to_dict())
+			and lead1.health.day_no > health.day_no + 90)
+	_ok("...and the game's body and athlete are untouched", _json(health.to_dict()) == keep_health and _json(game.athlete.to_dict()) == keep_athlete)
+	var week: Dictionary = plan.edit_phase(2026, "spring_base")
+	var risk: String = health.plan_risk(week, lead1)
+	var load_pct: int = health.load_vs_normal(week, lead1)
+	_ok("risk and load of spring base after the lead-in: %s, %d %%" % [risk, load_pct], risk in ["low", "moderate", "high"] and load_pct > 50 and load_pct < 200)
+	var section = load("res://scripts/ui/health_ui.gd").plan_section(week, null, lead1)
+	_ok("the body-strain section builds for a future phase", section != null)
+	if section:
+		section.free()
+	load("res://scripts/core/health_system.gd").model_enabled = false
+
+	# The UI pieces build (season view, bar, phase editor of every phase, caption).
+	var view = load("res://scripts/ui/season_view.gd").new()
+	_ok("the season view builds", view.get_child_count() >= 5)
+	view.free()
+	var bar = load("res://scripts/ui/season_bar.gd").new(2026)
+	_ok("the season bar has 7 phases and 52 week kinds", bar._phases.size() == 7 and bar._kinds.size() == 52)
+	bar.free()
+	var built := 0
+	for p in plan.phase_dates(2026):
+		var editor = load("res://scripts/ui/phase_editor.gd").new(2026, p.id)
+		built += 1 if editor.get_child_count() >= 4 else 0
+		editor.free()
+	_ok("the phase editor builds for all 7 phases (past, now, future)", built == 7)
+	_ok("week strip caption: \"%s\"" % load("res://scripts/ui/season_ui.gd").week_caption(),
+			load("res://scripts/ui/season_ui.gd").week_caption().begins_with("General base · week 2 of 10"))
 
 
 func _check_speed() -> void:

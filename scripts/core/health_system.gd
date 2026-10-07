@@ -874,7 +874,11 @@ func race_slowdown() -> float:
 ## played days as done, the rest as planned now. 100 = as usual.
 ## `week_or_plan` is a WeekSim, or a week plan (see WeekPlan; the old plain Array works too): a plan is taken as
 ## this week with nothing played and no day changes.
-func load_vs_normal(week_or_plan: Variant) -> int:
+## `from` = a lead-in (see `projected`): the plan as the week the lead-in ends on, against the normal of the
+## weeks before it.
+func load_vs_normal(week_or_plan: Variant, from := {}) -> int:
+	if not from.is_empty():
+		return from.health.load_vs_normal(WeekSim.new(from.athlete, week_or_plan, from.monday))
 	if impacts.is_empty():
 		return 100
 	var week: WeekSim = week_or_plan if week_or_plan is WeekSim \
@@ -912,14 +916,16 @@ func _impact(sessions: Array, level: String, is_race: bool) -> float:
 ## `plan` is a week plan (days and intensity, see WeekPlan; the old plain Array of days works too).
 ## Plays the plan for a few weeks on copies (no dice), counting expected overuse injuries at average
 ## injury proneness, so it never gives the hidden value away.
-func plan_risk(plan: Variant) -> String:
+## `from` = a lead-in (see `projected`): the risk of switching into the plan when the lead-in ends.
+func plan_risk(plan: Variant, from := {}) -> String:
 	var cfg: Dictionary = Data.health.plan_risk
 	var copy := HealthSystem.new()
-	copy.from_dict(to_dict().duplicate(true))
+	var base: HealthSystem = from.get("health", self)
+	copy.from_dict(base.to_dict().duplicate(true))
 	copy._ensure_started()
 	copy.injuries = []
-	var a := Athlete.from_dict(Game.athlete.to_dict().duplicate(true))
-	var monday := Game.week_monday()
+	var a := Athlete.from_dict((from.athlete if from.has("athlete") else Game.athlete).to_dict().duplicate(true))
+	var monday: Dictionary = from.get("monday", Game.week_monday())
 	var expected := 0.0
 	for w in int(cfg.weeks):
 		var week := WeekSim.new(a, plan, monday)
@@ -933,6 +939,35 @@ func plan_risk(plan: Variant) -> String:
 	if expected >= float(cfg.high):
 		return "high"
 	return "moderate" if expected >= float(cfg.moderate) else "low"
+
+
+## The lead-in for a future phase (GDD 4.8 UI, "Future phases"): the body and the athlete as they would be on the
+## Monday `until` if the season plan were followed from today. Plays the rest of this week (with its day changes
+## and races) and every week up to `until` on copies, races as races, with no dice and no injuries; the weekly
+## progression is applied too. Returns {"health", "athlete", "monday"} for plan_risk / load_vs_normal.
+## About 6 ms per 4 weeks: the UI computes it only for the phase it shows and keeps it until the plan changes.
+func projected(until: Dictionary) -> Dictionary:
+	var copy := HealthSystem.new()
+	copy.from_dict(to_dict().duplicate(true))
+	copy._ensure_started()
+	copy.injuries = []
+	var a := Athlete.from_dict(Game.athlete.to_dict().duplicate(true))
+	var now := Game.current_week()
+	var week := WeekSim.from_dict(a, WeekPlan.make(now.plan, now.plan_intensity), now.to_dict().duplicate(true))
+	week.races = now.races
+	var monday: Dictionary = now.monday
+	var guard := 0
+	while Calendar.date_key(monday) < Calendar.date_key(until) and guard < 60:
+		guard += 1
+		while not week.is_over():
+			var rec: Dictionary = week.race_done("") if week.is_race_day(week.day) else week.play_day()
+			copy._body_day(a, copy._done_sessions(rec), rec.intensity, rec.race != "",
+					Game.add_days(monday, int(rec.day)), float(rec.fatigue))
+			copy.day_no += 1
+		week.end_week()
+		monday = Game.add_days(monday, 7)
+		week = WeekSim.new(a, Game.season.week_for(monday), monday, Calendar.races_in_week(Game.entries, monday))
+	return {"health": copy, "athlete": a, "monday": until}
 
 
 ## After repeated injuries the game may hint that the athlete picks up knocks easily (proneness stays hidden).

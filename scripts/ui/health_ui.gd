@@ -276,20 +276,35 @@ static func warning_sections(open: Dictionary) -> Control:
 ## the old plain Array of days works too): load vs your normal (a %, capped), the plan risk word Low / Moderate /
 ## High, each explained. With `week` (the current week, with its day changes) a third line shows how this week
 ## stands. Null when the model is off.
-static func plan_section(plan: Variant, week: WeekSim = null) -> Control:
+## `lead_in` (HealthSystem.projected, for a phase that starts later): the plan is judged as the body would be
+## when the phase starts if the season plan is followed until then, against the weeks before it.
+static func plan_section(plan: Variant, week: WeekSim = null, lead_in := {}) -> Control:
 	var h := system()
 	if h == null:
 		return null
 	var box := UIKit.vbox(10)
 	box.add_child(UIKit.label("BODY STRAIN", "CaptionLabel"))
-	var plan_week := WeekSim.new(Game.athlete, plan, Game.week_monday())   # nothing played, no day changes
-	box.add_child(_load_row("Load vs your normal", h.load_vs_normal(plan_week), true))
-	var risk := h.plan_risk(plan)
+	if lead_in.is_empty():
+		var plan_week := WeekSim.new(Game.athlete, plan, Game.week_monday())   # nothing played, no day changes
+		box.add_child(_load_row("Load vs your normal", h.load_vs_normal(plan_week), true))
+	else:
+		var percent := h.load_vs_normal(plan, lead_in)
+		var col := UIKit.vbox(2)
+		var band := load_band(percent)
+		var value := UIKit.label(load_text(percent))
+		value.add_theme_color_override("font_color", band.color)
+		col.add_child(UIKit.fact_row("Load vs the weeks before", value))
+		col.add_child(UIKit.wrapped("%s Compared with the four weeks of your season plan before this phase starts." % band.text))
+		box.add_child(col)
+	var risk := h.plan_risk(plan, lead_in)
 	var risk_label := UIKit.label(HealthSystem.RISK_NAMES[risk])
 	risk_label.add_theme_color_override("font_color", risk_color(risk))
 	var risk_box := UIKit.vbox(2)
-	risk_box.add_child(UIKit.fact_row("Plan risk", risk_label))
-	risk_box.add_child(UIKit.wrapped("%s It depends on how your body is right now: the same plan can be Low once you've built up to it." % RISK_TEXT[risk]))
+	risk_box.add_child(UIKit.fact_row("Plan risk" if lead_in.is_empty() else "Risk when it starts", risk_label))
+	if lead_in.is_empty():
+		risk_box.add_child(UIKit.wrapped("%s It depends on how your body is right now: the same plan can be Low once you've built up to it." % RISK_TEXT[risk]))
+	else:
+		risk_box.add_child(UIKit.wrapped("%s Worked out for your body as it would be when this phase starts, if you follow your season plan until then." % RISK_TEXT[risk]))
 	box.add_child(risk_box)
 	if week != null and (week.day > 0 or not week.changes.is_empty()):
 		box.add_child(_load_row("This week, with your changes", h.load_vs_normal(week), false))

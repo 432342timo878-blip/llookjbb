@@ -723,6 +723,57 @@ the day before a target**; the player sees **one line** in the Training tab ("Co
   `form_check`, `day_engine_check`, `health_check` ALL CHECKS PASSED, stderr clean; tour at 1600×900 and 390×844 looked at; `layout_check`
   at all 5 sizes: no OVERFLOW.
 
+**Built (step 6e, 2026-10-07):** the season UI. As designed in "UI" below, plus these details. User decisions this session: **one
+session, two commits** (Training tab first, then strip / day editor / Report / Calendar); the **phase editor is a full page in the
+Training tab** on PC and phone ("◀ Season plan" goes back); **target meets are marked ◆** (★ keeps meaning "the coach suggests" /
+"the coach's pick"); the plan cards sit behind **one line + "Change plan"**. (The two-commit split was a fallback in case the session
+ran long; everything was finished, so it went in as one commit.)
+- **Files:** `SeasonView` (`scripts/ui/season_view.gd`, the Training tab in season mode), `SeasonBar` (`season_bar.gd`, the drawn Nov–Oct
+  bar), `PhaseEditor` (`phase_editor.gd`), `SeasonUI` (`season_ui.gd`: strip caption, phase dates and states, plan-card load, the cached
+  lead-in), `PlanUI` (`plan_ui.gd`: the day rows, session pickers, plan summary and days list, moved out of the hub so the repeating week and
+  the phase editor share them). New model functions: `SeasonPlan.switch_to_phases / plan_year / target_candidates / can_target / phase_dates /
+  lighter_on / ramp_of`, `Game.use_season_plan()`, `HealthSystem.projected(until)`, and an optional lead-in argument on `plan_risk`,
+  `load_vs_normal` and `HealthUI.plan_section(plan, week, lead_in)`.
+- **Mode switch:** two toggles at the top of the Training tab, both ways. To the repeating week: this phase's week becomes the repeating week
+  (as in 6b) and the season records stay. Back to the season plan: the records are used as they were; a career that never had a season plan (an
+  old save) gets the coach's ★ plan for the season it is in and its coming targets are entered where allowed.
+- **Coach's plans:** the line "Balanced ★: …" + **Change plan** opens three `ChoiceCard`s (a row on PC, stacked on a phone): name, ★ on the coach's
+  pick, "in use", **weekly load about N** (the season's phase templates × intensity, weighted by the phases' weeks; the athlete's own session load,
+  so the numbers are lower than 6d's 63 / 74 / 107 for a low-durability athlete), **typical risk** (a word stored in the data per plan, `card.risk`:
+  Low / Low / Moderate as measured in 6d, not computed from today's body) and **focus** (`card.focus`). Choosing a plan with edited phases shows
+  "This replaces your changes to N phases … Your targets and moved edges stay" with **Use X** / **Keep my plan**.
+- **The season:** PC = `SeasonBar` (phases in their data colours with names where they fit, a dark dot = your changes, a thin strip under it with
+  the lighter weeks blue and taper weeks orange, ◆ + name on each target, month ticks, a white line for today; tap a phase = its editor) **plus** the
+  phases as tappable cards in two columns (the bar has no room for short phases' names); phone = the cards stacked (colour edge, name, dates,
+  weeks, "Now: week N", "Over", "your changes"; past phases dimmed).
+- **Targets:** each target with its date, its role ("sets the indoor / outdoor phases" or "taper only"), entered or not (with **Enter** when allowed)
+  and **Remove**; **Add a target meet…** lists this season's meets from today that fit the athlete's event and age class (not watch-only); at 3 the
+  list is replaced by "3 targets is the most". Adding a target enters the meet when allowed. Removing doesn't withdraw the entry.
+- **Phase editor:** title + dates + "now: week N" / "starts in N weeks" / "over"; "Your changes" box with **Back to coach's** (asks once more); the
+  phase's week (day rows as the repeating week: two pickers, load, Easy / Normal / Hard); **Lighter weeks** On / Off (any phase); **Easing in**
+  N weeks with Fewer / More (1–4, at most the phase's length; the coach's number shown); **When it runs**: start and end with ◀ Earlier / Later ▶ (the
+  end moves the next phase's start; the season's first start and last end can't move; **an edge in this week or before can't move**, so the
+  running week never changes under the player; a move `set_shift` cuts back shows "Can't move it further…"). A phase that is over is read-only.
+  Summary: the plan summary for the phase's week (month = the phase's middle) and the body strain: the phase running now from today's body, a
+  **future phase after the lead-in** ("Load vs the weeks before", "Risk when it starts").
+- **Lead-in:** `HealthSystem.projected(monday)` plays the rest of this week (its day changes and races) and the season plan's weeks up to the phase's
+  start on copies (body, athlete with weekly progression; races as races; no dice, no injuries) ≈ 33 ms to spring base from mid-November.
+  `SeasonUI.lead_in` caches it until the season plan (other than the opened phase's own edits), the entries, the date or the health day change.
+- **Week strip caption** (above the strip, caption style, hidden in repeat mode): "GENERAL BASE · WEEK 3 OF 10 · LIGHTER WEEK", "TAPER: <meet> IN 9
+  DAYS" (counted from today), "RACE DAY: <meet>". **Day editor:** a "Season plan" row with the rule's `why` for that day (lighter week, ramp, easy day
+  before a race, taper) and "This is your season plan's day"; "Back to plan" already returned to the season plan's day. **Report:** the week report
+  stores `plan = {phase, phase_week, phase_weeks, kind, target}` in season mode (`Game._end_week`; nothing in repeat mode, so repeat-mode saves are
+  unchanged) and last week's facts show "Season plan: Spring base · week 4 of 10 · lighter week". **Calendar:** in season mode a second button under
+  Enter (beside it on a phone): **Make target** / **Target ◆** on meets that can be targets (from today on); at 3 targets a note says to remove one first;
+  withdrawing a target takes the target off (as in 6b).
+- **Verified:** `season_plan_check` new section "season UI (step 6e)" (switching both ways keeps the records exactly, an old repeat career switched on,
+  phase dates contiguous, target candidates, max 3, the report's phase, the lead-in repeatable and leaving the game untouched, all UI pieces build)
+  ALL CHECKS PASSED; `form_check`, `day_engine_check`, `health_check` pass, stderr clean; `training_balance.gd -- 0` fingerprints identical
+  (215.999957139 / 13.751549603 / 1203.029795007); tour at 1600×900 and 390×844 (new shots `28_…32b_`: plan line, cards, the replace warning, the
+  season bar and phase list, targets, phase editor future / now / past and its body strain after the lead-in, a lighter week and a taper week with the
+  day editor's reason, the Report's phase line, the Calendar's Target button, the mode switch both ways) looked at; `layout_check` at all 5 sizes
+  (new views: cards + warning, phases, phase editor, its strain, the phase running now, lighter and taper weeks, the Report) no OVERFLOW.
+
 **Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
 
 | Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |

@@ -84,6 +84,8 @@ func _run() -> void:
 		await _frames(3)
 		await _health_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _season_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -270,6 +272,120 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 	router.go("career_hub")
 	await _frames(6)
 	load("res://scripts/core/health_system.gd").model_enabled = false
+
+
+# --- The season plan UI (M2 step 6e) at this window size ------------------------------------------------------
+
+## The plan cards with the "replaces your changes" warning (an edited phase), the phase editor of a future phase
+## (health on: body strain after the lead-in) and of the phase running now, a lighter week and a taper week (strip
+## caption + the day editor's reason), and the Report with last week's phase line. Everything is put back afterwards.
+func _season_views(main: Node, game, tag: String) -> void:
+	var SeasonView = load("res://scripts/ui/season_view.gd")
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var year: int = game.season.plan_year(game.week_monday())
+	var week: Dictionary = game.season.edit_phase(year, "spring_base")
+	week.intensity[1] = "hard"
+	var current: String = game.season.variant(year)
+	SeasonView.cards_open = true
+	SeasonView.pending_variant = "ambitious" if current != "ambitious" else "steady"
+	hub._show("training")
+	await _frames(5)
+	var caption := _find_label(hub, "COACH'S PLAN")
+	if caption:
+		hub._scroll.ensure_control_visible(caption)
+		await _frames(3)
+	await _shot("%s_season_cards" % tag)
+	_check_overflow(hub, "%s season_cards" % tag)
+	SeasonView.pending_variant = ""
+	SeasonView.cards_open = false
+	hub._show("training")
+	await _frames(5)
+	var phases := _find_label(hub, "THE SEASON")
+	if phases:
+		hub._scroll.ensure_control_visible(phases)
+		await _frames(3)
+	await _shot("%s_season_phases" % tag)
+	_check_overflow(hub, "%s season_phases" % tag)
+
+	# The phase editor: a future phase (health on for the lead-in), then the phase running now.
+	load("res://scripts/core/health_system.gd").model_enabled = true
+	game.get_system("health")._ensure_started()
+	hub._phase_open = "spring_base"
+	hub._show("training")
+	await _frames(5)
+	await _shot("%s_phase_editor" % tag)
+	_check_overflow(hub, "%s phase_editor" % tag)
+	var strain := _find_label(hub, "BODY STRAIN")
+	if strain:
+		hub._scroll.ensure_control_visible(strain)
+		await _frames(3)
+	await _shot("%s_phase_editor_strain" % tag)
+	_check_overflow(hub, "%s phase_editor_strain" % tag)
+	load("res://scripts/core/health_system.gd").model_enabled = false
+	hub._phase_open = game.season.week_for(game.week_monday()).phase
+	hub._show("training")
+	await _frames(5)
+	var edges := _find_label(hub, "WHEN IT RUNS")
+	if edges:
+		hub._scroll.ensure_control_visible(edges)
+		await _frames(3)
+	await _shot("%s_phase_editor_now" % tag)
+	_check_overflow(hub, "%s phase_editor_now" % tag)
+	hub._phase_open = ""
+	game.season.reset_phase(year, "spring_base")
+
+	# A lighter week and a taper week: the strip caption and the day editor's reason. Then the Report with a week
+	# report that has its phase (made on a copy of the athlete).
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_week = game._week
+	var saved_report: Dictionary = game.last_report
+	for kind in ["lighter", "taper"]:
+		var monday: Dictionary = game.add_days(game.week_monday(), 7)
+		for i in 60:
+			if game.season.week_for(monday).kind == kind:
+				break
+			monday = game.add_days(monday, 7)
+		game.date = game.add_days(monday, 2)
+		game._week = null
+		game.current_week()
+		hub._refresh_week_ui()
+		hub._show("overview")
+		var with_why := 4
+		var wplan: Dictionary = game.season.week_for(game.week_monday())
+		for d in range(2, 7):
+			if wplan.why[d] != "":
+				with_why = d
+				break
+		hub._open_day(with_why)
+		await _frames(6)
+		var why := _find_label(hub._editor, "Season plan")
+		if why:
+			var p := why.get_parent()
+			while p and not p is ScrollContainer:
+				p = p.get_parent()
+			if p:
+				(p as ScrollContainer).ensure_control_visible(why)
+			await _frames(3)
+		await _shot("%s_season_%s_week" % [tag, kind])
+		_check_overflow(hub, "%s season_%s_week" % [tag, kind])
+		hub._close_day()
+	var copy = load("res://scripts/core/athlete.gd").from_dict(game.athlete.to_dict().duplicate(true))
+	var plan: Dictionary = game.season.week_for(game.week_monday())
+	var report: Dictionary = load("res://scripts/core/week_sim.gd").new(copy, plan, game.week_monday()).finish()
+	report.plan = {"phase": plan.phase, "phase_week": plan.phase_week, "phase_weeks": plan.phase_weeks, "kind": plan.kind,
+			"target": plan.target}
+	game.last_report = report
+	hub._show("report")
+	await _frames(5)
+	await _shot("%s_season_report" % tag)
+	_check_overflow(hub, "%s season_report" % tag)
+	game.last_report = saved_report
+	game.date = saved_date
+	game._week = saved_week
+	game.current_week()
+	hub._refresh_week_ui()
+	hub._show("overview")
+	await _frames(4)
 
 
 func _reset_health(game, health) -> void:
