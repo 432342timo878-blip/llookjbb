@@ -49,6 +49,54 @@ static func phased(athlete: Athlete, start: Dictionary, variant := "") -> Season
 	return s
 
 
+## The coach's ★ plan (GDD 4.8), from what the player can see: durability and professionalism as shown (whole
+## numbers) and the injuries of the last months (`health` = the HealthSystem, or null: none). Limits in the data.
+static func coach_pick(athlete: Athlete, today: Dictionary, health: HealthSystem = null) -> String:
+	var rule: Dictionary = Data.periodization.coach_pick
+	var durability := roundi(athlete.get_attr("durability"))
+	if durability <= int(rule.steady.durability_max) \
+			or _injuries_within(health, today, int(rule.steady.months)) >= int(rule.steady.injuries):
+		return "steady"
+	if durability >= int(rule.ambitious.durability_min) \
+			and roundi(athlete.get_attr("professionalism")) >= int(rule.ambitious.professionalism_min) \
+			and _injuries_within(health, today, int(rule.ambitious.injury_free_months)) == 0:
+		return "ambitious"
+	return "balanced"
+
+
+## Injuries of the tiers the coach counts that started in the last `months` months (a month = 365 / 12 days).
+static func _injuries_within(health: HealthSystem, today: Dictionary, months: int) -> int:
+	if health == null:
+		return 0
+	var tiers: Array = Data.periodization.coach_pick.tiers
+	var count := 0
+	for inj in health.history + health.injuries:
+		if inj.tier in tiers and Calendar.days_between(inj.started, today) < months * 365.0 / 12.0:
+			count += 1
+	return count
+
+
+## The coach's plan a season runs on ("steady" / "balanced" / "ambitious"). A season nobody has touched keeps
+## the plan of the season before it (until the autumn offer, step 6f, makes a record for it).
+func variant(year: int) -> String:
+	return str(_record(year).variant)
+
+
+## Puts a season on another of the coach's plans. The player's phase weeks of that season are dropped (the new
+## plan replaces them, GDD 4.8); targets and moved edges stay.
+func set_variant(year: int, id: String) -> void:
+	if id.begins_with("_") or not Data.periodization.variants.has(id):
+		return
+	var rec := _record_for_edit(year)
+	rec.variant = id
+	rec.phases = {}
+
+
+## How many phases of a season the player has changed (for the "This replaces your changes to N phases" warning).
+func edited_phases(year: int) -> int:
+	return layout(year).filter(func(p): return is_edited(year, p.id)).size()
+
+
 ## The player turns off the season plan: this week's phase plan becomes the repeating week.
 func switch_to_repeat(monday: Dictionary) -> void:
 	if mode == PHASES:
@@ -223,7 +271,9 @@ func _apply_taper(days: Array, level: Array, why: Array, d: int, info: Dictionar
 		var before_level: String = level[d]
 		if band.get("rest", false):
 			days[d] = []
-		else:
+		elif not days[d].is_empty():
+			if band.has("sessions"):
+				days[d] = band.sessions.map(func(id): return str(id))
 			if band.has("replace"):
 				days[d] = days[d].map(func(id): return str(band.replace.get(id, id)))
 			if band.has("max_sessions") and days[d].size() > int(band.max_sessions):
@@ -501,15 +551,24 @@ static func _new_record(variant := "") -> Dictionary:
 	return {"variant": id, "targets": null, "shifts": {}, "phases": {}}
 
 
-## The season's record, or a fresh coach's one (not stored) for a season nobody has touched.
+## The season's record, or a fresh coach's one (not stored) for a season nobody has touched, on the plan of the
+## latest season before it.
 func _record(year: int) -> Dictionary:
-	return seasons[year] if seasons.has(year) else _new_record()
+	return seasons[year] if seasons.has(year) else _new_record(_inherited_variant(year))
 
 
 func _record_for_edit(year: int) -> Dictionary:
 	if not seasons.has(year):
-		seasons[year] = _new_record()
+		seasons[year] = _new_record(_inherited_variant(year))
 	return seasons[year]
+
+
+func _inherited_variant(year: int) -> String:
+	var best := -1
+	for y in seasons:
+		if y < year and y > best:
+			best = y
+	return str(seasons[best].variant) if best >= 0 else ""
 
 
 func _cache(year: int) -> Dictionary:

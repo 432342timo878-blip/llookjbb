@@ -553,6 +553,11 @@ func _build_training_season() -> void:
 	var plan := Game.season.week_for(Game.week_monday())
 	var phase := SeasonPlan.phase_type(plan.phase)
 	_content.add_child(UIKit.label("Season plan", "HeadingLabel"))
+	# Which of the coach's three plans this season runs (the cards to choose one come in step 6e); ★ = the coach's pick now.
+	var variant_id := Game.season.variant(SeasonPlan.year_of(Game.week_monday()))
+	var variant: Dictionary = Data.periodization.variants[variant_id]
+	var star := variant_id == SeasonPlan.coach_pick(a, Game.date, HealthUI.system())
+	_content.add_child(UIKit.wrapped("Coach's plan: %s%s. %s" % [variant.name, " ★" if star else "", variant.text]))
 	_content.add_child(UIKit.wrapped(
 			"Your club coach is running your training year: %s, week %d of %d%s. The phases, lighter weeks, an easy day before "
 			% [phase.name, plan.phase_week, plan.phase_weeks, " (a lighter week)" if plan.kind == "lighter" else (" (taper)" if plan.kind == "taper" else "")]

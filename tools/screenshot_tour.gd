@@ -282,6 +282,7 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	_reset_health(game, health)
 	hub._show("training")   # a new career runs the coach's season plan (M2 step 6b): notice + this week's plan
 	await _frames(6)
+	await _shot("22a0_training_season_plan_top")   # "Coach's plan: Balanced ★" (M2 step 6d)
 	await _scroll_to_label(hub, "BODY STRAIN")
 	await _shot("22a_health_training_season_plan")
 	# The rest of the tour plans its own repeating weeks: press the switch button (it asks once more).

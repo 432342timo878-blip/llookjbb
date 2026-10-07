@@ -127,10 +127,13 @@ func _check_season_words() -> void:
 	_ok("all races and probes were reached", out.size() == 6)
 	if out.size() == 6:
 		_ok("a tapered target race reads Peaking (SM-hallit)", out["sm_hallit_14_15@2027"].word == "Peaking")
-		# The race-season week is so heavy that even the taper leaves fatigue near 19 (a 6d tuning point), so the
-		# August target reads Sharp rather than Peaking: it must at least be Sharp.
-		_ok("the August target (tapered, but fatigue stays near 19) reads Sharp or better", out["sm_14_15@2027"].word in ["Sharp", "Peaking"])
-		_ok("a race at the end of the spring base (Sat 24 Apr, no race-specific work yet) would read Rusty", out["end_of_spring_base"].word == "Rusty")
+		# 6c found the race-season week so heavy that the taper left fatigue near 19 (Sharp); 6d gave the week a rest day
+		# and made the last taper day mobility only.
+		_ok("the August target (tapered) reads Peaking too", out["sm_14_15@2027"].word == "Peaking")
+		# 6c: Rusty (sharpness 21). Since 6d Balanced's spring base has Easy speed & strides on Fridays (sharpness ~29) and the
+		# Saturday is a long-run morning (fatigue ~34), so it reads Tired or OK: still a poor day, below 0 %.
+		_ok("a race at the end of the spring base (Sat 24 Apr, little race-specific work) is a poor day (Rusty / OK / Tired, below 0 %)",
+				out["end_of_spring_base"].word in ["Rusty", "OK", "Tired"] and out["end_of_spring_base"].share < 0.0)
 		_ok("Rusty is slower than Peaking", out["end_of_spring_base"].share < out["sm_hallit_14_15@2027"].share)
 
 
@@ -315,8 +318,9 @@ func _athlete():
 		"answers": answers}, rng)
 
 
+## Phases mode always on Balanced (not the coach's ★ pick for this athlete), so the season words test that plan.
 func _new_career(mode: String) -> void:
-	game.start_career(_athlete(), mode)
+	game.start_career(_athlete(), mode, "balanced")
 
 
 func _d(y: int, m: int, d: int) -> Dictionary:

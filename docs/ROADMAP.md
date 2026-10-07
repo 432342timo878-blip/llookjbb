@@ -96,7 +96,11 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         averages 0; form word on the Today card (tap = explanation) and before a race. *(Sonnet, medium)*
         Check: `race_balance.gd` identical with form off; a check tool shows the repeating coach week ≈ 0 % average
         form, a tapered target ≈ "Peaking", the first race after base "Rusty"; fingerprints identical.
-  - [ ] **6d. Coach's three plans + balance:** Steady and Ambitious templates, the ★ rule, `training_balance.gd` part 4
+  - [x] **6d. Coach's three plans + balance (done 2026-10-07**, details and numbers in GDD 4.8 "Built (step 6d)": youth ★ limits
+        (Steady at durability ≤ 4, Ambitious at 9 / 11), Ambitious = doubles + a rest day, Steady = Balanced's sessions mostly Easy,
+        race-season rest day + mobility the day before a target (Nuorten SM now Peaking); Balanced 0.78 injuries / +1.17, Steady 0.67 /
+        +1.02, Ambitious careful 0.99 / +1.49; **open, the user's call:** Balanced progress below +1.25, Steady injuries above 0.4,
+        Ambitious injuries below 1.3; the Training tab shows "Coach's plan: Balanced ★"**)** Steady and Ambitious templates, the ★ rule, `training_balance.gd` part 4
         (season rows × neutral / careful, form at targets, season best at targets); tune the templates to the GDD 4.8
         targets and write the numbers into the GDD. No model changes without asking. *(Opus, high: tuning)*
         Check: part 4 table against the targets; parts 1–2 identical; run rows in parallel (~4 at a time).
@@ -147,6 +151,16 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   the SUL Arvokilpailukalenteri 2027 PDF (https://www.yleisurheilu.fi/wp-content/uploads/2026/05/Arvokilpailukalenteri-2027.pdf)
   already used. Real dates with sources; where unknown, realistic estimates marked `estimated`. Also fills in more `main` meets
   for the season model (GDD 4.8). Research + data task. *(Sonnet)*
+- **In-game help per menu (user, 2026-10-07):** not a full tutorial: every screen / tab (Overview, Training, Calendar, Rankings, Report,
+  day editor, race screen, season plan later) gets a "?" / "How this works" button that opens a short help panel for that screen only,
+  when the player wants it. The game is deep (training, health, form, periodization), so the help text explains each concept in plain
+  words. Help texts live in `data/help.json` (one entry per screen, with sections), shown by one shared `HelpPanel` (phone: bottom sheet,
+  PC: side panel, 44 px, no hover). Each new feature step adds its help entry; a small "new" dot on the "?" could mark unread help.
+  Best started right after step 6e (season UI) so the big screens exist; the entries for the existing tabs can be written earlier. *(Opus for the text outline, then Sonnet)*
+- **Season best (SB) in the race field (user, 2026-10-07):** the pre-race "THE FIELD" list on the race screen (`race_screen.gd`
+  `_show_pre`) shows only PB per runner; add an **SB** column next to it (this season's best, "–" when none). Rivals already carry
+  `sb` / `sb_season` (Rankings, `Rivals.train_week`); the player's SB comes from `Rankings`. On a phone the row is tight (name + PB), so
+  show PB and SB on one line or drop the club first. Small UI task. *(Sonnet, low)*
 - **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 

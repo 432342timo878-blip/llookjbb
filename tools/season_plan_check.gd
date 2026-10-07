@@ -31,6 +31,9 @@ func _run() -> void:
 	game.autosave = false
 
 	_check_data()
+	_check_variants()
+	_check_star_rule()
+	_check_variant_records()
 	_check_seasons()
 	_check_layout_2026()
 	_check_every_week()
@@ -77,6 +80,137 @@ func _check_data() -> void:
 	_ok("main tags: SM-hallit 14-15 / 17-22 indoor, the three outdoor SM",
 			main_tags == {"sm_hallit_14_15": "indoor", "sm_hallit_17_22": "indoor", "sm_14_15": "outdoor",
 			"sm_16_17": "outdoor", "sm_19_22": "outdoor"})
+
+
+## The coach's three plans (M2 step 6d): shapes, loads against Balanced's, and a plan for every week in each.
+func _check_variants() -> void:
+	print("-- the coach's three plans")
+	var variants: Dictionary = data.periodization.variants
+	var ids := []
+	for p in data.periodization.phases:
+		ids.append(p.id)
+	_ok("three plans: steady, balanced, ambitious", variants.has("steady") and variants.has("balanced") and variants.has("ambitious"))
+	for v in ["steady", "balanced", "ambitious"]:
+		var fine := true
+		var rest_day := true
+		for id in ids:
+			var t: Dictionary = variants[v].templates[id]
+			fine = fine and t.days.size() == 7 and t.intensity.size() == 7 and variants[v].ramp_weeks.has(id)
+			var rest := false
+			for d in 7:
+				fine = fine and t.days[d].size() <= 2 and t.intensity[d] in ["easy", "normal", "hard"]
+				for s in t.days[d]:
+					fine = fine and not data.get_session(s).is_empty()
+				rest = rest or t.days[d].is_empty()
+			rest_day = rest_day and rest
+		_ok("%s: 7 days per phase, at most 2 known sessions a day, ramp weeks for every phase" % v, fine and str(variants[v].name) != "")
+		_ok("%s: a full rest day in every phase's week" % v, rest_day)
+	var amb: Dictionary = variants.ambitious.ramp_weeks
+	_ok("Ambitious builds up longer in the base phases (3 weeks)", int(amb.general_base) == 3 and int(amb.spring_base) == 3)
+	# Planned weekly load over the 2026-27 season (session load × intensity), against Balanced's.
+	var loads := {}
+	for v in ["steady", "balanced", "ambitious"]:
+		var plan = SP.phased(_athlete(2012, "800m"), game.START_DATE, v)
+		var sum := 0.0
+		var shapes := true
+		for w in 104:
+			var p: Dictionary = plan.week_for(game.add_days(game.START_DATE, 7 * w), [])
+			shapes = shapes and p.days.size() == 7 and p.intensity.size() == 7 and p.why.size() == 7
+			if w < 52:
+				for d in 7:
+					for s in p.days[d]:
+						sum += float(data.get_session(s).load) * float(data.health.intensity[p.intensity[d]].load)
+		loads[v] = sum / 52.0
+		_ok("%s: every Monday of 2026-27 and 2027-28 has a plan" % v, shapes)
+	var steady: float = loads.steady / loads.balanced
+	var ambitious: float = loads.ambitious / loads.balanced
+	print("    planned load a week: Steady %.0f (%.0f %%), Balanced %.0f, Ambitious %.0f (%.0f %%)" % [
+			loads.steady, 100.0 * steady, loads.balanced, loads.ambitious, 100.0 * ambitious])
+	_ok("Steady is about 80 % of Balanced's load (75–90 %)", steady >= 0.75 and steady <= 0.90)
+	_ok("Ambitious is 140–160 % of Balanced's load", ambitious >= 1.40 and ambitious <= 1.60)
+	# Ambitious ramps up from the coach's starter week over 3 weeks: week 1 = 2 days Ambitious, 5 the coach's.
+	var ap = SP.phased(_athlete(2012, "800m"), game.START_DATE, "ambitious")
+	var a1: Dictionary = ap.week_for(game.START_DATE, [])
+	var coach: Array = data.training.coach_plan.days
+	_ok("Ambitious week 1: 2 days of its own, the rest still the coach's week",
+			a1.days.slice(0, 2) == variants.ambitious.templates.general_base.days.slice(0, 2) and a1.days.slice(2) == coach.slice(2)
+			and a1.why[2] == "Easing in (week 1 of 3)")
+	# Every plan tapers to its targets and peaks the same way: rest 2 days before, mobility the day before.
+	var tapers := true
+	for v in ["steady", "ambitious"]:
+		var p = SP.phased(_athlete(2012, "800m"), game.START_DATE, v)
+		var wk: Dictionary = p.week_for(_d(2027, 8, 2), [])   # Nuorten SM Fri 6 Aug: Wed = -2, Thu = -1
+		tapers = tapers and wk.kind == "taper" and wk.days[2].is_empty() and wk.days[3] == ["mobility"] and wk.intensity[3] == "easy"
+	_ok("Steady and Ambitious taper too (rest on day -2, mobility on day -1)", tapers)
+
+
+## The coach's ★ (GDD 4.8, limits in data/periodization.json coach_pick): attributes as shown (whole numbers), injuries
+## of the tiers listed (not niggles or illnesses) in the last months.
+func _check_star_rule() -> void:
+	print("-- the coach's ★ pick")
+	var rule: Dictionary = data.periodization.coach_pick
+	_ok("youth limits in the data: Steady at durability <= 4 or 2+ injuries in 12 months, Ambitious at 9 / 11 and 6 months clean",
+			int(rule.steady.durability_max) == 4 and int(rule.steady.injuries) == 2 and int(rule.steady.months) == 12
+			and int(rule.ambitious.durability_min) == 9 and int(rule.ambitious.professionalism_min) == 11 and int(rule.ambitious.injury_free_months) == 6)
+	var today := _d(2027, 10, 1)
+	var pick := func(dur: float, pro: float, injuries: Array) -> String:
+		var a = _athlete(2012, "800m")
+		a.set_attr("durability", dur)
+		a.set_attr("professionalism", pro)
+		var h = load("res://scripts/core/health_system.gd").new()
+		for inj in injuries:
+			h.history.append({"tier": inj[0], "started": game.add_days(today, -int(inj[1]))})
+		return SP.coach_pick(a, today, h)
+	_ok("durability 4 (shown as 4, also 4.4): Steady", pick.call(4.0, 10.0, []) == "steady" and pick.call(4.4, 10.0, []) == "steady")
+	_ok("durability 5 (4.5 is shown as 5): Balanced", pick.call(5.0, 10.0, []) == "balanced" and pick.call(4.5, 10.0, []) == "balanced")
+	_ok("durability 9 + professionalism 11, no injuries: Ambitious", pick.call(9.0, 11.0, []) == "ambitious")
+	_ok("...professionalism 10 or durability 8: Balanced", pick.call(9.0, 10.0, []) == "balanced" and pick.call(8.0, 15.0, []) == "balanced")
+	_ok("an injury 5 months ago blocks Ambitious, one 7 months ago doesn't",
+			pick.call(12.0, 12.0, [["injury", 150]]) == "balanced" and pick.call(12.0, 12.0, [["injury", 215]]) == "ambitious")
+	_ok("2 injuries in the last 12 months: Steady, even when durable", pick.call(12.0, 12.0, [["injury", 30], ["serious", 330]]) == "steady")
+	_ok("...but not when one of them is older than 12 months", pick.call(12.0, 12.0, [["injury", 250], ["injury", 380]]) == "ambitious")
+	_ok("niggles and illnesses don't count", pick.call(12.0, 12.0, [["niggle", 20], ["niggle", 40], ["illness", 10]]) == "ambitious")
+	_ok("no health system (career start): attributes only", SP.coach_pick(_athlete(2012, "800m"), today) in ["steady", "balanced", "ambitious"])
+	# Share of picks among 200 random new 14-year-olds (no creation points spent), for the GDD.
+	var counts := {"steady": 0, "balanced": 0, "ambitious": 0}
+	for i in 200:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 1000 + i
+		var answers := {}
+		for q in data.background_questions:
+			answers[q.id] = rng.randi_range(0, q.answers.size() - 1)
+		var a = load("res://scripts/core/athlete_factory.gd").create({"first_name": "T", "last_name": "R",
+				"gender": "male" if i % 2 == 0 else "female", "hometown": "Tampere", "club_id": "tap", "main_event": "800m",
+				"birth_date": {"year": 2012, "month": 5, "day": 1}, "answers": answers}, rng)
+		counts[SP.coach_pick(a, game.START_DATE)] += 1
+	print("    200 new 14-year-olds (no points spent): Steady %d %%, Balanced %d %%, Ambitious %d %%" % [
+			counts.steady / 2, counts.balanced / 2, counts.ambitious / 2])
+	_ok("most new careers get Balanced", counts.balanced > counts.steady + counts.ambitious)
+
+
+## Choosing a plan for a season, and later seasons keeping it (until the autumn offer of step 6f).
+func _check_variant_records() -> void:
+	print("-- a season's plan")
+	var plan = SP.phased(_athlete(2012, "800m"), game.START_DATE, "steady")
+	_ok("the first season runs the plan it was made with", plan.variant(2026) == "steady")
+	_ok("a later season nobody has touched keeps that plan", plan.variant(2027) == "steady" and plan.variant(2029) == "steady")
+	var steady_week: Array = data.periodization.variants.steady.templates.general_base.days
+	_ok("...and its weeks come from it", plan.week_for(_d(2027, 11, 22), []).days == steady_week)
+	plan.edit_phase(2026, "spring_base").days[0] = ["tempo_run"]
+	plan.edit_phase(2026, "race_season").days[0] = ["tempo_run"]
+	plan.set_shift(2026, "spring_base", 1)
+	plan.set_targets(2026, ["tjig@2027", "sm_14_15@2027"])
+	_ok("edited phases are counted (2)", plan.edited_phases(2026) == 2)
+	plan.set_variant(2026, "ambitious")
+	_ok("choosing another plan replaces the phase weeks", plan.variant(2026) == "ambitious" and plan.edited_phases(2026) == 0)
+	_ok("...but keeps the targets and the moved edges", plan.targets(2026) == ["tjig@2027", "sm_14_15@2027"] and plan.shift_of(2026, "spring_base") == 1)
+	_ok("the next season follows the latest choice", plan.variant(2027) == "ambitious")
+	plan.set_variant(2027, "balanced")
+	_ok("a season with its own choice keeps it", plan.variant(2027) == "balanced" and plan.variant(2026) == "ambitious" and plan.variant(2028) == "balanced")
+	plan.set_variant(2026, "nonsense")
+	_ok("an unknown plan is ignored", plan.variant(2026) == "ambitious")
+	var back = SP.from_dict(JSON.parse_string(JSON.stringify(plan.to_dict())))
+	_ok("the choices survive save/load", back.variant(2026) == "ambitious" and back.variant(2027) == "balanced" and back.variant(2030) == "balanced")
 
 
 func _check_seasons() -> void:
@@ -201,21 +335,30 @@ func _check_ramp() -> void:
 	# Pre-competition starts Mon 26 Apr 2027. Spring base: Sat long run; pre-competition: Sat club session.
 	var w1: Dictionary = plan.week_for(_d(2027, 4, 26), [])
 	var w2: Dictionary = plan.week_for(_d(2027, 5, 3), [])
-	var spring: Array = data.periodization.variants.balanced.templates.spring_base.days
-	var pre: Array = data.periodization.variants.balanced.templates.pre_competition.days
+	var spring_t: Dictionary = data.periodization.variants.balanced.templates.spring_base
+	var pre_t: Dictionary = data.periodization.variants.balanced.templates.pre_competition
+	var spring: Array = spring_t.days
+	var pre: Array = pre_t.days
 	_ok("ramp week 1: the first 4 days are the new phase's, the rest the old one's",
 			w1.days.slice(0, 4) == pre.slice(0, 4) and w1.days.slice(4) == spring.slice(4) and w1.phase == "pre_competition" and w1.phase_week == 1)
-	_ok("the day that is still the old phase's says so", w1.why[5] == "Easing in (week 1 of 2)" and w1.why[0] == "" and w1.why[4] == "")
+	# A day that is still the old phase's says so when it differs from the new phase's day (sessions or intensity).
+	var whys_right: bool = w1.why[0] == "" and w1.why[5] == "Easing in (week 1 of 2)"
+	for d in range(4, 7):
+		var differs: bool = spring[d] != pre[d] or spring_t.intensity[d] != pre_t.intensity[d]
+		whys_right = whys_right and (w1.why[d] == "Easing in (week 1 of 2)") == differs
+	_ok("the days that are still the old phase's say so", whys_right)
 	_ok("ramp week 2 is the whole new phase", w2.days == pre and w2.why == ["", "", "", "", "", "", ""])
 	plan.set_ramp_weeks(2026, "pre_competition", 1)
 	_ok("ramp 1 = no ramp", plan.week_for(_d(2027, 4, 26), []).days == pre and plan.is_edited(2026, "pre_competition"))
-	# The first phase of the next season blends from the last phase of this one.
+	# The first phase of the next season blends from the last phase of this one. (Balanced's autumn week is the coach
+	# week with an Easy Monday, so make its Wednesday different to see the blend.)
+	plan.edit_phase(2026, "autumn_general").days[2] = ["tempo_run"]
 	plan.set_ramp_weeks(2027, "general_base", 4)   # 2 days new, 5 old in the first week
 	var n1: Dictionary = plan.week_for(SP.season_start(2027), [])
-	var autumn: Array = data.periodization.variants.balanced.templates.autumn_general.days
 	var base: Array = data.periodization.variants.balanced.templates.general_base.days
 	_ok("next season's first week blends from autumn general (2 new days, 5 old)",
-			n1.days.slice(0, 2) == base.slice(0, 2) and n1.days[2] == autumn[2] and n1.days[3] == autumn[3] and n1.why[2] == "Easing in (week 1 of 4)")
+			n1.days.slice(0, 2) == base.slice(0, 2) and n1.days[2] == ["tempo_run"] and n1.why[2] == "Easing in (week 1 of 4)"
+			and n1.days.slice(3) == base.slice(3))
 
 
 func _check_easy_day() -> void:
@@ -227,7 +370,7 @@ func _check_easy_day() -> void:
 		["hallikisat_espoo@2027", _d(2027, 1, 23), true],     # indoor specific
 		["hallikisat_kuortane@2027", _d(2027, 2, 27), false], # spring base
 		["kevatkisat@2027", _d(2027, 5, 15), true],           # pre-competition
-		["iltakisat_kesakuu@2027", _d(2027, 6, 8), true],     # race season, a Tuesday: Monday is the day before
+		["iltakisat_kesakuu@2027", _d(2027, 6, 8), false],    # race season, a Tuesday: Monday, the day before, is the rest day
 		["syyskisat@2027", _d(2027, 8, 28), true]]            # race season (last week), a Saturday
 	var entries := []
 	for c in cases:
@@ -240,9 +383,10 @@ func _check_easy_day() -> void:
 		var with: Dictionary = plan.week_for(monday, entries)
 		var without: Dictionary = plan.week_for(monday, [])
 		var changed: bool = with.intensity[d] != without.intensity[d]
-		var easy: bool = with.intensity[d] == "easy" and with.why[d].contains("Easy: race tomorrow")
+		# Easy the day before; the reason is shown when the rule changed it (some plans have an Easy day there anyway).
+		var easy: bool = with.intensity[d] == "easy" and (with.why[d].contains("Easy: race tomorrow") or without.intensity[d] == "easy")
 		_ok("%s (%s): %s" % [c[0], with.phase, "easy day before" if c[2] else "nothing changed"],
-				(c[2] and easy and (changed or without.intensity[d] == "easy")) or (not c[2] and not changed))
+				(c[2] and easy) or (not c[2] and not changed))
 	# A rest day is not made Easy: spring base / race season Sunday is rest or Easy anyway; use Saturday race, Friday rest.
 	var edited: Dictionary = plan.edit_phase(2026, "race_season")
 	edited.days[4] = []
@@ -283,7 +427,7 @@ func _check_taper() -> void:
 			elif off == 2:
 				fine = day.is_empty() and why.begins_with("Taper")
 			elif off == 1:
-				fine = day.size() == 1 and level == "easy" and why.begins_with("Taper")
+				fine = day == ["mobility"] and level == "easy" and why.begins_with("Taper")
 			if not fine:
 				bad.append("%d days before: %s %s %s" % [off, day, level, why])
 		_ok(label + ": days -10..-1 follow the taper rules, day 0 and -11/-12 untouched" + (" " + str(bad) if not bad.is_empty() else ""),
@@ -401,10 +545,19 @@ func _check_fallbacks() -> void:
 
 
 func _check_career_start() -> void:
-	print("-- a new career starts in phases mode on Balanced")
+	print("-- a new career starts in phases mode on the coach's ★ plan")
+	game.start_career(_athlete(2012, "800m"))
+	var star: String = SP.coach_pick(game.athlete, game.START_DATE)
+	_ok("phases mode, the ★ plan (%s), first season 2026" % star, game.season.mode == "phases" and game.season.first_season == 2026
+			and game.season.variant(2026) == star)
+	var sturdy = _athlete(2012, "800m")
+	sturdy.set_attr("durability", 4.0)
+	game.start_career(sturdy)
+	_ok("durability 4 at the start: the career starts on Steady", game.season.variant(2026) == "steady")
+	game.start_career(_athlete(2012, "800m"), "phases", "ambitious")
+	_ok("a plan asked for is used", game.season.variant(2026) == "ambitious")
 	_new_career(3, "phases")
-	_ok("phases mode, Balanced, first season 2026", game.season.mode == "phases" and game.season.first_season == 2026
-			and game.season._record(2026).variant == "balanced")
+	_ok("(the other checks run on Balanced)", game.season.variant(2026) == "balanced")
 	_ok("the two targets are entered: %s" % [game.entries], game.entries == ["sm_hallit_14_15@2027", "sm_14_15@2027"])
 	game.withdraw("sm_14_15@2027")
 	_ok("withdrawing from a target takes it off the target list", game.season.targets(2026) == ["sm_hallit_14_15@2027"]
@@ -553,9 +706,10 @@ func _athlete(birth_year: int, event: String):
 	return a
 
 
+## Phases mode on Balanced (not the ★ pick), so the checks don't depend on this athlete's attributes.
 func _new_career(seed_value: int, mode: String) -> void:
 	var a = _athlete(2012, "800m")
-	game.start_career(a, mode)
+	game.start_career(a, mode, "balanced")
 
 
 func _d(y: int, m: int, d: int) -> Dictionary:

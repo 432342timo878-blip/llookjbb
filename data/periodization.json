@@ -67,53 +67,64 @@
   "why": "Easy: race tomorrow"
  },
  "taper": {
-  "_note": "Counted back from the target's race day (days = days before it). Bands are checked in order; the first that contains the day applies. max_sessions: keep only the best session (keep_tags first: a session with the first tag wins, then the second; ties = the first listed); replace: session swapped for another; intensity: set the day's intensity; rest: a rest day. Wins over lighter weeks and the easy day before a race. {meet} and {days} are filled in.",
+  "_note": "Counted back from the target's race day (days = days before it). Bands are checked in order; the first that contains the day applies. max_sessions: keep only the best session (keep_tags first: a session with the first tag wins, then the second; ties = the first listed); replace: session swapped for another; sessions: the day becomes exactly these sessions (not on a rest day); intensity: set the day's intensity; rest: a rest day. Wins over lighter weeks and the easy day before a race. {meet} and {days} are filled in.",
   "days": 10,
   "keep_tags": ["speed", "hard"],
   "bands": [
    {"from": 10, "to": 4, "max_sessions": 1, "replace": {"long_run": "easy_run"}, "why": "Taper: {meet} in {days} days, fewer sessions"},
    {"from": 3, "to": 3, "max_sessions": 1, "intensity": "normal", "why": "Taper: {meet} in {days} days, one sharp session"},
    {"from": 2, "to": 2, "rest": true, "why": "Taper: rest before {meet}"},
-   {"from": 1, "to": 1, "max_sessions": 1, "intensity": "easy", "why": "Taper: easy day before {meet}"}
+   {"from": 1, "to": 1, "sessions": ["mobility"], "intensity": "easy", "why": "Taper: easy day before {meet}"}
   ]
  },
+ "coach_pick": {
+  "_note": "The coach's star plan (GDD 4.8), from what the player can see: attributes as shown (whole numbers) and injuries (tiers listed; niggles and illnesses don't count). Steady after `injuries` or more injuries in the last `months` months or with durability <= durability_max; Ambitious with durability >= durability_min, professionalism >= professionalism_min and no injury in the last `injury_free_months` months; otherwise Balanced. Youth limits (user, 2026-10-07): with 6 / 12 two in three new 14-year-olds were pointed to Steady and nobody to Ambitious.",
+  "tiers": ["injury", "serious"],
+  "steady": {"injuries": 2, "months": 12, "durability_max": 4},
+  "ambitious": {"durability_min": 9, "professionalism_min": 11, "injury_free_months": 6}
+ },
  "variants": {
+  "_note": "The club coach's three season plans (GDD 4.8; tuned in M2 step 6d with tools/training_balance.gd part 4, numbers in GDD 4.8 'Built (step 6d)'). Per variant: name, text, ramp_weeks per phase and one week template per phase (days = Mon..Sun session lists, intensity = 7 x easy / normal / hard). Every plan keeps a full rest day each week. Balanced's general base is exactly the coach's starter week (data/training.json), so a new career starts as before. Easy days are the cheap way to train: Easy cuts body strain to 0.6 but keeps 0.8 of the effect (data/health.json).",
+  "steady": {
+   "name": "Steady",
+   "text": "The coach's normal sessions, but most days easy. Low risk, slower progress.",
+   "ramp_weeks": {"general_base": 2, "indoor_specific": 3, "spring_base": 2, "pre_competition": 2, "race_season": 2, "transition": 1, "autumn_general": 3},
+   "templates": {
+    "general_base": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "normal", "easy", "normal"]},
+    "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["club_session"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "normal", "easy", "normal"]},
+    "spring_base": {"days": [["easy_run", "drills"], ["tempo_run"], ["strength", "hill_sprints"], ["fartlek"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "normal", "easy", "normal"]},
+    "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["club_session"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+    "race_season": {"days": [[], ["intervals_800"], ["strength", "speed_strides"], ["easy_run", "drills"], ["mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "easy", "easy", "normal", "normal", "easy"]},
+    "transition": {"days": [["mobility"], [], ["easy_run"], [], ["easy_run"], [], ["easy_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
+    "autumn_general": {"days": [["easy_run", "drills"], ["club_session"], ["strength"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "normal", "easy", "normal"]}
+   }
+  },
   "balanced": {
    "name": "Balanced",
    "text": "The club coach's normal year.",
-   "ramp_weeks": {
-    "general_base": 2, "indoor_specific": 2, "spring_base": 2, "pre_competition": 2, "race_season": 2,
-    "transition": 1, "autumn_general": 2
-   },
+   "ramp_weeks": {"general_base": 2, "indoor_specific": 3, "spring_base": 2, "pre_competition": 2, "race_season": 2, "transition": 1, "autumn_general": 3},
    "templates": {
-    "general_base": {
-     "days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []],
-     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
-    },
-    "indoor_specific": {
-     "days": [["easy_run", "drills"], ["intervals_800"], ["strength"], ["club_session"], ["mobility"], ["long_run"], []],
-     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
-    },
-    "spring_base": {
-     "days": [["easy_run", "drills"], ["tempo_run"], ["strength", "hill_sprints"], ["fartlek"], ["mobility"], ["long_run"], []],
-     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
-    },
-    "pre_competition": {
-     "days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["club_session"], []],
-     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
-    },
-    "race_season": {
-     "days": [["easy_run"], ["intervals_800"], ["strength", "speed_strides"], ["easy_run", "drills"], ["mobility"], ["club_session"], ["long_run"]],
-     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "easy"]
-    },
-    "transition": {
-     "days": [["mobility"], [], ["easy_run"], [], [], ["easy_run"], []],
-     "intensity": ["normal", "normal", "easy", "normal", "normal", "easy", "normal"]
-    },
-    "autumn_general": {
-     "days": [["easy_run", "drills"], [], ["strength"], ["fartlek"], ["mobility"], ["long_run"], []],
-     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
-    }
+    "general_base": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
+    "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["club_session"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "normal", "normal", "easy", "normal", "normal"]},
+    "spring_base": {"days": [["easy_run", "drills"], ["tempo_run"], ["strength", "hill_sprints"], ["fartlek"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "normal", "normal", "easy", "normal", "normal"]},
+    "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["club_session"], []], "intensity": ["easy", "normal", "normal", "normal", "easy", "normal", "normal"]},
+    "race_season": {"days": [[], ["intervals_800"], ["strength", "speed_strides"], ["fartlek", "drills"], ["mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "easy"]},
+    "transition": {"days": [["mobility"], [], ["easy_run"], [], ["easy_run"], [], ["easy_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
+    "autumn_general": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["easy", "normal", "normal", "normal", "normal", "normal", "normal"]}
+   }
+  },
+  "ambitious": {
+   "name": "Ambitious",
+   "text": "A big year: two sessions on most days, built up gradually. Faster progress, but it pays only if you listen to your body.",
+   "ramp_weeks": {"general_base": 3, "indoor_specific": 2, "spring_base": 3, "pre_competition": 2, "race_season": 2, "transition": 1, "autumn_general": 3},
+   "templates": {
+    "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["tempo_run", "speed_strides"], ["fartlek"], ["easy_run", "drills"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+    "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["club_session", "strength"], ["easy_run", "mobility"], ["long_run", "drills"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+    "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["normal", "hard", "normal", "hard", "normal", "normal", "normal"]},
+    "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek"], ["easy_run", "drills"], ["club_session", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+    "race_season": {"days": [[], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session"], ["long_run", "strength"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
+    "transition": {"days": [["mobility"], [], ["easy_run"], [], ["easy_run"], [], ["easy_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
+    "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["fartlek"], ["mobility"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]}
    }
   }
  }

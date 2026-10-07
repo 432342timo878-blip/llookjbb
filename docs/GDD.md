@@ -636,6 +636,92 @@ before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected
   `training_balance.gd -- 0` fingerprints identical (215.999957139 / 13.751549603 / 1203.029795007); `day_engine_check`, `health_check`,
   `season_plan_check` pass; tour at 1600×900 and 390×844 looked at, `layout_check` at all sizes: no OVERFLOW.
 
+**Built (step 6d, 2026-10-07):** the coach's three plans and their balance. User decisions this session: **youth limits** for the ★ (with
+durability ≤ 6 / ≥ 12 two in three new 14-year-olds were pointed to Steady and nobody to Ambitious); Ambitious gets its extra load from
+**doubles and one or two Hard days, always keeping a full rest day**; the race-season fix = **a rest day in the week + mobility only on
+the day before a target**; the player sees **one line** in the Training tab ("Coach's plan: Balanced ★" + the plan's sentence). Details:
+- **Data** (`data/periodization.json`): `variants.steady / balanced / ambitious` (name, text, `ramp_weeks`, a week per phase), `coach_pick`
+  (the ★ limits), the taper's new band key `sessions` (day −1 = `["mobility"]`, Easy). No numbers in scripts.
+- **The ★ rule** (`SeasonPlan.coach_pick(athlete, today, health = null)`): durability and professionalism *as shown* (rounded); Steady with
+  durability ≤ **4** or **2+** injuries in 12 months; Ambitious with durability ≥ **9**, professionalism ≥ **11** and no injury in 6 months;
+  otherwise Balanced. Injuries = tiers `injury` and `serious` (niggles and illnesses don't count: 2 niggles shouldn't make the coach cautious);
+  a month = 365/12 days. 200 random new 14-year-olds (no creation points): Steady 9 %, Balanced 91 %, Ambitious 0 % (Ambitious needs points
+  spent on durability and professionalism). `Game.start_career(athlete, mode, variant = "")`: "" = the ★ pick; a new career starts on it.
+- **A season's plan:** `SeasonPlan.variant(year)`; a season with no record keeps the plan of the latest season before it (until 6f's autumn
+  offer makes records). `set_variant(year, id)` drops that season's phase weeks (the new plan replaces them) but keeps targets and moved edges;
+  `edited_phases(year)` counts the changed phases for 6e/6f's "This replaces your changes to N phases".
+- **Final templates** (Normal unless marked; transition is the same in all three plans: mobility Mon, easy run (Easy) Wed, Fri, Sun):
+
+  | Balanced | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
+  |---|---|---|---|---|---|---|---|
+  | General base (= the coach week) | easy run + drills | club session | strength + speed & strides | fartlek | mobility | long run | rest |
+  | Indoor specific | easy run + drills (E) | 800 m intervals | strength + speed & strides | club session | easy run + mobility (E) | long run | rest |
+  | Spring base | easy run + drills (E) | tempo run | strength + hill sprints | fartlek | easy run + speed & strides (E) | long run | rest |
+  | Pre-competition | easy run + drills (E) | 800 m intervals | strength + speed & strides | fartlek | easy run + mobility (E) | club session | rest |
+  | Race season | **rest** | 800 m intervals | strength + speed & strides | fartlek + drills | mobility | club session | long run (E) |
+  | Autumn general | easy run + drills (E) | club session | strength + speed & strides | fartlek | mobility | long run | rest |
+
+  **Steady** = Balanced's sessions (autumn without speed & strides, race-season Thursday an easy run + drills) with **most days Easy**: in the
+  base phases, indoor specific and autumn Mon, Wed, Thu and Sat are Easy (Tuesday's key session and Friday Normal); in pre-competition all but
+  Tuesday and Saturday's club session; in the race season Wed, Thu and Sun. **Ambitious** (doubles, Hard marked H):
+  general base easy run + drills / club + strength / tempo + speed & strides / fartlek H / easy run + drills / long run + strength / rest;
+  indoor specific easy + drills / intervals + strength / tempo + speed & strides / club H + strength / easy run + mobility / long run + drills /
+  rest; spring base easy + drills / tempo H + strength / easy run + hill sprints / fartlek H / easy run + speed & strides / long run + strength /
+  rest; pre-competition easy + drills / intervals + strength / tempo + speed & strides / fartlek H / easy run + drills / club + strength / rest;
+  race season rest / intervals + strength / tempo + speed & strides / fartlek + drills / easy run + mobility / club / long run + strength;
+  autumn easy + drills / club + strength / easy run + speed & strides / fartlek / mobility / long run + strength / rest.
+  **Ramp weeks:** Steady and Balanced 3 into indoor specific and autumn general, 2 elsewhere; Ambitious 3 into the base phases (general,
+  spring, autumn), 2 elsewhere; transition 1.
+- **Planned load** (session load × intensity, averaged over 2026–27): Steady 63 a week (**85 %** of Balanced), Balanced 74, Ambitious 107
+  (**144 %**). Per phase Balanced: general 70 (lighter weeks included), indoor 77, spring 82, pre-competition 89, race season 83, transition 18, autumn 63.
+- **What tuning found** (`training_balance.gd` part 4, about 15 template versions tried, 80–200 athletes each): (1) the transition and the
+  autumn weeks cost Balanced ≈ 0.10 of progress against the repeating week, and 25 % more load in the other phases bought only +0.05–0.10;
+  (2) the periodized plans' extra injuries come from **phase changes**, not load: the first weeks of 800 m intervals (indoor specific +0.07–0.10
+  injuries a year against the repeating week, pre-competition +0.06) and the return after the transition (autumn +0.05); the lighter weeks
+  *save* injuries (general base 0.11 vs 0.16); (3) **Easy days are the efficient way to train** (Easy cuts strain to 0.6 but keeps 0.8 of the
+  effect): a Steady of Balanced's sessions mostly at Easy beat a Steady with sessions taken out (+1.02 vs +0.88–0.90 at the same load and
+  injuries), and Easy easy-run days gave Balanced the same progress at slightly fewer injuries (0.78 vs 0.81, within noise) and a lower plan
+  risk ("ever High" 14 % vs 27 %); (4) an active transition (3 easy
+  runs instead of 2) and 3 ramp weeks into indoor specific and autumn took the plan risk after the break from 70 % to 24 % "Moderate".
+- **Final numbers** (200 athletes per row, the 2026–27 season from 14, health and form on, targets + coach-recommended meets entered;
+  careful in brackets; form = average race-day form, SB at target = the target was the fastest indoor / outdoor race by expected time):
+
+  | Row | Injuries/yr | Serious | Ability ±0.01 | Fatigue | Form at targets (Peaking) | Other races | SB at target in / out | Plan risk L/M/H (ever High) |
+  |---|---|---|---|---|---|---|---|---|
+  | Repeating coach week | 0.67 (0.69) | 2 % | +1.17 | 25 | −0.03 % (0 %; half "Tired") | −0.09 % | 35 % / 0 % | 97/2/1 % (5 %) |
+  | Steady | 0.67 (0.60) | 5 % | +1.02 (+1.03) | 21 | +1.32 % (88 %) | +0.55 % | 94 % / 64 % | 90/9/2 % (11 %) |
+  | Balanced | 0.78 (0.77) | 3 % | +1.17 | 25 | +1.30 % (88 %) | +0.52 % | 92 % / 73 % | 89/9/2 % (14 %) |
+  | Ambitious | 1.23 (0.99) | 9 % (4 %) | +1.48 (+1.49) | 36 | +1.22 % (86 %) | +0.50 % | 97 % / 84 % | 78/15/6 % (33 %) |
+
+  Fatigue by phase (average / highest): Balanced general base 23/34, indoor 26/40, spring 29/38, pre-competition 31/41, race season 28/42
+  (the repeating week 24–26 / 34–38); Ambitious 36–45 on average with peaks 52–64 (indoor specific). Plan risk reads Moderate at the start of
+  indoor specific (Steady 60 %, Balanced 45 %, Ambitious 38 % of samples there: the intervals come in) and Ambitious also in general base
+  (29 %) and autumn (50 %). For 6e: the cards' "highest plan risk" should be the typical week's (Low / Low / Moderate), not the worst sample.
+- **Against the targets:** Balanced injuries ≤ 0.8 **met** (0.78), form at targets **met** (+1.30 %, Peaking 88 %; target +0.8…1.3), season best
+  at a target **met** (92 % / 73 % vs 35 % / 0 %); Balanced progress **not met** (+1.17 = the repeating week, target +1.25–1.35); Steady progress
+  **met** (+1.02), Steady injuries **not met** (0.60–0.67, target ≈ 0.4); Ambitious careful progress **met** (+1.49, target +1.5–1.6), its
+  injuries **lower** than designed (0.99, target 1.3–1.6), neutral above careful (1.23) as designed. **Options (open, the user's call):**
+  1. *Balanced progress:* (a) accept: in this model periodization pays in race-day form (+1.3 % ≈ 1.8 s at 2:20) and safety, not in weekly
+     progress, as "Why it matters" says (recommended); (b) a heavier Balanced: tried, +1.21 at 0.87–0.97 injuries and plan risk "ever High" 32 %;
+     (c) a model change in step 7, e.g. an adaptation bonus after lighter weeks and tapers, or a transition that costs less fitness.
+  2. *Steady injuries:* the model's floor for a 14-year-old with the same race calendar (growth-spurt niggles, bad luck, races) is ≈ 0.6 at 80 %
+     of the load; ≈ 0.4 needs far less training (2 easy runs a week = 0.07). (a) accept: Steady still has the freshest legs, the lowest fatigue
+     and the best form at the targets (recommended); (b) fewer races for Steady (the coach's race list); (c) change the target.
+  3. *Ambitious injuries below target:* accept (recommended; ignoring the warnings would still cost far more), or make it heavier.
+- **The 6c issues:** the race-season week now has a rest day (Monday) and the taper's last day is mobility only: **Nuorten SM Fri 6 Aug reads
+  Peaking +1.45 %** (fatigue 9; was Sharp +0.82 % at fatigue 19), SM-hallit Peaking +1.36 %. Spring base: average fatigue 29, highest 38 (as
+  the repeating week's 38), a Saturday long-run morning ≈ 34; with Easy speed & strides on Fridays a race at the end of spring base reads
+  Tired / −0.19 % (sharpness 29) instead of Rusty / −0.34 % (21): `form_check` now asserts "a poor day, below 0 %".
+- **Tools:** `training_balance.gd` part 4 (`-- <n> part4`, or row names `week`, `steady`, `balanced careful` …; any variant id in the data can be
+  tried by name; prints the planned loads, then per row injuries, progress, fatigue, form at targets / other races, SB at target, plan risk,
+  and per phase fatigue, plan risk, injuries and progress; ~5 min per row of 200 on the dev PC, run 4 rows at a time). Races are not run: each
+  race's expected time (ability, injury slowdown, form, the race's fatigue and composure rules, no dice) decides the season best.
+  `season_plan_check.gd` new sections "the coach's three plans", "the coach's ★ pick", "a season's plan"; tools that start in phases mode
+  ask for "balanced" explicitly. The tour has `22a0_training_season_plan_top` (the new line).
+- **Verified:** `training_balance.gd -- 0` fingerprints identical (215.999957139 / 13.751549603 / 1203.029795007); `season_plan_check`,
+  `form_check`, `day_engine_check`, `health_check` ALL CHECKS PASSED, stderr clean; tour at 1600×900 and 390×844 looked at; `layout_check`
+  at all 5 sizes: no OVERFLOW.
+
 **Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
 
 | Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |
@@ -687,7 +773,7 @@ targets are also the phase anchors (a third target only gets a taper).
   season" offers the three plans and "Decide later in the Training tab". Each autumn (3 weeks before the new season)
   the same event comes for next season; if ignored, the ★ plan is used. Choosing a plan replaces the phases, after a
   warning when the player has edited phases ("This replaces your changes to N phases").
-- **First Balanced templates** (Normal unless marked; tuned in 6d):
+- **First Balanced templates** (Normal unless marked; the 6b–6c version, replaced by the tuned templates in "Built (step 6d)" above):
 
 | Phase | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
@@ -768,7 +854,7 @@ messages. Step 6's club coach only offers data templates, the ★ rule, targets 
 | Ambitious, neutral | higher than careful | | |
 
   If a target can't be reached with templates alone (e.g. Balanced above +1.25 without more injuries), the tuning
-  session reports the options instead of changing the model.
+  session reports the options instead of changing the model. (Measured in step 6d, with the open options: see "Built (step 6d)".)
 - **Multi-season check** (new `tools/season_check.gd`): 50 athletes, 3 seasons (ages 14–17) on Balanced through the
   game loop with health on. The offer events are answered by the tool. It checks: the season rollover (new phases,
   targets for the new age class or the fallback, no week without a plan, the 2028 leap year), save/load at the season

@@ -43,12 +43,13 @@ var _next_event := 1
 ## `mode` is how the training plan works (SeasonPlan.PHASES: the coach's season plan, with the main
 ## championships of the season entered as targets; SeasonPlan.REPEAT: one repeating week, the M1 behaviour).
 ## Dev tools that play days ask for REPEAT so no meets are entered and no stop events come.
-func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES) -> void:
+## `variant`: the coach's plan to start on ("" = the coach's ★ pick, SeasonPlan.coach_pick).
+func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := "") -> void:
 	athlete = new_athlete
 	date = START_DATE.duplicate()
 	entries = []
 	if mode == SeasonPlan.PHASES:
-		season = SeasonPlan.phased(athlete, date)
+		season = SeasonPlan.phased(athlete, date, variant if variant != "" else SeasonPlan.coach_pick(athlete, date))
 		for key in season.targets(season.first_season):
 			enter(key)
 	else:
