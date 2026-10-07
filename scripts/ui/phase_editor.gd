@@ -94,7 +94,7 @@ func _month() -> int:
 func _week_box() -> Control:
 	var week: Dictionary = Game.season.edit_phase(year, phase_id)   # edited in place
 	var a := Game.athlete
-	var box := UIKit.vbox(14 if Layout.compact else 8)
+	var box := UIKit.vbox(14 if Layout.stacked() else 8)
 	box.add_child(UIKit.label("THE PHASE'S WEEK", "CaptionLabel"))
 	box.add_child(UIKit.wrapped("Every week of the phase starts from this week. The season plan then adds its rules: "
 			+ "easing in from the phase before, lighter weeks, an easy day before a race and the taper before a target."))
@@ -102,7 +102,7 @@ func _week_box() -> Control:
 		_refresh_summary()
 		plan_changed.emit()
 	for d in 7:
-		if d > 0 and Layout.compact:
+		if d > 0 and Layout.stacked():
 			box.add_child(HSeparator.new())
 		box.add_child(PlanUI.day_row(week, d, a, _month(), on_change, Training.DAY_NAMES[d]))
 	return UIKit.panel(box, 16)
@@ -113,7 +113,7 @@ func _reset_box() -> Control:
 	col.add_child(UIKit.wrapped("Your changes: this phase differs from the coach's %s plan."
 			% Data.periodization.variants[Game.season.variant(year)].name, ""))
 	var reset := UIKit.button("Back to coach's", false, 190)
-	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_BEGIN
+	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.stacked() else Control.SIZE_SHRINK_BEGIN
 	var stage := [0]
 	reset.pressed.connect(func():
 		if stage[0] == 0:
@@ -142,8 +142,8 @@ func _rules_box() -> Control:
 	var buttons := UIKit.hbox(6)
 	for on in [true, false]:
 		var b := UIKit.toggle("On" if on else "Off", group)
-		b.custom_minimum_size.x = 0 if Layout.compact else 80
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_END
+		b.custom_minimum_size.x = 0 if Layout.stacked() else 80
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.stacked() else Control.SIZE_SHRINK_END
 		b.button_pressed = s.lighter_on(year, phase_id) == on
 		b.pressed.connect(func():
 			if s.lighter_on(year, phase_id) != on:
@@ -167,7 +167,7 @@ func _rules_box() -> Control:
 	for delta in [-1, 1]:
 		var b := UIKit.button("Fewer" if delta < 0 else "More", false, 100)
 		b.disabled = ramp + delta < 1 or ramp + delta > maxi(limit, ramp)
-		if Layout.compact:
+		if Layout.stacked():
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func():
 			s.set_ramp_weeks(year, phase_id, ramp + delta)
@@ -236,7 +236,7 @@ func _edge_row(text: String, moves: String, start: int) -> Control:
 	for delta in [-1, 1]:
 		var b := UIKit.button("◀  Earlier" if delta < 0 else "Later  ▶", false, 130)
 		b.disabled = delta < 0 and start - 1 <= this_week
-		if Layout.compact:
+		if Layout.stacked():
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func():
 			var want: int = s.shift_of(year, moves) + delta

@@ -13,7 +13,8 @@ extends VBoxContainer
 
 signal changed          # a day change was made
 signal close_requested
-signal rebuilt          # the content was redrawn (the phone sheet re-fits its height)
+signal help_requested   # the "?" next to Close: the hub opens the day editor's help
+signal rebuilt         # the content was redrawn (the phone sheet re-fits its height)
 
 var day := 0
 var _adding := false    # an empty "Choose a session" row is open
@@ -68,6 +69,9 @@ func _header(info: Dictionary) -> Control:
 		status += " · RACE DAY"
 	titles.add_child(UIKit.label(status, "CaptionLabel"))
 	row.add_child(titles)
+	var help := HelpButton.new("day_editor")
+	help.pressed.connect(func(): help_requested.emit())
+	row.add_child(help)
 	var close := UIKit.button("Close", false, 90)
 	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close.pressed.connect(func(): close_requested.emit())

@@ -28,12 +28,26 @@ var _strip: WeekStrip
 var _editor: DayEditor          # the day editor; lives in the side panel (PC) or the bottom sheet (phone)
 var _selected_day := -1         # the day open in the editor, -1 = none
 var _side: PanelContainer       # PC: the side panel around the editor (null on a phone)
+var _side_scroll: ScrollContainer
 var _sheet: Control             # phone: the dimmed layer + bottom sheet around the editor (null on PC)
 var _sheet_scroll: ScrollContainer
 var _today_card: TodayCard      # on Overview only
 var _overview_columns := 0      # columns the wide Overview was built with (0 = not built yet)
 var _phase_open := ""           # Training tab: the season phase open in the PhaseEditor ("" = the season view)
 var _strip_caption: Label       # above the week strip: the season plan's phase and week (empty in repeat mode)
+# Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
+# (Close goes back to the day); phone: a HelpOverlay sheet. `_help_stack` is what is open ([] = closed), kept across
+# layout switches.
+var _help_button: HelpButton
+var _help: HelpPanel            # PC: the help in the side slot (null on a phone)
+var _help_overlay: HelpOverlay  # phone: the hub's help sheet (null on PC)
+var _help_stack := []
+var _help_follows_view := false # opened with the header "?": shows the help of the tab you switch to
+var _built_side_open := false   # the page was built with the side panel open (Layout.stacked() layout)
+
+
+func _exit_tree() -> void:
+	Layout.side_open = false   # (only the hub has a side panel)
 
 
 func _ready() -> void:
@@ -45,10 +59,11 @@ func _ready() -> void:
 	_show_pending_event()
 
 
-## Ctrl+S saves (desktop only), like the Save button. Escape closes the day editor.
+## Ctrl+S saves (desktop only), like the Save button. F1 opens / closes the help. Escape closes the help, then the
+## day editor.
 ## Debug builds only: T arms a test stop event for the end of the next played day (see DevEvents);
 ## H prints the hidden health numbers (strain, injuries, risk) to the Output panel (HealthSystem.debug_text).
-## (Not F keys: when the game runs from the editor, F7/F8 pause/stop the game.)
+## (Not F7/F8: when the game runs from the editor, they pause/stop the game.)
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
@@ -57,6 +72,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if OS.has_feature("pc"):
 			_save()
 			get_viewport().set_input_as_handled()
+	elif key == KEY_F1:
+		if _event_overlay == null or not _event_overlay.visible:
+			_toggle_help()
+	elif key == KEY_ESCAPE and not _help_stack.is_empty():
+		_close_help()
 	elif key == KEY_ESCAPE and _selected_day >= 0:
 		_close_day()
 	elif key == KEY_T:
@@ -102,7 +122,9 @@ func _build_shell() -> void:
 	_editor = DayEditor.new()
 	_editor.changed.connect(_on_day_changed)
 	_editor.close_requested.connect(_close_day)
+	_editor.help_requested.connect(func(): _open_help("day_editor", false))
 	_editor.rebuilt.connect(_fit_sheet)
+	_help = null
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -146,9 +168,8 @@ func _build_shell() -> void:
 		column.add_child(body)
 	if _selected_day >= 0:
 		_editor.show_day(_selected_day)
-	_apply_editor_visibility()
-	if _event_overlay:
-		move_child(_event_overlay, -1)   # stays on top of the rebuilt page
+	_apply_help()   # (also sets the editor's visibility)
+	_raise_overlays()   # the stop event and the help stay on top of the rebuilt page
 	_refresh_header()
 
 
@@ -163,16 +184,20 @@ func _build_header() -> Control:
 	var save := UIKit.button("Save", false, 110)
 	_save_button = save
 	save.pressed.connect(_save)
-	var menu := UIKit.button("Menu" if Layout.compact else "Main menu", false, 140)
+	var short := Layout.compact or Layout.logical_width < 1280.0   # (a short, wide window: phone sideways)
+	var menu := UIKit.button("Menu" if short else "Main menu", false, 110 if short else 140)
 	menu.pressed.connect(Router.go.bind("main_menu"))
+	_help_button = HelpButton.new(_help_entry())
+	_help_button.pressed.connect(_toggle_help)
 
 	if Layout.compact:
-		# Name + Save + Menu on top, then the info line, then today's date with the time buttons.
+		# Name + ? + Save + Menu on top, then the info line, then today's date with the time buttons.
 		var box := UIKit.vbox(6)
 		var top := UIKit.hbox(8)
 		_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_name_label.clip_text = true
 		top.add_child(_name_label)
+		top.add_child(_help_button)
 		save.custom_minimum_size.x = 76
 		menu.custom_minimum_size.x = 76
 		top.add_child(save)
@@ -193,6 +218,8 @@ func _build_header() -> Control:
 	var row := UIKit.hbox(16)
 	var titles := UIKit.vbox(2)
 	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_name_label.clip_text = true   # a long name ends in "…" rather than pushing the buttons off the window
+	_name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	titles.add_child(_name_label)
 	titles.add_child(_info_label)
 	row.add_child(titles)
@@ -200,7 +227,7 @@ func _build_header() -> Control:
 	_date_label.custom_minimum_size.y = 44
 	_date_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(_date_label)
-	for b in [next_day, play_week, save, menu]:
+	for b in [next_day, play_week, save, menu, _help_button]:
 		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		row.add_child(b)
 	return row
@@ -272,9 +299,10 @@ func _open_day(day: int) -> void:
 	_editor.show_day(day)
 	_strip.selected = day
 	_strip.refresh()
+	if _help != null and not _help_stack.is_empty():
+		_close_help()   # PC: tapping a day brings the day editor back over the help
 	_apply_editor_visibility()
-	if _event_overlay:
-		move_child(_event_overlay, -1)
+	_raise_overlays()
 
 
 func _close_day() -> void:
@@ -291,21 +319,37 @@ func _on_day_changed() -> void:
 		_today_card.refresh()
 
 
+## The side panel (PC) shows the help when it is open, else the day editor; the phone sheet only the day editor
+## (the phone's help is a HelpOverlay on top).
 func _apply_editor_visibility() -> void:
 	var open := _selected_day >= 0
+	var help_here := _help != null and not _help_stack.is_empty()
+	_editor.visible = not help_here
+	if _help:
+		_help.visible = help_here
 	if _side:
 		_side.custom_minimum_size.x = _side_width()   # the window may have been resized since the page was built
-		_side.visible = open
+		_side.visible = open or help_here
 	if _sheet:
 		_sheet.visible = open
 	if _view == "overview" and _overview_columns != 0 and not Layout.compact \
 			and _overview_columns != _wanted_overview_columns():
 		_relayout_overview()
+	# The Training pages were built for the other width (side panel opened or closed): build them again.
+	if _view == "training" and not Layout.compact and _content.get_child_count() > 0 \
+			and _side_is_open() != _built_side_open:
+		_rebuild_view()
+
+
+## PC: the side panel shows the day editor or the help.
+func _side_is_open() -> bool:
+	return _selected_day >= 0 or (_help != null and not _help_stack.is_empty())
 
 
 ## Columns of the wide Overview: 4 need about 1150 logical px, which the side panel takes away.
 func _wanted_overview_columns() -> int:
-	var width := Layout.logical_width - 96.0 - (_side_width() + 16.0 if _selected_day >= 0 else 0.0)
+	var side_open := _selected_day >= 0 or (_help != null and not _help_stack.is_empty())
+	var width := Layout.logical_width - 96.0 - (_side_width() + 16.0 if side_open else 0.0)
 	return 4 if width >= 1150.0 else 2
 
 
@@ -323,10 +367,15 @@ func _relayout_overview() -> void:
 	_scroll.scroll_vertical = at
 
 
-## PC: the editor in a panel to the right of the tabs and content.
+## PC: the editor (or the help, which covers it) in a panel to the right of the tabs and content.
 func _build_side_panel() -> void:
+	_help = HelpPanel.new()
+	_help.visible = false
+	_help.close_requested.connect(_close_help)
+	_help.navigated.connect(func(): _help_stack = _help.stack.duplicate())
 	var scroll := _scrolling_editor()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_side_scroll = scroll
 	_side = UIKit.panel(scroll, 16)
 	_side.custom_minimum_size.x = _side_width()
 	_side.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -340,7 +389,11 @@ func _scrolling_editor() -> ScrollContainer:
 	var pad := MarginContainer.new()
 	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pad.add_theme_constant_override("margin_right", 12)
-	pad.add_child(_editor)
+	var holder := UIKit.vbox(0)
+	holder.add_child(_editor)
+	if _help:
+		holder.add_child(_help)
+	pad.add_child(holder)
 	scroll.add_child(pad)
 	return scroll
 
@@ -431,8 +484,9 @@ func _show_pending_event() -> void:
 	# Logical window width (the screen may not be laid out yet), minus screen margin and panel padding.
 	var width := minf(480.0, Layout.logical_width - 32.0 - 36.0 - 12.0)
 	var box: Control
-	if HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels
-		box = HealthEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice))
+	if HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels (with a "?")
+		box = HealthEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice),
+				func(): HelpOverlay.open(self, HealthEventPanel.HELP))
 	else:
 		box = UIKit.vbox(10)
 		box.custom_minimum_size.x = width
@@ -455,7 +509,7 @@ func _show_pending_event() -> void:
 	scroll.add_child(box)
 	card.add_child(scroll)
 	_event_overlay.visible = true
-	move_child(_event_overlay, -1)
+	_raise_overlays()
 	_fit_event_card(scroll, box)
 
 
@@ -478,6 +532,9 @@ func _on_event_answer(event_id: String, choice: String) -> void:
 func _show(view: String) -> void:
 	_view = view
 	_tabs[view].button_pressed = true
+	# PC with the side panel open: pages with wide rows (Training) build their stacked, phone-like layout.
+	Layout.side_open = not Layout.compact and _side_is_open()
+	_built_side_open = Layout.side_open
 	_scroll.scroll_vertical = 0
 	for child in _content.get_children():
 		child.queue_free()
@@ -487,6 +544,80 @@ func _show(view: String) -> void:
 		"calendar": _build_calendar()
 		"rankings": _build_rankings()
 		"report": _content.add_child(ReportView.new())
+	# The header "?" belongs to what is shown now; help opened with it follows to the new tab / page.
+	var help_id := _help_entry()
+	_help_button.entry_id = help_id
+	if _help_follows_view and not _help_stack.is_empty() and _help_stack[0] != help_id:
+		_help_stack = [help_id]
+		_apply_help()
+
+
+# --- Help (GDD 5 "Help") ------------------------------------------------------------------------
+
+## The help entry of what the hub shows: the tab, and in the Training tab which of its three pages.
+func _help_entry() -> String:
+	if _view == "training":
+		if Game.season.mode != SeasonPlan.PHASES:
+			return "training_repeat"
+		return "phase_editor" if _phase_open != "" else "training_season"
+	return _view
+
+
+## The header "?" and F1: opens the help of what is shown, or closes it when that is already open.
+func _toggle_help() -> void:
+	if not _help_stack.is_empty() and _help_stack[0] == _help_entry():
+		_close_help()
+	else:
+		_open_help(_help_entry(), true)
+
+
+func _open_help(id: String, follows_view: bool) -> void:
+	_help_follows_view = follows_view
+	_help_stack = [id]
+	_apply_help()
+	if _side_scroll:
+		_side_scroll.scroll_vertical = 0
+
+
+func _close_help() -> void:
+	_help_stack = []
+	_apply_help()
+
+
+## Shows `_help_stack` where it belongs in this layout: PC = the side slot (over the day editor), phone = a sheet.
+func _apply_help() -> void:
+	var open := not _help_stack.is_empty()
+	if _help != null:   # PC
+		if is_instance_valid(_help_overlay):   # (it was opened on a phone before the window was widened)
+			_help_overlay.remove()
+		_help_overlay = null
+		if open and _help.stack != _help_stack:
+			_help.show_stack(_help_stack)
+	elif open:
+		if not is_instance_valid(_help_overlay) or _help_overlay.is_queued_for_deletion():
+			_help_overlay = HelpOverlay.new()
+			_help_overlay.closed.connect(func():
+				_help_stack = []
+				_help_overlay = null)
+			_help_overlay.panel.navigated.connect(func(): _help_stack = _help_overlay.panel.stack.duplicate())
+			_help_overlay.panel.show_stack(_help_stack)
+			add_child(_help_overlay)
+		elif _help_overlay.panel.stack != _help_stack:
+			_help_overlay.panel.show_stack(_help_stack)
+	elif is_instance_valid(_help_overlay):
+		_help_overlay.remove()
+		_help_overlay = null
+	_apply_editor_visibility()
+	_raise_overlays()
+
+
+## The stop-event layer above the page, and any help above that.
+func _raise_overlays() -> void:
+	if _event_overlay:
+		move_child(_event_overlay, -1)
+	for c in get_children():
+		if c is HelpOverlay:
+			move_child(c, -1)
 
 
 # --- Overview ---------------------------------------------------------------------------
@@ -546,13 +677,9 @@ func _build_profile(a: Athlete) -> void:
 			columns.add_child(p)
 	_content.add_child(columns)
 
-	var help := ("Arrows show attributes that have been rising or falling lately. Tap an attribute to see what it does. "
-			+ "Plan your week under Training, change a single day by tapping it in the week strip, "
-			+ "then press Next day or Play week. In the week strip, a round ! means you were sore that day "
-			+ "(the colour says how sore) and a + means an injury or illness limited it.")
-	if OS.has_feature("pc"):
-		help += " Ctrl+S saves."
-	_content.add_child(UIKit.wrapped(help, "MutedLabel"))
+	# The long explanations (week strip markers, attributes, saving) are in the help (data/help.json, "overview").
+	_content.add_child(UIKit.wrapped("Plan your week under Training, tap a day in the week strip to change it, then press "
+			+ "Next day or Play week. The ? at the top explains what you see on each screen.", "MutedLabel"))
 
 
 # --- Training plan ----------------------------------------------------------------------
@@ -666,9 +793,9 @@ func _build_training_repeat() -> void:
 		_after_plan_change()
 		refresh_summary.call()
 
-	var days := UIKit.vbox(14 if Layout.compact else 8)
+	var days := UIKit.vbox(14 if Layout.stacked() else 8)
 	for day in 7:
-		if day > 0 and Layout.compact:
+		if day > 0 and Layout.stacked():
 			days.add_child(HSeparator.new())
 		var date := Game.add_days(Game.week_monday(), day)
 		days.add_child(PlanUI.day_row(plan, day, a, month, on_plan_edited, "%s %d.%d." % [Training.DAY_NAMES[day], date.day, date.month]))
@@ -732,12 +859,10 @@ func _session_library(a: Athlete, month: int) -> PanelContainer:
 func _build_calendar() -> void:
 	var a := Game.athlete
 	_content.add_child(UIKit.label("Season calendar", "HeadingLabel"))
+	# More (qualifying times, targets, estimated dates) in the help (data/help.json, "calendar").
 	_content.add_child(UIKit.wrapped(
-			"Enter the meets you want to race; a race replaces that day's training. Tap \"Entered\" again to withdraw. "
-			+ "★ = your coach recommends it. "
-			+ "\"Estimated\" dates are believable guesses for small meets whose real dates aren't published."
-			+ (" \"Make target\" makes a meet one of your season's target meets (at most %d): your season plan builds up to it and tapers before it."
-				% int(Data.periodization.season.max_targets) if Game.season.mode == SeasonPlan.PHASES else "")))
+			"Enter the meets you want to race; a race replaces that day's training. ★ = your coach recommends it."
+			+ (" %s = one of your target meets." % SeasonUI.TARGET_MARK if Game.season.mode == SeasonPlan.PHASES else "")))
 
 	# The rest of this season and the whole next one.
 	var meets := Calendar.meets_between(Game.date, {"year": Game.date.year + 1, "month": 10, "day": 31})

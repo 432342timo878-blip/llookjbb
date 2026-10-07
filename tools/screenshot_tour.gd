@@ -21,6 +21,10 @@ func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
 	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4).
 	load("res://scripts/core/health_system.gd").model_enabled = false
+	# The help's "read" marks in their own file, empty at the start: the "?" buttons show their "new" dot.
+	var help = load("res://scripts/ui/help.gd")
+	help.SEEN_PATH = "user://tour_help_seen.cfg"
+	help.reset_seen()
 	await _frames(10)
 	await _shot("0_main_menu")
 	var main := current_scene
@@ -35,6 +39,12 @@ func _run() -> void:
 	wizard._show_step()
 	await _frames(5)
 	await _shot("1_identity")
+	# The help (GDD 5 "Help"): the wizard's "?" opens it over the page.
+	load("res://scripts/ui/help_overlay.gd").open(wizard, "new_career")
+	await _frames(6)
+	await _shot("1b_help_new_career")
+	_close_help_overlays(main)
+	await _frames(3)
 	for i in range(4):
 		if i == 1:
 			for q in wizard.get_node("/root/Data").background_questions:
@@ -46,6 +56,18 @@ func _run() -> void:
 	await _frames(5)
 	await _shot("6_career_hub")
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	# The header "?": Overview's help (PC: the side slot; phone: a sheet), then its "See also: Race form" topic.
+	hub._toggle_help()
+	await _frames(6)
+	await _shot("6b_help_overview")
+	var see := _find_button_prefix(main, "See also: Race form")
+	if see:
+		see.pressed.emit()
+		await _frames(6)
+		await _shot("6c_help_topic_form")
+	hub._close_help()
+	await _frames(3)
+	await _shot("6d_hub_help_read")   # the "?" without its dot now
 	hub._show("training")
 	await _frames(5)
 	await _shot("7_training")
@@ -64,6 +86,10 @@ func _run() -> void:
 	hub._scroll.scroll_vertical = 700
 	await _frames(5)
 	await _shot("8b_calendar_scrolled")
+	hub._toggle_help()
+	await _frames(6)
+	await _shot("8b2_help_calendar")
+	hub._close_help()
 	# Next day twice: the header shows Wednesday.
 	hub._show("overview")
 	hub._on_advance(false)
@@ -76,6 +102,11 @@ func _run() -> void:
 	hub._open_day(3)
 	await _frames(6)
 	await _shot("8c2_day_editor")
+	hub._editor.help_requested.emit()   # the day editor's own "?": the help covers the editor
+	await _frames(6)
+	await _shot("8c2b_help_day_editor")
+	hub._close_help()
+	await _frames(3)
 	hub._open_day(0)
 	await _frames(6)
 	await _shot("8c3_day_editor_played")
@@ -104,6 +135,11 @@ func _run() -> void:
 	await _frames(5)
 	await _shot("9_race_field")
 	var screen: Control = main.get_node("ScreenHost").get_child(-1)
+	screen._open_help(screen._help_id())
+	await _frames(6)
+	await _shot("9b_help_race_before")
+	_close_help_overlays(main)
+	await _frames(2)
 	screen._start(true)
 	Engine.time_scale = 3.0
 	var shots := {"decision": false, "mid": false}
@@ -115,6 +151,11 @@ func _run() -> void:
 				shots.decision = true
 				await _frames(3)
 				await _shot("10_race_decision")
+				screen._open_help("race_running")   # the "?" on the decision card
+				await _frames(6)
+				await _shot("10b_help_race_decision")
+				_close_help_overlays(main)
+				await _frames(2)
 			screen._decision.visible = false
 			race.choose(race.pending.options[0].id)
 		if not shots.mid and race.player.d > 560.0:
@@ -199,10 +240,14 @@ func _season_tour(main: Node) -> void:
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
 	var year: int = game.season.plan_year(game.week_monday())
 
-	# 1. The Training tab in season mode; then the three plan cards.
+	# 1. The Training tab in season mode (and its help); then the three plan cards.
 	hub._show("training")
 	await _frames(6)
 	await _shot("28_season_plan_top")
+	hub._toggle_help()
+	await _frames(6)
+	await _shot("28a_help_training_season")
+	hub._close_help()
 	SeasonView.cards_open = true
 	hub._show("training")
 	await _frames(6)
@@ -235,6 +280,10 @@ func _season_tour(main: Node) -> void:
 	hub._show("training")
 	await _frames(6)
 	await _shot("29_phase_editor_top")
+	hub._toggle_help()
+	await _frames(6)
+	await _shot("29a_help_phase_editor")
+	hub._close_help()
 	await _scroll_to_label(hub, "WEEKS OF THE PHASE")
 	await _shot("29b_phase_editor_rules")
 	await _scroll_to_label(hub, "BODY STRAIN")
@@ -426,6 +475,10 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	_reset_health(game, health)
 	await _new_problem(game, hub, health, data, "shin_splints")
 	await _shot("20_health_diagnosis_niggle")
+	load("res://scripts/ui/help_overlay.gd").open(hub, "health_event")   # the "?" on the diagnosis panel
+	await _frames(6)
+	await _shot("20a_help_health_event")
+	_close_help_overlays(main)
 	hub._on_event_answer(game.pending_event().id, "ok")
 	await _frames(6)
 	await _shot("20b_health_today_injured")
@@ -620,6 +673,25 @@ func _find_label(node: Node, text: String) -> Label:
 		if found:
 			return found
 	return null
+
+
+func _find_button_prefix(node: Node, prefix: String) -> Button:
+	if node is Button and (node as Button).text.begins_with(prefix) and (node as Button).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _find_button_prefix(c, prefix)
+		if found:
+			return found
+	return null
+
+
+## Closes every help sheet / panel over a screen (HelpOverlay).
+func _close_help_overlays(node: Node) -> void:
+	if node.get_script() == load("res://scripts/ui/help_overlay.gd") and not node.is_queued_for_deletion():
+		node.close()
+		return
+	for c in node.get_children():
+		_close_help_overlays(c)
 
 
 func _find_button(node: Node, text: String) -> Button:

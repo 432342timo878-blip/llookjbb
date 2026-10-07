@@ -926,6 +926,42 @@ messages. Step 6's club coach only offers data templates, the ★ rule, targets 
 
 ## 5. Presentation
 
+### Help (built 2026-10-07)
+
+Not a tutorial: every screen has a **"?" ("How this works")** that opens a short help for that screen only, when the player
+wants it. Decisions (user, 2026-10-07): **one "?" in the hub header** (beside Save / Menu on PC, in the top row on a phone) that
+opens the help of whatever tab or page is shown; the day editor has its own "?" next to Close; **never opens by itself**, a small
+accent **"new" dot** on a "?" until its help was read (and again when the entry's `version` goes up); on PC the help **covers the
+day editor** in the side slot (Close goes back to the day; tapping a day brings the editor back); shared ideas are **topic entries
+reached by "See also" buttons** (with "◀ Back"). Claude's defaults, accepted:
+- **Texts:** `data/help.json`: `screens` (overview, training_season, phase_editor, training_repeat, calendar, rankings, report,
+  day_editor, race_before, race_running, race_result, new_career, health_event) and `topics` (fatigue, soreness, injuries,
+  load_vs_normal, plan_risk, form, lighter_weeks, easing_in, targets). Each: title, version, sections {heading, text (at most
+  ~50 words, the check allows 60), see: [topic ids]}. Plain words, what the player sees and what to do; **no hidden numbers**
+  (injury proneness, strain, formulas); numbers the UI already shows are fine. No help text in scripts.
+- **Where it shows:** `HelpPanel` (title, sections all open, "See also" / Back, Close; 44 px buttons) in the hub's side slot on PC;
+  everywhere else a `HelpOverlay` (dimmed layer, tap it or Esc to close): a bottom sheet on a phone (fitted, at most 72 %), a
+  460 px panel over the right side on PC (race screen, wizard, health stop panels). Rebuilds on `Router.layout_changed` and keeps
+  the open entry. The help opened with the header "?" follows the tab or Training page you switch to.
+- **Which entry:** the hub's tab, and in Training the page (season plan / phase editor / one repeating week); the race screen by
+  stage (before / running and its decision card / result); the diagnosis and "sore" panels share `health_event`. No help on the
+  main menu and load screen. **F1** opens / closes the help, **Esc** closes it first (then the day editor). The race waits while
+  its help is open.
+- **"Read" state** is a player setting, not part of a career: `user://help_seen.cfg` (entry id → version read), not the save.
+- **Long inline explanations moved into the help:** Overview's paragraph (strip markers, attributes, Ctrl+S) is one line now that
+  points to the "?"; the Calendar intro keeps the ★ / ◆ key.
+- **Found while building:** on PC the Training pages' wide day rows didn't fit beside the side panel (help *or* the day editor,
+  which was already the case before): `Layout.stacked()` (= phone, or PC with the hub's side panel open) now gives them their
+  stacked layout, and the hub rebuilds the Training page when the side panel opens or closes. The PC header says "Menu" on a
+  short, wide window (phone sideways) and a long name ends in "…".
+- **Rule:** every new feature step adds or updates its help entry (raise `version` when the text changes meaningfully).
+- **Verified:** `tools/help_check.gd` (405 checks: the data, every screen's "?" pressed and showing an entry that exists, every
+  entry used, See also / Back, the dot, Esc / F1), tour shots `1b_`, `6b_`–`6d_`, `8b2_`, `8c2b_`, `9b_`, `10b_`, `20a_`, `28a_`,
+  `29a_` at 1600×900 and 390×844, `layout_check` at all 5 sizes (help on every tab, a topic, the day editor's help, the wizard,
+  the race and the health panel): no OVERFLOW / SQUEEZED.
+
+### Other presentation
+
 - 2D stadium view during meets: track, crowd, simultaneous events.
 - Modern, sleek, responsive UI (desktop + mobile).
 - **Idea (user, for later):** the plain dark UI feels generic. Use athlete photos as screen backgrounds, darkened and/or blurred behind the panels so they never hurt readability. Could vary per screen or event (e.g. an 800 m pack on the career hub). Needs a set of good, properly licensed photos (e.g. Wikimedia Commons) or the user's own. **Status (UI polish pass, 2026-10-05):** the backdrop system is built (blurred + darkened photo behind translucent panels, per screen, falls back to a gradient). A deliberately harsh test image stayed readable, but loose text (tabs, captions) is the weak spot, so photos should be calm and dark. Photos added (2026-10-05, user-approved): two Finnish athletes at Kalevan Kisat 2018 and Lahti Stadium, all CC BY-SA 4.0 from Wikimedia Commons; a Credits screen is still to do. See `assets/backgrounds/README.md`.

@@ -5,6 +5,7 @@ const STEPS := ["Identity", "Main event", "Background", "Attributes", "Summary"]
 ## Events playable in the current version (M1).
 const PLAYABLE_EVENTS := ["800m"]
 const ATTRIBUTE_CATEGORIES := ["physical", "technical", "mental"]
+const HELP := "new_career"   # the wizard's help entry in data/help.json
 
 var _step := 0
 var _choices := {
@@ -47,8 +48,13 @@ func _build_shell() -> void:
 	_step_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status_label = UIKit.label("", "SubheadingLabel")
 	_status_label.add_theme_color_override("font_color", Palette.ACCENT)
+	_step_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_status_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(_step_label)
 	top.add_child(_status_label)
+	var help := HelpButton.new(HELP)   # "How this works" (GDD 5 "Help")
+	help.pressed.connect(func(): HelpOverlay.open(self, HELP))
+	top.add_child(help)
 	column.add_child(top)
 	column.add_child(UIKit.label("New Career", "HeadingLabel"))
 
@@ -78,6 +84,12 @@ func _build_shell() -> void:
 		footer.add_child(UIKit.spacer())
 		footer.add_child(_next)
 	column.add_child(footer)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_F1:
+		HelpOverlay.open(self, HELP)
+		get_viewport().set_input_as_handled()
 
 
 func _on_back() -> void:

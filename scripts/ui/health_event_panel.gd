@@ -9,6 +9,7 @@ extends RefCounted
 ## Both use the same look: coloured edge + caption, heading, explanation, facts, 44 px buttons.
 
 const KINDS := ["diagnosis", "sore"]
+const HELP := "health_event"   # the help entry of both panels (data/help.json), opened by the "?" in the caption row
 
 
 ## Is this one of the health events this class can draw?
@@ -16,22 +17,23 @@ static func handles(e: Dictionary) -> bool:
 	return e.get("source", "") == "health" and e.get("kind", "") in KINDS and HealthUI.system() != null
 
 
-## The panel content for event `e`, `width` px wide. `on_answer(choice_id)` is called with the player's answer.
-static func build(e: Dictionary, width: float, on_answer: Callable) -> Control:
+## The panel content for event `e`, `width` px wide. `on_answer(choice_id)` is called with the player's answer;
+## with `on_help`, a "?" in the caption row calls it (the host opens the help entry HELP).
+static func build(e: Dictionary, width: float, on_answer: Callable, on_help := Callable()) -> Control:
 	if e.kind == "diagnosis":
-		return _diagnosis(e, width, on_answer)
-	return _sore(e, width, on_answer)
+		return _diagnosis(e, width, on_answer, on_help)
+	return _sore(e, width, on_answer, on_help)
 
 
 # --- Diagnosis -----------------------------------------------------------------------------------------
 
-static func _diagnosis(e: Dictionary, width: float, on_answer: Callable) -> Control:
+static func _diagnosis(e: Dictionary, width: float, on_answer: Callable, on_help: Callable) -> Control:
 	var h := HealthUI.system()
 	var x := _find_active(h, e)
 	var box := UIKit.vbox(10)
 	box.custom_minimum_size.x = width
 	if x.is_empty():   # healed again already: just the text
-		box.add_child(UIKit.label(Calendar.format_day(e.date).to_upper(), "CaptionLabel"))
+		box.add_child(_caption(UIKit.label(Calendar.format_day(e.date).to_upper(), "CaptionLabel"), on_help))
 		box.add_child(UIKit.wrapped(e.title, "HeadingLabel"))
 		box.add_child(UIKit.wrapped(e.text, ""))
 		box.add_child(_ok_button(on_answer))
@@ -39,7 +41,7 @@ static func _diagnosis(e: Dictionary, width: float, on_answer: Callable) -> Cont
 
 	var color := HealthUI.tier_color(x.tier)
 	var tag := ("IT GOT WORSE" if x.escalated else "DIAGNOSIS") + " · " + Calendar.format_day(e.date).to_upper()
-	box.add_child(UIKit.label(tag, "CaptionLabel"))
+	box.add_child(_caption(UIKit.label(tag, "CaptionLabel"), on_help))
 	var kind := UIKit.label(HealthUI.TIER_NAMES[x.tier] + (" · " + str(x.area_name).to_upper() if x.area_name != "" else ""), "CaptionLabel")
 	kind.add_theme_color_override("font_color", color)
 	box.add_child(kind)
@@ -80,11 +82,11 @@ static func _racing_text(x: Dictionary) -> String:
 
 # --- "Sore" warning --------------------------------------------------------------------------------------
 
-static func _sore(e: Dictionary, width: float, on_answer: Callable) -> Control:
+static func _sore(e: Dictionary, width: float, on_answer: Callable, on_help: Callable) -> Control:
 	var h := HealthUI.system()
 	var box := UIKit.vbox(10)
 	box.custom_minimum_size.x = width
-	box.add_child(UIKit.label("WARNING · " + Calendar.format_day(e.date).to_upper(), "CaptionLabel"))
+	box.add_child(_caption(UIKit.label("WARNING · " + Calendar.format_day(e.date).to_upper(), "CaptionLabel"), on_help))
 	box.add_child(UIKit.wrapped(e.title, "HeadingLabel"))
 	box.add_child(UIKit.wrapped(e.text, ""))
 
@@ -107,6 +109,21 @@ static func _sore(e: Dictionary, width: float, on_answer: Callable) -> Control:
 
 
 # --- Pieces ------------------------------------------------------------------------------------------------
+
+## The caption with the "?" at its right end (just the caption when there is no help to open).
+static func _caption(caption: Label, on_help: Callable) -> Control:
+	if not on_help.is_valid():
+		return caption
+	var row := UIKit.hbox(8)
+	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	caption.clip_text = true
+	row.add_child(caption)
+	var help := HelpButton.new(HELP)
+	help.pressed.connect(func(): on_help.call())
+	row.add_child(help)
+	return row
+
 
 static func _fact(caption: String, text: String) -> Control:
 	var col := UIKit.vbox(1)

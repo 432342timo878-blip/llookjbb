@@ -153,12 +153,14 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   the SUL Arvokilpailukalenteri 2027 PDF (https://www.yleisurheilu.fi/wp-content/uploads/2026/05/Arvokilpailukalenteri-2027.pdf)
   already used. Real dates with sources; where unknown, realistic estimates marked `estimated`. Also fills in more `main` meets
   for the season model (GDD 4.8). Research + data task. *(Sonnet)*
-- **In-game help per menu (user, 2026-10-07):** not a full tutorial: every screen / tab (Overview, Training, Calendar, Rankings, Report,
+- [x] **In-game help per menu (user, 2026-10-07; built 2026-10-07, GDD 5 "Help"):** not a full tutorial: every screen / tab (Overview, Training, Calendar, Rankings, Report,
   day editor, race screen, season plan later) gets a "?" / "How this works" button that opens a short help panel for that screen only,
   when the player wants it. The game is deep (training, health, form, periodization), so the help text explains each concept in plain
   words. Help texts live in `data/help.json` (one entry per screen, with sections), shown by one shared `HelpPanel` (phone: bottom sheet,
   PC: side panel, 44 px, no hover). Each new feature step adds its help entry; a small "new" dot on the "?" could mark unread help.
   Best started right after step 6e (season UI) so the big screens exist; the entries for the existing tabs can be written earlier. *(Opus for the text outline, then Sonnet)*
+  **Done:** 13 screen entries + 9 topics, `HelpButton` / `HelpPanel` / `HelpOverlay`, `tools/help_check.gd`; 6f adds the return block's entry
+  (and the coach's offer event's) to `data/help.json`.
 - **Track visuals (user, 2026-10-07):** the user is starting to dislike how the track looks in the main menu and in the races (the
   drawn stadium / hall track). Worth a look later: get reference images of real tracks first (CLAUDE.md: realism, no guessing), then
   redraw. Could go together with M3 (stadium view). *(Opus for the look, then Sonnet)*

@@ -12,6 +12,14 @@ const WIDE_MIN_ASPECT := 1.1
 static var compact := false
 ## Logical width of the window (set by main.gd); wide screens use it to keep content from stretching too far.
 static var logical_width := 1280.0
+## PC: the career hub's side panel (day editor or help) is open, so its pages get only ~690 px (set by the hub).
+static var side_open := false
+
+
+## The page content is phone-narrow: a phone, or PC beside the hub's side panel. Pages with wide rows (the Training
+## tab's day rows, phase editor, season view) stack them when this is true.
+static func stacked() -> bool:
+	return compact or side_open
 
 
 ## Mode for a window of this size in pixels.

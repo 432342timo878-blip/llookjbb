@@ -22,6 +22,9 @@ func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
 	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4).
 	load("res://scripts/core/health_system.gd").model_enabled = false
+	var help = load("res://scripts/ui/help.gd")
+	help.SEEN_PATH = "user://tour_help_seen.cfg"
+	help.reset_seen()
 	await _frames(10)
 	var main := current_scene
 	var router = main.get_node("/root/Router")
@@ -82,6 +85,8 @@ func _run() -> void:
 		hub._close_day()
 		hub._on_day_changed()
 		await _frames(3)
+		await _help_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		await _health_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _season_views(main, game, tag)
@@ -177,6 +182,11 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 	await _frames(6)
 	await _shot("%s_health_diagnosis" % tag)
 	_check_overflow(hub, "%s health_diagnosis" % tag)
+	load("res://scripts/ui/help_overlay.gd").open(hub, "health_event")   # the panel's "?"
+	await _frames(6)
+	await _shot("%s_help_health_event" % tag)
+	_check_overflow(hub, "%s help_health_event" % tag)
+	_close_help_overlays(hub)
 	game.answer_event(game.pending_event().id, "ok")
 	health.injuries.erase(news[0])
 	health.levels.clear()
@@ -263,6 +273,11 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 		var screen: Control = main.get_node("ScreenHost").get_child(-1)
 		await _shot("%s_health_race_screen" % tag)
 		_check_overflow(screen, "%s health_race_screen" % tag)
+		screen._open_help(screen._help_id())   # the race screen's help over the page
+		await _frames(6)
+		await _shot("%s_help_race" % tag)
+		_check_overflow(screen, "%s help_race" % tag)
+		_close_help_overlays(screen)
 		game.race_day = null
 		game.withdraw(meet.key)
 	game.date = saved_date
@@ -386,6 +401,80 @@ func _season_views(main: Node, game, tag: String) -> void:
 	hub._refresh_week_ui()
 	hub._show("overview")
 	await _frames(4)
+
+
+# --- The help (GDD 5 "Help") at this window size ----------------------------------------------------------
+
+## The header "?" on each tab and Training page (PC: the side slot; phone: a sheet), a "See also" topic, the day
+## editor's help over the editor, and the wizard's help. Everything is closed again afterwards.
+func _help_views(main: Node, game, tag: String) -> void:
+	var router = main.get_node("/root/Router")
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	for view in ["overview", "training", "calendar", "rankings", "report"]:
+		hub._show(view)
+		await _frames(3)
+		hub._toggle_help()
+		await _frames(6)
+		await _shot("%s_help_%s" % [tag, view])
+		_check_overflow(hub, "%s help_%s" % [tag, view])
+		hub._close_help()
+	hub._phase_open = "spring_base"
+	hub._show("training")
+	await _frames(3)
+	hub._toggle_help()
+	await _frames(6)
+	await _shot("%s_help_phase_editor" % tag)
+	_check_overflow(hub, "%s help_phase_editor" % tag)
+	hub._close_help()
+	hub._phase_open = ""
+	# A topic (See also), with ◀ Back.
+	hub._show("overview")
+	hub._toggle_help()
+	await _frames(4)
+	var see := _find_button_prefix(main, "See also: Soreness")
+	if see:
+		see.pressed.emit()
+		await _frames(6)
+		await _shot("%s_help_topic" % tag)
+		_check_overflow(hub, "%s help_topic" % tag)
+	hub._close_help()
+	# The day editor's "?": the help covers the editor; closing it shows the day again.
+	hub._open_day(3)
+	await _frames(4)
+	hub._editor.help_requested.emit()
+	await _frames(6)
+	await _shot("%s_help_day_editor" % tag)
+	_check_overflow(hub, "%s help_day_editor" % tag)
+	hub._close_help()
+	hub._close_day()
+	# The wizard's help (the career stays as it is: the wizard only starts one with "Start career").
+	router.go("new_career")
+	await _frames(6)
+	var wizard: Control = main.get_node("ScreenHost").get_child(-1)
+	load("res://scripts/ui/help_overlay.gd").open(wizard, "new_career")
+	await _frames(6)
+	await _shot("%s_help_new_career" % tag)
+	_check_overflow(wizard, "%s help_new_career" % tag)
+	router.go("career_hub")
+	await _frames(6)
+
+
+func _find_button_prefix(node: Node, prefix: String) -> Button:
+	if node is Button and (node as Button).text.begins_with(prefix) and (node as Button).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _find_button_prefix(c, prefix)
+		if found:
+			return found
+	return null
+
+
+func _close_help_overlays(node: Node) -> void:
+	if node.get_script() == load("res://scripts/ui/help_overlay.gd") and not node.is_queued_for_deletion():
+		node.close()
+		return
+	for c in node.get_children():
+		_close_help_overlays(c)
 
 
 func _reset_health(game, health) -> void:

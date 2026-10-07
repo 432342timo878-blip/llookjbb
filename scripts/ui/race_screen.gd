@@ -31,6 +31,8 @@ var _standings: VBoxContainer
 var _stand_rows := []   # [name label, gap label] per position, reused every frame
 var _commentary: VBoxContainer
 var _decision: Control   # full-screen dimmed overlay holding the decision card
+var _help_button: HelpButton   # "?" in the header: the help of this stage (GDD 5 "Help")
+var _help: HelpOverlay         # open help; the race waits while it is open
 
 
 func _ready() -> void:
@@ -68,6 +70,9 @@ func _build_shell() -> void:
 	else:
 		_header_right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		header.add_child(_header_right)
+	_help_button = HelpButton.new(_help_id())
+	_help_button.pressed.connect(func(): _open_help(_help_id()))
+	header.add_child(_help_button)
 	column.add_child(header)
 	if Layout.compact:
 		column.add_child(_header_right)
@@ -119,6 +124,24 @@ func _set_body(content: Control) -> void:
 	_header_right.visible = false
 	content.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_body.add_child(content)
+	_help_button.entry_id = _help_id()
+
+
+# --- Help (GDD 5 "Help") ------------------------------------------------------------------------
+
+## The help of this stage: before the race, the race itself (with its decisions), the result.
+func _help_id() -> String:
+	return {"pre": "race_before", "running": "race_running", "result": "race_result"}.get(_stage, "race_before")
+
+
+func _open_help(id: String) -> void:
+	_help = HelpOverlay.open(self, id)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_F1:
+		_open_help(_help_id())
+		get_viewport().set_input_as_handled()
 
 
 func _update_titles() -> void:
@@ -348,8 +371,8 @@ func _show_running() -> void:
 
 
 func _process(delta: float) -> void:
-	if not _running:
-		return
+	if not _running or (is_instance_valid(_help) and not _help.is_queued_for_deletion()):
+		return   # (the race waits while the help is open)
 	if _race.finished:
 		_finish_wait += delta
 		if _finish_wait > 1.2:
@@ -419,7 +442,14 @@ func _show_decision(d: Dictionary) -> void:
 		child.queue_free()
 	var box := UIKit.vbox(10)
 	box.custom_minimum_size.x = minf(480.0, size.x - 32.0 - 36.0)   # screen margin + panel padding
-	box.add_child(UIKit.wrapped(d.title, "HeadingLabel"))
+	var head := UIKit.hbox(8)
+	var title := UIKit.wrapped(d.title, "HeadingLabel")
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var help := HelpButton.new("race_running")
+	help.pressed.connect(func(): _open_help("race_running"))
+	head.add_child(help)
+	box.add_child(head)
 	box.add_child(UIKit.wrapped(d.text, ""))
 	for o in d.options:
 		var b := UIKit.button(o.label, false, 200)

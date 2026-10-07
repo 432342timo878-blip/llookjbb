@@ -1,0 +1,222 @@
+{
+ "_about": "In-game help (GDD 5 'Help'). 'screens' = one entry per screen or screen state, opened by that screen's '?' button; 'topics' = ideas used on several screens, opened from a section's 'see' list (a 'See also' button). Raise an entry's 'version' when its text changes in a meaningful way: the '?' shows its 'new' dot again. Sections: a heading and at most ~50 words of plain text. No hidden numbers (injury proneness, strain, formulas). Each new feature adds or updates its entry here (CLAUDE.md).",
+ "screens": {
+  "overview": {
+   "title": "Overview",
+   "version": 1,
+   "sections": [
+    {"heading": "Playing the days", "text": "Next day plays one day. Play week plays on to Sunday night, but it stops early when something needs you: a race, a new injury or a warning sign. The game saves itself after every day."},
+    {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
+    {"heading": "! and + on a day", "text": "A round ! means you were sore that day; its colour says how sore. A + means an injury or illness limited the day; its colour says how serious it is."},
+    {"heading": "How you feel", "text": "Your fatigue: Fresh, Normal, Tired or Exhausted. Training adds to it and rest takes it away. When you are tired, sessions train you less and races go slower.", "see": ["fatigue"]},
+    {"heading": "Race form", "text": "How you would race if the race were today. It is not about fitness: it is about being sharp and fresh on the day.", "see": ["form"]},
+    {"heading": "Warning signs", "text": "Body areas that feel sore after training, worst first. Tap one to see why it is sore and what helps. \"A bit sore\" is the early warning.", "see": ["soreness"]},
+    {"heading": "Injury and illness", "text": "What you have now, what you are allowed to do, and when you are expected back. Tap it for a plain explanation.", "see": ["injuries"]},
+    {"heading": "Attributes", "text": "Your abilities on a scale of 1 to 20. Training changes them once a week, on Sunday night, and growing up helps too. Abilities you don't train fade slowly. Arrows show what has been rising or falling lately; tap an attribute to see what it does."},
+    {"heading": "Saving", "text": "Besides the automatic save, the Save button makes an extra copy you can load later from the main menu. On a computer, Ctrl+S does the same."}
+   ]
+  },
+  "training_season": {
+   "title": "Training: season plan",
+   "version": 1,
+   "sections": [
+    {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
+    {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
+    {"heading": "The phases", "text": "General base builds your engine in winter. Indoor specific sharpens you for the indoor target. Spring base builds again before summer. Pre-competition and race season are for racing. Transition is a few easy weeks of rest, and autumn general starts the new year gently. Tap a phase to see or change it."},
+    {"heading": "Lighter weeks and easing in", "text": "In the base phases every fourth week is lighter, so your body can catch up. A new phase doesn't start all at once: its sessions come in a day at a time over the first weeks.", "see": ["lighter_weeks", "easing_in"]},
+    {"heading": "Target meets ◆", "text": "Up to three a season. Your plan builds up to them, and the last ten days before each one are a taper so you arrive fresh and sharp.", "see": ["targets"]},
+    {"heading": "Body strain", "text": "Under this week's plan: how much you train compared with your usual weeks, and how risky the plan is for your body right now.", "see": ["load_vs_normal", "plan_risk"]},
+    {"heading": "Over the week strip", "text": "The line above the week strip shows the phase and week you are in, or how many days are left before a target."},
+    {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."}
+   ]
+  },
+  "phase_editor": {
+   "title": "Training: a phase",
+   "version": 1,
+   "sections": [
+    {"heading": "The phase's week", "text": "This week repeats through the whole phase, with the season's rules on top (lighter weeks, easing in, the easy day before a race, the taper). Change sessions and Easy / Normal / Hard here as in a repeating week."},
+    {"heading": "Your changes", "text": "A phase you changed is marked \"your changes\". Back to coach's puts the coach's week back."},
+    {"heading": "Lighter weeks", "text": "Switch the lighter weeks on or off for this phase. A lighter week makes every day one step easier.", "see": ["lighter_weeks"]},
+    {"heading": "Easing in", "text": "How many weeks the phase takes to blend in from the phase before it. Fewer is a quicker change, more is gentler on the body.", "see": ["easing_in"]},
+    {"heading": "When it runs", "text": "Earlier and Later move the start or the end by a week; moving an end moves the next phase's start too. Weeks that have already begun can't move, so this week never changes under you."},
+    {"heading": "Body strain of a later phase", "text": "For a phase that hasn't started yet, the load and risk are worked out as if you follow your plan until then: they show what switching into this phase will feel like.", "see": ["load_vs_normal", "plan_risk"]}
+   ]
+  },
+  "training_repeat": {
+   "title": "Training: one repeating week",
+   "version": 1,
+   "sections": [
+    {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in the week strip."},
+    {"heading": "Easy, Normal, Hard", "text": "How hard you do the day's sessions. Hard trains you a bit more but tires you and strains your body much more. Easy keeps most of the training effect for much less strain, which makes it a good way to train more without getting hurt."},
+    {"heading": "Coach's plan and Clear week", "text": "Coach's plan puts back the starter week your club coach suggests. Clear week empties every day so you can start from scratch."},
+    {"heading": "The summary", "text": "Weekly load, the fatigue you can expect after a few weeks of this plan, what it trains, and the body strain.", "see": ["fatigue", "load_vs_normal", "plan_risk"]},
+    {"heading": "Sessions and seasons", "text": "Outdoor tracks are closed from November to April. Without an indoor track, track sessions are done on roads and work less well. Skiing is possible from December to March. The list at the bottom says what each session trains."},
+    {"heading": "Back to the season plan", "text": "The switch at the top takes you back to your coach's season plan, with your earlier changes to it."}
+   ]
+  },
+  "calendar": {
+   "title": "Calendar",
+   "version": 1,
+   "sections": [
+    {"heading": "Entering a meet", "text": "Tap Enter to race a meet. On race day the race replaces that day's training. Tap Entered ✓ again to withdraw."},
+    {"heading": "★ and ◆", "text": "★ means your coach suggests the meet. ◆ marks one of your season's target meets; Make target turns a meet into one (at most three a season).", "see": ["targets"]},
+    {"heading": "Qualifying times", "text": "Championships have a qualifying time for your age class. The meet says whether you have it. You may still enter one event without it."},
+    {"heading": "The seasons", "text": "Indoor meets run from December to March, outdoor meets from May to September. \"Estimated\" dates are believable guesses for small meets whose real dates aren't out yet. Senior meets are shown, but you follow them from home for now."}
+   ]
+  },
+  "rankings": {
+   "title": "Rankings",
+   "version": 1,
+   "sections": [
+    {"heading": "Season bests", "text": "Everyone's best time this season (1 November to 31 October), indoor and outdoor together. The top 25 are shown, and you always are."},
+    {"heading": "Your rivals", "text": "Your rivals train and race on their own, so the list fills up as the season goes on. They get injured too and miss races now and then."}
+   ]
+  },
+  "report": {
+   "title": "Report",
+   "version": 1,
+   "sections": [
+    {"heading": "This week", "text": "Every day played so far: what you did, your fatigue, sore areas, injuries and anything that happened."},
+    {"heading": "Last week", "text": "Sessions, training load and how your fatigue went, plus the health and the season plan line. Attributes are shown when one moved a whole point: progress is added on Sunday night and builds up slowly."}
+   ]
+  },
+  "day_editor": {
+   "title": "Changing a day",
+   "version": 1,
+   "sections": [
+    {"heading": "This week only", "text": "Changes here are for this one day of this week. Days already played and race days can't be changed. To change every week, use the Training tab."},
+    {"heading": "Sessions", "text": "Swap a session, remove it, add a second one (two at most) or make the day a rest day. A greyed-out session isn't possible this time of year, or with your injury; the reason is in its name."},
+    {"heading": "Easy, Normal, Hard", "text": "How hard you do the day. The day's load is shown next to what your plan has. Hard trains a bit more but strains the body much more.", "see": ["fatigue"]},
+    {"heading": "Back to plan", "text": "A changed day says who changed it. Back to plan returns the day to your plan. In a season plan, the \"Season plan\" line says why the day looks as it does: a lighter week, easing in, an easy day before a race or the taper."},
+    {"heading": "Injury limits", "text": "An injury or illness takes out what you shouldn't do. With a minor problem you can train through it, but it can make it worse and take longer to heal. \"Locked\" means it isn't allowed at all.", "see": ["injuries"]},
+    {"heading": "Race day", "text": "On a race day you see the meet and your race form. If you are injured or ill, you can scratch (not start). A played day only shows what you did."}
+   ]
+  },
+  "race_before": {
+   "title": "Before the race",
+   "version": 1,
+   "sections": [
+    {"heading": "The field", "text": "The runners in your race, fastest personal best first."},
+    {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
+    {"heading": "Race plan", "text": "Run from the front: set the pace, no traffic, but it costs energy. Stay with the pack: near the front, ready to react. Start easy, kick late: save energy for a fast finish, at the risk of getting boxed in."},
+    {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan. Watch and decide shows the race and stops for your decisions. If you are injured, you can still scratch before the first round."}
+   ]
+  },
+  "race_running": {
+   "title": "The race",
+   "version": 1,
+   "sections": [
+    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed. The race runs in lanes until the first bend is over, then everyone cuts in."},
+    {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Spend the reserve too early and you tie up in the finish."},
+    {"heading": "Decisions", "text": "The race pauses when you have a choice: where to run after the break, what to do at the bell, whether to go with a rival's move, when to kick, and how to get past on the home straight."}
+   ]
+  },
+  "race_result": {
+   "title": "The result",
+   "version": 1,
+   "sections": [
+    {"heading": "Results", "text": "Your place and time; a new personal best is marked. The time counts in the season rankings."},
+    {"heading": "Heats and final", "text": "At big meets there are heats. Q marks the runners through to the final: the top two of each heat and the fastest of the rest."}
+   ]
+  },
+  "new_career": {
+   "title": "New career",
+   "version": 1,
+   "sections": [
+    {"heading": "Who you are", "text": "Your name, gender, hometown and club. You start as a 14-year-old in November 2026."},
+    {"heading": "Main event", "text": "The event you train for and race. The 800 m is playable now; more events come later."},
+    {"heading": "Background", "text": "Your answers shape your starting abilities: your old sport, your family, where you train, how you grow and how you handle nerves all leave their mark. Where you train also decides whether you have an indoor track in winter."},
+    {"heading": "Attribute points", "text": "Spend 12 points on top of your background, at most +3 on any one ability. Some things about your talent stay hidden and show themselves over the years."}
+   ]
+  },
+  "health_event": {
+   "title": "Injuries and warnings",
+   "version": 1,
+   "sections": [
+    {"heading": "A diagnosis", "text": "A niggle lets you train with limits, an injury stops running for a while, a serious injury means weeks out. Expected time is a range: it moves later if you train through it. The limits are already in your week.", "see": ["injuries"]},
+    {"heading": "Locked or \"may get worse\"", "text": "Locked means you can't train or race against the limits. Otherwise you may, but it strains the area more and can turn into something worse."},
+    {"heading": "A soreness warning", "text": "An area just turned sore. Keep going trains as planned. Take it easy makes today Easy. A rest day gives the body the most time. Before a race, you choose between racing and scratching.", "see": ["soreness"]}
+   ]
+  }
+ },
+ "topics": {
+  "fatigue": {
+   "title": "Fatigue",
+   "version": 1,
+   "sections": [
+    {"heading": "Tired legs", "text": "Fatigue is how tired your whole body is, from 0 to 100: Fresh, Normal, Tired, Exhausted. Every session adds to it, and some of it fades every day, more on rest days."},
+    {"heading": "Why it matters", "text": "When you are tired, sessions train you less, races are slower and illnesses come more easily. Being a bit tired in heavy training weeks is normal; staying Tired for weeks is not."},
+    {"heading": "Not the same as soreness", "text": "Fatigue is the whole body and goes away in days. Soreness is one body area under strain, and it is the warning before an injury.", "see": ["soreness"]}
+   ]
+  },
+  "soreness": {
+   "title": "Soreness",
+   "version": 1,
+   "sections": [
+    {"heading": "What it is", "text": "Each body area (shins, feet, knees, heels, hamstrings, calves) takes strain from training. Strain shows as soreness: a bit sore, sore, painful."},
+    {"heading": "The early warning", "text": "\"A bit sore\" is when to listen: an easy day or a rest day now usually stops it from turning into an injury. Training on through \"sore\" and \"painful\" is how most injuries start."},
+    {"heading": "What makes it worse", "text": "Hard days, tired legs, sudden jumps in training, hard winter roads, a growth spurt and an old injury in the same place."}
+   ]
+  },
+  "injuries": {
+   "title": "Injuries and illness",
+   "version": 1,
+   "sections": [
+    {"heading": "Kinds", "text": "A niggle is a small problem you can train with. An injury means no running for a while, then easy running. A serious injury means weeks to months out. A cold allows easy training; with a fever you rest."},
+    {"heading": "While you are out", "text": "Banned sessions are swapped for ones that are allowed, such as pool running or the bike, which keep much of your fitness. Your abilities don't drop for good; you lose time."},
+    {"heading": "Training through it", "text": "With a minor problem you may ignore the limits, but each day of it adds healing time and can turn the problem into something worse."},
+    {"heading": "Coming back", "text": "After time off, your body is no longer used to full training. Jumping straight back into your old plan is itself a big risk: build up again.", "see": ["load_vs_normal"]}
+   ]
+  },
+  "load_vs_normal": {
+   "title": "Load vs your normal",
+   "version": 1,
+   "sections": [
+    {"heading": "What it shows", "text": "How much this plan's week trains you compared with your average week over the last four weeks. 100 % is your usual."},
+    {"heading": "Why it matters", "text": "Your body gets used to the training it is given. A gradual build-up is safe; a sudden jump (well above 120 %) is when injuries happen. Right after a break even a normal week is a big jump."}
+   ]
+  },
+  "plan_risk": {
+   "title": "Plan risk",
+   "version": 1,
+   "sections": [
+    {"heading": "What it shows", "text": "How likely this plan is to give you an overuse injury in the next few weeks, given what your body is used to now: Low, Moderate or High."},
+    {"heading": "How to use it", "text": "It is a guide, not a promise: bodies differ, and bad luck happens. To lower it, add Easy days or a rest day, take out a hard session, or build up over a few weeks."}
+   ]
+  },
+  "form": {
+   "title": "Race form",
+   "version": 1,
+   "sections": [
+    {"heading": "What it means", "text": "How fast you would race today compared with a normal day: Peaking, Sharp, OK, Rusty, or Tired. It changes your race time by a little, often enough to win or lose a place."},
+    {"heading": "Sharpness", "text": "Race-like work keeps you sharp: 800 m intervals, the club session, speed and strides, and races. It fades within a week or two without them."},
+    {"heading": "Freshness", "text": "Low fatigue on race day. A few lighter days before a race make you fresh; a taper gives you both and is how you peak.", "see": ["targets"]}
+   ]
+  },
+  "lighter_weeks": {
+   "title": "Lighter weeks",
+   "version": 1,
+   "sections": [
+    {"heading": "What they are", "text": "In general base and spring base, every fourth week of the phase is lighter: every day is one step easier (Hard to Normal, Normal to Easy). The week strip marks turn blue."},
+    {"heading": "Why", "text": "The body gets stronger in the easier days after hard work. Lighter weeks let it catch up, so you can train more over the season with less risk. You can switch them off per phase."}
+   ]
+  },
+  "easing_in": {
+   "title": "Easing in",
+   "version": 1,
+   "sections": [
+    {"heading": "What it is", "text": "When a new phase starts, its sessions come in a day at a time over its first weeks, while the rest of the week stays as in the phase before."},
+    {"heading": "Why", "text": "The first weeks of new hard work, such as the first 800 m intervals of the winter, are when injuries are most likely. A gentle change lets the body get used to it."}
+   ]
+  },
+  "targets": {
+   "title": "Target meets and the taper",
+   "version": 1,
+   "sections": [
+    {"heading": "Targets ◆", "text": "The meets your season builds up to, at most three. Your coach picks the main indoor and outdoor championships for you. The first indoor and first outdoor target decide when the phases fall; a third one only gets a taper."},
+    {"heading": "Changing them", "text": "Add or remove targets in the Training tab, or with Make target in the Calendar. Making a meet a target enters it when you can; withdrawing from it takes it off the list."},
+    {"heading": "The taper", "text": "The ten days before a target: fewer sessions and no long runs so you arrive fresh, one sharp session three days out to keep your speed, then a rest day and an easy day."}
+   ]
+  }
+ }
+}

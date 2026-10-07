@@ -72,7 +72,7 @@ func _plan_section() -> Control:
 		var card := ChoiceCard.new(title, detail, group)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.size_flags_stretch_ratio = 1.0
-		card.custom_minimum_size.y = 120 if not Layout.compact else 52
+		card.custom_minimum_size.y = 120 if not Layout.stacked() else 52
 		card.selected = id == (pending_variant if pending_variant != "" else current)
 		by_id[id] = card
 		card.button.pressed.connect(func(): _choose(id))
@@ -96,7 +96,7 @@ func _plan_section() -> Control:
 			pending_variant = ""
 			plan_changed.emit())
 		for b in [yes, no]:
-			if Layout.compact:
+			if Layout.stacked():
 				b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			buttons.add_child(b)
 		confirm.add_child(buttons)
@@ -124,14 +124,14 @@ func _choose(id: String) -> void:
 func _season_section() -> Control:
 	var box := UIKit.vbox(10)
 	box.add_child(UIKit.label("THE SEASON", "CaptionLabel"))
-	if not Layout.compact:
+	if not Layout.stacked():
 		var bar := SeasonBar.new(year)
 		bar.phase_pressed.connect(func(id): phase_opened.emit(id))
 		box.add_child(bar)
 		box.add_child(UIKit.wrapped("Blue weeks under the bar are lighter weeks, orange ones a taper; %s = a target meet, "
 				% SeasonUI.TARGET_MARK + "the white line = today, a dark dot = your changes."))
 	var list: Container
-	if Layout.compact:
+	if Layout.stacked():
 		list = UIKit.vbox(8)
 	else:
 		var grid := GridContainer.new()
@@ -240,7 +240,7 @@ func _targets_section() -> Control:
 			buttons.add_child(remove)
 			for b in buttons.get_children():
 				b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-				if Layout.compact:
+				if Layout.stacked():
 					b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(buttons)
 		box.add_child(row)
@@ -255,8 +255,8 @@ func _targets_section() -> Control:
 			box.add_child(UIKit.wrapped("No other meets this season that you could make a target.", ""))
 		else:
 			var add := OptionButton.new()
-			add.custom_minimum_size = Vector2(0 if Layout.compact else 360, 44)
-			add.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_BEGIN
+			add.custom_minimum_size = Vector2(0 if Layout.stacked() else 360, 44)
+			add.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.stacked() else Control.SIZE_SHRINK_BEGIN
 			add.fit_to_longest_item = false
 			add.clip_text = true
 			add.add_item("Add a target meet…")

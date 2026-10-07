@@ -9,10 +9,10 @@ extends RefCounted
 ## the Easy / Normal / Hard buttons on one row. Phone: a header line (day + load) with the two pickers stacked
 ## under it, then the three intensity buttons. `on_change` is called after every edit.
 static func day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_change: Callable, title: String) -> Control:
-	var day_label := UIKit.label(title, "SubheadingLabel" if Layout.compact else "")
+	var day_label := UIKit.label(title, "SubheadingLabel" if Layout.stacked() else "")
 	var load_label := UIKit.label("", "MutedLabel")
 	var row: BoxContainer
-	if Layout.compact:
+	if Layout.stacked():
 		row = UIKit.vbox(6)
 		var head := UIKit.hbox(8)
 		day_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -33,7 +33,7 @@ static func day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_chang
 				pick.select(i)
 		slots.append(pick)
 		row.add_child(pick)
-	if not Layout.compact:
+	if not Layout.stacked():
 		load_label.custom_minimum_size.x = 80
 		row.add_child(load_label)
 
@@ -43,8 +43,8 @@ static func day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_chang
 	var level_row := UIKit.hbox(6)
 	for level in Training.INTENSITIES:
 		var b := UIKit.toggle(Training.intensity(level).name, group)
-		b.custom_minimum_size.x = 0 if Layout.compact else 72
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_END
+		b.custom_minimum_size.x = 0 if Layout.stacked() else 72
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.stacked() else Control.SIZE_SHRINK_END
 		b.button_pressed = level == plan.intensity[day]
 		level_buttons[level] = b
 		level_row.add_child(b)
@@ -77,7 +77,7 @@ static func day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_chang
 
 static func session_picker(a: Athlete, month: int) -> OptionButton:
 	var pick := OptionButton.new()
-	pick.custom_minimum_size = Vector2(0 if Layout.compact else 200, 44)
+	pick.custom_minimum_size = Vector2(0 if Layout.stacked() else 200, 44)
 	pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pick.add_item("—")
 	pick.set_item_metadata(0, "")
@@ -132,11 +132,11 @@ static func fill_summary(box: VBoxContainer, a: Athlete, plan: Variant, monday: 
 	for id in focus:
 		var row := UIKit.hbox(10)
 		var l := UIKit.label(UIKit.attr_name(id))
-		l.custom_minimum_size.x = 150 if Layout.compact else 200
+		l.custom_minimum_size.x = 150 if Layout.stacked() else 200
 		row.add_child(l)
 		var bar := ColorRect.new()
 		bar.color = Palette.ACCENT
-		bar.custom_minimum_size = Vector2(minf(p.stimulus[id], 6.0) * (30.0 if Layout.compact else 50.0), 12)
+		bar.custom_minimum_size = Vector2(minf(p.stimulus[id], 6.0) * (30.0 if Layout.stacked() else 50.0), 12)
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(bar)
 		box.add_child(row)
