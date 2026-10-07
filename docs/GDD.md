@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.6 — 2026-10-06 (M2 steps 3–5: health model built and tuned, 4.6; step 6 season periodization designed, 4.8). Living document: updated after each design discussion.
+Version 0.7 — 2026-10-07 (race realism designed, 4.3.1; earlier: M2 steps 3–6 built, 4.6 / 4.8). Living document: updated after each design discussion.
 
 ## 1. Vision
 
@@ -131,6 +131,192 @@ on aggregate result standards only, with no individual names or results. Real at
   with heats when needed (2 auto qualifiers per heat + fastest losers).
 - **Results:** stored on the athlete (results list, PB). They show on the Overview and in the weekly report.
 - **Tuning:** `tools/race_balance.gd` (median times hit the anchors within ~1 s).
+- **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
+  and commentary. See 4.3.1; it replaces the plan lap factors, the fixed decision points and the commentary above.
+
+### 4.3.1 Race realism (designed 2026-10-07, not built yet)
+
+Playtest (user, 2026-10-07): the order seems settled early, while real 800 m races are often one bunch with moves
+anywhere. Wanted: pack racing (staying together, drafting, being boxed in), rival moves at any point that can change the
+order late, the player answering them, and commentary that reacts to what happens and to the player's choices.
+
+**Measured before (M1 engine, `tools/race_shape.gd -- 100`, 8 runners, seed 11).** Gaps in metres when the leader
+passes 200 / 400 / 600 m; finish gaps are medians:
+
+| Row | 1st→last 200/400/600 m | 1st→4th at 400 | Within 5 m of leader at 400 | Leader at 400 / 600 wins | Order 400 / 600 vs finish (r) | Finish 1st→2nd / 4th / last | Won by < 0.2 s | Time / table |
+|---|---|---|---|---|---|---|---|---|
+| Youth even field (ability 7 ± 0.8) | 23 / 46 / 65 | 19 | 1.7 | 62 % / 71 % | 0.84 / 0.88 | 2.5 / 7.0 / 17.5 s | 6 % | 0.996 |
+| Youth local meet, wide (7 ± 1.6) | 37 / 74 / 108 | 31 | 1.4 | 85 % / 94 % | 0.93 / 0.94 | 4.6 / 11.7 / 33.0 s | 3 % | 0.995 |
+| Youth championship final (9 ± 0.5) | 17 / 35 / 47 | 16 | 1.9 | 50 % / 69 % | 0.75 / 0.82 | 2.0 / 4.9 / 11.9 s | 7 % | 0.997 |
+| Youth indoor (7 ± 0.8) | 24 / 46 / 65 | 21 | 1.6 | 79 % / 88 % | 0.85 / 0.88 | 3.1 / 8.4 / 18.3 s | 5 % | 1.012 |
+| Girls even field (7 ± 0.8) | 21 / 42 / 60 | 18 | 1.8 | 66 % / 81 % | 0.82 / 0.87 | 2.9 / 7.6 / 17.8 s | 4 % | 0.997 |
+| Senior national final (15 ± 0.4) | 13 / 28 / 36 | 12 | 2.1 | 53 % / 67 % | 0.62 / 0.73 | 1.0 / 2.8 / 7.0 s | 8 % | 0.997 |
+| 8 identical runners (9, consistency 20) | 10 / 21 / 24 | 9 | 2.7 | 38 % / 47 % | 0.41 / 0.51 | 0.5 / 1.8 / 4.1 s | 25 % | 0.999 |
+
+`race_balance.gd` before (median vs anchor): girls 5–13 within −1.4…+0.4 s; boys 5–13 within −1.0…+0.1 s; indoor boys
++1.1…+2.4 s (slower by design: tight bends).
+
+**Real races** (times only; youth athletes are minors, so no names are used or stored):
+- Nuorten SM 14–15, Mikkeli 31.7.–2.8.2026, and 16–17, Hyvinkää 7.–9.8.2026 (Tilastopaja results 113170 / 113276;
+  17 races of 6–11 runners, P/T 14–17, seeded timed sections). Medians: 1st→2nd **1.1 s**, 1st→4th **3.5 s**, 1st→last
+  **11.9 s**; 2 of 17 won by < 0.2 s. Typical shape: a tight front group, then a long tail (e.g. 2:05.24, 2:06.04,
+  2:06.20, 2:06.25, 2:06.47, 2:08.64, 2:08.86, 2:14.47).
+- Kalevan kisat, Jyväskylä 24.–26.7.2026 (Tilastopaja 113047), men's final + 3 heats: medians 1st→2nd **0.06 s**,
+  1st→4th **1.1 s**, 1st→last **4.1 s**; the final 1:50.88 / 1:50.88 / 1:51.48 / 1:51.78 … 1:53.59. Women (less deep):
+  1st→2nd 0.14 s, 1st→4th 2.5 s, 1st→last 9.6 s.
+- District youth meet (15–9-v. pm-kilpailut, Riihimäki 22.–23.8.2026, Tilastopaja 113558): small fields, big gaps
+  (e.g. T15 2:39.05 / 2:42.85 / 2:52.88): wide fields really do string out.
+- World level (Wikipedia): Paris 2024 men's final 1st→4th 0.48 s, 1st→8th 2.65 s; Tokyo 2021 men's final bell 53.76,
+  all 9 within 1.47 s; Budapest 2023 the winner was last at 400 m; World U20 2024 final 1st→4th 0.29 s; Tokyo 2021
+  women "the pack still tight" at the bell.
+- Renfree et al. 2014 (IJSPP 9:362, 2012 Olympics): order vs finish r = 0.61 at 400 m, 0.84 at 600 m. NCAA 2025
+  (Citius Mag): half the champions led at the bell; both 800 m winners came from 5th–6th. Since 2011 world medallists
+  run the first lap 2.2 ± 1.1 s faster than the second. Pugh 1971 (J Physiol): ~8 % of the energy at 6 m/s goes to air
+  resistance; running 1 m behind someone cut oxygen use ~6 %.
+
+**Why the field strings out (the M1 engine):** (1) every runner runs their own clock: target speed = own even pace ×
+plan factor, nobody adjusts to the race except not running into the runner in front; (2) the plan sets lap 1: front
+×1.05, pack ×1.03, back ×1.01, so two equal runners are ~18 m apart at 400 m (the identical-runners row); (3) weaker
+runners drop off from the gun instead of hanging on and being dropped late; (4) drafting only discounts the drain
+above the sustainable speed by 7 %, worth ~0.1–0.2 % of effort (real ~6 %); (5) rival kicks are pre-rolled distances,
+nobody covers a move; (6) the player's decisions come at fixed distances, the "rival move" one only at 420–570 m; (7)
+about four kinds of commentary line. The order-vs-finish correlation is near real; the **gaps** are 2–5× too big, so a
+change of place late is a fade, never a fight.
+
+**Decisions (user, 2026-10-07):**
+1. Race shapes per level as proposed (table below).
+2. **Pauses for the big moments plus an always-there action bar** (the player can make their own move at any time).
+3. **Rival personalities**, kept per rival, hidden at first, a tag after racing someone twice, mentioned by the commentator.
+4. **Boxed in** always has a way out at a cost; **falls and tripping: yes**.
+5. **Quick results use the same engine**; the athlete decides by race tactics.
+6. **TV commentator and the coach**: the coach shouts from the side of the track, as coaches really do.
+7. Energy shown as **a word**.
+8. Good race vs bad race ≈ **0.5–1 % of time** (1–2 places in an even field); smart racing **can cause upsets** when a
+   stronger runner races badly, with a proper balance (targets below).
+9. At 2x / 4x the race **drops to 1x** for a moment when something happens near the player.
+
+**Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
+- **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
+  the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 3–7 % slower, then a
+  long sprint). Mix: local youth 50 / 35 / 15, district 40 / 40 / 20, championship heats 30 / 50 / 20, finals
+  20 / 35 / 45 (fast / honest / tactical). A front runner in the field moves weight towards fast; no front runner
+  towards tactical. The leader aims for the shape's pace; the commentator calls it at 200 m.
+- **Following:** every runner wants a place (personality + plan: lead / front of the pack / back of the pack / own
+  pace). Behind a group they run the group's speed. Running faster than their own sustainable speed drains the reserve
+  as now; **drafting** (≤ 1.5 m behind, same line) lowers the cost by about 2 % of speed (from Pugh's 6 % of energy,
+  less on bends and in the second row; data). Leading costs the full price.
+- **Hanging on and being dropped:** a runner stays with the group while their expected reserve at their kick point
+  is enough (personality and determination set how deep they dig). When it isn't, they fall back to their own pace:
+  "dropped". This gives the real shape: a tight front group, a long tail.
+- **Misjudged energy:** each runner feels their reserve with an error (± a few %, smaller with better race tactics),
+  fixed per race, so a long kick sometimes dies in the last 50 m. The player's Feeling word shows the *felt* reserve.
+- **Moves:** any runner may surge (+4–8 % for 50–150 m) at any point after the break: chance by personality, race
+  shape (more in tactical races) and position. Runners close to the move cover it or let it go (personality, tactics,
+  energy). A covered move bunches the field again; an uncovered one opens a gap that may hold or come back.
+- **Kick chain:** a kick near the front sets off answers instead of every kick being pre-rolled.
+- **Boxed in:** on the inside with a runner ≤ 1.5 m ahead and one alongside outside: no faster than the runner ahead.
+  Ways out: *wait* (a gap opens when the pack stretches or the runner ahead fades; more often with better race
+  tactics), *ease and step out* (costs 2–4 m), *push through* (a gap between two runners: contact risk, a small
+  obstruction-DQ risk). Rivals obey the same rules (kickers get boxed too).
+- **Contact, stumbles and falls:** contact can happen where paths cross at close range: cutting in at the break line,
+  bunched bends, swinging out late, pushing through. A contact is mostly nothing, sometimes a **stumble** (1–3 m and a
+  little reserve), rarely a **fall** (4–8 s, rarely DNF); a fall can bring down the runner just behind. Target ≈ 1 fall
+  per 60–100 bunched races per runner, much rarer in strung-out fields; front running is safest. A fall rolls an acute
+  race injury in the health model (new `injuries.json` entries: graze / bruise niggle, rarely an ankle sprain; spiked =
+  cut niggle). Obstruction DQ only from "push through", tiny chance (data).
+- **Heats:** with automatic places, runners safely in them ease off in the last 30–50 m (not when fastest losers count).
+- **Plan lap factors go**; the pre-race plan picks the place the player wants (Lead / Sit in the pack / Wait at the back).
+- **Calibration:** one data number (cruising-speed scale) brings the median back to the anchors: tactical races are
+  slower, fast ones quicker, the mix averages to the table. The off-screen rival races (`Rivals.train_week`, table ×
+  ~1.008) stay as they are, so the engine's median time / table must stay within ±0.5 % of 1.00.
+- All randomness from the race's own RNG (tools stay repeatable).
+
+**Rival personalities** (`personality` on the rival dict; old saves get one on load, made from the rival's
+`anaerobic` and a hash of its id, so no save version change): **Front runner** (leads, honest or fast, long drive from
+300–400 m; common among youth), **Pack runner** (sits 2nd–4th, covers moves, kicks 200–150), **Kicker** (back of the
+pack, ignores mid-race moves, kicks 150–100, big reserve), **Surger** (one or two moves at 300–550 m). Weights by
+`anaerobic` (low → front / surger, high → kicker). Race tactics = how well they judge and time it, not the type.
+Shown as a tag in the pre-race field after the player has raced that rival twice (`met` count on the rival); the
+commentator mentions it ("known for her late kick").
+
+**Player controls (detailed mode).**
+- **Pre-race:** plan (Lead / Sit in the pack / Wait at the back).
+- **Pause cards** (the race waits, as now), **event-driven**, at most 6 per race (data), the most important first; minor
+  ones only go to the commentary: break position and bell / halfway (always); a rival move within ~15 m (any distance:
+  *Go with them / Let them go / Counter-attack*); boxed in while a move goes (*Wait / Ease and step out / Push through
+  (risk)*); losing contact (*Dig in / Run your own pace*); a slow tactical pace (*Take the lead / Stay put*); home
+  straight (as now); after a fall (*Get up and chase / Finish steady*). The card shows the coach's shout when the coach
+  can see it ("Coach: Go with him!").
+- **Action bar**, always there, no pause, 44 px: **Push / Hold / Ease / Move out / Kick now** (the active one
+  highlighted; Kick now needs a second tap within 2 s, "Tap again to kick", against mistaken taps on a phone).
+- **Slow motion:** at 2x / 4x the race drops to 1x for ~5 race seconds when a move, box, contact or fall happens
+  within ~20 m of the player (data), then returns to the chosen speed.
+- **Feeling** word under the clock: Comfortable / Working / Hurting / Empty (felt reserve, fatigue).
+- **Quick mode:** the same engine; cards answered by the athlete (race tactics, as `_auto_choice` today), no action bar.
+
+**Coach and commentary.**
+- **Voices:** the **TV commentator** (third person), the **coach** (shouts to the player from a spot by the track:
+  outdoors near the 200 m start / back straight, once a lap; indoors from the infield, twice a lap; splits, "Relax!",
+  "Stay on his shoulder!", reacting to rivals; advice quality = the club coach's for now, good not perfect; hired
+  coaches change it later), and **"you" lines** for the player's own choices. Now and then another runner's coach is
+  heard ("Go Aino!").
+- **Events, not text:** the engine posts race events (start, break leader, pace calls at 200 / 400 / 600 compared with
+  the field's even pace, pack shape, move, cover, dropped, boxed, escape, contact / stumble / fall, lead change, kick,
+  kick dying, close finish, photo finish, PB / SB) and the commentary picks lines for them.
+- **Lines in `data/race_commentary.json`:** per event several variants with placeholders (`{name}`, `{m}`, `{split}`,
+  `{gap}`, `{pos}`), tags (shape, level, indoor, voice). Never the same variant twice in a race, the last ~30 used
+  remembered across races, at least ~2 race seconds between lines except important ones, one pace call per 200 m.
+- **Choices get a verdict** ~10 s later from what happened ("You went with him and it's paying off", "Waiting has cost
+  you two places").
+- **UI:** PC = a COMMENTARY box of fixed height in the side panel (6 lines, newest on top, scroll for older; coach
+  lines in the accent colour with a COACH tag), key moments also as a 2-second banner over the track. Phone = a 2-line
+  ticker under the track; tap opens the full log as a sheet (the race waits, like help). Result screen: **Race story**
+  (splits at 200 / 400 / 600 for the player and the winner, 4–6 key moments, the coach's one-line verdict).
+- Texts in data, so they can be translated (D27).
+
+**Sketches** (the action bar, banner, ticker and card; layout as today):
+```
+PC                                                      side panel
+┌───────────────────────────────────────────────┬──────────────────────────┐
+│ Nuorten SM · Final                [1x][2x][4x]│ 1:31.4                   │
+│        (track with dots)                      │ You 4th · 229 m to go    │
+│   ┌──────────────────────────────────┐        │ Feeling: working         │
+│   │ Korhonen kicks — 229 m to go!    │ banner │ POSITIONS …              │
+│   └──────────────────────────────────┘        │ COMMENTARY               │
+│ [Push] [Hold] [Ease] [Move out] [Kick now]    │ ▸ Korhonen kicks!        │
+│                                               │   COACH: Go with him!    │
+└───────────────────────────────────────────────┴──────────────────────────┘
+Card (dimmed overlay)                         Phone
+┌ A rival makes a move ─────────────── ? ┐    ┌──────────────────────────────┐
+│ Korhonen kicks with 229 m to go.        │    │ Final          [1x][2x][4x]  │
+│ You: 4th, boxed on the rail.            │    │      (track, 250 px)         │
+│ Coach: "Go with him!"                   │    │ ▸ Korhonen kicks! 229 to go  │
+│ [ Go with him ]   costs energy now      │    │   COACH: Go with him!        │
+│ [ Let him go ]    he may fade late      │    │ 1:31.4  You 4th · working    │
+│ [ Ease, step out ] free, but −3 m       │    │ [Push][Hold][Ease][Kick]     │
+│ [ Push through ]  risk of contact       │    │ POSITIONS …                  │
+└─────────────────────────────────────────┘    └──────────────────────────────┘
+```
+(The phone bar has room for four buttons; Move out moves to the card / a second row when needed, decided in the build.)
+
+**Balance and verification:**
+- `race_balance.gd`: medians within ±1 s of the anchors (before: above). `race_shape.gd`: time / table median within
+  ±0.5 % of 1.00.
+- **Shape targets** (`race_shape.gd`): youth championship final row: finish 1st→2nd ≈ 0.6–1.5 s, 1st→4th ≈ 2.5–4.5 s,
+  1st→last ≈ 9–15 s (real 1.1 / 3.5 / 11.9); senior national final row: 1st→2nd ≈ 0.1–0.5 s, 1st→4th ≈ 0.7–1.5 s,
+  1st→last ≈ 3–5.5 s, won by < 0.2 s in 30–60 % (real 0.06 / 1.1 / 4.1, 3 of 4); even finals: ≥ 4 of 8 within 5 m of
+  the leader at 400 m, the leader at 400 m wins 30–50 %, order vs finish r ≈ 0.6 at 400 m and ≈ 0.8 at 600 m; wide
+  local fields stay strung out (1st→last ≥ 20 s).
+- **Upsets** (new duel rows in `race_shape.gd`: runner A stronger by Δ ability with a bad race, e.g. leads too fast /
+  waits boxed / kicks from 400 m, runner B with a good race, in an even field): a good vs bad race is worth ≈ 0.5–1 %
+  of time on average; at Δ = 0.5 B beats A ≈ 45–55 % (vs ≈ 30 % when both race neutrally); at Δ = 1 ≈ 20–30 %; at
+  Δ = 2 under 5 %. Watched with sensible choices vs quick mode: at most ~1 place better on average.
+- **Falls:** ≈ 1 per 60–100 bunched races per runner; printed by `race_shape.gd`.
+- Form (4.8) works on ability before the race, so `form_check.gd` must still pass unchanged; `training_balance.gd`
+  parts 1–2 fingerprints identical (no races there); `rankings_check`, `day_engine_check`, `health_check`,
+  `help_check` pass; `race_perf.gd` keeps 60 fps on PC and phone size; the tour and layout check get seeded race states
+  (action bar, banner, ticker, card with the coach's shout, race story).
+- Build order and sessions: ROADMAP "Race realism".
 
 ### 4.4 Season calendar (first version built)
 

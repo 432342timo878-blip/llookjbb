@@ -124,6 +124,37 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         *(Sonnet, high)*
         Check: `season_check.gd` (rollover, 2028 leap year, save/load at the boundary, no drift), all earlier checks,
         tools that play days still finish (they set repeat mode / answer the offer), playtest screenshots.
+- [ ] **Race realism (designed 2026-10-07, GDD 4.3.1)**, before step 7, so the multi-year check measures the new
+      race times. From the playtest notes "Races are decided too early" and "More immersive races". Each session ends
+      with the checks named, a commit and "Push origin"; `race_shape.gd` + `race_balance.gd` numbers before and after
+      go into GDD 4.3.1:
+  - [ ] **R1. Pack engine (headless):** race shapes (`races.json` `shapes`, mix per level / round), the leader's pace,
+        following a group, drafting (~2 % of speed), hanging on and being dropped, misjudged energy, rival
+        `personality` (+ made on load for old saves, `met` count), plan lap factors replaced by the wanted place,
+        the cruising-speed scale calibrated; the player's cards stay the old fixed ones for now. *(Opus, high)*
+        Check: `race_balance.gd` medians ±1 s of the anchors, `race_shape.gd` time / table within ±0.5 % and the shape
+        targets of GDD 4.3.1 (tight front group, long tail; wide local fields still strung out), `form_check.gd`,
+        `rankings_check.gd`, the race screen still runs (`race_perf.gd`).
+  - [ ] **R2. Moves, boxes, falls (headless):** surges at any point, covering / letting go, the kick chain, boxed in +
+        the three ways out, contact / stumble / fall (+ a fall bringing down the runner behind), race injuries in
+        `injuries.json` through the health model, the obstruction DQ, heats easing in, the engine's race event list
+        (for the commentary), the duel rows and fall counts in `race_shape.gd`; tune the upset targets. *(Opus, high)*
+        Check: the shape, upset and fall targets of GDD 4.3.1; `health_check.gd`; R1 checks still pass.
+  - [ ] **R3. Player controls (UI):** event-driven decision cards (max 6, priority), the action bar (Push / Hold / Ease
+        / Move out / Kick now, double tap for Kick, PC + phone, 44 px), the drop to 1x near the player, the Feeling
+        word, the coach's shout on cards, quick mode answering the new cards, help entries (`race_running` etc.,
+        raise `version`). *(Sonnet, high)*
+        Check: tour + layout check with seeded race states (no overflow at the 5 sizes), `help_check.gd`,
+        `race_perf.gd` 60 fps, quick vs watched with default choices within ~1 place on average.
+  - [ ] **R4. Commentary, coach and race story (UI + data):** `data/race_commentary.json` (variants, placeholders,
+        tags, voices TV / coach / you), no repeats + rate rules, choice verdicts, the coach's spot by the track, PC box +
+        banner, phone ticker + log sheet, the Race story on the result screen, personality tags and the SB column (backlog
+        item) in the pre-race field. *(Sonnet, high)*
+        Check: a tool plays 50 races and prints how often each line is used (no line twice in a race, no event without
+        lines); tour + layout check; `help_check.gd`; look at the screenshots.
+  - [ ] **R5. Balance & playtest:** all GDD 4.3.1 targets in one table before / after, watched races on PC and phone
+        (indoor and outdoor, heats + final), fixes, docs + CLAUDE.md. *(Opus, medium: tuning; Sonnet for the fixes)*
+        Check: every check tool above, `training_balance.gd -- 0` fingerprints identical, `season_check.gd`.
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
@@ -184,6 +215,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
     racing (runners staying together, drafting, being boxed in) and moves from rivals at any point that can change the order late,
     plus the player's answers to them. Look first at why the field strings out early (rival pace choices, the fatigue and drafting
     numbers in `data/races.json`, `tools/race_balance.gd`). Goes together with the "more immersive races" design session above. *(Opus)*
+  - **Both designed 2026-10-07:** GDD 4.3.1 "Race realism" (measured with the new `tools/race_shape.gd` against Tilastopaja
+    results of Nuorten SM and Kalevan kisat 2026); build in M2 part 1 "Race realism" R1–R5, before step 7.
 
 ## M3 — Stadium view
 - [ ] 2D stadium during meets: track, crowd, simultaneous events
