@@ -7,7 +7,7 @@ const PLANS := [
 	["pack", "Sit in the pack", "Run behind others near the front and save energy. The safe, flexible choice."],
 	["back", "Wait at the back", "Save the most for a late kick. Suits fast finishers; you may get boxed in."],
 ]
-const SPEEDS := [2.0, 4.0, 8.0]
+const SPEEDS := [1.0, 2.0, 4.0]   # 1x = real time (GDD 4.3.1 sketch)
 
 var _rd: RaceDay
 var _race: Race

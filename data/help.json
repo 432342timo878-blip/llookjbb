@@ -109,7 +109,7 @@
    "title": "The race",
    "version": 1,
    "sections": [
-    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed. The race runs in lanes until the first bend is over, then everyone cuts in."},
+    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. The race runs in lanes until the first bend is over, then everyone cuts in."},
     {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Spend the reserve too early and you tie up in the finish."},
     {"heading": "Decisions", "text": "The race pauses when you have a choice: where to run after the break, what to do at the bell, whether to go with a rival's move, when to kick, and how to get past on the home straight."}
    ]
