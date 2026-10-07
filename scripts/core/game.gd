@@ -157,6 +157,10 @@ func use_season_plan() -> void:
 			var m := Calendar.get_meet(key)
 			if not m.is_empty() and Calendar.can_enter(athlete, m, date).ok:
 				enter(key)
+	# Back in a later season than the plan was made for (it was off at the rollover): that season starts now.
+	var ss := get_system("season") as SeasonSystem
+	if ss:
+		ss.roll_over(season.plan_year(week_monday()))
 	current_week()
 	var health := get_system("health") as HealthSystem
 	if health:

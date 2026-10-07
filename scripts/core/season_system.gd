@@ -114,7 +114,8 @@ func choose(year: int, variant_id: String) -> void:
 
 
 ## A new season starts tomorrow: without the player's choice it runs on the coach's ★ of today; its targets are
-## entered where allowed. Once per season, season mode only, never the career's first season.
+## entered where allowed. Once per season, season mode only, never the career's first season. Also called when the
+## player switches the season plan back on in a season that started while it was off (Game.use_season_plan).
 func roll_over(year: int) -> void:
 	var s := Game.season
 	if s.mode != SeasonPlan.PHASES or year <= s.first_season or rolled.has(year):

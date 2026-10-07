@@ -848,6 +848,21 @@ func _check_coach_events() -> void:
 	ss.on_day_end({"date": _d(2028, 10, 29)})
 	_ok("a chosen plan survives the rollover, and so do the player's targets", game.season.variant(2028) == "ambitious"
 			and game.season.targets(2028) == with_extra)
+	# Switched to one repeating week before the season turned, back on after it (the user's save, 2026-10-07).
+	_new_career(3, "phases")
+	ss = game.get_system("season")
+	game.season.switch_to_repeat(game.week_monday())
+	game.date = _d(2027, 10, 31)
+	ss.on_day_end({"date": _d(2027, 10, 31)})
+	_ok("repeat mode: no rollover", not ss.rolled.has(2027) and not game.season.seasons.has(2027))
+	game.date = _d(2027, 11, 1)
+	game._week = null
+	game.entries = []
+	game.use_season_plan()
+	var late: Array = game.season.targets(2027)
+	_ok("back to the season plan in a new season: it starts now (record, targets %s entered)" % [late],
+			ss.rolled.has(2027) and game.season.seasons.has(2027) and not late.is_empty()
+			and late.all(func(k): return k in game.entries))
 	# Save / load of the season system.
 	var copy = SS.new()
 	copy.from_dict(JSON.parse_string(JSON.stringify(ss.to_dict())))
