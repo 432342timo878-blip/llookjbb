@@ -700,7 +700,8 @@ the day before a target**; the player sees **one line** in the Training tab ("Co
 - **Against the targets:** Balanced injuries ≤ 0.8 **met** (0.78), form at targets **met** (+1.30 %, Peaking 88 %; target +0.8…1.3), season best
   at a target **met** (92 % / 73 % vs 35 % / 0 %); Balanced progress **not met** (+1.17 = the repeating week, target +1.25–1.35); Steady progress
   **met** (+1.02), Steady injuries **not met** (0.60–0.67, target ≈ 0.4); Ambitious careful progress **met** (+1.49, target +1.5–1.6), its
-  injuries **lower** than designed (0.99, target 1.3–1.6), neutral above careful (1.23) as designed. **Options (open, the user's call):**
+  injuries **lower** than designed (0.99, target 1.3–1.6), neutral above careful (1.23) as designed. **Decided (user, 2026-10-07): option (a)
+  for all three, accepted as measured** (a model change for progress can come up again in step 7). The options were:
   1. *Balanced progress:* (a) accept: in this model periodization pays in race-day form (+1.3 % ≈ 1.8 s at 2:20) and safety, not in weekly
      progress, as "Why it matters" says (recommended); (b) a heavier Balanced: tried, +1.21 at 0.87–0.97 injuries and plan risk "ever High" 32 %;
      (c) a model change in step 7, e.g. an adaptation bonus after lighter weeks and tapers, or a transition that costs less fitness.
