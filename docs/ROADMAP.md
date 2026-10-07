@@ -140,6 +140,13 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   properly licensed photo exists (e.g. Wikimedia Commons CC BY-SA, needs the Credits screen), a real photo.
   Youth stay fictional (minors). The player's own avatar can come with stage 1 too.
 
+- **Club (seura) and hometown pages (user, 2026-10-07):** see your own club's information, and the same for every club: general
+  info, all its athletes. Likewise your hometown and every hometown: info and all its athletes. Needs clubs / hometowns to
+  have athletes (rival cohort per club and town) and the rival profile screen above. Needs a design session first. *(Opus, then Sonnet)*
+- **More meets in the calendar (user, 2026-10-07):** add all the national and international meets that can be found, on top of
+  the SUL Arvokilpailukalenteri 2027 PDF (https://www.yleisurheilu.fi/wp-content/uploads/2026/05/Arvokilpailukalenteri-2027.pdf)
+  already used. Real dates with sources; where unknown, realistic estimates marked `estimated`. Also fills in more `main` meets
+  for the season model (GDD 4.8). Research + data task. *(Sonnet)*
 - **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 
