@@ -327,6 +327,10 @@ func _build_race(info: Dictionary) -> void:
 	if warning != null:
 		add_child(warning)
 	add_child(UIKit.panel(box, 14))
+	if info.today:
+		var form := FormUI.race_card()   # how you will race today (a later race day: it depends on the days in between)
+		if form != null:
+			add_child(form)
 
 
 # --- Health ------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 {
- "_note": "Ready-made training sessions (GDD D25). load = fatigue added (before durability). effects = training stimulus per attribute; several sessions on the same attribute in one week give diminishing returns. needs_track: needs a running track; in the months the outdoor track is closed, athletes without an indoor hall do it on roads/snow at reduced effect. months: only possible in these months (e.g. skiing needs snow). Health (GDD 4.6): strain = hidden strain added per body area (data/health.json); acute = chance per session of a bad-luck injury (data/injuries.json); tags = what kind of session it is, which injury restrictions ban by tag; instead = what it is swapped for when an injury bans it (the first allowed one).",
+ "_note": "Ready-made training sessions (GDD D25). sharp = race sharpness a session adds (GDD 4.8 Form, data/form.json; sessions without it add none). load = fatigue added (before durability). effects = training stimulus per attribute; several sessions on the same attribute in one week give diminishing returns. needs_track: needs a running track; in the months the outdoor track is closed, athletes without an indoor hall do it on roads/snow at reduced effect. months: only possible in these months (e.g. skiing needs snow). Health (GDD 4.6): strain = hidden strain added per body area (data/health.json); acute = chance per session of a bad-luck injury (data/injuries.json); tags = what kind of session it is, which injury restrictions ban by tag; instead = what it is swapped for when an injury bans it (the first allowed one).",
  "season": {
   "track_closed_months": [11, 12, 1, 2, 3, 4],
   "track_access_bases": ["indoor_hall", "sports_class"],
@@ -21,7 +21,7 @@
    "strain": {"shins": 7, "feet": 5, "knees": 5, "achilles": 3, "hamstrings": 2, "calves": 5}
   },
   {
-   "id": "fartlek", "name": "Fartlek", "load": 13,
+   "id": "fartlek", "name": "Fartlek", "load": 13, "sharp": 4,
    "description": "40 min on forest trails with free surges.",
    "effects": {"aerobic_capacity": 0.7, "lactate_threshold": 0.6, "speed_endurance": 0.5, "race_tactics": 0.15, "determination": 0.1},
    "tags": ["run", "hard"], "instead": ["easy_run", "aqua_jog", "stationary_bike"],
@@ -29,14 +29,14 @@
    "acute": {"ankle_sprain": 0.0006}
   },
   {
-   "id": "tempo_run", "name": "Tempo run", "load": 17,
+   "id": "tempo_run", "name": "Tempo run", "load": 17, "sharp": 3,
    "description": "3 × 8 min at a comfortably hard pace.",
    "effects": {"lactate_threshold": 1.4, "aerobic_capacity": 0.5, "running_economy": 0.3, "pain_tolerance": 0.15},
    "tags": ["run", "hard"], "instead": ["easy_run", "aqua_jog", "stationary_bike"],
    "strain": {"shins": 7, "feet": 5, "knees": 4, "achilles": 4, "hamstrings": 3, "calves": 6}
   },
   {
-   "id": "intervals_800", "name": "800 m intervals", "load": 26, "needs_track": true,
+   "id": "intervals_800", "name": "800 m intervals", "load": 26, "sharp": 20, "needs_track": true,
    "description": "6 × 300 m fast with long recoveries. Race-specific and very hard.",
    "effects": {"speed_endurance": 1.5, "lactate_threshold": 0.4, "pain_tolerance": 0.4, "race_tactics": 0.15},
    "tags": ["run", "hard", "speed"], "instead": ["easy_run", "aqua_jog", "stationary_bike"],
@@ -44,7 +44,7 @@
    "acute": {"hamstring_pull": 0.0004, "calf_pull": 0.0003}
   },
   {
-   "id": "speed_strides", "name": "Speed & strides", "load": 9, "needs_track": true,
+   "id": "speed_strides", "name": "Speed & strides", "load": 9, "sharp": 4, "needs_track": true,
    "description": "Flying 30 m sprints and relaxed strides on the straight.",
    "effects": {"speed": 1.2, "acceleration": 0.5, "running_technique": 0.4},
    "tags": ["run", "speed"], "instead": ["easy_run", "stationary_bike", "gym_core"],
@@ -52,7 +52,7 @@
    "acute": {"hamstring_pull": 0.0002}
   },
   {
-   "id": "hill_sprints", "name": "Hill sprints", "load": 11,
+   "id": "hill_sprints", "name": "Hill sprints", "load": 11, "sharp": 3,
    "description": "8 × 10 s uphill, walk back down to recover.",
    "effects": {"power": 1.2, "acceleration": 0.6, "strength": 0.5},
    "tags": ["run", "speed", "plyo"], "instead": ["strength", "stationary_bike", "gym_core"],
@@ -60,7 +60,7 @@
    "acute": {"calf_pull": 0.0003, "hamstring_pull": 0.0002}
   },
   {
-   "id": "start_practice", "name": "Start practice", "load": 5, "needs_track": true,
+   "id": "start_practice", "name": "Start practice", "load": 5, "sharp": 2, "needs_track": true,
    "description": "Standing and crouch starts, reaction games.",
    "effects": {"starts": 1.4, "acceleration": 0.5},
    "tags": ["run", "speed"], "instead": ["gym_core"],
@@ -68,7 +68,7 @@
    "acute": {"hamstring_pull": 0.0002}
   },
   {
-   "id": "club_session", "name": "Club group session", "load": 13, "needs_track": true,
+   "id": "club_session", "name": "Club group session", "load": 13, "sharp": 7, "needs_track": true,
    "description": "Mixed session with your training group: relays, races and games.",
    "effects": {"race_tactics": 0.8, "competitiveness": 0.6, "speed_endurance": 0.5, "composure": 0.3, "consistency": 0.2},
    "tags": ["run", "hard", "speed"], "instead": ["easy_run", "aqua_jog", "gym_core"],

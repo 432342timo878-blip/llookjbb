@@ -600,6 +600,42 @@ before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected
   13.751549603 / 1203.029795007 …); `day_engine_check` and `health_check` pass; all 4 of the user's version-2 saves load and
   play (`tools/saves_check.gd`); tour and layout check clean at all sizes.
 
+**Built (step 6c, 2026-10-07):** race-day form. As designed in "Form" below, plus these details decided while building:
+- **Files:** `data/form.json` (all numbers, the words with their colours and texts, the UI strings), `FormSystem` (`scripts/core/form_system.gd`,
+  GameSystem id `form`, hooks `on_health` only, switch `FormSystem.enabled`; "Form.enabled" in the plan is this), `FormUI`
+  (`scripts/ui/form_ui.gd`), `sharp` on the sessions in `training.json` and on `race_session` in `competitions.json`.
+  `RaceDay.form` holds the race's form share; time × (1 + slowdown − form), identical to before when form is 0.
+- **State:** one number, `sharpness`. A new career or an old save starts at `sharpness.start` (= `neutral`); the state is written to the
+  save only after the first played day (an old save loads with an empty state, and the form-less save is byte for byte as before).
+  Each day: `sharpness × 0.93 + Σ sharp × the day's intensity effect` (a race day adds the race's own 15), kept within 0–100.
+- **Race-morning form** uses the sharpness after yesterday and the fatigue the athlete has when the day starts; the race itself then adds
+  its sharpness. The Today card shows the same number as "if you raced today" (the form of a race-free day is never used).
+- **Tuned numbers (user decisions 2026-10-07: the word on the Today card means "if you raced today"; tapping gives plain reasons, no %;
+  before a race the word is on the day editor's race card and the race screen, not on the week strip):**
+  - `neutral` = **39.5** (calibration below). The sharpness term reaches its +0.75 % cap at **1.5 × neutral** (`sharp_term.cap_at`), not 2 ×:
+    the GDD's "about 2 × 30 = 60" is 1.5 × 39.5, and with the cap at 2 × neutral (79) no plan could ever reach it.
+  - **800 m intervals sharp 20** (GDD first guess 12). The old coach week has no intervals, so `neutral` is unaffected; with 12 even the
+    SM-hallit taper only reached "Sharp". Other values as in the GDD (race 15, club session 7, speed & strides 4, fartlek 4, tempo 3, hill sprints 3, start practice 2).
+  - Freshness as in the GDD (+0.75 % at fatigue ≤ 8, 0 at 20; a version that fell to 0 at 25, where "Tired" starts, was tried and gives every
+    coach-week race a freshness bonus, which only pushes `neutral` up to 53). Word limits as in the GDD: Peaking ≥ +1.0, Sharp ≥ +0.4,
+    OK > −0.3 (stored as −0.003), Rusty below; Tired (fatigue over 25) wins over all.
+- **Calibration** (`tools/form_check.gd`, the old repeating coach week, one athlete, a race at every eligible Saturday meet Dec 2026–Aug 2027,
+  11 races): average sharpness at the start line 37.9, average fatigue 20.1, **mean form +0.000 %** with `neutral` 39.5 (the tool also prints
+  the neutral that would give exactly 0 and fails if the data is more than 0.1 % off). The Race fatigue rule and the race anchors in 4.3 are untouched
+  (`race_balance.gd` runs the same code, `race.gd` / `race_performance.gd` unchanged).
+- **Season plan (phases mode, Balanced, same athlete):** Sat 9 Jan (end of general base) OK −0.16 %; **Sat 13 Feb, SM-hallit (taper): Peaking +1.05 %**
+  (sharpness 49, fatigue 9); **Sat 24 Apr, the last day of spring base: Rusty −0.34 %** (sharpness 21); Sat 15 May: Sharp +0.58 %; 31 May: Sharp +1.00 %;
+  **Fri 6 Aug, Nuorten SM (taper): Sharp +0.82 %**. Finding for 6d: in the race season the week is so heavy (midweek fatigue ~35) that even the taper
+  (days −3 Normal intervals, −1 an easy run) leaves fatigue near 19 on race morning, so the August target does not reach Peaking; the check asserts
+  "Sharp or better" there. A lighter day −1 (mobility) or a lighter race-season template would fix it.
+- **UI:** Today card: a "RACE FORM" row under the top part (word in its colour + one line; tap = what it means and what builds it; 44 px;
+  stacked on a phone). Race day: a "RACE FORM" card in the day editor (today's race only) and on the race screen next to "YOU". Nothing is shown when
+  the form model is off. The tour has `14d_form_peaking / rusty / tired` (rusty with its explanation open).
+- **Save/load:** `to_dict` = `{started, sharpness}`; 60 days after a load give exactly the same sharpness and race form as without saving.
+- **Verified:** `form_check.gd` ALL CHECKS PASSED (formula, calibration, season words, Tired, applied to the race time, save/load, switched off);
+  `training_balance.gd -- 0` fingerprints identical (215.999957139 / 13.751549603 / 1203.029795007); `day_engine_check`, `health_check`,
+  `season_plan_check` pass; tour at 1600×900 and 390×844 looked at, `layout_check` at all sizes: no OVERFLOW.
+
 **Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
 
 | Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |

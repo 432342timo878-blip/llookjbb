@@ -170,6 +170,9 @@ func _show_pre() -> void:
 	var cond := UIKit.label("Feeling %s (fatigue %d)" % [state[0].to_lower(), roundi(_rd.fatigue)])
 	cond.add_theme_color_override("font_color", state[1])
 	side.add_child(cond)
+	var form := FormUI.race_card()   # race-day form: Peaking / Sharp / OK / Rusty / Tired (GDD 4.8)
+	if form != null:
+		side.add_child(form)
 	# Racing with a niggle or a cold: slower, and it may get worse (GDD 4.6).
 	var injured := HealthUI.race_card(HealthUI.race_outlook(Game.current_week().day), true)
 	# Scratching (not starting) is possible in the first round; when injured it sits right under the warning.

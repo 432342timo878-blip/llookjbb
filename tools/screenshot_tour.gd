@@ -133,6 +133,7 @@ func _run() -> void:
 	hub._show("rankings")
 	await _frames(5)
 	await _shot("14b_rankings")
+	await _form_tour(game, hub)
 
 	# The Report tab in the middle of a week: this week so far, then last week.
 	game.advance_day()
@@ -175,6 +176,33 @@ func _run() -> void:
 	await _health_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- Race form (M2 step 6c): the Today card row for each word, one explanation open ---------------------------
+
+func _form_tour(game, hub: Control) -> void:
+	var form = game.get_system("form")
+	var keep_sharp: float = form.sharpness
+	var keep_fatigue: float = game.athlete.fatigue
+	for s in [["peaking", 62.0, 6.0], ["rusty", 18.0, 22.0], ["tired", 40.0, 38.0]]:
+		form.sharpness = s[1]
+		game.athlete.fatigue = s[2]
+		hub._show("overview")
+		hub._on_day_changed()
+		await _frames(5)
+		if s[0] == "rusty":
+			var label := _find_label(hub, "RACE FORM")
+			if label != null:
+				for pressed in [true, false]:
+					var ev := InputEventMouseButton.new()
+					ev.button_index = MOUSE_BUTTON_LEFT
+					ev.pressed = pressed
+					label.get_parent().gui_input.emit(ev)
+				await _frames(3)
+		await _shot("14d_form_" + s[0])
+	form.sharpness = keep_sharp
+	game.athlete.fatigue = keep_fatigue
+	hub._on_day_changed()
 
 
 # --- The health UI (M2 step 4): seeded states, the health model on --------------------------------------------

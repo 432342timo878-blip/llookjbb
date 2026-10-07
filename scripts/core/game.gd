@@ -68,7 +68,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES) -> void:
 
 
 func _make_systems() -> Array:
-	var list: Array = [HealthSystem.new()]
+	var list: Array = [HealthSystem.new(), FormSystem.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list

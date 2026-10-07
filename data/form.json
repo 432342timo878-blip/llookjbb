@@ -1,0 +1,31 @@
+{
+ "_note": "Race-day form (GDD 4.8 'Form'). Sharpness 0-100 is built by race-specific sessions (the `sharp` value on each session in training.json, and race_session in competitions.json) and fades by `decay` every day. Form on race morning, as a share of race time (+ = faster): a sharpness term (at_zero at sharpness 0, 0 at `neutral`, +cap at cap_at x neutral) plus a freshness term (+max at fatigue <= full_below, falling to 0 at zero_at), capped by total.max / total.min. `neutral` is calibrated (tools/form_check.gd) so the old repeating coach week averages 0 form over its races. Words: first match from the top by min (share of time); 'tired' (fatigue above tired_above) wins over all. color = hex.",
+ "sharpness": {"decay": 0.93, "start": 39.5, "max": 100.0, "neutral": 39.5},
+ "sharp_term": {"at_zero": -0.0075, "cap": 0.0075, "cap_at": 1.5},
+ "fresh_term": {"full_below": 8.0, "zero_at": 20.0, "max": 0.0075},
+ "total": {"max": 0.015, "min": -0.010},
+ "tired_above": 25.0,
+ "ui": {
+  "title": "RACE FORM",
+  "today_hint": "How you would race if you raced today. Tap to see what builds it.",
+  "race_hint": "How you will race today.",
+  "explain": "Form is a small boost or drag on your race time (about 1 % at most). It comes from sharpness (recent race-pace work) and freshness (low fatigue). What helps: "
+ },
+ "words": [
+  {"id": "peaking", "name": "Peaking", "min": 0.010, "color": "#4cc38a",
+   "text": "You're sharp and fresh: the best shape you can race in.",
+   "helps": "Race-specific work (800 m intervals, club sessions, races) builds sharpness. A taper (less training in the days before) brings freshness."},
+  {"id": "sharp", "name": "Sharp", "min": 0.004, "color": "#8fd16a",
+   "text": "Your legs know race pace and you're fairly fresh.",
+   "helps": "A few easy days before the race, with one short sharp session, tops it up."},
+  {"id": "ok", "name": "OK", "min": -0.003, "color": "#9aa1b2",
+   "text": "Nothing special either way. You'd race to your normal level.",
+   "helps": "Race-specific sessions (800 m intervals, club sessions, speed & strides) raise sharpness; rest and easy days raise freshness."},
+  {"id": "rusty", "name": "Rusty", "min": -1.0, "color": "#e0b252",
+   "text": "You haven't done much race-pace work lately, so you'd run a little below your level.",
+   "helps": "Sessions at race pace (800 m intervals, club group sessions, speed & strides) and racing itself bring sharpness back within a week or two."}
+ ],
+ "tired": {"id": "tired", "name": "Tired", "color": "#f0883e",
+   "text": "You're carrying too much fatigue to race at your best, so you'd run below your level.",
+   "helps": "Easy days and rest days bring freshness back. A taper before a big race does the same."}
+}

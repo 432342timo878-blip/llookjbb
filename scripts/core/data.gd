@@ -14,6 +14,7 @@ var races: Dictionary = {}             # data/races.json: 800 m race model tunin
 var health: Dictionary = {}            # data/health.json: day intensity, body areas, strain, illness, risks
 var injuries: Array = []               # data/injuries.json: the injury and illness catalogue
 var periodization: Dictionary = {}     # data/periodization.json: phases, week rules, the coach's season plans
+var form: Dictionary = {}              # data/form.json: race-day form (sharpness, freshness, words)
 
 
 func _ready() -> void:
@@ -34,6 +35,7 @@ func _ready() -> void:
 	health = _load("res://data/health.json")
 	injuries = _load("res://data/injuries.json").get("injuries", [])
 	periodization = _load("res://data/periodization.json")
+	form = _load("res://data/form.json")
 
 
 func get_event(id: String) -> Dictionary:

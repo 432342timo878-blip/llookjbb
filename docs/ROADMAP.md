@@ -91,8 +91,8 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         gaps, the 2026–27 dates match the GDD table, lighter weeks every 4th base week, taper days −10…−1 before each
         target, easy day before races only in race phases, moving an edge / a target moves the phases, a missing target
         falls back to the main meet, save/load bit for bit; fingerprints still identical in repeat mode.
-  - [ ] **6c. Form:** `FormSystem` (sharpness per day, freshness), `sharp` values in `training.json`, applied in
-        `RaceDay._player_entrant` like the slowdown, `Form.enabled`; calibrate `neutral` so the repeating coach week
+  - [x] **6c. Form (done 2026-10-07):** `FormSystem` (sharpness per day, freshness), `sharp` values in `training.json`, applied in
+        `RaceDay._player_entrant` like the slowdown, `FormSystem.enabled`; calibrate `neutral` so the repeating coach week
         averages 0; form word on the Today card (tap = explanation) and before a race. *(Sonnet, medium)*
         Check: `race_balance.gd` identical with form off; a check tool shows the repeating coach week ≈ 0 % average
         form, a tapered target ≈ "Peaking", the first race after base "Rusty"; fingerprints identical.

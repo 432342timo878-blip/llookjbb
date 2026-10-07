@@ -16,6 +16,7 @@ var player_results: Array = []    # [{round, place, field, time}]
 var all_results: Array = []       # every race run here (for rival PBs)
 var current: Race
 var slowdown := 0.0               # share slower because of a niggle or illness (HealthSystem.race_slowdown)
+var form := 0.0                   # share faster (+) or slower (-) from race-day form (FormSystem.race_form)
 
 var _rng := RandomNumberGenerator.new()
 var _gender := "male"
@@ -165,8 +166,10 @@ func _player_entrant() -> Dictionary:
 	var e := RacePerformance.player_profile(athlete)
 	var health := Game.get_system("health") as HealthSystem
 	slowdown = health.race_slowdown() if health else 0.0
-	if slowdown > 0.0:
-		var time := RacePerformance.time_for(e.ability, athlete.gender) * (1.0 + slowdown)
+	var form_system := Game.get_system("form") as FormSystem
+	form = form_system.race_form(athlete.fatigue) if form_system else 0.0
+	if slowdown > 0.0 or form != 0.0:
+		var time := RacePerformance.time_for(e.ability, athlete.gender) * (1.0 + slowdown - form)
 		e.ability = RacePerformance.ability_for_time(time, athlete.gender)
 	e.name = athlete.full_name()
 	e.club = Data.get_club(athlete.club_id).get("name", "")

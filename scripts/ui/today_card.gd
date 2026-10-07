@@ -2,7 +2,7 @@ class_name TodayCard
 extends PanelContainer
 ## The Today card at the top of Overview (GDD 4.5, 4.6): today's sessions and intensity (or rest day / the race),
 ## how you feel, and the next race. Tapping that top part opens today's day editor (`pressed`).
-## Under it the health part: warning signs (soreness per body area, in words and colour, tap an area for why and
+## Under it the race form (a word, tap = what it means and what builds it, `FormUI`) and the health part: warning signs (soreness per body area, in words and colour, tap an area for why and
 ## what helps) next to the active injuries and illnesses (phase, what's allowed, expected return).
 
 signal pressed
@@ -44,6 +44,10 @@ func refresh() -> void:
 	button.pressed.connect(func(): pressed.emit())
 	top.add_child(button)
 	_rows.add_child(top)
+	var form := FormUI.today_row()
+	if form != null:
+		_rows.add_child(HSeparator.new())
+		_rows.add_child(form)
 	var health := HealthUI.warning_sections(_open_areas)
 	if health != null:
 		_rows.add_child(HSeparator.new())
