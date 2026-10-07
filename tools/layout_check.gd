@@ -449,6 +449,12 @@ func _walk_overflow(node: Node, label: String, count: Array) -> void:
 			count[0] += 1
 			if count[0] <= 5:
 				print("  OVERFLOW ", label, ": ", c.get_path(), " rect ", r, " clip ", clip)
+		# A wrapping label squeezed to a sliver (beside an expanding control it can get no width and wraps letter by letter).
+		if c is Label and (c as Label).autowrap_mode != TextServer.AUTOWRAP_OFF and (c as Label).text.length() > 3 \
+				and r.size.x < 60.0:
+			count[0] += 1
+			if count[0] <= 5:
+				print("  SQUEEZED ", label, ": ", c.get_path(), " width ", r.size.x, " \"", (c as Label).text.left(30), "\"")
 	for child in node.get_children():
 		_walk_overflow(child, label, count)
 

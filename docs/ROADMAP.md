@@ -173,6 +173,11 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   - *Coach gives only one program:* the coach should offer several plans (fits Coaching + periodization, steps 6 and Part 2). Designed in GDD 4.8: the club coach offers Steady / Balanced / Ambitious season plans (built in 6d–6f); focus plans and hired coaches wait for Coaching.
   - [x] *Race is jittery and lags after the first decision:* fixed. Two causes, found with `tools/race_perf.gd`: the indoor hall track (antialiased arcs) was redrawn every frame together with the runners (~4.6 ms of drawing per frame, 40 → 20 ms/frame on the dev laptop's Intel GPU), and the POSITIONS rows were deleted and rebuilt every frame, which re-laid-out the whole side panel with its wrapped commentary labels (the lag grew as the commentary filled up, i.e. after the first decisions). Now the hall track is its own view drawn once and the position rows are reused; steady 60 fps (16.7 ms) on PC and phone size, indoor and outdoor.
   - *More immersive races:* more in-race options, and commentary in its own box that reacts to what happens and to the player's choices (e.g. "someone kicks with 229 m to go" should be something the player can answer), less repetition, more realism. Needs a design session (Opus), then build; belongs before or inside M3 (stadium view).
+  - *Races are decided too early (user, 2026-10-07):* the order seems settled early on, while real middle- and long-distance races
+    are often run in one bunch, with moves made anywhere: at the start, midway, or about 200 m before the finish. Needs more pack
+    racing (runners staying together, drafting, being boxed in) and moves from rivals at any point that can change the order late,
+    plus the player's answers to them. Look first at why the field strings out early (rival pace choices, the fatigue and drafting
+    numbers in `data/races.json`, `tools/race_balance.gd`). Goes together with the "more immersive races" design session above. *(Opus)*
 
 ## M3 — Stadium view
 - [ ] 2D stadium during meets: track, crowd, simultaneous events

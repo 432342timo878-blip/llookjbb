@@ -244,6 +244,8 @@ func _season_tour(main: Node) -> void:
 	hub._show("training")
 	await _frames(6)
 	await _shot("29d_phase_editor_now")
+	await _scroll_to_label(hub, "WHEN IT RUNS")
+	await _shot("29d2_phase_editor_now_edges")   # the start already passed: text only (it once wrapped letter by letter)
 	hub._phase_open = "general_base"
 	hub._show("training")
 	await _frames(6)

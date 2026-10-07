@@ -222,13 +222,16 @@ func _edges_box() -> Control:
 func _edge_row(text: String, moves: String, start: int) -> Control:
 	var s := Game.season
 	var this_week := SeasonPlan.week_no(year, Game.week_monday())
-	var row := UIKit.flex(10)
 	var label := UIKit.label(text, "SubheadingLabel")
+	if start <= this_week:
+		# Text only, stacked: a wrapping label beside an expanding one gets no width (it wrapped letter by letter).
+		var col := UIKit.vbox(2)
+		col.add_child(label)
+		col.add_child(UIKit.wrapped("Already started, so this edge can't move.", "MutedLabel"))
+		return col
+	var row := UIKit.flex(10)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(label)
-	if start <= this_week:
-		row.add_child(UIKit.wrapped("Already started: this edge can't move.", "MutedLabel"))
-		return row
 	var buttons := UIKit.hbox(6)
 	for delta in [-1, 1]:
 		var b := UIKit.button("◀  Earlier" if delta < 0 else "Later  ▶", false, 130)
