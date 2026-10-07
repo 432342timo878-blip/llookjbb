@@ -57,7 +57,7 @@ func _run() -> void:
 		"hometown": "Tampere", "club_id": "tap", "main_event": "800m",
 		"birth_date": {"year": 2012, "month": rng.randi_range(1, 10), "day": rng.randi_range(1, 28)},
 		"answers": answers}, rng)
-	_game.start_career(a)
+	_game.start_career(a, "repeat")
 	var health = _game.get_system("health")
 	health.rng.seed = seed_value
 	if plan_id == "hard":

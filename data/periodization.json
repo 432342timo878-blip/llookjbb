@@ -1,0 +1,120 @@
+{
+ "_note": "Season periodization (GDD 4.8). The training year as phases tied to the target meets; every number and text of the season model is here. Weeks are whole Monday-to-Sunday weeks. A phase starts at an anchor ('season_start', the indoor target's week or the outdoor target's week) plus `weeks`; the player can move each start by up to shift_limit weeks, and every phase keeps at least min_phase_weeks. A phase with `omit_without` is left out when the season has no target of that kind (the phase before it then lasts longer; the neighbours still count from the fallback date below). Week plans: days = 7 lists of session ids (Mon..Sun), intensity = 7 x easy / normal / hard. A week is built in this order: the phase's week, ramp, lighter week, easy day before a race, taper (see SeasonPlan.week_for).",
+ "season": {
+  "_note": "A season starts on the Monday nearest to start_month/start_day (2 Nov 2026, 1 Nov 2027, 30 Oct 2028) and runs until the next one.",
+  "start_month": 11,
+  "start_day": 1,
+  "default_variant": "balanced",
+  "max_targets": 3,
+  "shift_limit": 4,
+  "min_phase_weeks": 1
+ },
+ "anchor_fallback": {
+  "_note": "Only used for the phase edges when a season has no target of that kind (no meet fits the athlete). Month and day in the season's second calendar year; an estimate, not a real meet.",
+  "indoor": {"month": 2, "day": 13},
+  "outdoor": {"month": 8, "day": 6}
+ },
+ "phases": [
+  {
+   "id": "general_base", "name": "General base", "color": "#4f8fbf", "race_phase": false, "lighter": true,
+   "start": {"ref": "season_start", "weeks": 0},
+   "text": "Build the engine: easy running, strength and the club group. Every fourth week is lighter."
+  },
+  {
+   "id": "indoor_specific", "name": "Indoor specific", "color": "#d9774a", "race_phase": true, "lighter": false,
+   "start": {"ref": "indoor", "weeks": -4}, "omit_without": "indoor",
+   "text": "Sharpen up for the indoor target: 800 m intervals and the first races."
+  },
+  {
+   "id": "spring_base", "name": "Spring base", "color": "#5a9e6f", "race_phase": false, "lighter": true,
+   "start": {"ref": "indoor", "weeks": 1},
+   "text": "Back to building: tempo runs, hills and strength before the outdoor season. Every fourth week is lighter."
+  },
+  {
+   "id": "pre_competition", "name": "Pre-competition", "color": "#c9a63c", "race_phase": true, "lighter": false,
+   "start": {"ref": "outdoor", "weeks": -14},
+   "text": "Switching to race preparation: speed work and the first outdoor races."
+  },
+  {
+   "id": "race_season", "name": "Race season", "color": "#c44d4d", "race_phase": true, "lighter": false,
+   "start": {"ref": "outdoor", "weeks": -10}, "omit_without": "outdoor",
+   "text": "Racing season: keep the speed, race often and recover well."
+  },
+  {
+   "id": "transition", "name": "Transition", "color": "#8a8fa8", "race_phase": false, "lighter": false,
+   "start": {"ref": "outdoor", "weeks": 4},
+   "text": "A few easy weeks to rest the body and the mind after the summer."
+  },
+  {
+   "id": "autumn_general", "name": "Autumn general", "color": "#7a6bb0", "race_phase": false, "lighter": false,
+   "start": {"ref": "outdoor", "weeks": 7},
+   "text": "A gentle start to the new training year before the next general base."
+  }
+ ],
+ "lighter": {
+  "_note": "In phases with lighter weeks every `every`-th week of the phase: every day `step_down` intensity steps down (Hard > Normal > Easy). Not in a taper week.",
+  "every": 4,
+  "step_down": 1,
+  "why": "Lighter week"
+ },
+ "ramp": {
+  "_note": "The first ramp_weeks weeks of a phase blend in from the previous phase's week, a day at a time: in ramp week k (0-based) the first round((k+1) x 7 / ramp_weeks) days are the new phase's, the rest the previous phase's. 1 = no ramp.",
+  "why": "Easing in (week {week} of {weeks})"
+ },
+ "easy_day_before_race": {
+  "_note": "In race phases the day before an entered race (same week, not a race or rest day) is set to this intensity.",
+  "intensity": "easy",
+  "why": "Easy: race tomorrow"
+ },
+ "taper": {
+  "_note": "Counted back from the target's race day (days = days before it). Bands are checked in order; the first that contains the day applies. max_sessions: keep only the best session (keep_tags first: a session with the first tag wins, then the second; ties = the first listed); replace: session swapped for another; intensity: set the day's intensity; rest: a rest day. Wins over lighter weeks and the easy day before a race. {meet} and {days} are filled in.",
+  "days": 10,
+  "keep_tags": ["speed", "hard"],
+  "bands": [
+   {"from": 10, "to": 4, "max_sessions": 1, "replace": {"long_run": "easy_run"}, "why": "Taper: {meet} in {days} days, fewer sessions"},
+   {"from": 3, "to": 3, "max_sessions": 1, "intensity": "normal", "why": "Taper: {meet} in {days} days, one sharp session"},
+   {"from": 2, "to": 2, "rest": true, "why": "Taper: rest before {meet}"},
+   {"from": 1, "to": 1, "max_sessions": 1, "intensity": "easy", "why": "Taper: easy day before {meet}"}
+  ]
+ },
+ "variants": {
+  "balanced": {
+   "name": "Balanced",
+   "text": "The club coach's normal year.",
+   "ramp_weeks": {
+    "general_base": 2, "indoor_specific": 2, "spring_base": 2, "pre_competition": 2, "race_season": 2,
+    "transition": 1, "autumn_general": 2
+   },
+   "templates": {
+    "general_base": {
+     "days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []],
+     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+    },
+    "indoor_specific": {
+     "days": [["easy_run", "drills"], ["intervals_800"], ["strength"], ["club_session"], ["mobility"], ["long_run"], []],
+     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+    },
+    "spring_base": {
+     "days": [["easy_run", "drills"], ["tempo_run"], ["strength", "hill_sprints"], ["fartlek"], ["mobility"], ["long_run"], []],
+     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+    },
+    "pre_competition": {
+     "days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["club_session"], []],
+     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+    },
+    "race_season": {
+     "days": [["easy_run"], ["intervals_800"], ["strength", "speed_strides"], ["easy_run", "drills"], ["mobility"], ["club_session"], ["long_run"]],
+     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "easy"]
+    },
+    "transition": {
+     "days": [["mobility"], [], ["easy_run"], [], [], ["easy_run"], []],
+     "intensity": ["normal", "normal", "easy", "normal", "normal", "easy", "normal"]
+    },
+    "autumn_general": {
+     "days": [["easy_run", "drills"], [], ["strength"], ["fartlek"], ["mobility"], ["long_run"], []],
+     "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]
+    }
+   }
+  }
+ }
+}

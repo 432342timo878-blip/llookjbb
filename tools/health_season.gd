@@ -49,7 +49,7 @@ func _run() -> void:
 		"hometown": "Tampere", "club_id": "tap", "main_event": "800m",
 		"birth_date": {"year": 2012, "month": rng.randi_range(1, 10), "day": rng.randi_range(1, 28)},
 		"answers": answers}, rng)
-	game.start_career(a)
+	game.start_career(a, "repeat")
 	var health = game.get_system("health")
 	health.rng.seed = seed_value
 	for m in Cal.meets_between(game.START_DATE, game.add_days(game.START_DATE, 364)):

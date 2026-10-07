@@ -78,7 +78,10 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         Check: `training_balance.gd` parts 1–2 fingerprints identical; `day_engine_check`, `health_check` (+ a check that
         Hard days in the plan raise load vs normal and plan risk, and that a plan-level Easy day equal to a day change
         is dropped as "same as plan"); load your own v2 save; tour + layout check.
-  - [ ] **6b. Season model (headless):** `data/periodization.json` (phase types, skeleton, anchor rules, lighter /
+  - [x] **6b. Season model (headless; done 2026-10-07**, details in GDD 4.8 "Built (step 6b)": per-season records, the
+        Monday nearest 1 Nov, default targets entered at career start, 16–17 main meets from the SUL 2027 calendar,
+        Training tab shows a notice + "Use one repeating week instead" in phases mode; `tools/season_plan_check.gd` and
+        `tools/saves_check.gd` are new**) `data/periodization.json` (phase types, skeleton, anchor rules, lighter /
         ramp / taper / race-week / return rules, the Balanced templates of GDD 4.8), `"main"` tags in
         `competitions.json` (+ 16-17 main meets with sources, or rely on the fallback), `SeasonPlan` (phases mode,
         anchors, edges, targets max 3, `week_for(monday)` with `why` per day), `Game.current_week()` takes its plan from

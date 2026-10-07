@@ -18,7 +18,7 @@ func _run() -> void:
 	var a = factory.create({"first_name": "Test", "last_name": "Runner", "gender": "male", "club_id": "",
 			"hometown": "Oulu", "main_event": "800m", "birth_date": {"year": 2012, "month": 5, "day": 1},
 			"answers": {}}, rng)
-	game.start_career(a)
+	game.start_career(a, "repeat")
 	for w in 40:
 		game.advance_week()
 		if w in [3, 15, 39]:

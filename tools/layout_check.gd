@@ -191,6 +191,7 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 	# The Training tab (body strain), and the Report with sore days, injuries and the proneness hint.
 	_reset_health(game, health)
 	_start_problem(health, data, game, "shin_splints")
+	game.season.mode = "repeat"   # a new career runs the season plan; this view needs the weekly editor (put back below)
 	game.season.repeat_week = load("res://scripts/core/week_plan.gd").make(
 			[["intervals_800", "strength"], ["tempo_run", "drills"], ["long_run"], ["intervals_800", "hill_sprints"],
 			["tempo_run"], ["long_run", "speed_strides"], ["fartlek"]],
@@ -204,6 +205,7 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 	await _shot("%s_health_training" % tag)
 	_check_overflow(hub, "%s health_training" % tag)
 	game.season.repeat_week = load("res://scripts/core/week_plan.gd").coach()
+	game.season.mode = "phases"
 	for e in game.day_log:   # the two played days: put some health into their day log entries
 		e["soreness"] = {"shins": 1, "calves": 2}
 		e["health"] = ["shin_splints"]

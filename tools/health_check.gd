@@ -670,7 +670,7 @@ func _new_career(seed_value: int, health_seed: int) -> void:
 		"first_name": "Test", "last_name": "Runner", "gender": "male", "hometown": "Tampere",
 		"club_id": "tap", "main_event": "800m", "birth_date": {"year": 2012, "month": 5, "day": 1},
 		"answers": answers}, rng)
-	game.start_career(a)
+	game.start_career(a, "repeat")
 	game.get_system("health").rng.seed = health_seed
 
 

@@ -128,7 +128,7 @@ func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := fa
 	var peak := 0.0
 	var fat_sum := 0.0
 	if through_game:
-		game.start_career(a)
+		game.start_career(a, "repeat")
 		game.season.repeat_week = WP.make(plans[run[1]], [run[2], run[2], run[2], run[2], run[2], run[2], run[2]] if plan_level else [])
 	for w in 52:
 		var r: Dictionary
@@ -206,7 +206,7 @@ func _health_row(row: Array, plans: Dictionary, n: int) -> void:
 	var end_key: int = Cal.date_key(game.add_days(game.START_DATE, 364))
 	for i in n:
 		var a = _random_athlete(i)
-		game.start_career(a)
+		game.start_career(a, "repeat")
 		var health = game.get_system("health")
 		health.rng.seed = 5000 + i
 		for m in Cal.meets_between(game.START_DATE, game.add_days(game.START_DATE, 364)):

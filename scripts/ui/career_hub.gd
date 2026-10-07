@@ -545,7 +545,59 @@ func _build_profile(a: Athlete) -> void:
 
 # --- Training plan ----------------------------------------------------------------------
 
+## Phases mode, until the season editor arrives (GDD 4.8, step 6e): what the coach's plan does this week, and
+## a way to take the plan over as one repeating week.
+func _build_training_season() -> void:
+	var a := Game.athlete
+	var month: int = Game.add_days(Game.week_monday(), 3).month
+	var plan := Game.season.week_for(Game.week_monday())
+	var phase := SeasonPlan.phase_type(plan.phase)
+	_content.add_child(UIKit.label("Season plan", "HeadingLabel"))
+	_content.add_child(UIKit.wrapped(
+			"Your club coach is running your training year: %s, week %d of %d%s. The phases, lighter weeks, an easy day before "
+			% [phase.name, plan.phase_week, plan.phase_weeks, " (a lighter week)" if plan.kind == "lighter" else (" (taper)" if plan.kind == "taper" else "")]
+			+ "races and a taper before your main championships are built in. Editing the season plan comes in a later version. "
+			+ "To plan every week yourself now, switch to one repeating week."))
+
+	var days := UIKit.vbox(6)
+	days.add_child(UIKit.label("THIS WEEK", "CaptionLabel"))
+	for d in 7:
+		var names := []
+		for id in plan.days[d]:
+			names.append(Data.get_session(id).name)
+		var line := "%s: %s" % [Training.DAY_NAMES[d], ", ".join(names) if not names.is_empty() else "Rest day"]
+		if not names.is_empty() and plan.intensity[d] != WeekPlan.NORMAL:
+			line += " (%s)" % Training.intensity(plan.intensity[d]).name
+		days.add_child(UIKit.wrapped(line, ""))
+		if plan.why[d] != "":
+			days.add_child(UIKit.wrapped(plan.why[d], "CaptionLabel"))
+	_content.add_child(UIKit.panel(days, 16))
+
+	var summary := UIKit.vbox(8)
+	_content.add_child(UIKit.panel(summary, 16))
+	_fill_plan_summary(summary, a, month)
+
+	var switch := UIKit.button("Use one repeating week instead", false, 260)
+	var stage := [0]
+	switch.pressed.connect(func():
+		if stage[0] == 0:
+			stage[0] = 1
+			switch.text = "Tap again to confirm"
+			return
+		Game.season.switch_to_repeat(Game.week_monday())   # this week's phase week repeats from now on
+		HealthUI.refresh()
+		_refresh_week_ui()
+		_show("training"))
+	if Layout.compact:
+		switch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.add_child(switch)
+	_content.add_child(UIKit.wrapped("The repeating week starts as this phase's week. You can't go back to the season plan until the editor comes."))
+
+
 func _build_training() -> void:
+	if Game.season.mode == SeasonPlan.PHASES:
+		_build_training_season()
+		return
 	var a := Game.athlete
 	var month: int = Game.add_days(Game.week_monday(), 3).month
 	var plan: Dictionary = Game.season.repeat_week   # {days, intensity}: edited in place (see WeekPlan)

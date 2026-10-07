@@ -13,6 +13,7 @@ var competitions: Dictionary = {}      # data/competitions.json: meets, standard
 var races: Dictionary = {}             # data/races.json: 800 m race model tuning
 var health: Dictionary = {}            # data/health.json: day intensity, body areas, strain, illness, risks
 var injuries: Array = []               # data/injuries.json: the injury and illness catalogue
+var periodization: Dictionary = {}     # data/periodization.json: phases, week rules, the coach's season plans
 
 
 func _ready() -> void:
@@ -32,6 +33,7 @@ func _ready() -> void:
 	races = _load("res://data/races.json")
 	health = _load("res://data/health.json")
 	injuries = _load("res://data/injuries.json").get("injuries", [])
+	periodization = _load("res://data/periodization.json")
 
 
 func get_event(id: String) -> Dictionary:

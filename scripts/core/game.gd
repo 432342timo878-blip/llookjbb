@@ -17,8 +17,8 @@ const LOG_DAYS := 28
 
 var athlete: Athlete
 var date := START_DATE.duplicate()   # today: the next day to be played
-## The training plan over time (GDD 4.8). Repeat mode for now: one week plan that repeats every week
-## (season.repeat_week = {days, intensity}, see WeekPlan). Ask it for a week: season.week_for(monday).
+## The training plan over time (GDD 4.8): the coach's season plan in phases (new careers) or one week plan that
+## repeats every week (season.repeat_week = {days, intensity}, see WeekPlan). Ask for a week: season.week_for(monday).
 var season := SeasonPlan.new()
 var entries: Array = []          # meet keys (see Calendar) the athlete has entered
 var rivals: Array = []           # fictional runners of the athlete's age and gender (see Rivals)
@@ -40,11 +40,19 @@ var _playing_week := false   # the current day is being played by advance_week (
 var _next_event := 1
 
 
-func start_career(new_athlete: Athlete) -> void:
+## `mode` is how the training plan works (SeasonPlan.PHASES: the coach's season plan, with the main
+## championships of the season entered as targets; SeasonPlan.REPEAT: one repeating week, the M1 behaviour).
+## Dev tools that play days ask for REPEAT so no meets are entered and no stop events come.
+func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES) -> void:
 	athlete = new_athlete
 	date = START_DATE.duplicate()
-	season = SeasonPlan.repeating(WeekPlan.coach())
 	entries = []
+	if mode == SeasonPlan.PHASES:
+		season = SeasonPlan.phased(athlete, date)
+		for key in season.targets(season.first_season):
+			enter(key)
+	else:
+		season = SeasonPlan.repeating(WeekPlan.coach())
 	last_report = {}
 	race_day = null
 	events = []
@@ -136,6 +144,7 @@ func enter(meet_key: String) -> void:
 
 func withdraw(meet_key: String) -> void:
 	entries.erase(meet_key)
+	season.on_withdraw(meet_key)   # a target the player no longer races is no target
 
 
 ## The player scratches from an entered race (doesn't start): the entry is withdrawn and that day becomes

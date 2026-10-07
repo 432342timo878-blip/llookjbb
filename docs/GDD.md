@@ -144,6 +144,9 @@ at real venues (marked `estimated` in `data/competitions.json`); the **player en
   Games 17–20.6. Lahti**, Pohjola Seuracup district rounds (June/Aug), Lajikarnevaalit 3–4.7., district youth championships,
   **Nuorten SM M/N14-15 6–8.8.2027 Kauhava**, SM-maastot 23.10. Lahti (XC, not playable yet). Senior events (Kalevan kisat Pori,
   Ruotsi-ottelu Stockholm, World Championships Beijing) are shown but not enterable.
+- **Added in M2 step 6b** (same SUL calendar): Nuorten SM-hallit M/N17-19-22 26–28.2. Turku, Nuorten SM M/N19-22 13–15.8. Helsinki,
+  and watch-only SM-hallit (Jyväskylä), EM-hallit (Valencia) and EYOF; meets carry a `main` tag for their season's main
+  championship (GDD 4.8).
 - **Qualifying standards (SM 14-15, 2026 values):** 800 m M15 2:21.00, N15 2:35.00, M14 2:28.00, N14 2:36.00. Max 3 events,
   max 1 without the standard, so a pure 800 m runner can always enter.
 - **Later seasons** repeat the list 52 weeks later as estimates (national venues "TBA") until real data is added.
@@ -514,8 +517,9 @@ before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected
 
 **Season plan** (`scripts/core/season_plan.gd`, `Game.season`, replaces `Game.training_plan`):
 - `mode`: `"repeat"` (one repeating week = M1 behaviour, `repeat_week`) or `"phases"`.
-- `season`: the start year (the season runs Nov–Oct as in Rankings; its plan starts on the Monday of the week that
-  contains 1 November, e.g. Mon 2 Nov 2026, Mon 30 Oct 2028).
+- `season`: the start year (the season runs Nov–Oct as in Rankings; its plan starts on the **Monday nearest to
+  1 November** (user, 2026-10-07; the first wording "the week that contains 1 Nov" gave 26 Oct 2026, before the
+  career starts): Mon 2 Nov 2026, Mon 1 Nov 2027, Mon 30 Oct 2028).
 - `variant`: `"steady"` / `"balanced"` / `"ambitious"` (the coach plan it came from); `targets`: up to 3 meet keys.
 - `phases`: `{type, week (a week plan), edited, lighter (on/off), ramp_weeks}` in skeleton order; `shifts`: the
   player's moves of each phase edge in whole weeks (relative to the anchors, so a moved target still works).
@@ -548,6 +552,54 @@ before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected
   Easy 60 % / Normal 100 % / Hard 135 % (the Hard strain multiplier); plan risk of a middle plan Low at Normal and High at
   Hard, of the hard plan Low at Easy and High at Normal; coach plan stays Low even all-Hard.
 
+**Built (step 6b, 2026-10-07):** the season model, headless. As designed above, plus these details decided while building:
+- **Data:** `data/periodization.json` has the phases (name, text, colour, race phase, lighter, start rule, `omit_without`),
+  the lighter / ramp / easy-day / taper rules with their `why` texts, the fallback anchor dates and the Balanced
+  templates and `ramp_weeks` (2 for every phase, 1 for the transition). `Data.periodization`. No numbers in scripts.
+- **A record per season** (`SeasonPlan.seasons`, year → `{variant, targets (null = the coach's), shifts, phases}`), not one set of
+  fields: a season without a record is the coach's unedited plan, built on demand, so every week of every season has a plan
+  (the check covers 2026–27 and 2027–28) and step 6f's rollover only has to create records. `phases[id]` holds only what the
+  player changed (`week`, `lighter`, `ramp_weeks`); "edited" is worked out (differs from the coach's). Layout and default
+  targets are cached per season and dropped when a move or a target changes.
+- **Season start:** the Monday nearest to 1 Nov (see above). **Phase starts** = anchor week + `weeks` from the data + the
+  player's shift; every phase keeps ≥ 1 week (`set_shift` cuts a move back to what fits, ±4 at most, the first phase can't
+  move). A phase of a kind with no meet is left out and its neighbours still count from `anchor_fallback` dates in the data
+  (general base then runs to the week spring base would start, pre-competition to where the race season would have ended).
+- **Anchors:** the first indoor / outdoor meet in the season's target list; if the player took it off, the coach's pick
+  (so the phases don't move, only the taper goes); no meet at all: the fallback date and the phase is left out.
+- **Main meets (data, source: SUL Arvokilpailukalenteri 2027, preliminary 12.5.2026):** `main` tags on SM-hallit 14-15
+  (13–14.2.2027 Lappeenranta), **SM-hallit M/N17-19-22 (26–28.2.2027 Turku, new in the data, `ages` [16, 22]: my reading
+  is that the "17" class is the 16–17-year-olds, as the outdoor "M/N16-17" is, so a 16-year-old has an indoor main meet
+  too; correct the ages if SUL says otherwise)**, Nuorten SM 14-15 (Kauhava), 16-17 (Oulu), and the new 19-22 (13–15.8.2027
+  Helsinki). Without a fitting `main` meet the highest-level ★ meet of that season part (Tampere Junior Indoor Games, Youth
+  Athletics Games for a 13-year-old). Added from the same calendar as watch-only meets: senior SM-hallit (20–21.2. Jyväskylä),
+  EM-hallit (4–7.3. Valencia), EYOF M/N17 (24.7.–1.8. Lignano Sabbiadoro). Later seasons repeat 52 weeks later as before.
+- **Targets:** new careers **enter the two default targets** (user decision) and withdrawing or scratching a target takes it off
+  the list (`Game.withdraw → SeasonPlan.on_withdraw`). The taper counts back from the target's date whether or not it is
+  entered. `Game.start_career(athlete, mode = "phases")`; tools pass `"repeat"` (no meets entered, the old coach week).
+- **`week_for(monday, entries = null)`** (entries default to `Game.entries`) returns `{days, intensity, why, phase, phase_week,
+  phase_weeks, kind, target}`; `target` is the meet a taper counts down to. Ramp week *k* of `ramp_weeks` *n*: the first
+  `round((k+1) × 7 / n)` days are the phase's, the rest the previous phase's week (for a season's first phase the last
+  phase of the season before; for the career's first phase the coach's starter week, which is the general-base week, so a
+  new career starts exactly as before). A lighter week steps every day one level down, never in a taper week. The easy day
+  before a race counts races in the same week only. Taper: nearest coming target within 10 days; the kept session is the
+  one tagged speed, then hard (`taper.keep_tags`), else the first; the target day and other race days are left alone; each
+  rule writes its `why` only when it changed something and several reasons are joined with " · ". Cost ≈ 0.4 ms per call.
+- **For 6c–6f:** `layout / targets / set_targets / add_target / remove_target / set_shift / edit_phase (the phase's week to
+  edit in place) / reset_phase / is_edited / set_lighter / set_ramp_weeks / phase_base / switch_to_repeat`, `SeasonPlan.phase_type(id)`
+  (name, text, colour), `SeasonPlan.season_start / year_of / week_no`.
+- **Training tab (the only UI change):** in phases mode it shows "Season plan": the phase and week, this week's days with their
+  reasons, the plan summary (load vs your normal, risk) and a button **Use one repeating week instead** (asks once more;
+  one-way until the season editor in 6e) that turns this phase's week into the repeating week.
+- **Save:** version 3 kept; `season` also stores `birth_year`, `event`, `first_season` and the season records; a version-3 save
+  from 6a and version-1/2 saves load as repeat mode.
+- **Verified:** `tools/season_plan_check.gd` (new, 100+ checks: every Monday of 2026–27 and 2027–28, the 2026–27 dates of the
+  table below, lighter weeks 4 and 8 of general and spring base, ramp, easy day before races only in race phases, taper
+  −10…−1 at both targets, moving edges and targets, the fallbacks, save/load bit for bit, 104 days played through the game
+  loop across a taper and the race); `training_balance.gd -- 0` fingerprints unchanged in repeat mode (215.999957139 /
+  13.751549603 / 1203.029795007 …); `day_engine_check` and `health_check` pass; all 4 of the user's version-2 saves load and
+  play (`tools/saves_check.gd`); tour and layout check clean at all sizes.
+
 **Phases** (names, texts, colours, rules and templates in a new `data/periodization.json`; first season shown):
 
 | Phase | Anchor rule (whole weeks, Monday-aligned) | 2026–27 | Lighter weeks | Race phase |
@@ -564,7 +616,7 @@ before. `HealthSystem.plan_risk`, `load_vs_normal`, `Training.preview / expected
   athlete's age class (new tag in `data/competitions.json`: `"main": "indoor"` / `"outdoor"`, e.g. SM-hallit 14-15 and
   Nuorten SM 14-15); with none, the highest-level ★ meet of that season part; with none at all, the phase is left out
   and the phase before it lasts longer. Next season's age class (16-17) needs its own main meets in the data (to add
-  with sources in step 6b, or the fallback applies).
+  with sources in step 6b, or the fallback applies; done, see "Built (step 6b)").
 - **Edges:** each edge can be moved −4…+4 weeks; every phase keeps at least 1 week. Phases always start on a Monday.
 
 **How a week is built** (`week_for`), in this order; every rule that changes a day writes its `why`:

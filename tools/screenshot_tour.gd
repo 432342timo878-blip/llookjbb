@@ -206,7 +206,7 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	hub._today_card.open_area("shins")
 	await _frames(4)
 	await _shot("19b_health_soreness_row_open")
-	health.strain["calves"] = 62.0
+	health.strain["calves"] = 72.0   # (62 was enough on the old coach week; the indoor-specific Wednesday is lighter on the calves)
 	hub._on_advance(false)
 	await _frames(6)
 	print("health tour: pending event after the sore day: ", game.pending_event().get("kind", "none"))
@@ -252,6 +252,20 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 
 	# 4. The Training tab: load vs your normal and plan risk, for the coach plan and for a hard plan.
 	_reset_health(game, health)
+	hub._show("training")   # a new career runs the coach's season plan (M2 step 6b): notice + this week's plan
+	await _frames(6)
+	await _scroll_to_label(hub, "BODY STRAIN")
+	await _shot("22a_health_training_season_plan")
+	# The rest of the tour plans its own repeating weeks: press the switch button (it asks once more).
+	var switch := _find_button(hub, "Use one repeating week instead")
+	print("tour: switch button found: ", switch != null)
+	switch.pressed.emit()
+	await _frames(3)
+	await _shot("22a2_health_training_switch_confirm")
+	_find_button(hub, "Tap again to confirm").pressed.emit()
+	await _frames(3)
+	print("tour: repeat mode after the button: ", game.season.mode == "repeat")
+	hub = main.get_node("ScreenHost").get_child(-1)
 	hub._show("training")
 	await _frames(6)
 	await _scroll_to_label(hub, "BODY STRAIN")
