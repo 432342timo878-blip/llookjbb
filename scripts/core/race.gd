@@ -57,7 +57,17 @@ var lap1_pace := 1.0              # the leader's pace as a share of the field's 
 var lap2_pace := 1.0              # ... and lap 2 (until the kicks)
 var ref_speed := 0.0              # the field's even speed (m/s)
 
-var _asked := {}
+## The player's controls (GDD 4.3.1, step R3): the cards asked so far (how many of each id), the action bar's
+## effort (push / hold / ease) and the log of cards for tools: {id, t, d, answer}.
+var cards_shown := 0
+var effort := "hold"
+var card_log: Array = []
+var _card_counts := {}
+var _last_card_t := -1000.0
+var _ctl: Dictionary              # data/races.json "controls"
+var _gender := "male"
+var _player_fatigue := 0.0
+var _coach_rng: RandomNumberGenerator
 var _rng: RandomNumberGenerator
 var _eng: Dictionary              # data/races.json "engine"
 var _mix := ""
@@ -67,6 +77,8 @@ var _announced := {}
 var _last_leader: Runner          # for lead_change events
 var _lead_since := 0.0
 var _card_mover: Runner           # whose move the "A rival makes a move" card is about
+var _card_kinds: Array = []       # the card ids, most important first
+var _card_info := {}              # the placeholders of the card being asked (the coach's shout uses them)
 const MARKS := [200, 300, 400, 500, 600]   # pace calls (200 / 400 / 600) and pack shape (300 / 500)
 var _next_mark := 0
 var _order: Array[Runner] = []    # standings() keeps its order here
@@ -126,6 +138,12 @@ class Runner:
 	var surges := 0
 	var covering: Runner = null   # the surger they go with
 	var hold_left := 0.0          # letting a move go: metres more at no more than hold_v
+	# The player's controls (R3)
+	var out_left := 0.0           # Move out: seconds more outside, going for a pass
+	var out_to := 0.0             # ... and how far out (metres from the rail)
+	var dig_boost := 0.0          # "Dig in" / "Get up and chase": digs this much deeper, even when dropped
+	var dropped_s := 0.0          # seconds in a row they have been dropped
+	var box_pending := false      # boxed, and the box card is still to be decided (after box_after_s)
 	var hold_v := 0.0
 	var decided := {}             # "move <i> <n>" / "kick <i>" -> already decided about that move or kick
 	var kick_free := true         # answers kicks (off when the player chose to wait for the home straight)
@@ -161,6 +179,9 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 		indoor_track := false, mix := "") -> void:
 	_rng = rng
 	_eng = Data.races.engine
+	_ctl = Data.races.controls
+	_gender = gender
+	_player_fatigue = player_fatigue
 	_mix = mix
 	_p = float(_eng.drain_power)
 	_k_need = float(_eng.kick_need_per_100)
@@ -346,7 +367,7 @@ func step() -> void:
 	_race_events(order)
 	_commentate(order)
 	if not finished and player and not player.done:
-		_check_decisions(order)
+		_check_cards(order)
 
 
 ## Runners ordered by position (finished ones by time; those who did not finish last). The order is kept
@@ -385,6 +406,8 @@ func position_of(r: Runner) -> int:
 func choose(option_id: String) -> void:
 	var id: String = pending.get("id", "")
 	pending = {}
+	if not card_log.is_empty():
+		card_log[-1].answer = option_id
 	_apply_choice(player, id, option_id)
 
 
@@ -406,6 +429,8 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 	var front := _runner_in_front(r, order)          # nearest runner ahead in any line
 	var gap_front := front.d - r.d if front else INF
 	r.dropped = r != _leader and r.d >= break_line and gap_front > float(e.drop_gap)
+	if r.is_player:
+		r.dropped_s = r.dropped_s + DT if r.dropped else 0.0
 	if r.dropped and not r.was_dropped and r.d > break_line + 50.0 and not r.getting_up and front != null:
 		r.was_dropped = true
 		_event("dropped", r, {"behind": front.name}, order)
@@ -413,7 +438,13 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 	var pace := _pace(r)
 
 	if not r.kicking and rem <= r.kick_at:
-		_start_kick(r, order, null)
+		if r == player and int(_card_counts.get("kick", 0)) == 0:
+			# The player reaches their own kick point: the "metres to go" card asks (R3); the answer starts the
+			# kick (or waits for the home straight). If another card is open, the kick waits a step.
+			if pending.is_empty():
+				_ask("kick")
+		else:
+			_start_kick(r, order, null)
 	var target: float
 	if r.kicking:
 		# Fastest speed the reserve they feel they have can hold to the line: rem / (rem - felt) times cs.
@@ -455,6 +486,9 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 				target = minf(cap, maxf(pace, follow.v * float(e.pass_speed)))   # past a runner who is fading
 				wants_past = true
 			target = minf(target, cap)   # can't hold it: dropped
+			if r.out_left > 0.0:   # Move out (the action bar): going for a pass on the outside
+				target = minf(cap, maxf(target, follow.v * float(e.pass_speed)))
+				wants_past = true
 		# Moves (R2): a surge of their own, going with someone's surge, or letting it go.
 		if r.d >= break_line:
 			_maybe_surge(r, order, pace)
@@ -547,6 +581,10 @@ func _traffic(r: Runner, order: Array[Runner], target: float, wants_past: bool, 
 	var b: Dictionary = _eng.box
 	if r.push_left > 0.0:
 		r.push_left -= DT
+	var moving_out := r.out_left > 0.0   # the player's Move out
+	if moving_out:
+		r.out_left -= DT
+		wants_past = true
 	var ahead := _runner_ahead(r, order)
 	var in_box := false
 	if ahead != null:
@@ -569,10 +607,13 @@ func _traffic(r: Runner, order: Array[Runner], target: float, wants_past: bool, 
 			r.lat_target = _inside_target(r, order)
 	else:
 		r.lat_target = _inside_target(r, order)
+	if moving_out and not in_box and _outside_clear(r, r.out_to, order):
+		r.lat_target = maxf(r.lat_target, r.out_to)   # stay out instead of drifting back to the rail
 	r.boxed = in_box
 	if not in_box and r.box_way != "":
 		_event("escape", r, {"way": r.box_way, "seconds": snappedf(r.box_time, 0.1)}, order)
 		r.box_way = ""
+		r.box_pending = false
 	return target
 
 
@@ -585,10 +626,24 @@ func _urgent(r: Runner, rem: float) -> bool:
 func _boxed(r: Runner, ahead: Runner, out_lat: float, target: float, order: Array[Runner]) -> float:
 	var b: Dictionary = _eng.box
 	if r.box_way == "":
-		r.box_way = _box_way(r)
 		r.box_time = 0.0
+		if r == player:
+			# The player waits at first; if the box lasts and a move is going, the box card asks (R3); else the
+			# way is rolled like a rival's.
+			r.box_way = "wait"
+			r.box_pending = true
+		else:
+			r.box_way = _box_way(r)
 		_event("boxed", r, {"way": r.box_way}, order)
 	r.box_time += DT
+	if r.box_pending and r.box_time >= float(_ctl.cards.box_after_s):
+		r.box_pending = false
+		if _move_going(r) and _card_ok("box"):
+			var ahead_name: String = ahead.name
+			_ask("box", {"name": ahead_name.get_slice(" ", ahead_name.get_slice_count(" ") - 1),
+					"context": _move_context(r)})
+		else:
+			r.box_way = _box_way(r)
 	var blocker := _blocker(r, out_lat, order)
 	match r.box_way:
 		"wait":
@@ -690,8 +745,10 @@ func _react_to_move(s: Runner, order: Array[Runner]) -> void:
 		var gap := s.d - o.d
 		if gap < -2.0 or gap > float(m.react_range):
 			continue
-		if o == player and _move_card_coming(o):
-			continue   # the "A rival makes a move" card decides
+		if o == player and _card_ok("move"):
+			o.decided[key] = true
+			_ask("move", _move_ctx(s, "surges"))   # the "A rival makes a move" card decides
+			continue
 		o.decided[key] = true
 		if _rng.randf() < _cover_chance(o, s):
 			_cover(o, s, order)
@@ -699,10 +756,13 @@ func _react_to_move(s: Runner, order: Array[Runner]) -> void:
 			_let_go(o, s, order)
 
 
-func _cover(o: Runner, s: Runner, order: Array[Runner]) -> void:
+func _cover(o: Runner, s: Runner, order: Array[Runner], kick := false) -> void:
 	o.covering = s
 	o.hold_left = 0.0
-	_event("cover", o, {"of": s.name}, order)
+	var extra := {"of": s.name}
+	if kick:
+		extra["kick"] = true
+	_event("cover", o, extra, order)
 
 
 func _let_go(o: Runner, s: Runner, order: Array[Runner]) -> void:
@@ -754,6 +814,9 @@ func _react_to_kick(k: Runner, order: Array[Runner], origin: Runner = null) -> v
 		if gap < -float(c.ahead) or gap > float(c.answer_range):
 			continue
 		o.decided[key] = true
+		if o == player and _card_ok("move"):
+			_ask("move", _move_ctx(k, "kicks"))   # the card decides (R3)
+			continue
 		if _rng.randf() >= _answer_chance(o, v_k):
 			continue
 		if DISTANCE - o.d <= o.kick_at * float(c.kick_now_share):
@@ -780,10 +843,6 @@ func _answer_chance(o: Runner, v_k: float) -> float:
 	var can := minf(hold, o.kick_v) >= v_k * float(c.can_share)
 	return lerpf(base, float(c.smart[1 if can else 0]), o.skill)
 
-
-## The "A rival makes a move" card will ask the player about this move (detailed and quick mode alike).
-func _move_card_coming(p: Runner) -> bool:
-	return not _asked.has("move") and p.d >= 420.0 and DISTANCE - p.d > 230.0 and not p.kicking
 
 
 # --- Contact, stumbles and falls (R2) --------------------------------------------------------
@@ -944,7 +1003,7 @@ func _hold_speed(r: Runner, dist: float, budget: float) -> float:
 ## The reserve they want to keep for their kick (kick_need_per_100 per 100 m of kick, less by how deep they
 ## dig; dropped runners stop digging), never more than the kick can use at full speed.
 func _need(r: Runner, extra_dig := 0.0) -> float:
-	var dig := 0.0 if r.dropped else minf(r.dig + extra_dig, _dig_max)
+	var dig := 0.0 if (r.dropped and r.dig_boost <= 0.0) else minf(r.dig + r.dig_boost + extra_dig, _dig_max)
 	var need := _k_need * r.kick_at / 100.0 * r.dprime * (1.0 - dig)
 	return minf(need, r.kick_at * _drain(r, r.kick_v) / r.kick_v)
 
@@ -1062,141 +1121,426 @@ func is_bend(d: float) -> bool:
 	return p < bend or (p >= bend + straight and p < 2.0 * bend + straight)
 
 
-# --- Decisions ----------------------------------------------------------------------------
+# --- Cards: the player's decisions (R3) -------------------------------------------------------
 
-func _check_decisions(order: Array[Runner]) -> void:
+## Event-driven pause cards (GDD 4.3.1 "Player controls"): break, bell and 200 m to go always; a rival move or
+## kick, being boxed in while a move goes, losing contact, a slow pace, the home straight and a fall when they
+## happen. At most controls.cards.max per race, the most important first (see _card_ok). Moves and boxes ask from
+## inside the step (_react_to_move, _react_to_kick, _boxed); the rest are checked here, once a step. In quick
+## mode the athlete answers (_auto_choice), so both modes run the same engine.
+func _check_cards(order: Array[Runner]) -> void:
 	var p := player
-	var rem := DISTANCE - p.d
-	if p.down_left > 0.0:
+	if p.down_left > 0.0 or not pending.is_empty():
 		return
-	if p.d >= break_line and not _asked.has("break"):
-		_ask("break", "Break from the lanes",
-				"The field cuts in to the inside lane. Where do you want to run?", [
-			["lead", "Take the lead", "Control the pace from the front. Costs energy, but no traffic."],
-			["shoulder", "Sit on the leader's shoulder", "Stay close in 2nd–3rd, ready to react."],
-			["back", "Tuck in at the back", "Save energy behind everyone. Risk of getting boxed in later."],
-		])
-	elif p.d >= 400.0 and not _asked.has("bell"):
-		var leader := order[0]
-		var text := "%s The leader went through 400 m in %s. You: %s, %s." % ["Halfway!" if indoor else "Bell!",
-				Calendar.format_time(leader.split_400), Calendar.format_time(p.split_400), _ordinal(position_of(p))]
-		_ask("bell", "Halfway" if indoor else "The bell", text, [
-			["push", "Push the pace", "Run the second lap harder. Good if you're strong, risky if not."],
-			["hold", "Hold your position", "Keep doing what you're doing."],
-			["ease", "Ease off a little", "Save energy for the kick."],
-		])
-	elif _move_card_coming(p):
-		for o in order:
-			if o != p and not o.done and (o.kicking or o.surge_left > 0.0) and absf(o.d - p.d) < 15.0:
-				_card_mover = o
-				var what := "kicks" if o.kicking else "surges"
-				_ask("move", "A rival makes a move",
-						"%s %s with %d m to go!" % [o.name, what, roundi(DISTANCE - o.d)], [
-					["go", "Go with them", "Cover the move now."],
-					["wait", "Let them go", "Trust your own kick. They might pay for it later."],
-				])
-				break
-	elif p.d >= 600.0 and not p.kicking and not _asked.has("kick"):
-		_ask("kick", "200 metres to go", "You're %s. When do you go?" % _ordinal(position_of(p)), [
-			["now", "Kick now", "A long sprint for home. Strong finishers love this."],
-			["wait", "Wait for the home straight", "Kick with 100 m to go. Needs a fast finish and a clear path."],
-		])
-	elif p.d >= 700.0 and not _asked.has("straight") and position_of(p) > 1:
-		var ahead := _runner_ahead(p, order)
-		if ahead != null and ahead.d - p.d < 2.5:
-			_ask("straight", "Home straight", "%s is right in front of you." % ahead.name, [
-				["wide", "Swing wide and go round", "A clear path, but a few extra metres."],
-				["inside", "Wait for a gap on the inside", "Shortest way, if a gap opens..."],
-			])
+	var c: Dictionary = _ctl.cards
+	var rem := DISTANCE - p.d
+	if _card_kinds.is_empty():
+		var pr: Dictionary = c.priority
+		_card_kinds = pr.keys()
+		_card_kinds.sort_custom(func(a, b): return float(pr[a]) > float(pr[b]))
+	for kind in _card_kinds:
+		if not _card_ok(kind):
+			continue
+		match kind:
+			"break":
+				if p.d >= break_line:
+					_ask("break")
+					return
+			"bell":
+				if p.d >= float(c.bell_at):
+					var cfg: Dictionary = Data.race_cards.cards.bell
+					var leader := order[0]
+					_ask("bell", {"call": cfg.call_indoor if indoor else cfg.call, "leader": "The leader",
+							"leader_split": Calendar.format_time(leader.split_400), "split": Calendar.format_time(p.split_400)})
+					return
+			"fall":
+				if p.getting_up and p.falls > int(_card_counts.get("fall", 0)):
+					var f := _runner_in_front(p, order)
+					if f != null:
+						_ask("fall", {"gap": roundi(f.d - p.d)})
+						return
+			"straight":
+				if p.d >= float(c.straight_from) and _idx(p, order) > 0:
+					var ahead := _runner_ahead(p, order)
+					if ahead != null and ahead.d - p.d < float(c.straight_gap):
+						_ask("straight", {"name": ahead.name})
+						return
+			"dropped":
+				var f := _runner_in_front(p, order)
+				var dr: Dictionary = c.dropped
+				if f != null and p.dropped_s >= float(dr.hold_s) and not p.kicking and rem > float(dr.min_to_go) \
+						and f.d - p.d >= float(dr.gap[0]) and f.d - p.d <= float(dr.gap[1]):
+					_ask("dropped", {"gap": roundi(f.d - p.d), "name": _surname(f.name)})
+					return
+			"slow":
+				var sl: Dictionary = c.slow
+				if _leader != null and _leader != p and not p.kicking and p.want != "lead" and p.d >= float(sl.from) \
+						and p.d <= float(sl.to) and _idx(p, order) + 1 <= int(sl.max_place) \
+						and _leader.d - p.d <= float(sl.group_m) and _leader.v < ref_speed * float(sl.pace_max):
+					_ask("slow", {"leader": _surname(_leader.name), "gap": roundi(_leader.d - p.d)})
+					return
 
 
-func _ask(id: String, title: String, text: String, options: Array) -> void:
-	_asked[id] = true
+## How many of the always-asked cards (break, bell, 200 m to go) are still to come: they keep their place in the
+## budget, so the optional cards can never push them out.
+func _always_left() -> int:
+	var n := 0
+	for k in _ctl.cards.always:
+		if int(_card_counts.get(k, 0)) == 0 and not (k == "kick" and player.kicking):
+			n += 1
+	return n
+
+
+## May a card of this kind be asked now? Not while another is open; the always cards once each; the others only
+## when there is room in the budget, not more than max_per_race, not too soon after the last card and (only_below)
+## not when the low-priority ones would take the last places.
+func _card_ok(kind: String) -> bool:
+	if player == null or player.done or not pending.is_empty():
+		return false
+	var c: Dictionary = _ctl.cards
+	var n := int(_card_counts.get(kind, 0))
+	if kind in c.always:
+		return n == 0
+	if cards_shown + _always_left() >= int(c.max) or n >= int(c.max_per_race.get(kind, 1)):
+		return false
+	if c.only_below.has(kind) and cards_shown >= int(c.only_below[kind]):
+		return false
+	return kind in c.no_gap or time - _last_card_t >= float(c.min_gap_s)
+
+
+func _ask(id: String, ctx := {}) -> void:
+	var cfg: Dictionary = Data.race_cards.cards[id]
+	_card_counts[id] = int(_card_counts.get(id, 0)) + 1
+	cards_shown += 1
+	_last_card_t = time
+	_card_mover = ctx.get("mover", null)
+	var info := {"pos": _ordinal(position_of(player)), "to_go": roundi(DISTANCE - player.d)}
+	info.merge(ctx, true)
+	info.erase("mover")
+	_card_info = info
+	var title: String = cfg.get("title_indoor", cfg.title) if indoor else cfg.title
 	var opts := []
-	for o in options:
-		opts.append({"id": o[0], "label": o[1], "detail": o[2]})
-	var decision := {"id": id, "title": title, "text": text, "options": opts}
+	for o in cfg.options:
+		opts.append({"id": o.id, "label": o.label, "detail": o.detail})
+	var decision := {"id": id, "title": title.format(info), "text": String(cfg.text).format(info), "options": opts}
+	var coach := _coach_line(id, info)
+	if not coach.is_empty():
+		decision["coach"] = coach
+	card_log.append({"id": id, "t": snappedf(time, 0.1), "d": roundi(player.d), "answer": ""})
 	if interactive:
 		pending = decision
 		decision_needed.emit(decision)
 	else:
-		_apply_choice(player, id, _auto_choice(id))
+		var pick := _auto_choice(id)
+		card_log[-1].answer = pick
+		_apply_choice(player, id, pick)
 
 
-## What the athlete does on their own (quick mode): based on plan and race tactics.
+## What the athlete does on their own (quick mode): the sensible answer with a chance that grows with race
+## tactics (controls.auto), otherwise any answer. The break is the pre-race plan.
 func _auto_choice(id: String) -> String:
+	var sensible := sensible_choice(id)
+	if id == "break":
+		return sensible
+	var a: Dictionary = _ctl.auto
+	if _rng.randf() < lerpf(float(a.sensible_at_1), float(a.sensible_at_20), player.skill):
+		return sensible
+	var opts: Array = Data.race_cards.cards[id].options
+	return opts[_rng.randi_range(0, opts.size() - 1)].id
+
+
+## The sensible answer to the card `id` in the state of the race now (no dice): the coach's advice, what quick
+## mode usually does, and the "sensible watched player" of the checks. See controls.sensible.
+func sensible_choice(id: String) -> String:
 	var p := player
-	var smart := p.tactics / 20.0
+	var s: Dictionary = _ctl.sensible
+	var rem := DISTANCE - p.d
+	var share := _felt(p) / p.dprime
 	match id:
 		"break":
-			return {"lead": "lead", "pack": "shoulder", "back": "back"}[p.want]
+			return {"lead": "lead", "pack": "shoulder", "back": "back"}.get(p.want, "shoulder")
 		"bell":
-			return "hold"
-		"move":
-			return "go" if _rng.randf() < 0.5 + (0.3 if p.dleft > p.dprime * 0.5 else -0.3) * smart else "wait"
+			if share >= float(s.bell_push_share) and position_of(p) >= 3:
+				return "push"
+			return "ease" if share < float(s.bell_ease_share) else "hold"
 		"kick":
-			return "now" if p.kick_at >= 200.0 else "wait"
+			return "now" if share >= _k_need * rem / 100.0 * float(s.kick_now_factor) else "wait"
 		"straight":
-			return "wide" if _rng.randf() < 0.4 + smart * 0.5 else "inside"
+			return "wide"
+		"fall":
+			var f := _runner_in_front(p, standings())
+			return "chase" if f != null and f.d - p.d < float(s.chase_gap) else "steady"
+		"box":
+			if rem > float(s.box_wait_to_go):
+				return "wait"
+			return "push" if rem < float(s.box_push_to_go) else "ease"
+		"dropped":
+			return "dig" if share >= float(s.dig_share) else "own"
+		"slow":
+			var better := 0
+			for r in runners:
+				if r != p and r.even_v > p.even_v:
+					better += 1
+			return "lead" if better < int(s.slow_rank) and share >= float(s.slow_share) else "stay"
+		"move":
+			var m := _card_mover
+			if m == null:
+				return "wait"
+			var can: bool
+			if m.kicking:
+				can = minf(_hold_speed(p, rem, maxf(_felt(p), 0.0)), p.kick_v) >= _kick_speed(m) * float(_eng.chain.can_share)
+			else:
+				can = _spare(p) >= maxf(m.surge_left, 0.0) * _drain(p, m.surge_v * (1.0 - float(_eng.draft))) / maxf(m.surge_v, 0.1)
+			if can and share >= float(s.counter_share) and rem <= float(s.counter_to_go) \
+					and p.kick_v >= m.kick_v * float(s.counter_edge):
+				return "counter"
+			return "go" if can else "wait"
 	return ""
 
 
 func _apply_choice(p: Runner, id: String, option: String) -> void:
+	var order := standings()
 	match [id, option]:
 		["break", "lead"]:
 			p.want = "lead"
-			_say("You go to the front.")
 		["break", "shoulder"]:
 			p.want = "pack"
-			_say("You settle on the leader's shoulder.")
 		["break", "back"]:
 			p.want = "back"
-			_say("You tuck in at the back of the field.")
-		["bell", "push"]:
-			p.pace_factor = 1.03
-			_say("You push on down the back straight.")
-		["bell", "hold"]:
-			p.pace_factor = 1.0
-		["bell", "ease"]:
-			p.pace_factor = 0.97
-			_say("You ease off and save something for the finish.")
+		["bell", "push"], ["bell", "hold"], ["bell", "ease"]:
+			set_effort(option)
 		["move", "go"]:
-			var o := _card_mover
-			if o != null and o.surge_left > 0.0 and not o.kicking:
-				_cover(p, o, standings())    # go with the surge
-			elif not p.kicking:
-				_start_kick(p, standings(), o)
-			_say("You go with the move!")
+			var m := _card_mover
+			if m != null:
+				if m.kicking and DISTANCE - p.d <= p.kick_at * float(_eng.chain.kick_now_share):
+					if not p.kicking:
+						_start_kick(p, order, m)
+				elif m.kicking or m.surge_left > 0.0:
+					_cover(p, m, order, m.kicking)    # going with them
 		["move", "wait"]:
-			if _card_mover != null and _card_mover.surge_left > 0.0 and not _card_mover.kicking:
-				_let_go(p, _card_mover, standings())
-			elif _card_mover != null:
-				p.decided["kick %d" % _card_mover.index] = true
-			_say("You let them go and stay patient.")
+			var m := _card_mover
+			if m != null and m.surge_left > 0.0 and not m.kicking:
+				_let_go(p, m, order)
+		["move", "counter"]:
+			var m := _card_mover
+			if m != null and (m.kicking or DISTANCE - p.d <= p.kick_at):
+				if not p.kicking:
+					_start_kick(p, order, m)
+			else:
+				var cc: Dictionary = _ctl.counter
+				p.surge_left = float(cc.length)
+				p.surge_v = minf(maxf(p.v, _pace(p)) * float(cc.speed), p.kick_v)
+				p.surges += 1
+				p.hold_left = 0.0
+				p.covering = null
+				_event("move", p, {"pct": roundi((float(cc.speed) - 1.0) * 100.0), "length": roundi(float(cc.length))}, order)
+				_react_to_move(p, order)
+		["box", "wait"], ["box", "ease"], ["box", "push"]:
+			p.box_way = option
+			p.box_pending = false
+			if option == "push":
+				p.push_left = 0.0
+		["dropped", "dig"]:
+			p.dig_boost = float(_ctl.dig_in)
+		["dropped", "own"]:
+			p.dig_boost = 0.0
+		["slow", "lead"]:
+			p.want = "lead"
+			set_effort(_ctl.take_lead.effort)
+		["fall", "chase"]:
+			p.dig_boost = float(_ctl.chase.dig)
+			set_effort(_ctl.chase.effort)
+		["fall", "steady"]:
+			p.dig_boost = 0.0
+			set_effort(_ctl.steady.effort)
+			p.kick_at = minf(p.kick_at, float(_ctl.steady.kick_at))
 		["kick", "now"]:
 			if not p.kicking:
-				_start_kick(p, standings(), null)
-			_say("You kick with 200 to go!")
+				_start_kick(p, order, null)
 		["kick", "wait"]:
 			p.kick_at = 100.0
 			if interactive:
 				p.kick_free = false   # your call: no answering other kicks before the home straight
 		["straight", "wide"]:
-			var ahead := _runner_ahead(p, standings())
+			var ahead := _runner_ahead(p, order)
 			if ahead:
 				p.lat_target = ahead.lat + 1.2
 			if not p.kicking:
-				_start_kick(p, standings(), null)
-			_say("You swing wide into lane 2 and go for it!")
+				_start_kick(p, order, null)
 		["straight", "inside"]:
 			if not p.kicking:
-				_start_kick(p, standings(), null)
-			var ahead := _runner_ahead(p, standings())
+				_start_kick(p, order, null)
+			var ahead := _runner_ahead(p, order)
 			if ahead and _rng.randf() < 0.35 + p.tactics / 40.0:
 				ahead.lat_target = ahead.lat + 1.0
-				_say("A gap opens on the inside!")
+				_say_line("straight.gap")
 			else:
-				_say("No gap... you're boxed in.")
+				_say_line("straight.boxed")
+			return
+	_say_line("%s.%s" % [id, option])
+
+
+## A line of the player's choices in the commentary (data/race_cards.json "says").
+func _say_line(key: String) -> void:
+	var line: String = Data.race_cards.says.get(key, "")
+	if line != "" and player != null:
+		_say(line.format({"to_go": roundi(DISTANCE - player.d)}))
+
+
+# --- The action bar (R3): Push / Hold / Ease / Move out / Kick now ---------------------------------
+
+func set_effort(e: String) -> void:
+	effort = e
+	if player != null:
+		player.pace_factor = float(_ctl.effort[e])
+
+
+## Can the player give this command now? Push / Hold / Ease only before the kick; Move out and Kick now not in
+## lanes (Move out not either when already 3 m or more from the rail); nothing while down or after the finish.
+func can_command(cmd: String) -> bool:
+	var p := player
+	if p == null or p.done or finished or p.down_left > 0.0:
+		return false
+	match cmd:
+		"push", "hold", "ease":
+			return not p.kicking
+		"move_out":
+			return p.d >= break_line and p.lat < float(_ctl.move_out.max_lat) - 0.2   # (already out wide: nothing to do)
+		"kick":
+			return p.d >= break_line and not p.kicking
+	return false
+
+
+## The action bar's commands (no pause): push / hold / ease (the pace until the kick), move_out (a few seconds
+## on the outside going for a pass; boxed in it is "ease and step out"), kick (the kick starts now).
+func command(cmd: String) -> bool:
+	if not can_command(cmd):
+		return false
+	var p := player
+	match cmd:
+		"push", "hold", "ease":
+			set_effort(cmd)
+		"move_out":
+			var mo: Dictionary = _ctl.move_out
+			p.out_to = minf(p.lat + float(mo.lane), maxf(float(mo.max_lat), p.lat))   # (never back towards the rail)
+			p.out_left = float(mo.seconds)
+			if p.boxed and p.box_way == "wait":
+				p.box_way = "ease"
+				p.box_pending = false
+		"kick":
+			_start_kick(p, standings(), null)
+	_say_line("bar." + cmd)
+	return true
+
+
+# --- Feeling, the coach and the slow-down moments (R3) ----------------------------------------------
+
+## The word under the clock: the share of the reserve the player FEELS they have left (their race tactics
+## misjudge it), less a little for fatigue. {id, word, index} (0 comfortable … 3 empty); data controls.feeling.
+func feeling() -> Dictionary:
+	var f: Dictionary = _ctl.feeling
+	var share := _felt(player) / player.dprime \
+			- maxf(0.0, _player_fatigue - float(f.fatigue_from)) * float(f.fatigue_per_point)
+	var i := 0
+	for t in f.thresholds:
+		if share >= float(t):
+			break
+		i += 1
+	return {"id": f.ids[i], "word": f.words[i], "index": i, "share": share}
+
+
+## Can the coach see the player now? Outdoors he stands at one spot (controls.coach.spot_outdoor metres round the
+## lap) and sees view_m along the track either way; indoors he sees the whole track. (R4 gives him a real spot.)
+func coach_sees() -> bool:
+	if player == null:
+		return false
+	if indoor:
+		return true
+	var c: Dictionary = _ctl.coach
+	var dist := absf(fmod(player.d, lap) - float(c.spot_outdoor))
+	return minf(dist, lap - dist) <= float(c.view_m)
+
+
+## The coach's shout for the card `id`, or {} when he can't see: {option, text}. He is right with chance
+## controls.coach.accuracy. His dice come from the race's seed but not from its dice, so a watched race and a
+## quick one stay comparable.
+func _coach_line(id: String, info: Dictionary) -> Dictionary:
+	if not coach_sees():
+		return {}
+	var shouts: Dictionary = Data.race_cards.coach.shouts.get(id, {})
+	if shouts.is_empty():
+		return {}
+	var right := sensible_choice(id)
+	var pick := right
+	if _coach_rng == null:
+		_coach_rng = RandomNumberGenerator.new()
+		_coach_rng.seed = hash("coach %d" % _rng.state)   # (the state, not the seed: it differs from race to race)
+	if _coach_rng.randf() >= float(_ctl.coach.accuracy):
+		var others := shouts.keys().filter(func(k): return k != right)
+		if not others.is_empty():
+			pick = others[_coach_rng.randi_range(0, others.size() - 1)]
+	return {"option": pick, "text": String(shouts[pick]).format({"name": _surname(str(info.get("name", "")))})}
+
+
+## Has something happened since event number `from` that the race screen slows down for (a move, kick, contact,
+## stumble or fall within range_m of the player, or the player being boxed in)? data controls.slow_motion.
+func moment_since(from: int) -> bool:
+	if player == null:
+		return false
+	var sm: Dictionary = _ctl.slow_motion
+	for k in range(from, events.size()):
+		var ev: Dictionary = events[k]
+		if not ev.has("d"):
+			continue
+		var t: String = ev.type
+		if (t in sm.types or (ev.player and t in sm.types_player)) and absf(float(ev.d) - player.d) <= float(sm.range_m):
+			return true
+	return false
+
+
+# --- Helpers of the cards ---------------------------------------------------------------------------
+
+static func _surname(full: String) -> String:
+	return full.get_slice(" ", full.get_slice_count(" ") - 1)
+
+
+## The placeholders of the "A rival makes a move" card: who, what, how far to go, and where they are.
+func _move_ctx(mover: Runner, what: String) -> Dictionary:
+	var ph: Dictionary = Data.race_cards.phrases
+	var gap := mover.d - player.d
+	var where: String = ph.where_beside
+	if gap > 1.5:
+		where = String(ph.where_ahead).format({"m": roundi(gap)})
+	elif gap < -1.5:
+		where = String(ph.where_behind).format({"m": roundi(-gap)})
+	return {"mover": mover, "name": mover.name, "what": ph[what], "to_go": roundi(DISTANCE - mover.d), "where": where}
+
+
+## A rival who is surging or kicking close to the player (controls.cards.box_move_m ahead / behind), or null.
+func _find_mover(p: Runner) -> Runner:
+	var range_m: Array = _ctl.cards.box_move_m
+	var best: Runner = null
+	for o in runners:
+		if o == p or o.done or o.down_left > 0.0 or not (o.kicking or o.surge_left > 0.0):
+			continue
+		var gap := o.d - p.d
+		if gap >= float(range_m[0]) and gap <= float(range_m[1]) and (best == null or absf(gap) < absf(best.d - p.d)):
+			best = o
+	return best
+
+
+## "A move goes": a rival's move or kick close by, or the player's own (kick, surge, going with someone).
+func _move_going(p: Runner) -> bool:
+	return p.kicking or p.surge_left > 0.0 or p.covering != null or _find_mover(p) != null
+
+
+## The sentence about the move for the box card.
+func _move_context(p: Runner) -> String:
+	var ph: Dictionary = Data.race_cards.phrases
+	var m := _find_mover(p)
+	if m == null:
+		return ph.own_move
+	return String(ph.rival_move).format({"name": _surname(m.name), "what": ph["kicks" if m.kicking else "surges"]})
 
 
 # --- Race events (R2) and commentary ------------------------------------------------------

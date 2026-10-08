@@ -134,7 +134,7 @@ on aggregate result standards only, with no individual names or results. Real at
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
   and commentary. See 4.3.1; it replaces the plan lap factors, the fixed decision points and the commentary above.
 
-### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3–R5 to come)
+### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3 player controls 2026-10-08, R4–R5 to come)
 
 Playtest (user, 2026-10-07): the order seems settled early, while real 800 m races are often one bunch with moves
 anywhere. Wanted: pack racing (staying together, drafting, being boxed in), rival moves at any point that can change the
@@ -209,6 +209,17 @@ change of place late is a fade, never a fight.
     tactical lap saves more. With the old straight-line drain *when* a runner spent the reserve hardly mattered
     ("leading too fast" even helped a strong runner). The upset targets left short (Δ 0.5, good vs bad) are tuned
     again in R5, once the player's action bar and cards exist (R3).
+
+**Decisions (user, 2026-10-08, step R3):**
+14. **The coach's shout (stand-in rule until R4 gives him a real spot):** the coach stands at one spot, outdoors on the
+    back straight (200 m round the lap), indoors on the infield; he sees the player within 110 m along the track
+    (indoors the whole track), so on some cards he is silent. He shouts the sensible answer 80 % of the time, another
+    answer otherwise (`controls.coach`).
+15. **Phone action bar:** Push / Hold / Ease / Kick now in one row, **Move out as a full-width second row** (always
+    reachable).
+16. **The "metres to go" kick card stays** as a third always-card (break, bell, kick). Claude's change: it comes when
+    the player reaches their *own kick point* instead of fixed at 600 m run, because the athlete's natural kick used to
+    start by itself before that for about three races in four (grinders), and the card was then never asked.
 
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
@@ -495,6 +506,87 @@ the race's own RNG (`day_engine_check`: same seed → same race, results *and* e
   + DNF / DQ results (recorded, no PB / SB, DNF / DQ texts, save / load) and repeatable events; `health_check` + race
   injuries (tables, fall → mostly grazes, spike → spike wound, same dice → same injury, a fall on race day → the
   diagnosis, rival out_weeks only with the health model on); help `race_running` and `race_result` v2.
+
+**Built (step R3, 2026-10-08): the player's controls.** Engine in `Race` (`scripts/core/race.gd`), texts in
+`data/race_cards.json` (cards, the lines the choices put in the commentary, the coach's shouts), every number in
+`data/races.json` `controls`, UI in `scripts/ui/race_action_bar.gd` and `scripts/ui/race_screen.gd`. Decisions 14–16 above.
+- **Cards** (replace the fixed decision points; at most 6 per race, `controls.cards`): *break*, *bell / halfway* and the
+  *kick card* always (3 places in the budget, kept free); then, most important first (`priority`): a **fall** (when the
+  player is back on their feet), **boxed in while a move goes** (boxed at least 0.8 s and a rival surging / kicking from
+  5 m behind to 30 m ahead, or the player's own move), a **rival move** (the engine's reaction zone: a surger from 15 m
+  ahead to 2 m behind, a kicker near the front from 12 m ahead to 3 m behind), the **home straight** (700 m run, a runner
+  within 2.5 m ahead), **losing contact** (5–30 m behind the runner ahead for 1 s, more than 150 m to go), a **slow
+  pace** (the leader slower than 0.96 × the field's even speed, 150–400 m run, the player in the first 4 and within 15 m).
+  Optional cards: at least 8 race seconds apart (a fall ignores that), a kind at most 2 / 1 times, "losing contact" only
+  while fewer than 5 cards were shown and "slow pace" while fewer than 4, so the low-priority ones leave room. A card the
+  budget refuses is not asked and the engine decides as before (a rival's roll). The race waits while a card is open.
+- **What each answer does** (checked state by state in `race_check.gd`): break: lead / pack / back = the place the
+  player wants; bell: Push / Hold / Ease = pace × 1.03 / 1.00 / 0.97 until the kick (the same switch as the bar); kick
+  card: Kick now starts the kick, Wait kicks with 100 m to go and answers no other kick until then; move: *Go with them*
+  covers the surger (the surger's speed, up to 1.08 ×, digging 0.3 deeper) or goes with a kicker (covers until their own
+  kick point, or kicks at once when they are at it), *Let them go* holds back until the surge is over, *Counter-attack*
+  = their own surge (1.08 × for 120 m) or their own kick now; box: Wait / Ease and step out / Push through = the way out
+  (as the rivals', R2); losing contact: *Dig in* digs 0.3 deeper (even though dropped), *Run your own pace* does not;
+  slow pace: *Take the lead* = wants the lead + Push, *Stay put*; home straight: as before; fall: *Get up and chase* digs
+  0.5 deep + Push, *Finish steady* = Ease and kick from 150 m.
+- **Action bar** (`Race.command`, no pause): Push / Hold / Ease set the pace factor until the kick (the active one lit;
+  the bell card sets the same); **Move out** = 5 s one lane further out (at most 3 m from the rail) going for a pass,
+  2 % faster than the runner ahead when they can afford it; boxed in with "wait" it becomes "ease and step out"; not
+  offered in the lanes, once kicking it only moves out, and not when already 3 m or more out; **Kick now** starts the kick
+  at once (after the break); in the UI two taps within 2 s ("Tap again to kick", phone: "Tap again"). While kicking,
+  Push / Hold / Ease are dimmed and the Kick button reads "Kicking!". PC: one row under the track; phone: Push / Hold / Ease / Kick now + a
+  full-width Move out row, fixed under the clock, never scrolling away.
+- **Feeling** under the clock: the share of the reserve the player *feels* they have left (misjudged by their race
+  tactics, so it can be wrong) minus 0.003 per fatigue point above 25: Comfortable ≥ 0.6, Working ≥ 0.3, Hurting ≥ 0.1,
+  Empty below. At the bell the mean felt share is 0.48–0.56, at the kick card 0.24–0.30.
+- **Drop to 1x** (race screen): at 2x / 4x a move, kick, contact, stumble, fall or brought-down within 20 m of the player,
+  or the player's own box (rivals' boxes are everywhere in a pack and don't count), holds the race at 1x for 5 race
+  seconds ("SLOWED TO 1x" under the Feeling word), then back to the chosen speed. Measured: 16–36 % of a race's time.
+- **Coach**: `coach_sees()` and `_coach_line`; the shout in an accent-coloured block on the card ("COACH"); his dice come
+  from the race's state but not from its stream, so watching does not change the race. Outdoors he is silent on 36–41 %
+  of the cards (the bell, mostly), indoors never; right 78–84 % (data 80 %). **R4** moves the spot to the real one.
+- **Quick mode**: the same cards and the same engine, answered by the athlete: the sensible answer with a chance from 45 %
+  (race tactics 1) to 90 % (20), otherwise any answer (`controls.auto`); no bar. `Race.sensible_choice(card)` (numbers in
+  `controls.sensible`) is also the coach's advice and the "sensible watched player" of the tools. Break: the pre-race plan.
+- **Measured** (`tools/race_watch.gd`, the same 80–100 races played four ways from the same field and dice; player
+  race tactics 10; average place of the player, 1 = best):
+
+| Config | quick | sensible answers | coach's shouts | poor answers | cards / race | at 1x |
+|---|---|---|---|---|---|---|
+| Youth final, player a little stronger | 3.64 | 3.59 | 3.62 | 3.64 | 5.1 | 29 % |
+| District meet, wide field | 3.08 | 3.12 | 3.07 | 3.16 | 4.7 | 16 % |
+| Girls even field | 4.68 | 4.71 | 4.71 | 4.90 | 5.0 | 20 % |
+| Senior final | 4.61 | 4.67 | 4.70 | 4.71 | 5.2 | 35 % |
+| Indoor heat | 4.19 | 4.26 | 4.25 | 4.26 | 5.1 | 25 % |
+
+  **Sensible vs quick: within ±0.1 places (target: at most about 1) ✓** — watching with sensible answers is no better
+  than the athlete's own. **Not met, for R5:** sensible vs *deliberately poor* answers (anything but the sensible one:
+  leading at the break, countering, pushing at the bell, kicking early, pushing through boxes) differ by only 0.00–0.19
+  places and 0.0–0.4 s (e.g. 138.75 vs 138.89 s; girls 166.08 vs 166.42 s), against the target of a good vs a bad race ≈
+  0.5–1 % of time (1–2 places). The answers change the engine (checked state by state) but mostly *move* effort from one
+  part of the race to another (a push at the bell is paid back in the kick), so the finishing time hardly changes: R5
+  has to make the mistakes cost more (see the realism review below).
+- **Checks:** `race_check.gd` (ALL PASSED, ~300 races + rare incidents: ≤ 6 cards, break / bell once, every card comes up,
+  every answer of all 9 cards tried and the state right after it correct, the bar's commands, Feeling's four words,
+  the coach rule both laps and his accuracy, the slow-motion events, quick mode answers everything, same seed → same
+  cards), `help_check` (477), `layout_check` (5 sizes × outdoor and indoor × bar / "Tap again" / card with the coach's
+  shout / "slowed to 1x" / result: no OVERFLOW / SQUEEZED), the tour (PC and phone), `race_perf` (PC indoor 4x: 15–17 ms a
+  frame; phone outdoor 4x: 16.7–17.6 ms; a few start-up frames over 33 ms like before), `day_engine_check`, `health_check`,
+  `form_check`, `rankings_check`, `training_balance -- 0` (fingerprints identical), `race_shape.gd` rows 2 and 5 at
+  100 races **identical to the digit** to before R3 (nothing changed for runners without a player).
+- **Realism review (2026-10-08, of everything built so far; no changes made, for R5):**
+  - ✓ Times: the median race time is on the time table within ±0.5 % outdoors; youth final gaps 1.3 / 3.4 / 9.4 s vs real
+    1.1 / 3.5 / 11.9 s; wide local fields strung out; ~5 cards and 1–2 moves a race; the Feeling numbers fit the kick (a
+    200–250 m kick needs 25–31 % of the reserve and the kick card finds 24–30 %).
+  - ✗ **Lap splits:** the winner's laps (R2 table) are 67.2 + 67.4 (fast), 68.0 + 66.4 (honest) and 75.4 + 63.6 s
+    (tactical) in a youth final: the *honest* race is a 1.6 s negative split, while world medallists run the first lap
+    2.2 ± 1.1 s *faster* (Renfree / GDD 4.3.1 above), and a tactical race a 12 s negative split, where real tactical
+    youth finals are mostly 3–6 s. With the finals mix (20 / 35 / 45) the average final is a ~6 s negative split. Cause:
+    lap 1 carries the 1.5 s standing start, and the honest lap-1 factors (+1–2 % of even speed) don't make up for it.
+  - ✗ Senior final finish too spread (known, decision 12, step 7).
+  - ~ Contacts 4 a race, stumbles 0.65 a race, falls 1 per 73–96 runner-races in bunched finals: inside the targets
+    (60–100), but at the high end of what elite 800 m races show (about 1 fall per 200).
+  - ✗ **The answers hardly matter** (above): a clever player gains nothing over the athlete, a careless one loses nothing.
 
 ### 4.4 Season calendar (first version built)
 

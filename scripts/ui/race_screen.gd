@@ -8,6 +8,8 @@ const PLANS := [
 	["back", "Wait at the back", "Save the most for a late kick. Suits fast finishers; you may get boxed in."],
 ]
 const SPEEDS := [1.0, 2.0, 4.0]   # 1x = real time (GDD 4.3.1 sketch)
+## The Feeling word's colours (Race.feeling index): comfortable, working, hurting, empty.
+const FEELING_COLORS := [Palette.RISK_LOW, Palette.TEXT, Palette.SORE_2, Palette.SORE_3]
 
 var _rd: RaceDay
 var _race: Race
@@ -30,6 +32,11 @@ var _info: Label
 var _standings: VBoxContainer
 var _stand_rows := []   # [name label, gap label] per position, reused every frame
 var _commentary: VBoxContainer
+var _feeling: Label            # "Feeling: Working" under the clock (GDD 4.3.1)
+var _slow_note: Label          # "Slowed to 1x" while the race holds at 1x near something happening
+var _bar: RaceActionBar        # Push / Hold / Ease / Move out / Kick now
+var _events_seen := 0          # how many of the race's events the slow-motion check has looked at
+var _slow_left := 0.0          # race seconds more at 1x (a move, box, contact or fall near you, at 2x / 4x)
 var _decision: Control   # full-screen dimmed overlay holding the decision card
 var _help_button: HelpButton   # "?" in the header: the help of this stage (GDD 5 "Help")
 var _help: HelpOverlay         # open help; the race waits while it is open
@@ -315,20 +322,37 @@ func _show_running() -> void:
 
 	_clock = UIKit.label("0.0", "TitleLabel")
 	_info = UIKit.wrapped("")
+	_feeling = UIKit.label("")
+	_slow_note = UIKit.label("SLOWED TO 1x", "CaptionLabel")
+	_slow_note.add_theme_color_override("font_color", Palette.ACCENT)
+	_slow_note.visible = false
 	_standings = UIKit.vbox(2)
 	_stand_rows.clear()
 	_commentary = UIKit.vbox(4)
+	_events_seen = _race.events.size()
+	_slow_left = 0.0
+	# The action bar (not in quick mode, which never gets here) sits under the track and never scrolls away.
+	_bar = RaceActionBar.new(_race)
 	var side := UIKit.vbox(8)
+	var status: VBoxContainer = null
 	if Layout.compact:
+		status = UIKit.vbox(2)
 		var bar := UIKit.hbox(12)
 		_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		bar.add_child(_clock)
 		bar.add_child(_info)
-		side.add_child(bar)
+		status.add_child(bar)
+		var mood := UIKit.hbox(12)
+		_feeling.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mood.add_child(_feeling)
+		mood.add_child(_slow_note)
+		status.add_child(mood)
 	else:
 		side.custom_minimum_size.x = 330
 		side.add_child(_clock)
+		side.add_child(_feeling)
+		side.add_child(_slow_note)
 		side.add_child(_info)
 	side.add_child(UIKit.label("POSITIONS", "CaptionLabel"))
 	side.add_child(_standings)
@@ -337,8 +361,10 @@ func _show_running() -> void:
 	var side_panel := UIKit.panel(side, 16)
 
 	if Layout.compact:
-		var column := UIKit.vbox(10)
+		var column := UIKit.vbox(8)
 		column.add_child(track_area)
+		column.add_child(status)
+		column.add_child(_bar)
 		var scroll := ScrollContainer.new()
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -347,8 +373,12 @@ func _show_running() -> void:
 		column.add_child(scroll)
 		_set_body(column)
 	else:
+		var left := UIKit.vbox(10)
+		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		left.add_child(track_area)
+		left.add_child(_bar)
 		var row := UIKit.hbox(16)
-		row.add_child(track_area)
+		row.add_child(left)
 		row.add_child(side_panel)
 		_set_body(row)
 
@@ -384,10 +414,17 @@ func _process(delta: float) -> void:
 		return
 	if not _race.pending.is_empty():
 		return
-	_acc += delta * _speed
+	# At 2x / 4x the race drops to 1x for a few race seconds when a move, box, contact or fall happens close to
+	# the player (data controls.slow_motion), then goes back to the chosen speed.
+	_acc += delta * (1.0 if _slow_left > 0.0 else _speed)
 	while _acc >= Race.DT and _race.pending.is_empty() and not _race.finished:
 		_race.step()
 		_acc -= Race.DT
+		if _speed > 1.0 and _race.moment_since(_events_seen):
+			_slow_left = float(Data.races.controls.slow_motion.seconds)
+			_acc = minf(_acc, Race.DT)
+		_events_seen = _race.events.size()
+		_slow_left = maxf(0.0, _slow_left - Race.DT)
 	# Dots between the last two engine steps, so they glide instead of jumping 10 times a second at 1x.
 	_runners_view.set("blend", 1.0 if _race.finished else clampf(_acc / Race.DT, 0.0, 1.0))
 	_refresh_running()
@@ -399,6 +436,11 @@ func _refresh_running() -> void:
 	var order := _race.standings()
 	_info.text = "You: %s of %d · %d m to go" % [Race._ordinal(order.find(p) + 1), order.size(),
 			maxi(0, roundi(Race.DISTANCE - p.d))]
+	var feeling := _race.feeling()
+	_feeling.text = "Feeling: " + feeling.word
+	_feeling.add_theme_color_override("font_color", FEELING_COLORS[feeling.index])
+	_slow_note.visible = _slow_left > 0.0 and _speed > 1.0 and not _race.finished
+	_bar.refresh()
 	# The rows are made once and only their text changes: rebuilding them every frame re-lays-out the whole
 	# side panel (including the wrapped commentary) 60 times a second.
 	if _stand_rows.size() != order.size():
@@ -458,6 +500,13 @@ func _show_decision(d: Dictionary) -> void:
 	head.add_child(help)
 	box.add_child(head)
 	box.add_child(UIKit.wrapped(d.text, ""))
+	if d.has("coach"):   # the coach by the track shouts (when he can see you, GDD 4.3.1)
+		var shout := UIKit.vbox(2)
+		var tag := UIKit.label(Data.race_cards.coach.label, "CaptionLabel")
+		tag.add_theme_color_override("font_color", Palette.ACCENT)
+		shout.add_child(tag)
+		shout.add_child(UIKit.wrapped("“%s”" % d.coach.text, ""))
+		box.add_child(UIKit.alert_panel(shout, Palette.ACCENT))
 	for o in d.options:
 		var b := UIKit.button(o.label, false, 200)
 		b.pressed.connect(func():

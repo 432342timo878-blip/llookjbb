@@ -97,23 +97,25 @@
   },
   "race_before": {
    "title": "Before the race",
-   "version": 2,
+   "version": 3,
    "sections": [
     {"heading": "The field", "text": "The runners in your race, fastest personal best first."},
     {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
     {"heading": "Race plan", "text": "The plan is where you want to run. Lead: set the pace, no traffic, but no shelter from the wind. Sit in the pack: run behind others near the front and save energy. Wait at the back: save the most for a late kick, at the risk of getting boxed in or left behind."},
-    {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan. Watch and decide shows the race and stops for your decisions. If you are injured, you can still scratch before the first round."}
+    {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan, and your athlete makes the decisions as well as their race tactics allow. Watch and decide shows the race, stops for your decisions and gives you the action bar. If you are injured, you can still scratch before the first round."}
    ]
   },
   "race_running": {
    "title": "The race",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. The race runs in lanes until the first bend is over, then everyone cuts in."},
+    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. At 2x or 4x the race drops to 1x for a few seconds when something happens close to you. The race runs in lanes until the first bend is over, then everyone cuts in."},
     {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Going faster than your own even pace burns the reserve quickly: spend it too early and you tie up in the finish."},
+    {"heading": "Feeling", "text": "The word under the clock says how much you have left, as you feel it: Comfortable, Working, Hurting or Empty. Your race tactics decide how well you judge it, so it can be wrong. Being tired before the race makes it worse."},
+    {"heading": "The action bar", "text": "Always there; the race does not stop. Push, Hold and Ease set your pace until you kick. Move out takes you wide for a few seconds to go past. Kick now starts your kick: tap it twice within two seconds, so a slip of the thumb does not."},
     {"heading": "In the pack", "text": "Rivals make moves: a sudden surge, or a kick for home. The runners near them go with it or let it go, and one kick near the front sets off the others."},
     {"heading": "Boxed in and falls", "text": "Stuck on the inside with a runner ahead and one on your shoulder, you're boxed in: wait for a gap, ease off and step out, or push through (risky). In a tight bunch runners clip heels: a stumble, now and then a fall."},
-    {"heading": "Decisions", "text": "The race pauses when you have a choice: where to run after the break, what to do at the bell, whether to go with a rival's move, when to kick, and how to get past on the home straight."}
+    {"heading": "Decisions", "text": "The race pauses at the big moments, six at most: after the break, at the bell, a rival's move, being boxed in, losing contact, a slow pace, your own kick, the home straight and after a fall. If your coach can see you from the track side, the coach shouts what to do. The advice is usually right, not always."}
    ]
   },
   "race_result": {

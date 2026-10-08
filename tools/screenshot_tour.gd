@@ -170,7 +170,26 @@ func _run() -> void:
 			race.choose(race.pending.options[0].id)
 		if not shots.mid and race.player.d > 560.0:
 			shots.mid = true
-			await _shot("11_race_mid")
+			await _shot("11_race_mid")   # the action bar, the Feeling word under the clock
+			# (the race is held still for these two shots, so no card gets in the way)
+			screen._running = false
+			# Kick now needs a second tap: after the first, the button asks for it.
+			var kick: Button = screen._bar._buttons.kick
+			kick.pressed.emit()
+			await _frames(3)
+			await _shot("11b_race_tap_again")
+			screen._bar._armed_at = -1000.0
+			# Something happens right next to the player at 4x: the race drops to 1x for a moment.
+			screen._speed = 4.0
+			race.events.append({"type": "fall", "t": race.time, "who": "A Rival", "i": 1, "player": false,
+					"d": roundi(race.player.d) + 6, "pos": 3, "gap": 4.0})
+			screen._running = true
+			screen._process(0.05)
+			screen._running = false
+			screen._refresh_running()
+			await _frames(3)
+			await _shot("11c_race_slowed")
+			screen._running = true
 	Engine.time_scale = 1.0
 	await _frames(5)
 	await _shot("12_race_result")

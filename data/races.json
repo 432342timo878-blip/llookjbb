@@ -91,6 +91,60 @@
   "_events": "Race events (R2): a kick that empties the reserve with more than kick_dying_to_go metres left is 'kick dying'; a new leader counts as a lead change when the old one had led lead_change_s seconds; adjacent finishers under close_finish_s apart are a close finish, under photo_finish_s a photo finish.",
   "kick_dying_to_go": 30.0, "lead_change_s": 2.0, "close_finish_s": 0.3, "photo_finish_s": 0.05
  },
+ "controls": {
+  "_note": "The player's controls in a watched race (GDD 4.3.1 'Player controls', step R3). Card texts and the coach's shouts: data/race_cards.json.",
+  "cards": {
+   "_note": "Event-driven pause cards, at most `max` per race. `always` cards (break, bell, 200 m to go) are asked once each and keep their place in the budget; the others only while shown + always-cards-still-to-come < max, at least min_gap_s race seconds after the last card (no_gap kinds ignore that), at most max_per_race times, and (only_below) while fewer than N cards were shown, so the low-priority ones leave room for the important ones. priority = most important first when two want the same moment. bell_at (metres run; the 200 m card comes when the player reaches their own kick point instead of the kick starting by itself), straight_from + straight_gap: the home straight card needs a runner within that many metres ahead. box_after_s: a box must last that long before it is a card; box_move_m: a rival's move or kick from this far behind to this far ahead of the player counts as 'a move goes'. dropped: the gap to the runner ahead (m) and how long (s) before 'losing contact' is asked, not in the last min_to_go metres. slow: leader slower than pace_max x the field's even speed, between from and to metres run, player in the first max_place places and within group_m of the leader.",
+   "max": 6, "min_gap_s": 8.0, "no_gap": ["fall"],
+   "always": ["break", "bell", "kick"],
+   "priority": {"break": 100, "bell": 90, "fall": 85, "kick": 80, "box": 70, "move": 60, "straight": 50, "dropped": 40, "slow": 30},
+   "max_per_race": {"move": 2, "box": 1, "fall": 2, "straight": 1, "dropped": 1, "slow": 1},
+   "only_below": {"dropped": 5, "slow": 4},
+   "bell_at": 400.0, "straight_from": 700.0, "straight_gap": 2.5,
+   "box_after_s": 0.8, "box_move_m": [-5.0, 30.0],
+   "dropped": {"gap": [5.0, 30.0], "hold_s": 1.0, "min_to_go": 150.0},
+   "slow": {"from": 150.0, "to": 400.0, "pace_max": 0.96, "max_place": 4, "group_m": 15.0}
+  },
+  "effort": {"_note": "The action bar's Push / Hold / Ease (and the bell card): the player's speed before the kick x this.", "push": 1.03, "hold": 1.0, "ease": 0.97},
+  "move_out": {"_note": "Move out: for `seconds` the player runs `lane` metres further out (at most max_lat from the rail) and goes for a pass on the outside.", "seconds": 5.0, "lane": 1.0, "max_lat": 3.0},
+  "counter": {"_note": "Counter-attack on a surge: the player's own surge at speed x their pace for length metres (against a kick: their own kick now).", "speed": 1.08, "length": 120.0},
+  "dig_in": 0.3,
+  "chase": {"_note": "After a fall: Get up and chase digs `dig` deep and pushes; Finish steady eases off and kicks late.", "dig": 0.5, "effort": "push"},
+  "steady": {"effort": "ease", "kick_at": 150.0},
+  "take_lead": {"effort": "push"},
+  "bar": {"_note": "Kick now needs a second tap within kick_confirm_s real seconds.", "kick_confirm_s": 2.0},
+  "feeling": {
+   "_note": "The word under the clock, from the share of the reserve the player FEELS they have left (misjudged by their race tactics), minus fatigue_per_point per point of fatigue above fatigue_from. thresholds: from this share down to the next one gives the next word.",
+   "ids": ["comfortable", "working", "hurting", "empty"],
+   "words": ["Comfortable", "Working", "Hurting", "Empty"],
+   "thresholds": [0.6, 0.3, 0.1],
+   "fatigue_from": 25.0, "fatigue_per_point": 0.003
+  },
+  "slow_motion": {
+   "_note": "At 2x / 4x the race drops to 1x for `seconds` race seconds when one of these events happens within range_m of the player: `types` for any runner, `types_player` only for the player (a box is only a moment when it is yours: boxes are everywhere in a pack).",
+   "range_m": 20.0, "seconds": 5.0,
+   "types": ["move", "kick", "contact", "stumble", "fall", "brought_down"],
+   "types_player": ["boxed"]
+  },
+  "auto": {
+   "_note": "Quick mode: the athlete picks the sensible answer with this chance (race tactics 1 to 20), else any of the answers.",
+   "sensible_at_1": 0.45, "sensible_at_20": 0.9
+  },
+  "sensible": {
+   "_note": "What a sensible runner answers (the coach's advice, quick mode, the checks): bell - push when they feel at least bell_push_share of the reserve and are 3rd or worse, ease below bell_ease_share; counter when they feel counter_share, have counter_to_go or less to go and a kick at least counter_edge times the mover's; the kick card - go now when they feel at least kick_now_factor x the reserve an even kick from here needs; slow pace - take the lead when they are among the first slow_rank by even speed and feel at least slow_share; boxed - wait with more than box_wait_to_go to go, push through in the last box_push_to_go; dropped - dig in when they feel at least dig_share; fall - chase when the runner ahead is under chase_gap away.",
+   "bell_push_share": 0.9, "bell_ease_share": 0.3,
+   "counter_share": 0.9, "counter_to_go": 300.0, "counter_edge": 1.03,
+   "kick_now_factor": 0.9,
+   "slow_rank": 3, "slow_share": 0.8,
+   "box_wait_to_go": 300.0, "box_push_to_go": 90.0,
+   "dig_share": 0.45,
+   "chase_gap": 35.0
+  },
+  "coach": {
+   "_note": "The coach by the track (a stand-in until R4 gives him a spot): outdoors he stands spot_outdoor metres round the lap and sees the player within view_m along the track; indoors he sees the whole track. He shouts the sensible answer with chance accuracy, otherwise another one. Shouts: data/race_cards.json.",
+   "spot_outdoor": 200.0, "view_m": 110.0, "accuracy": 0.8
+  }
+ },
  "shapes": {
   "_note": "Race shapes (GDD 4.3.1; tactical lap 1 made 8-12 % slower in step R2, user 2026-10-08: real tactical finals start ~10 % slower, so the kick decides): the leader's pace as a share of the field's even speed (the runner at pace_ref_quantile of the field by ability, 0 = strongest, 0.5 = median), lap 1 and lap 2 ranges. The mix per meet level / round in percent; a front runner in the field moves front_runner_shift points from tactical to fast, no front runner from fast to tactical.",
   "pace_ref_quantile": 0.25,

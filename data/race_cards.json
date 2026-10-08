@@ -1,0 +1,133 @@
+{
+ "_note": "Texts of the player's controls in a watched race (GDD 4.3.1, step R3): the pause cards (title, text, answers), the lines the player's choices put in the commentary (R4 turns the commentary into data/race_commentary.json), and the coach's shouts. Placeholders in {braces} are filled by the race: {pos} your place, {to_go} metres to go, {name} / {leader} a runner, {gap} metres, {call} 'Bell!' or 'Halfway!', {split} / {leader_split} times, {what} kicks / surges, {where} where they are, {context} a sentence about the move that is going. The card ids and the answer ids are used by scripts/core/race.gd.",
+ "cards": {
+  "break": {
+   "title": "Break from the lanes",
+   "text": "The field cuts in to the inside lane. Where do you want to run?",
+   "options": [
+    {"id": "lead", "label": "Take the lead", "detail": "Control the pace from the front. Costs energy, but no traffic."},
+    {"id": "shoulder", "label": "Sit on the leader's shoulder", "detail": "Stay close in 2nd–3rd, ready to react."},
+    {"id": "back", "label": "Tuck in at the back", "detail": "Save energy behind everyone. Risk of getting boxed in later."}
+   ]
+  },
+  "bell": {
+   "title": "The bell",
+   "title_indoor": "Halfway",
+   "call": "Bell!",
+   "call_indoor": "Halfway!",
+   "text": "{call} {leader} went through 400 m in {leader_split}. You: {split}, {pos}.",
+   "options": [
+    {"id": "push", "label": "Push the pace", "detail": "Run the second lap harder. Good if you're strong, risky if not."},
+    {"id": "hold", "label": "Hold your position", "detail": "Keep doing what you're doing."},
+    {"id": "ease", "label": "Ease off a little", "detail": "Save energy for the kick."}
+   ]
+  },
+  "fall": {
+   "title": "You went down!",
+   "text": "You're back on your feet, {gap} m behind the pack. {to_go} m to go.",
+   "options": [
+    {"id": "chase", "label": "Get up and chase", "detail": "Run hard to get back on. Costs a lot of energy and may not be enough."},
+    {"id": "steady", "label": "Finish steady", "detail": "Shake it off, run calmly and bring it home."}
+   ]
+  },
+  "kick": {
+   "title": "{to_go} metres to go",
+   "text": "You're {pos}. When do you go?",
+   "options": [
+    {"id": "now", "label": "Kick now", "detail": "A long sprint for home. Strong finishers love this."},
+    {"id": "wait", "label": "Wait for the home straight", "detail": "Kick with 100 m to go. Needs a fast finish and a clear path."}
+   ]
+  },
+  "box": {
+   "title": "Boxed in",
+   "text": "You're stuck behind {name} with a runner on your shoulder. {context} How do you get out?",
+   "options": [
+    {"id": "wait", "label": "Wait for a gap", "detail": "Stay put. A gap often opens, but you may be too late for the move."},
+    {"id": "ease", "label": "Ease and step out", "detail": "Reliable, but you lose a few metres."},
+    {"id": "push", "label": "Push through", "detail": "The quickest way, but risk of contact, and a small risk of disqualification for obstruction."}
+   ]
+  },
+  "move": {
+   "title": "A rival makes a move",
+   "text": "{name} {what} with {to_go} m to go! {where}. You: {pos}.",
+   "options": [
+    {"id": "go", "label": "Go with them", "detail": "Sit on them and cover the move. Costs energy now."},
+    {"id": "wait", "label": "Let them go", "detail": "Stay patient and trust your own kick. They may pay for it later."},
+    {"id": "counter", "label": "Counter-attack", "detail": "Hit back and go past them. Costs a lot, and only pays if you have plenty left."}
+   ]
+  },
+  "straight": {
+   "title": "Home straight",
+   "text": "{name} is right in front of you.",
+   "options": [
+    {"id": "wide", "label": "Swing wide and go round", "detail": "A clear path, but a few extra metres."},
+    {"id": "inside", "label": "Wait for a gap on the inside", "detail": "Shortest way, if a gap opens..."}
+   ]
+  },
+  "dropped": {
+   "title": "You're losing contact",
+   "text": "The runners in front are pulling away: {gap} m to {name}. You're {pos}, {to_go} m to go.",
+   "options": [
+    {"id": "dig", "label": "Dig in", "detail": "Hang on to them now. It costs energy you would want later."},
+    {"id": "own", "label": "Run your own pace", "detail": "Let them go and keep your energy for a later kick."}
+   ]
+  },
+  "slow": {
+   "title": "A slow pace",
+   "text": "Nobody wants to lead and the pace is slow. You're {pos}, {gap} m behind {leader}.",
+   "options": [
+    {"id": "lead", "label": "Take the lead", "detail": "Pick it up yourself. Costs energy, but the race is yours to shape."},
+    {"id": "stay", "label": "Stay put", "detail": "Save energy and let the others make the first move."}
+   ]
+  }
+ },
+ "phrases": {
+  "kicks": "kicks",
+  "surges": "surges",
+  "where_ahead": "{m} m ahead of you",
+  "where_beside": "Right beside you",
+  "where_behind": "{m} m behind you",
+  "rival_move": "{name} {what} nearby.",
+  "own_move": "You want to get past."
+ },
+ "says": {
+  "break.lead": "You go to the front.",
+  "break.shoulder": "You settle on the leader's shoulder.",
+  "break.back": "You tuck in at the back of the field.",
+  "bell.push": "You push on down the back straight.",
+  "bell.ease": "You ease off and save something for the finish.",
+  "move.go": "You go with the move!",
+  "move.wait": "You let them go and stay patient.",
+  "move.counter": "You hit back!",
+  "box.ease": "You ease and step out.",
+  "box.push": "You push through!",
+  "dropped.dig": "You dig in and hold on!",
+  "dropped.own": "You settle into your own pace.",
+  "slow.lead": "You take over at the front.",
+  "fall.chase": "You scramble up and give chase!",
+  "fall.steady": "You get up and carry on steadily.",
+  "kick.now": "You kick with {to_go} m to go!",
+  "straight.wide": "You swing wide into lane 2 and go for it!",
+  "straight.gap": "A gap opens on the inside!",
+  "straight.boxed": "No gap... you're boxed in.",
+  "bar.push": "You push on.",
+  "bar.hold": "You settle.",
+  "bar.ease": "You ease off.",
+  "bar.move_out": "You move out to find space.",
+  "bar.kick": "You kick with {to_go} m to go!"
+ },
+ "coach": {
+  "label": "COACH",
+  "shouts": {
+   "break": {"lead": "Go to the front!", "shoulder": "Stay on their shoulder!", "back": "Stay at the back, be patient!"},
+   "bell": {"push": "Push now, you've got it!", "hold": "Relax! Hold it!", "ease": "Easy now, save it!"},
+   "fall": {"chase": "Up! Get after them!", "steady": "Up, stay calm, finish it!"},
+   "kick": {"now": "Go now, go!", "wait": "Wait! Wait for the straight!"},
+   "box": {"wait": "Be patient, a gap will come!", "ease": "Ease, step out!", "push": "Go through, go!"},
+   "move": {"go": "Go with {name}!", "wait": "Let {name} go, stay patient!", "counter": "Go past {name}, now!"},
+   "straight": {"wide": "Go wide, go round!", "inside": "Stay inside, wait for the gap!"},
+   "dropped": {"dig": "Stay with them! Dig!", "own": "Run your own race!"},
+   "slow": {"lead": "Take it up! Go!", "stay": "Stay put, relax!"}
+  }
+ }
+}

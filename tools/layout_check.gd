@@ -91,6 +91,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _health_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _race_views(main, game, data, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		await _season_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _coach_views(main, game, tag)
@@ -291,6 +293,114 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 	router.go("career_hub")
 	await _frames(6)
 	load("res://scripts/core/health_system.gd").model_enabled = false
+
+
+# --- The watched race (GDD 4.3.1, step R3) at this window size --------------------------------------------------
+
+## A watched race outdoors and indoors, driven by hand so every run shows the same states: the action bar and the
+## Feeling word mid-race, "Tap again to kick", a card with the coach's shout (the coach's view is widened for it),
+## the "slowed to 1x" note after an event near the player, and the result. The race day is thrown away afterwards.
+func _race_views(main: Node, game, data, tag: String) -> void:
+	var cal = load("res://scripts/core/calendar.gd")
+	var router = main.get_node("/root/Router")
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_week = game._week
+	var coach: Dictionary = data.races.controls.coach
+	var saved_view: float = coach.view_m
+	coach.view_m = 9999.0
+	for place in ["outdoor", "indoor"]:
+		var meet := {}
+		for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 12, "day": 31}):
+			if bool(m.get("indoor", false)) == (place == "indoor") and m.get("level", "") in ["local", "district"]:
+				meet = m
+				break
+		if meet.is_empty():
+			print("  (no %s meet found for the race views)" % place)
+			continue
+		game.date = meet.date.duplicate()
+		game._week = null
+		game.current_week()
+		game.race_day = load("res://scripts/core/race_day.gd").new(meet, game.athlete, game.rivals)
+		game.race_day._rng.seed = 4242
+		router.go("race")
+		await _frames(8)
+		var screen: Control = main.get_node("ScreenHost").get_child(-1)
+		screen._start(true)
+		await _frames(3)
+		screen._running = false   # driven by hand below
+		var race = screen._race
+		race.print_events = false
+		var t := "%s_race_%s" % [tag, place]
+		_drive(screen, race, func(): return race.player.d >= 330.0)
+		screen._refresh_running()
+		await _frames(3)
+		await _shot(t + "_bar")
+		_check_overflow(screen, t + "_bar")
+		var kick: Button = screen._bar._buttons.kick
+		kick.pressed.emit()   # the first tap: "Tap again to kick"
+		await _frames(3)
+		await _shot(t + "_tap_again")
+		_check_overflow(screen, t + "_tap_again")
+		print("  kick button after one tap: \"", kick.text, "\"", "" if kick.text.begins_with("Tap again") else "   <-- WRONG")
+		screen._bar._armed_at = -1000.0
+		# A card with the coach's shout: the next card that comes up.
+		_drive_to_card(race)
+		await _frames(4)
+		print("  card: ", race.pending.get("id", "?"), " coach: ", race.pending.get("coach", {}).get("text", "(none)"))
+		await _shot(t + "_card_coach")
+		_check_overflow(screen, t + "_card_coach")
+		screen._decision.visible = false
+		race.choose(race.pending.options[0].id)
+		# Something happens next to the player at 4x: the race drops to 1x for a moment.
+		screen._speed = 4.0
+		race.events.append({"type": "fall", "t": race.time, "who": "A Rival", "i": 1, "player": false, "d": roundi(race.player.d) + 6,
+				"pos": 3, "gap": 4.0})
+		screen._running = true
+		screen._process(0.05)
+		screen._running = false
+		screen._refresh_running()
+		await _frames(3)
+		print("  slow note: ", screen._slow_note.visible, " slow_left ", screen._slow_left, "" if screen._slow_left > 0.0 else "   <-- WRONG")
+		await _shot(t + "_slowed")
+		_check_overflow(screen, t + "_slowed")
+		# To the finish and the result.
+		race.interactive = false
+		race.run()
+		screen._show_result()
+		await _frames(4)
+		await _shot(t + "_result")
+		_check_overflow(screen, t + "_result")
+		game.race_day = null
+		router.go("career_hub")
+		await _frames(6)
+	coach.view_m = saved_view
+	game.date = saved_date
+	game._week = saved_week
+	game.current_week()
+	router.go("career_hub")
+	await _frames(6)
+
+
+## Plays the race by hand until `until` is true (answering every card with its first answer).
+func _drive(screen, race, until: Callable) -> void:
+	var guard := 0
+	while not race.finished and not until.call() and guard < 20000:
+		guard += 1
+		if not race.pending.is_empty():
+			screen._decision.visible = false
+			race.choose(race.pending.options[0].id)
+		race.step()
+	if not race.pending.is_empty():
+		screen._decision.visible = false
+		race.choose(race.pending.options[0].id)
+
+
+## Plays until a card is open (it is shown by the race screen, which listens to the race).
+func _drive_to_card(race) -> void:
+	var guard := 0
+	while not race.finished and race.pending.is_empty() and guard < 20000:
+		guard += 1
+		race.step()
 
 
 # --- The season plan UI (M2 step 6e) at this window size ------------------------------------------------------

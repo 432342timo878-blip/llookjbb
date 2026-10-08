@@ -11,6 +11,7 @@ var names: Dictionary = {}             # data/names_fi.json
 var training: Dictionary = {}          # data/training.json: sessions, season rules, coach plan
 var competitions: Dictionary = {}      # data/competitions.json: meets, standards, race training effect
 var races: Dictionary = {}             # data/races.json: 800 m race model tuning
+var race_cards: Dictionary = {}        # data/race_cards.json: the player's race cards, choice lines, the coach's shouts
 var health: Dictionary = {}            # data/health.json: day intensity, body areas, strain, illness, risks
 var injuries: Array = []               # data/injuries.json: the injury and illness catalogue
 var periodization: Dictionary = {}     # data/periodization.json: phases, week rules, the coach's season plans
@@ -33,6 +34,7 @@ func _ready() -> void:
 	training = _load("res://data/training.json")
 	competitions = _load("res://data/competitions.json")
 	races = _load("res://data/races.json")
+	race_cards = _load("res://data/race_cards.json")
 	health = _load("res://data/health.json")
 	injuries = _load("res://data/injuries.json").get("injuries", [])
 	periodization = _load("res://data/periodization.json")

@@ -154,12 +154,19 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         step 7: seniors' race-day consistency), the upsets at Δ 0.5 (37–40 % vs 45–55 %) and good vs bad race
         (~0 % vs 0.5–1 %) → R5. New `tools/race_check.gd`; `race_shape.gd` duel rows + tuning overrides;
         `race_balance.gd` takes races per row and a group.
-  - [ ] **R3. Player controls (UI):** event-driven decision cards (max 6, priority), the action bar (Push / Hold / Ease
+  - [x] **R3. Player controls (UI):** event-driven decision cards (max 6, priority), the action bar (Push / Hold / Ease
         / Move out / Kick now, double tap for Kick, PC + phone, 44 px), the drop to 1x near the player, the Feeling
         word, the coach's shout on cards, quick mode answering the new cards, help entries (`race_running` etc.,
         raise `version`). *(Sonnet, high)*
         Check: tour + layout check with seeded race states (no overflow at the 5 sizes), `help_check.gd`,
         `race_perf.gd` 60 fps, quick vs watched with default choices within ~1 place on average.
+        Done 2026-10-08 (GDD 4.3.1 "Built (step R3)", decisions 14–16): cards from engine events (`Race._check_cards`,
+        max 6, `data/race_cards.json` + `races.json` `controls`), the action bar (`RaceActionBar`), Feeling, drop to 1x,
+        the coach's shout (sees part of the track), quick mode answers the same cards; help `race_before` / `race_running`
+        v3; new `tools/race_watch.gd`, `race_check.gd` rewritten for the cards, `layout_check` + tour race states. Sensible
+        answers vs quick mode: within ±0.2 places (target ≤ 1) ✓; R2 rows 2 and 5 of `race_shape.gd` identical. **Carried
+        on to R5:** sensible vs deliberately poor answers differ by only 0.0–0.4 places (target: a good vs bad race
+        ≈ 1–2 places), and the realism flags in GDD 4.3.1 "Built (step R3)" (lap splits).
   - [ ] **R4. Commentary, coach and race story (UI + data):** `data/race_commentary.json` (variants, placeholders,
         tags, voices TV / coach / you), no repeats + rate rules, choice verdicts, the coach's spot by the track, PC box +
         banner, phone ticker + log sheet, the Race story on the result screen, personality tags and the SB column (backlog
