@@ -88,15 +88,18 @@ func play_day() -> Dictionary:
 	return _play_day(_sessions_of(session_ids(day)), {}, intensity(day))
 
 
-## The race day is done: apply its load and training effect. `summary` is a line for the report.
-## Returns the day's record.
-func race_done(summary: String) -> Dictionary:
+## The race day is done: apply its load and training effect. `summary` is a line for the report;
+## `incidents` = the player's falls and spike wounds (RaceDay.incidents), which the health model reads from
+## the day's record. Returns the day's record.
+func race_done(summary: String, incidents := []) -> Dictionary:
 	var meet: Dictionary = races[day]
 	var race: Dictionary = Data.competitions.race_session.duplicate()
 	race.name = meet.name
 	var d := day
 	_raced.append({"day": d, "meet_key": meet.get("key", ""), "name": meet.name})
 	var record := _play_day([race], meet, NORMAL)
+	if not incidents.is_empty():
+		record.incidents = incidents.duplicate(true)
 	if summary != "":
 		_notes.append("%s: %s" % [Training.DAY_NAMES[d], summary])
 	return record

@@ -365,6 +365,9 @@ func _show_running() -> void:
 
 	_race.commentary.connect(_add_commentary)
 	_race.decision_needed.connect(_show_decision)
+	# Dev (debug builds, e.g. run from the editor): the engine's race events in the Output panel, until the
+	# commentary turns them into words (step R4).
+	_race.print_events = OS.is_debug_build()
 	_running = true
 	_acc = 0.0
 	_finish_wait = 0.0
@@ -416,6 +419,8 @@ func _refresh_running() -> void:
 		var gap := "" if i == 0 else ("+%.1f m" % (lead - r.d) if not r.done else Calendar.format_time(r.t))
 		if i == 0 and r.done:
 			gap = Calendar.format_time(r.t)
+		if r.status == "dnf":
+			gap = "DNF"
 		var n: Label = _stand_rows[i][0]
 		n.text = "%d. %s" % [i + 1, r.name]
 		if r.is_player:
@@ -482,10 +487,14 @@ func _show_result(fresh := true) -> void:
 		var headline := "%s in %s" % [Race._ordinal(place), Calendar.format_time(mine.time)]
 		var best_so_far := old_pb
 		for r in _rd.player_results.slice(0, -1):
-			if best_so_far == 0.0 or r.time < best_so_far:
+			if r.get("status", "") == "" and (best_so_far == 0.0 or r.time < best_so_far):
 				best_so_far = r.time
-		if best_so_far == 0.0 or mine.time < best_so_far:
-			headline += "  ·  Personal best!"
+		match mine.status:
+			"dnf": headline = "Did not finish"
+			"dq": headline = "Disqualified (obstruction)"
+			_:
+				if best_so_far == 0.0 or mine.time < best_so_far:
+					headline += "  ·  Personal best!"
 		var qualifiers := []
 		if _rd.rounds.size() > 1 and _rd.round_index == 1:
 			qualifiers = _rd.final_entrants.map(func(e): return e.name)
@@ -506,7 +515,8 @@ func _show_result(fresh := true) -> void:
 		grid.add_child(UIKit.label(h, "CaptionLabel"))
 	for i in res.size():
 		var r: Dictionary = res[i]
-		var cells := [str(i + 1), r.name, Calendar.format_time(r.time), "Q" if r.name in _result.qualifiers else ""]
+		var no_time: bool = r.get("status", "") != ""
+		var cells := ["–" if no_time else str(i + 1), r.name, Race.time_text(r), "Q" if r.name in _result.qualifiers else ""]
 		if not Layout.compact:
 			cells.insert(2, r.club)
 		for c in cells.size():

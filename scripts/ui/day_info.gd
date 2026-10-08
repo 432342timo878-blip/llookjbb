@@ -170,7 +170,7 @@ static func race_result_text(meet_key: String) -> String:
 	var parts := []
 	for r in Game.athlete.results:
 		if r.meet_key == meet_key:
-			var text: String = "%s, %s" % [Race._ordinal(int(r.place)), Calendar.format_time(r.time)]
+			var text: String = Race.result_text(r, ", ")
 			if r.round != "Race":
 				text = "%s: %s" % [r.round, text]
 			parts.append(text + (" (PB)" if r.pb else ""))

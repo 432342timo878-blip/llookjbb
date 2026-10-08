@@ -113,6 +113,7 @@ func on_health(ctx: Dictionary) -> void:
 	var news := []   # injuries and illnesses that started (or got worse) today
 	_progress(a, sessions, is_race, date, news)
 	_roll_acute(a, sessions, is_race, date, news)
+	_roll_race_incidents(rec, date, news)
 	_roll_overuse(a, date, news)
 	_roll_illness(a, news)
 	for inj in news:
@@ -449,6 +450,30 @@ func _roll_acute(a: Athlete, sessions: Array, is_race: bool, date: Dictionary, n
 				continue
 			if rng.randf() < float(risks[injury_id]) * tired * prone:
 				_start(data, date, news)
+
+
+## A fall or a spike wound in today's race (the race engine decided that it happened, with the race's dice):
+## what it did is rolled here with the health model's own saved dice (data/health.json race_incidents).
+func _roll_race_incidents(rec: Dictionary, date: Dictionary, news: Array) -> void:
+	var tables: Dictionary = Data.health.race_incidents
+	for inc in rec.get("incidents", []):
+		var table: Dictionary = tables.get(str(inc.kind), {})
+		var total := 0.0
+		for k in table:
+			total += float(table[k])
+		if total <= 0.0:
+			continue
+		var x := rng.randf() * total
+		var pick := ""
+		for k in table:
+			x -= float(table[k])
+			if x < 0.0:
+				pick = k
+				break
+		var data := Data.get_injury(pick)
+		if data.is_empty() or injuries.any(func(i): return i.id == pick) or (data.area != "" and _injured(data.area)):
+			continue
+		_start(data, date, news)
 
 
 ## Overuse: each area may give way, more likely the more strained it is.

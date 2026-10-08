@@ -107,19 +107,22 @@
   },
   "race_running": {
    "title": "The race",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. The race runs in lanes until the first bend is over, then everyone cuts in."},
-    {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Spend the reserve too early and you tie up in the finish."},
+    {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Going faster than your own even pace burns the reserve quickly: spend it too early and you tie up in the finish."},
+    {"heading": "In the pack", "text": "Rivals make moves: a sudden surge, or a kick for home. The runners near them go with it or let it go, and one kick near the front sets off the others."},
+    {"heading": "Boxed in and falls", "text": "Stuck on the inside with a runner ahead and one on your shoulder, you're boxed in: wait for a gap, ease off and step out, or push through (risky). In a tight bunch runners clip heels: a stumble, now and then a fall."},
     {"heading": "Decisions", "text": "The race pauses when you have a choice: where to run after the break, what to do at the bell, whether to go with a rival's move, when to kick, and how to get past on the home straight."}
    ]
   },
   "race_result": {
    "title": "The result",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Results", "text": "Your place and time; a new personal best is marked. The time counts in the season rankings."},
-    {"heading": "Heats and final", "text": "At big meets there are heats. Q marks the runners through to the final: the top two of each heat and the fastest of the rest."}
+    {"heading": "DNF and DQ", "text": "DNF: did not finish, after a bad fall. DQ: disqualified for obstruction, after pushing through a gap. Neither counts for a personal best or the rankings. A fall can leave you with grazes or a bruise, rarely a sprained ankle.", "see": ["injuries"]},
+    {"heading": "Heats and final", "text": "At big meets there are heats. Q marks the runners through to the final: the top two of each heat and the fastest of the rest. Runners safely in the top two often ease off before the line."}
    ]
   },
   "new_career": {

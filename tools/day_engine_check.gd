@@ -43,6 +43,7 @@ func _run() -> void:
 	_check_race_week(true)
 	_check_rival_personalities()
 	_check_race_repeatable()
+	_check_no_time_results()
 	_check_stop_events()
 	_check_day_start_stop()
 	_check_ui_models()
@@ -388,8 +389,70 @@ func _check_race_repeatable() -> void:
 		var race = RaceScript.new()
 		race.setup(entrants, "male", false, 10.0, rng, false, "final")
 		race.run()
-		out.append([race.shape, race.results().map(func(x): return [x.name, x.time, x.split_400])])
-	_ok("same seed, same shape and results (%s)" % out[0][0], out[0] == out[1])
+		out.append([race.shape, race.results().map(func(x): return [x.name, x.time, x.split_400, x.status]), race.events])
+	_ok("same seed, same shape, results and race events (%s, %d events)" % [out[0][0], out[0][2].size()], out[0] == out[1])
+
+
+## A race without a time (DNF after a fall, DQ for obstruction, GDD 4.3.1 step R2): recorded with its status,
+## never a PB or a season best, shown as DNF / DQ, kept through save/load; in a race the runner is listed last.
+func _check_no_time_results() -> void:
+	print("-- DNF / DQ results")
+	var RaceScript = load("res://scripts/core/race.gd")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var entrants := []
+	for i in 6:
+		entrants.append({"name": "R%d" % i, "club": "", "ability": 9.0, "speed": 9.0, "anaerobic": 0.0, "tactics": 9.0,
+				"consistency": 9.0, "composure": 9.0})
+	var race = RaceScript.new()
+	race.setup(entrants, "male", false, 10.0, rng, false, "final")
+	for k in 300:
+		race.step()
+	race.runners[0].status = "dq"
+	race._event("fall", race.runners[1], {"where": "bend"})
+	race.runners[1].done = true
+	race.runners[1].status = "dnf"
+	race.run()
+	var res: Array = race.results()
+	_ok("results: finishers first, then DQ, then DNF (no time)", res[-1].name == "R1" and res[-1].status == "dnf"
+			and res[-2].name == "R0" and res[-2].status == "dq" and res[-1].time == 0.0 and res[-2].time == 0.0
+			and res.slice(0, 4).all(func(x): return x.status == "" and x.time > 0.0))
+	_ok("the race's event list has the start, the fall and the finish", ["start", "fall", "finish"].all(
+			func(t): return race.events.any(func(ev): return ev.type == t)))
+
+	for status in ["dnf", "dq"]:
+		_new_career(8)
+		var meet := {}
+		for m in Cal.meets_between(game.date, game.add_days(game.date, 120)):
+			if Cal.coach_recommends(game.athlete, m, game.date):
+				meet = m
+				break
+		game.enter(meet.key)
+		var r: String = game.DAY_DONE
+		var guard := 0
+		while r != game.RACE and guard < 200:
+			guard += 1
+			r = game.advance_day()
+			while not game.pending_event().is_empty():
+				game.answer_event(game.pending_event().id, "ok")
+		var rd = game.race_day
+		_run_race()
+		for pr in rd.player_results:
+			pr.status = status
+			pr.time = 0.0
+		var text: String = rd.summary()
+		game.finish_race()
+		var last: Dictionary = game.athlete.results[-1]
+		_ok("%s: recorded with its status, no PB" % status, last.get("status", "") == status and not last.pb
+				and float(game.athlete.personal_bests.get("800m", 0.0)) == 0.0)
+		_ok("%s: the report line and the race result say %s" % [status, status.to_upper()], text.contains(status.to_upper())
+				and load("res://scripts/ui/day_info.gd").race_result_text(meet.key).contains(status.to_upper()))
+		var Rk = load("res://scripts/core/rankings.gd")
+		_ok("%s: no season best" % status, Rk.player_season_best(game.athlete, Rk.season_of(meet.date)) == 0.0)
+		saves.save("no_time")
+		saves.load_slot("no_time")
+		_ok("%s: kept through save/load" % status, game.athlete.results[-1].get("status", "") == status)
+		saves.delete("no_time")
 
 
 ## A stop event at day end pauses Play week; answering it changes tomorrow.

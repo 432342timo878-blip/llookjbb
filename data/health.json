@@ -94,6 +94,12 @@
   "winter_roads": {"months": [12, 1, 2], "injury": "ankle_sprain", "chance": 0.0003}
  },
 
+ "race_incidents": {
+  "_note": "Race injuries (GDD 4.3.1, step R2). The race engine decides whether the athlete falls or is spiked (the race's own dice); after the race day the health model rolls what it did, with its own saved dice: one pick per fall / spike wound from these weights (injury id or none). A fall is mostly grazes or a bruise, rarely an ankle sprain; being spiked is a spike wound.",
+  "fall": {"none": 25, "fall_graze": 45, "fall_bruise": 22, "ankle_sprain": 8},
+  "spiked": {"spike_cut": 100}
+ },
+
  "escalation": {
   "_note": "Daily chance that an injury that can get worse (escalates_to) does: after a day trained through its limits (a banned session done), after racing on it, or when its area is painful anyway. The trained-through and raced chances are × (area strain / 'sore' level)², kept between strain_min and strain_max, so training through on a calm area is a smaller gamble. Each day an injury (not an illness) is trained through also adds extend_days to its current phase.",
   "trained_through": 0.3, "raced": 0.2, "painful": 0.02, "strain_min": 0.25, "strain_max": 3.0, "extend_days": 2

@@ -675,8 +675,8 @@ func _build_profile(a: Athlete) -> void:
 		body.add_child(UIKit.label("RECENT RACES", "CaptionLabel"))
 		for r in a.results.slice(-5):
 			var where: String = "" if r.round == "Race" else " (%s)" % r.round.to_lower()
-			var line := "%d.%d. %s%s: %s %s" % [int(r.date.day), int(r.date.month), r.meet, where,
-					Race._ordinal(int(r.place)), Calendar.format_time(r.time)]
+			var line := "%d.%d. %s%s: %s" % [int(r.date.day), int(r.date.month), r.meet, where,
+					Race.result_text(r, " ")]
 			body.add_child(UIKit.wrapped(line + (" PB" if r.pb else ""), "MutedLabel"))
 	columns.add_child(_column_panel(body))
 	if Layout.compact:   # the body and results first, then the attributes

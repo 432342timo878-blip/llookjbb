@@ -134,7 +134,7 @@ on aggregate result standards only, with no individual names or results. Real at
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
   and commentary. See 4.3.1; it replaces the plan lap factors, the fixed decision points and the commentary above.
 
-### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2–R5 to come)
+### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3–R5 to come)
 
 Playtest (user, 2026-10-07): the order seems settled early, while real 800 m races are often one bunch with moves
 anywhere. Wanted: pack racing (staying together, drafting, being boxed in), rival moves at any point that can change the
@@ -195,15 +195,30 @@ change of place late is a fade, never a fight.
    stronger runner races badly, with a proper balance (targets below).
 9. At 2x / 4x the race **drops to 1x** for a moment when something happens near the player.
 
+**Decisions (user, 2026-10-08, step R2):**
+10. **A rival's fall:** most falls only cost the race; a small share keeps the rival out for 1–3 weeks (`out_weeks`,
+    ~1 in 8 falls, half of the DNFs), rolled with the race's dice, applied when the health model is on.
+11. **Tactical races start slower:** lap 1 8–12 % below the field's even pace (was 3–7 %): real tactical finals start
+    ~10 % slower, and only then is there a real sprint finish.
+12. **The senior final finish target waits for step 7:** the engine turns each runner's ability *on the day* into
+    finish gaps almost one to one, and race-day form (±0.6 ability ≈ ±1.8 s for a senior, elite seniors really vary
+    ~1 %) spreads the senior test field wider than a real national final. Seniors' race-day consistency is designed
+    with the multi-year check.
+13. **Energy: going faster than your own even pace costs extra** (R2): the reserve drains by (speed − cs) ×
+    (speed / own even speed)³; even pace costs as before, a too-fast start or a long sprint costs more, a slow
+    tactical lap saves more. With the old straight-line drain *when* a runner spent the reserve hardly mattered
+    ("leading too fast" even helped a strong runner). The upset targets left short (Δ 0.5, good vs bad) are tuned
+    again in R5, once the player's action bar and cards exist (R3).
+
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
-  the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 3–7 % slower, then a
-  long sprint). Mix: local youth 50 / 35 / 15, district 40 / 40 / 20, championship heats 30 / 50 / 20, finals
+  the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 8–12 % slower, then a
+  long sprint; was 3–7 % until R2, decision 11). Mix: local youth 50 / 35 / 15, district 40 / 40 / 20, championship heats 30 / 50 / 20, finals
   20 / 35 / 45 (fast / honest / tactical). A front runner in the field moves weight towards fast; no front runner
   towards tactical. The leader aims for the shape's pace; the commentator calls it at 200 m.
 - **Following:** every runner wants a place (personality + plan: lead / front of the pack / back of the pack / own
   pace). Behind a group they run the group's speed. Running faster than their own sustainable speed drains the reserve
-  as now; **drafting** (≤ 1.5 m behind, same line) lowers the cost by about 2 % of speed (from Pugh's 6 % of energy,
+  (from R2 faster the further above their own even pace, decision 13); **drafting** (≤ 1.5 m behind, same line) lowers the cost by about 2 % of speed (from Pugh's 6 % of energy,
   less on bends and in the second row; data). Leading costs the full price.
 - **Hanging on and being dropped:** a runner stays with the group while their expected reserve at their kick point
   is enough (personality and determination set how deep they dig). When it isn't, they fall back to their own pace:
@@ -383,6 +398,104 @@ dice before; `day_engine_check` now checks that the same seed gives the same rac
   events, which could freeze it before); `training_balance.gd -- 0` fingerprints identical (215.999957139 /
   13.751549603 / 1203.029795007); `race_perf.gd` (see ROADMAP R1).
 
+**Built (step R2, 2026-10-08): moves, boxes, falls (headless).** All in `Race` (`scripts/core/race.gd`), every
+number in `data/races.json` `engine` (`moves`, `chain`, `box`, `contact`, `heat_ease`, `drain_power`), every die from
+the race's own RNG (`day_engine_check`: same seed → same race, results *and* event list). Decisions 10–13 above.
+- **Energy (decision 13):** reserve drain = (speed − cs) × (speed / own even speed)³ (`drain_power` 3; 0 = R1).
+  Every "how fast can I go" answer (the kick, hanging on, covering, surging) solves this exactly (`_hold_speed`).
+- **Moves:** after the break + 20 m a runner not kicking may surge (+4–8 % for 50–150 m): per 100 m front 0.04, pack
+  0.03, kicker 0.01, surger 0.03 (0.5 between 300 and 550 m run), × 0.5 / 1 / 2 in fast / honest / tactical races,
+  × 0.7 for the leader, × 0.3 more than 5 m behind; at most 2 each; only when the reserve they *feel* they can spare
+  covers it. Runners from 2 m ahead to 15 m behind cover (follow the surger at up to 1.08 × its speed, digging 0.3
+  deeper) or let it go (no faster than their speed / the race pace until 20 m after the surge): cover chance front 0.6,
+  pack 0.75, kicker 0.2, surger 0.5, player 0.5, moved by race tactics towards 0.9 (can afford) / 0.15 (can't).
+- **Kick chain** (Claude, measured): a kick in the first 4 places or within 6 m of the leader makes the runners from
+  3 m ahead to 12 m behind answer (front 0.8, pack 0.85, kicker 0.5, surger 0.75, player 0.7; × 0.6 before their own
+  kick point; tactics towards 0.95 / 0.2 by whether they could hold the kicker's speed to the line). **Answering =
+  going with the kicker** (covering), their own kick at their own point; a coverer near the front passes it on. First
+  build answered with an immediate all-out kick: every front runner then went from 400 m and the senior final spread
+  *out* (0.9 / 2.8 / 7.0 s).
+- **Boxed in:** wants past (kicking, in a move, covering, or in the last 300 m), a runner < 1.5 m ahead in the line and
+  someone on the shoulder: no faster than the runner ahead. Way out by weights: wait (more early, more with tactics; a
+  gap opens 0.02–0.25 per second by race tactics: the runner on the shoulder drifts wide), ease and step out (0.93 ×
+  the speed ahead until the outside is clear: costs a few metres), push through (more with grit and in the last
+  150 m; contact 50 %, obstruction DQ 1 %). The player's way is picked the same way (quick mode's race tactics) until
+  R3. Per race in a youth final: 17.6 boxes, most under half a second, 2.8 lasting 2 s or more; out by wait 71 % /
+  ease 24 % / push 4 %.
+- **Contact / stumble / fall:** a runner on someone's heels (< 0.9 m behind, < 0.55 m sideways) has contacts per
+  second: cutting in after the break 0.3, either moving sideways 0.15, bend 0.04, straight 0.015; push through rolls
+  its own. A contact: the runner behind is the one in trouble 75 %; stumble 15 % (1–3 m, 2–5 m of reserve), fall 2 %
+  (down 3.2–7 s + getting up ≈ 4–8 s, 5 m of reserve, DNF 6 %, the runner right behind goes down too 30 %); the one
+  ahead is spiked 3 %. A rival who falls is out 1–3 weeks with 12 % (50 % after a DNF). Front running is safest: only
+  the runner on someone's heels is at risk (the leader only when clipped from behind).
+- **Race injuries (GDD 4.6):** the fall / spike comes from the race's RNG (`RaceDay.incidents` → the race day's
+  record); the injury is rolled after the race day by the health model with its own saved dice, so a saved game goes
+  on bit for bit (the race itself, as before, runs on the race day's own fresh RNG and is never saved half-way).
+- **DNF / DQ:** `status` dnf / dq, time 0, listed after the finishers (DQ before DNF); never a PB, season best,
+  qualifier, rival PB; the result screen shows – and DNF / DQ ("Did not finish", "Disqualified (obstruction)"), the
+  report line DNF / DQ (+ "You fell." / "You were spiked."), Overview and day editor DNF / DQ.
+- **Heats:** in a heat (2 automatic places) a runner in an automatic place ≥ 3 m clear of the first runner outside
+  them eases to 0.95 × speed in the last 30–50 m. Not in finals.
+- **Event list** (`Race.events`, for R4): start, break_leader, pace (200 / 400 / 600: split, % vs the field's even
+  pace, front group, spread), pack (300 / 500), move, cover, let_go, dropped, boxed, escape (way, seconds), gap_opens,
+  contact (where), stumble, fall, brought_down, dnf, dq, spiked, lead_change (after ≥ 2 s), kick (answer_to),
+  kick_dying, ease, close_finish (< 0.3 s) / photo_finish (< 0.05 s), finish; each with who, runner index, player,
+  metres run, place and gap to the leader. Debug builds print them to the Output panel while a race is watched.
+- **Shapes:** tactical lap 1 0.88–0.92 (decision 11), lap 2 1.01–1.03 (was 1.00–1.02; Claude: keeps the finals on the
+  table). **`cs_scale` 1.017** (was 1.003).
+- **Measured after** (`race_shape.gd -- 100`, same rows and seed; R1 in brackets; "no tactics" = the gaps if
+  everyone ran their even time for the day):
+
+| Row | 1st→last 200/400/600 m | 1st→4th at 400 | Within 5 m at 400 | Leader at 400 / 600 wins | r 400 / 600 | Finish 1st→2nd / 4th / last | No tactics | Won by < 0.2 s | Time / table |
+|---|---|---|---|---|---|---|---|---|---|
+| Youth even field | 15 / 32 / 47 (15 / 32 / 51) | 9 (7) | 2.9 (3.4) | 62 / 68 % (61 / 66) | 0.83 / 0.91 (0.86 / 0.90) | 1.8 / 6.0 / 14.9 s (2.0 / 5.9 / 16.4) | 2.7 / 6.7 / 15.7 | 8 % (11) | 0.998 (0.996) |
+| Youth local meet, wide | 27 / 57 / 89 (27 / 55 / 85) | 14 (12) | 2.9 (3.1) | 59 / 64 % (54 / 65) | 0.93 / 0.95 (0.90 / 0.93) | 2.3 / 8.7 / 28.2 s (2.4 / 8.3 / 27.9) | 4.2 / 12.1 / 32.2 | 5 % (12) | 0.997 (1.002) |
+| Youth championship final | 7 / 17 / 29 (7 / 16 / 28) | 4 (4) | 4.9 (5.1) | 49 / 61 % (29 / 39) | 0.59 / 0.84 (0.59 / 0.76) | 1.3 / 3.4 / 9.4 s (0.7 / 3.0 / 9.5) | 1.9 / 4.4 / 11.1 | 13 % (24) | 1.004 (1.002) |
+| Youth indoor | 15 / 31 / 48 (16 / 33 / 52) | 10 (10) | 3.1 (2.8) | 60 / 68 % (60 / 71) | 0.80 / 0.90 (0.79 / 0.87) | 1.8 / 6.0 / 14.8 s (2.3 / 6.6 / 17.0) | 2.2 / 6.0 / 16.8 | 8 % (7) | 1.015 (1.014) |
+| Girls even field | 15 / 31 / 47 (14 / 29 / 44) | 9 (7) | 3.0 (3.4) | 70 / 66 % (49 / 53) | 0.85 / 0.91 (0.83 / 0.87) | 2.0 / 5.9 / 15.8 s (1.7 / 5.4 / 15.7) | 2.6 / 6.8 / 18.1 | 7 % (10) | 0.997 (1.001) |
+| Senior national final | 6 / 13 / 23 (5 / 11 / 19) | 4 (3) | 5.0 (5.6) | 45 / 46 % (34 / 46) | 0.52 / 0.75 (0.52 / 0.73) | 0.6 / 2.0 / 5.9 s (0.7 / 2.1 / 5.6) | 0.9 / 2.5 / 6.3 | 25 % (25) | 1.004 (1.001) |
+| 8 identical runners | 3 / 7 / 11 (3 / 6 / 12) | 3 (2) | 5.6 (6.1) | 44 / 54 % (26 / 44) | 0.45 / 0.65 (0.44 / 0.73) | 0.6 / 1.7 / 4.7 s (0.5 / 1.7 / 4.5) | 0.5 / 1.6 / 3.7 | 20 % (27) | 1.005 (1.001) |
+| *New:* senior final, consistent field (15 ± 0.25, consistency 13 ± 3) | 5 / 10 / 17 | 3 | 5.3 | 35 / 43 % | 0.48 / 0.69 | 0.5 / 2.0 / 4.8 s | 0.7 / 1.7 / 4.9 | 20 % | 1.006 |
+
+  Winner's laps by shape (youth final): fast 67.2 + 67.4, honest 68.0 + 66.4, tactical 75.4 + 63.6 s. Per race (youth
+  final): 0.9 moves, 1.7 let go, ~10 covers (moves and kicks), 4.0 contacts, 0.7 stumbles.
+- **Targets:** time / table within ±0.5 % in every outdoor row ✓ (0.997–1.005; indoor 1.015, slower by design); youth
+  championship final 1.3 / 3.4 / 9.4 s ✓; even finals ≥ 4 within 5 m at 400 ✓ (4.9 / 5.0); leader at 400 wins 49 % /
+  45 % ✓ (30–50); r 0.59 / 0.84 (youth) ✓, 0.52 / 0.75 (senior, a little low as in R1); wide local fields strung out
+  ✓ (28.2 s). **Senior final not met** (0.6 / 2.0 / 5.9 s, 25 % under 0.2 s; targets 0.1–0.5 / 0.7–1.5 / 3–5.5,
+  30–60 %): decision 12, step 7. Even the consistent field gives 2.0 s to 4th (no tactics 1.7 s): the engine does not
+  squeeze a field's ability differences in the final 200 m (only tactical races do: senior tactical 1st→4th 1.4 s vs
+  fast / honest 2.6–2.9 s), so a real-looking senior final needs both a tighter day spread and that question again
+  in step 7 / R5.
+- **Falls:** bunched finals (youth final, senior final, identical field together) **1 per 96 runner-races** ✓
+  (target 60–100; senior alone 1 per 73); the other, more strung-out rows 1 per ~170. DNF ≈ 6 % of falls; DQ 0–1 per
+  100 races.
+- **Upsets** (`race_shape.gd -- 100 duel…`: runner A stronger by Δ, B; 6 others around them, an even final; A's bad
+  race = leads at 1.07 × own even pace / waits boxed at the back / kicks from 400 m; B's good race = perfect feel,
+  race tactics 20 for decisions, sits in the pack, kicks from 200, eases out of boxes):
+
+| Δ | B beats A, both neutral | A bad + B good (leads too fast / waits boxed / kicks from 400) | Target |
+|---|---|---|---|
+| 0.5 | 37 % | 40 / 34 / 39 % | 45–55 % (vs ≈ 30 % neutral) |
+| 1 | 25 % | 17 / 18 / 21 % | 20–30 % |
+| 2 | 4 % | 3 / 3 / 8 % | under 5 % |
+
+  A bad race against A's good race costs −0.9…+0.5 % of time (relative to the rest of the field), about 0 on average
+  over the nine cases (waiting boxed +0.1…+0.5 % is the only one that always costs); B's good race −0.2 %. Target
+  0.5–1 %. **Not met: Δ 0.5 and good vs bad** (decision 13: tuned again in R5 with the player's cards and action
+  bar); Δ 1 and Δ 2 near their targets. Why: a strong runner in a slower field can't use their whole reserve in a
+  capped kick, so leading hard (Δ 2: −0.9 %) or kicking long is not automatically a bad race for them; with the R1
+  straight-line drain leading too fast helped even at Δ 0.5 (−0.75 %).
+- **`race_balance.gd`** (median vs anchor): girls −0.8…+0.3 s (40 races per row), boys −0.5…0.0 s (80 per row; at 40
+  the 12-race noise put ability 9 at −1.1 s), indoor +1.8…+2.7 s (R1 +2.1…+3.0, slower by design).
+- **Speed:** ~0.5 s per race headless (R1 ~0.4; neighbour searches use the step's order, insertion-sorted standings,
+  cached numbers): at a championship the other heats take ~2 s after the player's heat.
+- **Checks:** new `tools/race_check.gd` (plans × answers incl. quick mode: no stuck race, every old card per plan;
+  rare incidents with raised rates; heats easing only in heats; every event type with its fields); `day_engine_check`
+  + DNF / DQ results (recorded, no PB / SB, DNF / DQ texts, save / load) and repeatable events; `health_check` + race
+  injuries (tables, fall → mostly grazes, spike → spike wound, same dice → same injury, a fall on race day → the
+  diagnosis, rival out_weeks only with the health model on); help `race_running` and `race_result` v2.
+
 ### 4.4 Season calendar (first version built)
 
 Decisions (user, 2026-10-05): big meets use **real dates**; small local/district meets get **believable estimated dates**
@@ -464,6 +577,11 @@ acute-risk value. No injury numbers in scripts.
   "a bit sore" and rises steeply above it; ~15 % of injuries come with only a slight warning.
 - **Acute bad luck** per session: ankle sprains (trail fartlek, icy winter roads), hamstring/calf strains (speed work,
   races; more when tired).
+- **Race falls (GDD 4.3.1, step R2):** the race engine decides that the athlete fell or was spiked (the race's own
+  dice); after the race day the health model rolls what it did with its own saved dice (`health.json`
+  `race_incidents`): a fall is grazes (45 %) or a bruise (22 %), rarely an ankle sprain (8 %), otherwise nothing; being
+  spiked is a spike wound. New niggles in `injuries.json` (cause `race`): grazes (easy training 1–3 days), bruise
+  (limits 3–7 days), spike wound (easy training 2–4 days). The diagnosis stop event comes as for any injury.
 - **Growth spurt:** a growth-spurt age from gender + maturation (early/average/late) makes knees and heels more
   vulnerable around it (an average-maturing boy is in it at 14).
 - **History:** a past injury raises the same area's risk for ~6 months.

@@ -1,5 +1,5 @@
 {
- "_note": "Injury and illness catalogue for youth runners (GDD 4.6). tier: niggle / injury / serious / illness. area: the body area (data/health.json) it belongs to. cause: overuse (picked when an area's strain causes an injury), acute (bad luck in a session, see the sessions' 'acute' risks) or illness. min_strain: the area strain from which an overuse injury can be the one picked (higher = only when the area is very overloaded; the mildest niggles start where the overuse risk starts, injury_risk.zero_below in data/health.json); weight: how common it is among the eligible ones. min_age / max_age: age in years. growth: only around the growth spurt (more likely the closer to it). female: weight multiplier for girls (bone stress). phases: what is allowed, in order, each lasting a number of days drawn inside 'days'; after the last phase the athlete is fully fit. restriction: a preset from data/health.json, bans: extra session tags that are banned, locked: the player can't override the limits. escalates_to: what it can turn into when trained or raced through (if the athlete is old enough for it). race_slowdown: share slower when racing with it. Time ranges follow real-world return-to-run guidance for adolescents.",
+ "_note": "Injury and illness catalogue for youth runners (GDD 4.6). tier: niggle / injury / serious / illness. area: the body area (data/health.json) it belongs to. cause: overuse (picked when an area's strain causes an injury), acute (bad luck in a session, see the sessions' 'acute' risks), race (a fall or a spike wound in a race, see race_incidents in data/health.json) or illness. min_strain: the area strain from which an overuse injury can be the one picked (higher = only when the area is very overloaded; the mildest niggles start where the overuse risk starts, injury_risk.zero_below in data/health.json); weight: how common it is among the eligible ones. min_age / max_age: age in years. growth: only around the growth spurt (more likely the closer to it). female: weight multiplier for girls (bone stress). phases: what is allowed, in order, each lasting a number of days drawn inside 'days'; after the last phase the athlete is fully fit. restriction: a preset from data/health.json, bans: extra session tags that are banned, locked: the player can't override the limits. escalates_to: what it can turn into when trained or raced through (if the athlete is old enough for it). race_slowdown: share slower when racing with it. Time ranges follow real-world return-to-run guidance for adolescents.",
  "injuries": [
   {
    "id": "shin_splints", "name": "Shin splints", "tier": "niggle", "area": "shins", "cause": "overuse",
@@ -180,6 +180,25 @@
     {"restriction": "easy_running", "days": [5, 10]}
    ],
    "race_slowdown": 0.05
+  },
+
+  {
+   "id": "fall_graze", "name": "Grazes from a fall", "tier": "niggle", "area": "", "cause": "race",
+   "description": "You went down in a race and took the skin off a knee, hip or elbow. It stings, but it only needs cleaning and a couple of easier days.",
+   "phases": [{"restriction": "easy_day", "days": [1, 3]}],
+   "race_slowdown": 0.005
+  },
+  {
+   "id": "fall_bruise", "name": "Bruised from a fall", "tier": "niggle", "area": "", "cause": "race",
+   "description": "A hard landing on the track left a deep bruise on the hip or thigh. Easy running is fine; sprinting and jumping hurt for a few days.",
+   "phases": [{"restriction": "limits", "days": [3, 7]}],
+   "race_slowdown": 0.01
+  },
+  {
+   "id": "spike_cut", "name": "Spike wound", "tier": "niggle", "area": "", "cause": "race",
+   "description": "Another runner's spikes cut your leg in the bunch. Keep it clean and covered for a few easier days while it closes.",
+   "phases": [{"restriction": "easy_day", "days": [2, 4]}],
+   "race_slowdown": 0.005
   },
 
   {

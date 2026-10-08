@@ -142,11 +142,18 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         personality / `met` / repeatable-race checks; fixed old tool problems: `rankings_check` and `race_perf` now
         answer stop events (both could hang since health / step 6f), `race_perf` no longer presses the card's "?".
         `race_perf` 60 fps on PC (indoor) and phone (outdoor) at 4x.
-  - [ ] **R2. Moves, boxes, falls (headless):** surges at any point, covering / letting go, the kick chain, boxed in +
+  - [x] **R2. Moves, boxes, falls (headless):** surges at any point, covering / letting go, the kick chain, boxed in +
         the three ways out, contact / stumble / fall (+ a fall bringing down the runner behind), race injuries in
         `injuries.json` through the health model, the obstruction DQ, heats easing in, the engine's race event list
         (for the commentary), the duel rows and fall counts in `race_shape.gd`; tune the upset targets. *(Opus, high)*
         Check: the shape, upset and fall targets of GDD 4.3.1; `health_check.gd`; R1 checks still pass.
+        Done 2026-10-08 (GDD 4.3.1 "Built (step R2)", decisions 10–13): answering a kick = going with the kicker;
+        energy drain × (speed / own even speed)³; tactical lap 1 8–12 % slower; `cs_scale` 1.017; falls 1 per 96
+        runner-races in bunched finals ✓; youth final 1.3 / 3.4 / 9.4 s ✓; time / table 0.997–1.005 outdoors ✓;
+        `race_balance` within ±1 s outdoors ✓. **Not met, carried on:** the senior final finish (0.6 / 2.0 / 5.9 s →
+        step 7: seniors' race-day consistency), the upsets at Δ 0.5 (37–40 % vs 45–55 %) and good vs bad race
+        (~0 % vs 0.5–1 %) → R5. New `tools/race_check.gd`; `race_shape.gd` duel rows + tuning overrides;
+        `race_balance.gd` takes races per row and a group.
   - [ ] **R3. Player controls (UI):** event-driven decision cards (max 6, priority), the action bar (Push / Hold / Ease
         / Move out / Kick now, double tap for Kick, PC + phone, 44 px), the drop to 1x near the player, the Feeling
         word, the coach's shout on cards, quick mode answering the new cards, help entries (`race_running` etc.,
@@ -160,13 +167,16 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         Check: a tool plays 50 races and prints how often each line is used (no line twice in a race, no event without
         lines); tour + layout check; `help_check.gd`; look at the screenshots.
   - [ ] **R5. Balance & playtest:** all GDD 4.3.1 targets in one table before / after, watched races on PC and phone
-        (indoor and outdoor, heats + final), fixes, docs + CLAUDE.md. *(Opus, medium: tuning; Sonnet for the fixes)*
+        (indoor and outdoor, heats + final), fixes, docs + CLAUDE.md. Carried over from R2: the upsets at Δ 0.5 and a
+        good vs bad race worth 0.5–1 % (with the player's cards / action bar in place). *(Opus, medium: tuning;
+        Sonnet for the fixes)*
         Check: every check tool above, `training_balance.gd -- 0` fingerprints identical, `season_check.gd`.
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
       plateau). Tune the progression ceiling, maturation and rival growth; also check whether rivals need the health
-      model and plan-based training. *(Opus)*
+      model and plan-based training. Also seniors' race-day consistency (GDD 4.3.1 decision 12: the senior final
+      finish target). *(Opus)*
 
 Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans):
 - [ ] Coaching (hire, veto)

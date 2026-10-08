@@ -238,7 +238,7 @@ func advance_week() -> String:
 ## during Play week, the week goes on. Same return values as advance_day().
 func finish_race() -> String:
 	_record(race_day)
-	_week.race_done(race_day.summary())
+	_week.race_done(race_day.summary(), race_day.incidents)
 	race_day = null
 	var result := _end_day()
 	if result == DAY_DONE and _playing_week:
@@ -374,22 +374,31 @@ func answer_event(event_id: String, choice: String) -> void:
 
 # --- Results -------------------------------------------------------------------------------------
 
-## Stores the player's results and PBs, and the rivals' PBs.
+## Stores the player's results and PBs, and the rivals' PBs. A race without a time (status "dnf" / "dq") is
+## kept in the results but never counts for a PB or the rankings. A rival hurt in a fall misses some weeks
+## (out_weeks, GDD 4.3.1; part of the health model, so only when it is on).
 func _record(rd: RaceDay) -> void:
 	var event := athlete.main_event
 	for r in rd.player_results:
+		var status: String = r.get("status", "")
 		var pb: float = athlete.personal_bests.get(event, 0.0)
-		var is_pb: bool = pb == 0.0 or r.time < pb
+		var is_pb: bool = status == "" and (pb == 0.0 or r.time < pb)
 		if is_pb:
 			athlete.personal_bests[event] = r.time
-		athlete.results.append({"date": rd.meet.date, "meet": rd.meet.name, "meet_key": rd.meet.key,
-				"event": event, "round": r.round, "place": r.place, "field": r.field, "time": r.time, "pb": is_pb})
+		var entry := {"date": rd.meet.date, "meet": rd.meet.name, "meet_key": rd.meet.key,
+				"event": event, "round": r.round, "place": r.place, "field": r.field, "time": r.time, "pb": is_pb}
+		if status != "":
+			entry.status = status
+		athlete.results.append(entry)
 	for res in rd.all_results:
 		var with_player: bool = res.any(func(row): return row.is_player)
 		for row in res:
 			var rival: Dictionary = row.get("rival", {})
 			if not rival.is_empty():
-				Rivals.record_time(rival, row.time, rd.meet.date)
+				if row.get("status", "") == "":
+					Rivals.record_time(rival, row.time, rd.meet.date)
+				if int(row.get("out_weeks", 0)) > 0 and HealthSystem.model_enabled:
+					rival.out_weeks = maxi(int(rival.get("out_weeks", 0)), int(row.out_weeks))
 				if with_player:
 					rival.met = int(rival.get("met", 0)) + 1   # raced the player (the tag shows from 2, step R4)
 

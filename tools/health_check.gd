@@ -44,6 +44,7 @@ func _run() -> void:
 	_check_plan_intensity()
 	_check_health_ui()
 	_check_rivals()
+	_check_race_injuries()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -648,6 +649,102 @@ func _check_rivals() -> void:
 	var rng := RandomNumberGenerator.new()
 	var field: Array = load("res://scripts/core/rivals.gd").pick_field(game.rivals, "national", rng, 1.0)
 	_ok("injured rivals aren't in race fields", not field.any(func(r): return int(r.get("out_weeks", 0)) > 0))
+
+
+## Race injuries (GDD 4.3.1, step R2): the race engine decides that the athlete fell or was spiked (race dice);
+## after the race day the health model rolls what it did with its own saved dice. Rivals hurt in a fall miss
+## some weeks.
+func _check_race_injuries() -> void:
+	print("-- race injuries (falls, spike wounds)")
+	var bad := []
+	for kind in data.health.race_incidents:
+		if kind.begins_with("_"):
+			continue
+		for id in data.health.race_incidents[kind]:
+			if id != "none" and data.get_injury(id).is_empty():
+				bad.append(kind + ": " + id)
+	_ok("race incident tables use known injuries %s" % str(bad), bad.is_empty())
+	_new_career(23, 31)
+	var health = game.get_system("health")
+	var counts := {}
+	for i in 600:
+		health.injuries.clear()
+		var news := []
+		health._roll_race_incidents({"incidents": [{"kind": "fall"}]}, game.date, news)
+		var id: String = news[0].id if not news.is_empty() else "none"
+		counts[id] = int(counts.get(id, 0)) + 1
+	print("    600 falls: ", counts)
+	_ok("a fall: mostly grazes or a bruise, rarely an ankle sprain, sometimes nothing",
+			int(counts.get("fall_graze", 0)) > int(counts.get("fall_bruise", 0))
+			and int(counts.get("fall_bruise", 0)) > int(counts.get("ankle_sprain", 0))
+			and int(counts.get("ankle_sprain", 0)) > 0 and int(counts.get("none", 0)) > 0)
+	health.injuries.clear()
+	var news := []
+	health._roll_race_incidents({"incidents": [{"kind": "spiked"}]}, game.date, news)
+	_ok("spiked: a spike wound niggle", news.size() == 1 and news[0].id == "spike_cut" and news[0].tier == "niggle")
+	# Same dice, same injury: the roll uses the health model's own (saved) RNG.
+	var picks := []
+	for k in 2:
+		health.injuries.clear()
+		health.rng.seed = 4242
+		var got := []
+		for i in 20:
+			var n2 := []
+			health.injuries.clear()
+			health._roll_race_incidents({"incidents": [{"kind": "fall"}, {"kind": "spiked"}]}, game.date, n2)
+			got.append(n2.map(func(x): return x.id))
+		picks.append(got)
+	_ok("same health dice, same race injuries", picks[0] == picks[1])
+	health.injuries.clear()
+
+	# Through the real day loop: a fall in the race (the race engine's incidents) → a diagnosis stop event.
+	_new_career(24, 7)
+	health = game.get_system("health")
+	var meet := {}
+	for m in Cal.meets_between(game.date, game.add_days(game.date, 120)):
+		if Cal.coach_recommends(game.athlete, m, game.date):
+			meet = m
+			break
+	game.enter(meet.key)
+	var guard := 0
+	while game.race_day == null and guard < 200:
+		guard += 1
+		var r: String = game.advance_day()
+		while not game.pending_event().is_empty():
+			var e: Dictionary = game.pending_event()
+			game.answer_event(e.id, "keep" if e.get("kind", "") == "sore" else "ok")
+	var table: Dictionary = data.health.race_incidents.fall
+	data.health.race_incidents.fall = {"fall_graze": 1}   # (this check needs an injury from the fall)
+	var rd = game.race_day
+	while not rd.is_done():
+		var race = rd.start_round(false, "pack")
+		race.run()
+		rd.finish_round()
+	rd.incidents.append({"kind": "fall", "round": "Race"})
+	health.injuries.clear()
+	game.finish_race()
+	data.health.race_incidents.fall = table
+	var e: Dictionary = game.pending_event()
+	_ok("a fall on race day: a diagnosis stop event names the graze", game.day_log[-1].race == meet.key
+			and e.get("kind", "") == "diagnosis" and e.get("injury", "") == "fall_graze")
+	_ok("... the weekly report line says you fell", rd.summary().contains("You fell"))
+	_ok("... grazes limit the next days to easy training", health.active().any(func(x): return x.id == "fall_graze"))
+
+	# A rival hurt in a fall is out for some weeks (only with the health model on).
+	var rival: Dictionary = game.rivals[0]
+	rival.out_weeks = 0
+	var fake = load("res://scripts/core/race_day.gd").new(meet, game.athlete, game.rivals)
+	fake.player_results = []
+	fake.all_results = [[{"name": "x", "club": "", "time": 0.0, "status": "dnf", "is_player": false, "rival": rival,
+			"split_400": 0.0, "fell": true, "spiked": false, "out_weeks": 2}]]
+	var pb_before := float(rival.pb)
+	game._record(fake)
+	_ok("a rival hurt in a fall is out (out_weeks 2), and a DNF is no time", int(rival.out_weeks) == 2 and float(rival.pb) == pb_before)
+	rival.out_weeks = 0
+	H.model_enabled = false
+	game._record(fake)
+	H.model_enabled = true
+	_ok("... not with the health model off", int(rival.out_weeks) == 0)
 
 
 # --- Helpers -------------------------------------------------------------------------------------

@@ -12,8 +12,9 @@ var fatigue := 0.0                # the player's fatigue going into the current 
 var heats: Array = []             # Array of entrant arrays
 var player_heat := 0
 var final_entrants: Array = []
-var player_results: Array = []    # [{round, place, field, time}]
+var player_results: Array = []    # [{round, place, field, time, status}] (status "dnf" / "dq": no time, time 0)
 var all_results: Array = []       # every race run here (for rival PBs)
+var incidents: Array = []         # the player's falls and spike wounds today: [{kind: fall / spiked, round}] (health model)
 var current: Race
 var slowdown := 0.0               # share slower because of a niggle or illness (HealthSystem.race_slowdown)
 var form := 0.0                   # share faster (+) or slower (-) from race-day form (FormSystem.race_form)
@@ -87,8 +88,14 @@ func start_round(interactive: bool, plan: String) -> Race:
 	current = Race.new()
 	current.interactive = interactive
 	current.setup(entrants, _gender, is_big_meet(), fatigue, _rng, meet.get("indoor", false), shape_mix())
+	current.auto_places = _auto_places()
 	current.set_player_plan(plan)
 	return current
+
+
+## Heats: the automatic qualifying places (runners safely in one ease off near the line); 0 in a final.
+func _auto_places() -> int:
+	return int(Data.races.heats.auto_per_heat) if rounds[round_index] == "heat" else 0
 
 
 ## Which race-shape mix (data/races.json shapes.mix) fits this meet and round: local and district meets by
@@ -104,11 +111,15 @@ func shape_mix() -> String:
 func finish_round() -> void:
 	var res := current.results()
 	all_results.append(res)
-	var place := 0
 	for i in res.size():
 		if res[i].is_player:
-			place = i + 1
-			player_results.append({"round": round_name(), "place": place, "field": res.size(), "time": res[i].time})
+			player_results.append({"round": round_name(), "place": i + 1, "field": res.size(), "time": res[i].time,
+					"status": res[i].status})
+	if current.player != null:
+		for k in current.player.falls:
+			incidents.append({"kind": "fall", "round": round_name()})
+		if current.player.spiked:
+			incidents.append({"kind": "spiked", "round": round_name()})
 	if rounds[round_index] == "heat":
 		var heat_results := []
 		for h in heats.size():
@@ -117,6 +128,7 @@ func finish_round() -> void:
 			else:
 				var other := Race.new()
 				other.setup(heats[h], _gender, is_big_meet(), 0.0, _rng, meet.get("indoor", false), shape_mix())
+				other.auto_places = _auto_places()
 				other.run()
 				heat_results.append(other.results())
 				all_results.append(heat_results[h])
@@ -126,7 +138,7 @@ func finish_round() -> void:
 	round_index += 1
 
 
-## Top N of each heat plus the fastest of the rest, up to the final size.
+## Top N of each heat plus the fastest of the rest, up to the final size (only runners with a time).
 func _qualifiers(heat_results: Array) -> Array:
 	var cfg: Dictionary = Data.races.heats
 	var by_name := {}
@@ -137,6 +149,8 @@ func _qualifiers(heat_results: Array) -> Array:
 	var rest := []
 	for res in heat_results:
 		for i in res.size():
+			if res[i].get("status", "") != "":
+				continue   # did not finish / disqualified (always listed last)
 			if i < int(cfg.auto_per_heat):
 				q.append(by_name[res[i].name])
 			else:
@@ -156,10 +170,14 @@ func summary() -> String:
 	var parts := []
 	for r in player_results:
 		var where: String = "" if r.round == "Race" else r.round.to_lower() + " "
-		parts.append("%s%s in %s" % [where, Race._ordinal(r.place), Calendar.format_time(r.time)])
+		parts.append(where + Race.result_text(r))
 	var text := "%s, 800 m: %s." % [meet.name, ", ".join(parts)]
 	if rounds.size() > 1 and not qualified:
 		text += " Didn't make the final."
+	if incidents.any(func(x): return x.kind == "fall"):
+		text += " You fell."
+	elif incidents.any(func(x): return x.kind == "spiked"):
+		text += " You were spiked."
 	return text
 
 

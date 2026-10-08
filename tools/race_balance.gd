@@ -1,6 +1,7 @@
 extends SceneTree
 ## Dev tool: runs many quick 800 m races to check that times match the calibration anchors.
-## Run: godot --headless --path . -s res://tools/race_balance.gd
+## Run: godot --headless --path . -s res://tools/race_balance.gd [-- races_per_row [female|male|indoor]]
+## (12 races per row by default: noisy; 60 for a calibration. Rows can run as parallel processes.)
 
 
 func _initialize() -> void:
@@ -13,13 +14,17 @@ func _run() -> void:
 	var cal = load("res://scripts/core/calendar.gd")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	for setup in [["female", false], ["male", false], ["male", true]]:
+	var args := OS.get_cmdline_user_args()
+	var n := int(args[0]) if args.size() > 0 else 12
+	var setups := [["female", false], ["male", false], ["male", true]]
+	if args.size() > 1:
+		setups = setups.filter(func(s): return (args[1] == "indoor") == s[1] and (args[1] == "indoor" or s[0] == args[1]))
+	for setup in setups:
 		var gender: String = setup[0]
 		for ability in [5.0, 7.0, 9.0, 11.0, 13.0]:
 			var sum_mid := 0.0
 			var sum_win := 0.0
 			var sum_split := 0.0
-			var n := 12
 			for i in n:
 				var entrants := []
 				for k in 8:

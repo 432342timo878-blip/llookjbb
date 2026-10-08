@@ -14,10 +14,12 @@ static func season_label(season: int) -> String:
 	return "%d–%02d" % [season, (season + 1) % 100]
 
 
-## The player's best time of the season in their main event, or 0.0.
+## The player's best time of the season in their main event, or 0.0 (races without a time don't count).
 static func player_season_best(a: Athlete, season: int) -> float:
 	var best := 0.0
 	for r in a.results:
+		if r.get("status", "") != "" or float(r.time) <= 0.0:
+			continue
 		if r.event == a.main_event and season_of(Game.int_date(r.date)) == season:
 			if best == 0.0 or float(r.time) < best:
 				best = float(r.time)
