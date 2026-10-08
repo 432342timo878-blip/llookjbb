@@ -81,6 +81,15 @@
    ]
   }
  },
+ "moments": {
+  "move": "{name} makes a move",
+  "kick": "{name} kicks",
+  "contact": "{name} clips someone",
+  "stumble": "{name} stumbles",
+  "fall": "{name} falls",
+  "brought_down": "{name} is brought down",
+  "boxed": "you are boxed in"
+ },
  "phrases": {
   "kicks": "kicks",
   "surges": "surges",

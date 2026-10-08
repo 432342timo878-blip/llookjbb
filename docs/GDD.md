@@ -221,6 +221,13 @@ change of place late is a fade, never a fight.
     the player reaches their *own kick point* instead of fixed at 600 m run, because the athlete's natural kick used to
     start by itself before that for about three races in four (grinders), and the card was then never asked.
 
+**Decisions (user, 2026-10-08, after R3):**
+17. **Mistakes must cost; no arcade feel.** A good vs a bad race is worth about 0.5–1 % of time; the follow-up to R3
+    below builds it (the energy exponent, committing answers, early kicks, letting a move go) and fixes the lap splits.
+18. **No arbitrary cap on cards:** a race that demands more cards gets more. The cap is now a safety valve (10); what
+    limits the cards is that one needs a real moment and comes at least 8 race seconds after the last (about 5–6 a race).
+19. **The drop to 1x says why** ("SLOWED TO 1x · SAVOLAINEN KICKS"): the user could not tell which moves merit it.
+
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
   the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 8–12 % slower, then a
@@ -510,7 +517,8 @@ the race's own RNG (`day_engine_check`: same seed → same race, results *and* e
 **Built (step R3, 2026-10-08): the player's controls.** Engine in `Race` (`scripts/core/race.gd`), texts in
 `data/race_cards.json` (cards, the lines the choices put in the commentary, the coach's shouts), every number in
 `data/races.json` `controls`, UI in `scripts/ui/race_action_bar.gd` and `scripts/ui/race_screen.gd`. Decisions 14–16 above.
-- **Cards** (replace the fixed decision points; at most 6 per race, `controls.cards`): *break*, *bell / halfway* and the
+- **Cards** (replace the fixed decision points; first built with at most 6 per race, since the follow-up 10 as a safety
+  valve only, `controls.cards`): *break*, *bell / halfway* and the
   *kick card* always (3 places in the budget, kept free); then, most important first (`priority`): a **fall** (when the
   player is back on their feet), **boxed in while a move goes** (boxed at least 0.8 s and a rival surging / kicking from
   5 m behind to 30 m ahead, or the player's own move), a **rival move** (the engine's reaction zone: a surger from 15 m
@@ -587,6 +595,72 @@ the race's own RNG (`day_engine_check`: same seed → same race, results *and* e
   - ~ Contacts 4 a race, stumbles 0.65 a race, falls 1 per 73–96 runner-races in bunched finals: inside the targets
     (60–100), but at the high end of what elite 800 m races show (about 1 fall per 200).
   - ✗ **The answers hardly matter** (above): a clever player gains nothing over the athlete, a careless one loses nothing.
+
+**Follow-up to R3 (2026-10-08): mistakes cost, realistic splits** (decisions 17–19; the rival engine changes below
+change the R2 rows, which the user allowed).
+- **Why the answers did not matter** (`tools/race_value.gd`, new: each answer of a card played against the sensible
+  answer from the same moment): the energy rule was almost neutral for the ±3 % pace changes of the cards (a push is
+  paid back in the kick), the speed cap that protects every runner's kick also protected the player from their own
+  commitments, a kick from far out was computed to arrive exactly empty, and moves did not matter. Measured before:
+  push / ease at the bell ±0.01 s, going with a move +0.2 s, digging in +0.3 s, bad vs good race 0.1–0.2 % of time.
+- **What changed** (data in `races.json`; the commit and early-kick rules touch only the player, the rest all runners):
+  1. **Energy exponent 3 → 5** (decision 13 revised): faster than your own even pace costs much more, slower saves little.
+     Duel rows (`race_shape.gd -- 100 duel1`): leading 7 % too fast went from −0.2 % (it paid) to **+1.06 %** of time.
+  2. **Committing answers** (Go with them, Dig in, Get up and chase) switch off the speed cap for the length of the
+     move / 150 m / the rest of the race (`commit_left`, `controls.commit`): you run what the move demands until the
+     reserve is gone, then tie up. Digging in with 250–400 m to go costs **+1.2 s (0.9 %)** and 0.6 places.
+  3. **A kick started earlier than the player's own kick point** runs faster than the felt reserve can hold and dies
+     before the line (`controls.kick_early`, 0.08 % of speed per metre earlier, from 30 m; measured with a scratch tool over 30 races:
+     a kick from 470 m to go costs **+1.6 s** (≈ 1 %), from 350 m −0.1 s: a grinder's long kick is a real tactic, only a
+     kick from far out is a mistake). At their own point it is exact, so ordinary races keep their times. (Even with
+     per-metre overshoot 0.012 % the early kick had *saved* 0.5 s: in this energy model an even effort is the cheapest.)
+  4. **Letting a move go** means closing on the field only slowly until your own kick (`moves.let_go_close` 1.0).
+  5. **Counter-attack** is a +12 % surge for 150 m (was +8 % for 120 m): early it costs, near the end it can pay.
+  6. **Kick reserve** held back for the kick `kick_need_per_100` 0.125 → 0.07, **`cs_scale` 1.029**, and the **fast /
+     honest lap factors** 1.055–1.075 / 0.945–0.965 and 1.035–1.045 / 0.955–0.975 (were 1.03–1.05 / 0.97–0.99 and
+     1.01–1.02 / 0.98–1.00): runners stop banking so much for the kick and the first lap is run faster.
+- **Lap splits** (winner's laps, youth final, then senior final): fast 65.4 + 67.8 / 53.9 + 55.9 s (**+2.4 / +2.0 s**
+  positive split, was −0.2 / +0.4), honest 65.7 + 68.3 / 54.0 + 55.4 s (**+2.6 / +1.4 s**, was −1.6 / +1.1), tactical
+  74.8 + 64.0 / 60.6 + 52.1 s (−10.8 / −8.5 s, unchanged: decision 11). Real medallists: +2.2 ± 1.1 s.
+- **Rows** (`race_shape.gd -- 100`; R2 in brackets; 1st→last at 200 / 400 / 600 m | 1st→4th at 400 | finish 1st→2nd /
+  4th / last | time / table):
+
+| Row | Gaps | 1st→4th | Finish gaps | Time / table |
+|---|---|---|---|---|
+| Youth even field | 16 / 34 / 46 (15 / 32 / 47) | 12 (9) | 2.0 / 6.5 / 15.4 s (1.8 / 6.0 / 14.9) | 0.9985 (0.998) |
+| Youth local meet, wide | 29 / 59 / 87 (27 / 57 / 89) | 17 (14) | 3.0 / 9.3 / 27.9 s (2.3 / 8.7 / 28.2) | 0.997 (0.997) |
+| Youth championship final | 8 / 19 / 28 (7 / 17 / 29) | 7 (4) | 1.1 / 3.6 / 10.0 s (1.3 / 3.4 / 9.4) | 1.0077 (1.004) |
+| Youth indoor | 18 / 37 / 52 (15 / 31 / 48) | 14 (10) | 2.6 / 7.9 / 17.3 s (1.8 / 6.0 / 14.8) | 1.0156 (1.015) |
+| Girls even field | 16 / 34 / 46 (15 / 31 / 47) | 12 (9) | 2.2 / 6.8 / 17.0 s (2.0 / 5.9 / 15.8) | 0.9984 (0.997) |
+| Senior national final | 7 / 15 / 22 (6 / 13 / 23) | 6 (4) | 0.7 / 2.3 / 6.1 s (0.6 / 2.0 / 5.9) | 1.0065 (1.004) |
+
+  Youth final targets still met (1.1 / 3.6 / 10.0 s vs 0.6–1.5 / 2.5–4.5 / 9–15); the senior final stays too spread
+  (decision 12, step 7). Falls in bunched finals 1 per 73–89 runner-races (target 60–100). `race_balance.gd` medians
+  within ±1 s of the anchors outdoors (male 5 → 13: +0.6, +0.9, −0.3, 0.0, 0.0 s; female ≤ ±0.6 s).
+- **What the answers are worth now** (`race_value.gd`, youth final, 200–250 races; time / places against the sensible
+  answer): push at the bell +0.25 s / +0.21 places, hold +0.12 s, ease ≈ 0; going with a move > 400 m out +0.35 s /
+  +0.22 places while letting it go −0.34 s / −0.18; counter-attack > 400 m out +0.53 s / +0.30 places, at 250–400 m
+  −0.17 s; boxed: pushing through +0.2–1.3 s, easing back +0.3–2.6 s, waiting best at every distance; kick: waiting for
+  the straight +0.47 s when you have the reserve for it. The sensible answers (and so the coach's advice) were reset to
+  these findings: ease at the bell unless fresh (felt ≥ 0.75), let moves go unless the mover out-kicks you and you can
+  afford it, dig in only within 10 m of the pack with ≥ 0.6 left, wait when boxed.
+- **Measured with `race_watch.gd`** (100 races per mode, average place; time in seconds):
+
+| Config | quick | sensible | coach | poor answers | poor − sensible |
+|---|---|---|---|---|---|
+| Youth final, player a little stronger | 3.67 | 3.88 | 4.00 | 3.98 | +0.10 places, +0.37 s |
+| District meet, wide field | 3.29 | 3.21 | 3.28 | 3.41 | +0.20 places, +0.71 s |
+| Girls even field | 5.06 | 4.92 | 4.91 | 5.38 | +0.46 places, +1.56 s |
+| Senior final | 4.77 | 4.74 | 4.78 | 5.02 | +0.28 places, +0.56 s |
+
+  Sensible vs quick: −0.21 … +0.14 places (noise level at 100 races; target: at most about 1 ✓). **A bad race now costs
+  0.3–0.9 % of the time (target 0.5–1 % ✓)** but only 0.1–0.5 places, because the player's place also depends on who
+  is in the race. Cards per race 5.2–6.0 (max 10), 16–35 % of the time at 1x.
+- **Why the user won:** (user's save, 10 Jan 2027, Hippoksen hallikisat 1st of 6 in 2:29.96) the athlete's 800 m
+  ability had grown to 7.35, the **median of the 150 rivals** (47th percentile; pool 3.2–13.0, median 7.5); local meets
+  draw their field from the weakest 80 % of the pool (`fields.local.pool_range` 0–0.8), so he met runners of 5.2–8.4
+  and beat 7 of the 10 he has met. Winning one local race at the median is normal (≈ one in ten, more after a good
+  training spell); the first sims were fresh 14-year-olds around ability 5–6, below the pool.
 
 ### 4.4 Season calendar (first version built)
 

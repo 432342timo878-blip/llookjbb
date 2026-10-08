@@ -164,9 +164,14 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         max 6, `data/race_cards.json` + `races.json` `controls`), the action bar (`RaceActionBar`), Feeling, drop to 1x,
         the coach's shout (sees part of the track), quick mode answers the same cards; help `race_before` / `race_running`
         v3; new `tools/race_watch.gd`, `race_check.gd` rewritten for the cards, `layout_check` + tour race states. Sensible
-        answers vs quick mode: within ±0.2 places (target ≤ 1) ✓; R2 rows 2 and 5 of `race_shape.gd` identical. **Carried
-        on to R5:** sensible vs deliberately poor answers differ by only 0.0–0.4 places (target: a good vs bad race
-        ≈ 1–2 places), and the realism flags in GDD 4.3.1 "Built (step R3)" (lap splits).
+        answers vs quick mode: within ±0.2 places (target ≤ 1) ✓.
+        **Follow-up the same day (user: "mistakes must cost, no arcade feel", GDD 4.3.1 "Follow-up to R3", decisions
+        17–19):** energy exponent 3 → 5, committing answers switch off the kick-protecting speed cap, a kick from far out
+        dies (+1.7 s from 470 m), letting a move go closes slowly, positive lap splits (+2.4 / +2.6 s, fast / honest),
+        `kick_need_per_100` 0.07, `cs_scale` 1.029, card cap 6 → 10 (safety valve), the drop to 1x names its reason; new
+        `tools/race_value.gd` (what each answer is worth). A bad vs a good race now costs 0.3–0.9 % of the time ✓ (target
+        0.5–1 %) but only 0.1–0.5 places; the R2 rows moved (table in the GDD) and the senior final is still too spread.
+        **Left for R5:** places (the answers should be worth more places), the upsets at Δ 0.5, a decisive move.
   - [ ] **R4. Commentary, coach and race story (UI + data):** `data/race_commentary.json` (variants, placeholders,
         tags, voices TV / coach / you), no repeats + rate rules, choice verdicts, the coach's spot by the track, PC box +
         banner, phone ticker + log sheet, the Race story on the result screen, personality tags and the SB column (backlog
@@ -227,6 +232,35 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   `_show_pre`) shows only PB per runner; add an **SB** column next to it (this season's best, "–" when none). Rivals already carry
   `sb` / `sb_season` (Rankings, `Rivals.train_week`); the player's SB comes from `Rankings`. On a phone the row is tight (name + PB), so
   show PB and SB on one line or drop the club first. Small UI task. *(Sonnet, low)*
+- **Statistics tab (user, 2026-10-08):** a tab (hub: Overview / Training / Calendar / Rankings / Report + **Stats**) with
+  everything we can think of about the athlete: number of races, wins, 2nd / 3rd places, podiums, DNF / DQ, PBs and season bests
+  per event and per season (best times by season, a PB history), races by level / indoor vs outdoor, average place, results table
+  with filters, rivals beaten / lost to most, attribute history (curves per season), training totals (sessions, hours, load),
+  injuries and illnesses (count, days lost, by area), form and fatigue history, weeks at each phase, season targets met.
+  Needs the results list to keep more per race (field size, round, shape, conditions) and a per-season history; the layout
+  rules apply (phone: stacked cards, no hover). Design the list first, then build in steps. *(Opus for the list, then Sonnet)*
+- **Race details window after the race (user, 2026-10-08):** an information window after a race (the result screen grows
+  into it, together with R4's Race story): the race in detail (splits, key moments, your place through the race), whether any
+  abilities have risen (the weekly progression is on Sunday night, so this means "what the race taught", or the attributes
+  that moved since the last race), the fitness / fatigue and form level, the coach's comments, health notes (fall, spike
+  wound, niggles), rivals met, PB / SB / rankings effect. Details later; the data comes from `Race.events`, `RaceDay`, the
+  form and health systems. *(Opus for the design, then Sonnet)*
+- **Warm-up and cool-down around a race (user, 2026-10-08), Finnish alkulämmittely / loppulämmittely:** a part before and
+  after the race, part of the race day: the player chooses (or the coach plans) the warm-up (length, intensity, drills,
+  strides), which sets race-day readiness (a poor warm-up costs a little at the start; an over-long one costs reserve), and
+  the cool-down helps recovery (soreness / fatigue) and shows up in the race-day report. Plugs into the day engine
+  (`on_day_start` / race day), the health model (injury risk when cold, warm-up as prevention) and Form (GDD 4.8). Needs a design
+  session first. *(Opus, then Sonnet)*
+- **Pacemakers (jänis) in senior races (user, 2026-10-08):** at senior level (M4+, Kalevan kisat and international meets, Diamond
+  League style) some races have a pacemaker who sets a fast first lap(s) and drops out (usually at 400–600 m), changing the race
+  shape (the leader runs the target split instead of the field's even pace; the shape mix gets a "paced" shape, GDD 4.3.1).
+  The player could be offered the hare's pace, and rivals' personalities react to it. Also fits "pace lights". Designed with
+  senior meets. *(Opus)*
+- **More athlete photos for the backgrounds (user, 2026-10-08):** now only two photographers' three CC BY-SA photos
+  (`assets/backgrounds/`). Find more copyright-free / free-licence (CC0, CC BY, CC BY-SA, Wikimedia Commons, Unsplash / Pexels
+  licence terms checked) athlete and track photos, ideally Finnish athletics, with the credits added to the README there and
+  to the in-game Credits screen (still missing). No photos of identifiable minors (youth meets) unless the licence and
+  privacy allow it; keep `mipmaps/generate=true`. Research + asset task; downloads need the user's OK per file. *(Sonnet)*
 - **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 

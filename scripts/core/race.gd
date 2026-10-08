@@ -143,6 +143,9 @@ class Runner:
 	var out_to := 0.0             # ... and how far out (metres from the rail)
 	var dig_boost := 0.0          # "Dig in" / "Get up and chase": digs this much deeper, even when dropped
 	var dropped_s := 0.0          # seconds in a row they have been dropped
+	var let_go_until := 0.0       # metres run until which a runner who let a move go closes on the field only slowly
+	var commit_left := 0.0        # metres more the player runs committed: the speed cap that protects the kick is off
+	var kick_nat := 0.0           # the kick point their body suits (metres to go): an earlier kick overshoots
 	var box_pending := false      # boxed, and the box card is still to be decided (after box_after_s)
 	var hold_v := 0.0
 	var decided := {}             # "move <i> <n>" / "kick <i>" -> already decided about that move or kick
@@ -254,6 +257,7 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 			var pk: Dictionary = e_cfg.player_kick
 			r.kick_at = clampf(float(pk.base) + float(pk.per_anaerobic) * float(e.anaerobic) + rng.randfn(0.0, kick_sd),
 					float(pk.min), float(pk.max))
+			r.kick_nat = r.kick_at
 		else:
 			var types: Dictionary = Data.races.personalities
 			r.personality = e.get("personality", "")
@@ -455,12 +459,14 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 	else:
 		var follow: Runner = front if gap_front <= float(e.follow_range) else null
 		var cap := _cap(r, float(e.draft) if follow else 0.0)
+		# Someone who let a move go closes on the field only slowly until their own kick (moves.let_go_close).
+		var close_max := float(e.moves.let_go_close) if r.d < r.let_go_until else float(e.close_max)
 		if r.d < break_line:
 			# In lanes: the race's pace, a little quicker for those who want the lead.
 			target = minf(pace * float(e.place_speed[r.want]), cap)
 		elif follow == null:
 			# Leading: the race's pace. Detached: their own pace, closing in no faster than close_max.
-			target = minf(pace if r == _leader else pace * float(e.close_max), cap)
+			target = minf(pace if r == _leader else pace * close_max, cap)
 			if r == _leader and r.scripted.has("lead_pace") and r.d < float(e.lead_until):
 				target = pace   # a scripted bad race: too fast, whatever it costs
 		else:
@@ -478,7 +484,7 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 				want_gap = float(e.tuck_gap)
 				r.lat_target = _inside_target(r, order)
 			target = clampf(follow.v + (gap_front - want_gap) * float(e.close_rate), follow.v * 0.9,
-					follow.v * float(e.close_max))
+					follow.v * close_max)
 			if to_front:
 				target = follow.v * float(e.pass_speed)          # working to the front
 				wants_past = true
@@ -555,6 +561,8 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 		if is_bend(r.d):
 			progress *= r1 / (r1 + r.lat)   # running wide on a bend costs distance
 		r.d += progress
+	if r.commit_left > 0.0:
+		r.commit_left = maxf(0.0, r.commit_left - progress)
 	if r.split_400 == 0.0 and r.d >= 400.0:
 		r.split_400 = time
 
@@ -573,7 +581,13 @@ func _kick_speed(r: Runner) -> float:
 	var felt := _felt(r)
 	if rem <= felt + 1.0:
 		return r.kick_v
-	return minf(r.kick_v, _hold_speed(r, rem, felt))
+	var v := _hold_speed(r, rem, felt)
+	if r.is_player:
+		# A kick started earlier than the player's body suits feels fine at first: they run a little above what
+		# the reserve can hold to the line (controls.kick_early), and die before it. At their own point: none.
+		var ke: Dictionary = _ctl.kick_early
+		v *= 1.0 + float(ke.per_m) * maxf(0.0, rem - r.kick_nat - float(ke.free_m))
+	return minf(r.kick_v, v)
 
 
 ## Runner ahead in the same line: following, passing, boxed in (GDD 4.3.1). Returns the target speed.
@@ -767,6 +781,7 @@ func _cover(o: Runner, s: Runner, order: Array[Runner], kick := false) -> void:
 
 func _let_go(o: Runner, s: Runner, order: Array[Runner]) -> void:
 	o.covering = null
+	o.let_go_until = DISTANCE - o.kick_at   # no closing on them (moves.let_go_close) until their own kick point
 	o.hold_left = maxf(s.surge_left, 0.0) + float(_eng.moves.let_go_after)
 	o.hold_v = o.v
 	_event("let_go", o, {"of": s.name}, order)
@@ -967,6 +982,10 @@ func _drain(r: Runner, u: float) -> float:
 	if _p == 3.0:
 		var x := u / r.even_v
 		return (u - r.cs) * x * x * x
+	if _p == 5.0:
+		var x := u / r.even_v
+		var x2 := x * x
+		return (u - r.cs) * x2 * x2 * x
 	return (u - r.cs) * (1.0 if _p == 0.0 else pow(u / r.even_v, _p))
 
 
@@ -992,6 +1011,16 @@ func _hold_speed(r: Runner, dist: float, budget: float) -> float:
 		var b := -2.0 * c * c * c / 27.0 - k
 		var s := sqrt(b * b / 4.0 + a * a * a / 27.0)
 		return _cbrt(-b / 2.0 + s) + _cbrt(-b / 2.0 - s) + c / 3.0
+	if p == 5.0:   # (the same Newton iteration with multiplications instead of pow: this runs for every runner every step)
+		var ve2 := r.even_v * r.even_v
+		var k5 := budget * ve2 * ve2 * r.even_v / dist
+		var u5 := maxf(r.cs * dist / (dist - budget), r.cs * 1.001)
+		for i in 6:
+			var u2 := u5 * u5
+			var u3 := u2 * u5
+			var f5 := (u5 - r.cs) * u3 * u5 - k5
+			u5 = maxf(u5 - f5 / (u3 * u5 + 4.0 * (u5 - r.cs) * u3), r.cs * 1.0001)
+		return u5
 	var u := maxf(r.cs * dist / (dist - budget), r.cs * 1.001)   # Newton from the linear answer
 	for i in 6:
 		var f := (u - r.cs) * pow(u, p - 1.0) - k
@@ -1018,6 +1047,8 @@ func _spare(r: Runner) -> float:
 ## move). Never below own_floor x the speed that would empty their reserve at the line: a dropped runner falls
 ## back to their own pace, not to a jog.
 func _cap(r: Runner, dr: float, extra_dig := 0.0) -> float:
+	if r.commit_left > 0.0:
+		return r.kick_v   # the player has committed (went with a move, dug in, chased): nobody holds them back but the reserve
 	var rem := DISTANCE - r.d
 	var felt := _felt(r)
 	var v_line := _hold_speed(r, rem, maxf(felt, 0.0))
@@ -1226,7 +1257,7 @@ func _ask(id: String, ctx := {}) -> void:
 	var coach := _coach_line(id, info)
 	if not coach.is_empty():
 		decision["coach"] = coach
-	card_log.append({"id": id, "t": snappedf(time, 0.1), "d": roundi(player.d), "answer": ""})
+	card_log.append({"id": id, "t": snappedf(time, 0.1), "d": roundi(player.d), "answer": "", "coach_sees": coach_sees()})
 	if interactive:
 		pending = decision
 		decision_needed.emit(decision)
@@ -1275,7 +1306,9 @@ func sensible_choice(id: String) -> String:
 				return "wait"
 			return "push" if rem < float(s.box_push_to_go) else "ease"
 		"dropped":
-			return "dig" if share >= float(s.dig_share) else "own"
+			var ahead := _runner_in_front(p, standings())
+			var close: bool = ahead != null and ahead.d - p.d <= float(s.dig_gap)
+			return "dig" if close and share >= float(s.dig_share) else "own"
 		"slow":
 			var better := 0
 			for r in runners:
@@ -1294,7 +1327,9 @@ func sensible_choice(id: String) -> String:
 			if can and share >= float(s.counter_share) and rem <= float(s.counter_to_go) \
 					and p.kick_v >= m.kick_v * float(s.counter_edge):
 				return "counter"
-			return "go" if can else "wait"
+			# Letting a move go costs nothing when your own kick is the better one (the mover pays for the move), so
+			# cover only a mover you could not out-kick, and only when you can afford it.
+			return "go" if can and m.kick_v >= p.kick_v * float(s.go_edge) else "wait"
 	return ""
 
 
@@ -1317,6 +1352,9 @@ func _apply_choice(p: Runner, id: String, option: String) -> void:
 						_start_kick(p, order, m)
 				elif m.kicking or m.surge_left > 0.0:
 					_cover(p, m, order, m.kicking)    # going with them
+					# ... for real: the speed cap that protects the kick is off for as long as the move lasts
+					var to_go := maxf(m.surge_left, 0.0) if not m.kicking else maxf(DISTANCE - p.d - p.kick_at, 0.0)
+					p.commit_left = to_go + float(_ctl.commit.cover_extra_m)
 		["move", "wait"]:
 			var m := _card_mover
 			if m != null and m.surge_left > 0.0 and not m.kicking:
@@ -1342,6 +1380,7 @@ func _apply_choice(p: Runner, id: String, option: String) -> void:
 				p.push_left = 0.0
 		["dropped", "dig"]:
 			p.dig_boost = float(_ctl.dig_in)
+			p.commit_left = float(_ctl.commit.dig_m)
 		["dropped", "own"]:
 			p.dig_boost = 0.0
 		["slow", "lead"]:
@@ -1349,6 +1388,7 @@ func _apply_choice(p: Runner, id: String, option: String) -> void:
 			set_effort(_ctl.take_lead.effort)
 		["fall", "chase"]:
 			p.dig_boost = float(_ctl.chase.dig)
+			p.commit_left = DISTANCE   # all the way: no holding back
 			set_effort(_ctl.chase.effort)
 		["fall", "steady"]:
 			p.dig_boost = 0.0
@@ -1485,8 +1525,13 @@ func _coach_line(id: String, info: Dictionary) -> Dictionary:
 ## Has something happened since event number `from` that the race screen slows down for (a move, kick, contact,
 ## stumble or fall within range_m of the player, or the player being boxed in)? data controls.slow_motion.
 func moment_since(from: int) -> bool:
+	return not moment_event(from).is_empty()
+
+
+## The first such event (see moment_since), or {}.
+func moment_event(from: int) -> Dictionary:
 	if player == null:
-		return false
+		return {}
 	var sm: Dictionary = _ctl.slow_motion
 	for k in range(from, events.size()):
 		var ev: Dictionary = events[k]
@@ -1494,8 +1539,14 @@ func moment_since(from: int) -> bool:
 			continue
 		var t: String = ev.type
 		if (t in sm.types or (ev.player and t in sm.types_player)) and absf(float(ev.d) - player.d) <= float(sm.range_m):
-			return true
-	return false
+			return ev
+	return {}
+
+
+## Why the screen slowed down, in a few words ("Savolainen kicks", "you are boxed in"): data race_cards.json "moments".
+func moment_text(ev: Dictionary) -> String:
+	var line: String = Data.race_cards.moments.get(ev.get("type", ""), "")
+	return line.format({"name": _surname(str(ev.get("who", ""))), "m": roundi(absf(float(ev.get("d", 0)) - player.d))})
 
 
 # --- Helpers of the cards ---------------------------------------------------------------------------

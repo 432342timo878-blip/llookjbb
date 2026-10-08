@@ -26,10 +26,10 @@
  "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2},
  "engine": {
   "_note": "Pack racing (GDD 4.3.1, step R1). Each runner has a cruising speed cs and a reserve (metres above cs); running behind someone costs less, the leader pays full price. cs_scale is the one calibration number: it keeps the median race time on the time table.",
-  "cs_scale": 1.017,
+  "cs_scale": 1.029,
   "start_cost": 1.5,
   "_drain": "Reserve used per second above cs: (speed - cs) x (speed / the runner's even speed)^drain_power (R2). 0 = plain linear (R1). Even pace costs the same either way; above it the reserve goes faster, below it slower.",
-  "drain_power": 3.0,
+  "drain_power": 5.0,
   "reserve_share": {"base": 0.18, "per_anaerobic": 0.006, "min": 0.13, "max": 0.23},
   "recover": 0.25,
   "accel": {"start": 4.0, "start_until": 30.0, "up": 1.2, "down": 1.5},
@@ -40,7 +40,7 @@
   "_tuck": "On a bend (or tuck_ahead metres before one) a runner alongside on the outside drops tuck_gap metres behind and moves in.",
   "tuck_gap": 2.0, "tuck_ahead": 15.0,
   "_hang": "Hanging on: a runner follows while the reserve they FEEL they will have at their kick point is at least kick_need_per_100 x kick distance / 100 x reserve (less by `dig`: personality + (competitiveness - 10) x dig_per_point, up to dig_max). Otherwise they drop to the speed that keeps it (never below own_floor x the speed that would empty the reserve at the line). Dropped = more than drop_gap metres behind the runner ahead.",
-  "kick_need_per_100": 0.125, "dig_per_point": 0.02, "dig_max": 0.5, "own_floor": 0.97, "drop_gap": 5.0,
+  "kick_need_per_100": 0.07, "dig_per_point": 0.02, "dig_max": 0.5, "own_floor": 0.97, "drop_gap": 5.0,
   "_misjudge": "Each runner feels their reserve with an error (share of the reserve, fixed for the race), sd from at_1 (race tactics 1) to at_20 (race tactics 20). Kick timing noise in metres likewise.",
   "misjudge_sd": {"at_1": 0.06, "at_20": 0.01},
   "kick_noise_sd": {"at_1": 40.0, "at_20": 10.0},
@@ -62,7 +62,8 @@
    "react_range": 15.0,
    "cover": {"front": 0.6, "pack": 0.75, "kicker": 0.2, "surger": 0.5, "player": 0.5},
    "cover_smart": [0.15, 0.9],
-   "cover_max": 1.08, "cover_dig": 0.3, "let_go_after": 20.0
+   "cover_max": 1.08, "cover_dig": 0.3, "let_go_after": 20.0,
+   "let_go_close": 1.0
   },
   "chain": {
    "_note": "The kick chain (R2): when a runner starts their kick in the first front_pos places or within front_m metres of the leader, every runner from `ahead` metres in front of them to answer_range behind who is not kicking yet answers with chance answer[personality or player] (x early when it comes before their own kick point), moved towards smart[can't hold it, can] by race tactics: 'can' = the speed they could hold to the line is at least can_share x the kicker's. Answering = their own kick now when they have at most kick_now_share x their own kick distance to go, else going with the kicker (covering, as a move: they kick at their own point); a runner near the front who goes with it passes the decision on to those behind them.",
@@ -94,12 +95,12 @@
  "controls": {
   "_note": "The player's controls in a watched race (GDD 4.3.1 'Player controls', step R3). Card texts and the coach's shouts: data/race_cards.json.",
   "cards": {
-   "_note": "Event-driven pause cards, at most `max` per race. `always` cards (break, bell, 200 m to go) are asked once each and keep their place in the budget; the others only while shown + always-cards-still-to-come < max, at least min_gap_s race seconds after the last card (no_gap kinds ignore that), at most max_per_race times, and (only_below) while fewer than N cards were shown, so the low-priority ones leave room for the important ones. priority = most important first when two want the same moment. bell_at (metres run; the 200 m card comes when the player reaches their own kick point instead of the kick starting by itself), straight_from + straight_gap: the home straight card needs a runner within that many metres ahead. box_after_s: a box must last that long before it is a card; box_move_m: a rival's move or kick from this far behind to this far ahead of the player counts as 'a move goes'. dropped: the gap to the runner ahead (m) and how long (s) before 'losing contact' is asked, not in the last min_to_go metres. slow: leader slower than pace_max x the field's even speed, between from and to metres run, player in the first max_place places and within group_m of the leader.",
-   "max": 6, "min_gap_s": 8.0, "no_gap": ["fall"],
+   "_note": "Event-driven pause cards. The real limit is that a card needs a real moment and comes at least min_gap_s race seconds after the last one (a race of ~2 minutes holds about 5-8); `max` is only a safety valve against pause fatigue (user 2026-10-08: a race that demands more should get more). At most `max` per race. `always` cards (break, bell, 200 m to go) are asked once each and keep their place in the budget; the others only while shown + always-cards-still-to-come < max, at least min_gap_s race seconds after the last card (no_gap kinds ignore that), at most max_per_race times, and (only_below) while fewer than N cards were shown, so the low-priority ones leave room for the important ones. priority = most important first when two want the same moment. bell_at (metres run; the 200 m card comes when the player reaches their own kick point instead of the kick starting by itself), straight_from + straight_gap: the home straight card needs a runner within that many metres ahead. box_after_s: a box must last that long before it is a card; box_move_m: a rival's move or kick from this far behind to this far ahead of the player counts as 'a move goes'. dropped: the gap to the runner ahead (m) and how long (s) before 'losing contact' is asked, not in the last min_to_go metres. slow: leader slower than pace_max x the field's even speed, between from and to metres run, player in the first max_place places and within group_m of the leader.",
+   "max": 10, "min_gap_s": 8.0, "no_gap": ["fall"],
    "always": ["break", "bell", "kick"],
    "priority": {"break": 100, "bell": 90, "fall": 85, "kick": 80, "box": 70, "move": 60, "straight": 50, "dropped": 40, "slow": 30},
-   "max_per_race": {"move": 2, "box": 1, "fall": 2, "straight": 1, "dropped": 1, "slow": 1},
-   "only_below": {"dropped": 5, "slow": 4},
+   "max_per_race": {"move": 3, "box": 2, "fall": 2, "straight": 1, "dropped": 2, "slow": 1},
+   "only_below": {"dropped": 8, "slow": 7},
    "bell_at": 400.0, "straight_from": 700.0, "straight_gap": 2.5,
    "box_after_s": 0.8, "box_move_m": [-5.0, 30.0],
    "dropped": {"gap": [5.0, 30.0], "hold_s": 1.0, "min_to_go": 150.0},
@@ -107,8 +108,10 @@
   },
   "effort": {"_note": "The action bar's Push / Hold / Ease (and the bell card): the player's speed before the kick x this.", "push": 1.03, "hold": 1.0, "ease": 0.97},
   "move_out": {"_note": "Move out: for `seconds` the player runs `lane` metres further out (at most max_lat from the rail) and goes for a pass on the outside.", "seconds": 5.0, "lane": 1.0, "max_lat": 3.0},
-  "counter": {"_note": "Counter-attack on a surge: the player's own surge at speed x their pace for length metres (against a kick: their own kick now).", "speed": 1.08, "length": 120.0},
+  "counter": {"_note": "Counter-attack on a surge: the player's own surge at speed x their pace for length metres (against a kick: their own kick now).", "speed": 1.12, "length": 150.0},
   "dig_in": 0.3,
+  "commit": {"_note": "Answers that commit the player (Go with them, Dig in, Get up and chase) switch off the speed cap that normally keeps the kick safe: they run what the move or the pack demands until it is over (cover_extra_m metres after the move, dig_m metres of digging) or the reserve is gone, then tie up. A bad commitment costs the kick; a good one pays.", "cover_extra_m": 30.0, "dig_m": 150.0},
+  "kick_early": {"_note": "The player's kick started earlier than their own kick point (kick_nat, rolled from their anaerobic fitness) runs per_m x the metres earlier (beyond free_m) faster than the felt reserve can hold to the line: it dies before the line. A kick at their own point is exact. Rivals are not affected (the rivals' engine is as in R2).", "per_m": 0.0008, "free_m": 30.0},
   "chase": {"_note": "After a fall: Get up and chase digs `dig` deep and pushes; Finish steady eases off and kicks late.", "dig": 0.5, "effort": "push"},
   "steady": {"effort": "ease", "kick_at": 150.0},
   "take_lead": {"effort": "push"},
@@ -131,13 +134,13 @@
    "sensible_at_1": 0.45, "sensible_at_20": 0.9
   },
   "sensible": {
-   "_note": "What a sensible runner answers (the coach's advice, quick mode, the checks): bell - push when they feel at least bell_push_share of the reserve and are 3rd or worse, ease below bell_ease_share; counter when they feel counter_share, have counter_to_go or less to go and a kick at least counter_edge times the mover's; the kick card - go now when they feel at least kick_now_factor x the reserve an even kick from here needs; slow pace - take the lead when they are among the first slow_rank by even speed and feel at least slow_share; boxed - wait with more than box_wait_to_go to go, push through in the last box_push_to_go; dropped - dig in when they feel at least dig_share; fall - chase when the runner ahead is under chase_gap away.",
-   "bell_push_share": 0.9, "bell_ease_share": 0.3,
+   "_note": "What a sensible runner answers (the coach's advice, quick mode, the checks): bell - push when they feel at least bell_push_share of the reserve and are 3rd or worse, ease below bell_ease_share; counter when they feel counter_share, have counter_to_go or less to go and a kick at least counter_edge times the mover's; the kick card - go now when they feel at least kick_now_factor x the reserve an even kick from here needs; slow pace - take the lead when they are among the first slow_rank by even speed and feel at least slow_share; boxed - wait with more than box_wait_to_go to go, push through in the last box_push_to_go (measured with tools/race_value.gd: waiting beats easing out and pushing through at every distance, easing back costs 0.3-2.6 s and pushing 0.2-1.3 s); dropped - dig in only when within dig_gap metres of the runner ahead and they feel at least dig_share (a long dig costs the kick); move - go with a mover only when they can afford it and the mover's kick is at least go_edge x their own (otherwise let them go: the mover pays for the move); fall - chase when the runner ahead is under chase_gap away.",
+   "bell_push_share": 0.9, "bell_ease_share": 0.75, "go_edge": 0.99, "dig_gap": 10.0,
    "counter_share": 0.9, "counter_to_go": 300.0, "counter_edge": 1.03,
    "kick_now_factor": 0.9,
    "slow_rank": 3, "slow_share": 0.8,
-   "box_wait_to_go": 300.0, "box_push_to_go": 90.0,
-   "dig_share": 0.45,
+   "box_wait_to_go": 800.0, "box_push_to_go": 0.0,
+   "dig_share": 0.6,
    "chase_gap": 35.0
   },
   "coach": {
@@ -148,8 +151,8 @@
  "shapes": {
   "_note": "Race shapes (GDD 4.3.1; tactical lap 1 made 8-12 % slower in step R2, user 2026-10-08: real tactical finals start ~10 % slower, so the kick decides): the leader's pace as a share of the field's even speed (the runner at pace_ref_quantile of the field by ability, 0 = strongest, 0.5 = median), lap 1 and lap 2 ranges. The mix per meet level / round in percent; a front runner in the field moves front_runner_shift points from tactical to fast, no front runner from fast to tactical.",
   "pace_ref_quantile": 0.25,
-  "fast":     {"name": "fast from the gun", "lap1": [1.03, 1.05], "lap2": [0.97, 0.99]},
-  "honest":   {"name": "honest", "lap1": [1.01, 1.02], "lap2": [0.98, 1.0]},
+  "fast":     {"name": "fast from the gun", "lap1": [1.055, 1.075], "lap2": [0.945, 0.965]},
+  "honest":   {"name": "honest", "lap1": [1.035, 1.045], "lap2": [0.955, 0.975]},
   "tactical": {"name": "tactical", "lap1": [0.88, 0.92], "lap2": [1.01, 1.03]},
   "mix": {
    "local":    {"fast": 50, "honest": 35, "tactical": 15},

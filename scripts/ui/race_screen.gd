@@ -37,6 +37,7 @@ var _slow_note: Label          # "Slowed to 1x" while the race holds at 1x near 
 var _bar: RaceActionBar        # Push / Hold / Ease / Move out / Kick now
 var _events_seen := 0          # how many of the race's events the slow-motion check has looked at
 var _slow_left := 0.0          # race seconds more at 1x (a move, box, contact or fall near you, at 2x / 4x)
+var _slow_reason := ""         # what it was ("Savolainen kicks"), shown in the note
 var _decision: Control   # full-screen dimmed overlay holding the decision card
 var _help_button: HelpButton   # "?" in the header: the help of this stage (GDD 5 "Help")
 var _help: HelpOverlay         # open help; the race waits while it is open
@@ -326,6 +327,9 @@ func _show_running() -> void:
 	_slow_note = UIKit.label("SLOWED TO 1x", "CaptionLabel")
 	_slow_note.add_theme_color_override("font_color", Palette.ACCENT)
 	_slow_note.visible = false
+	_slow_note.clip_text = true   # a long reason never widens the panel
+	_slow_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if Layout.compact else HORIZONTAL_ALIGNMENT_LEFT
+	_slow_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_standings = UIKit.vbox(2)
 	_stand_rows.clear()
 	_commentary = UIKit.vbox(4)
@@ -344,7 +348,6 @@ func _show_running() -> void:
 		bar.add_child(_info)
 		status.add_child(bar)
 		var mood := UIKit.hbox(12)
-		_feeling.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mood.add_child(_feeling)
 		mood.add_child(_slow_note)
 		status.add_child(mood)
@@ -420,8 +423,10 @@ func _process(delta: float) -> void:
 	while _acc >= Race.DT and _race.pending.is_empty() and not _race.finished:
 		_race.step()
 		_acc -= Race.DT
-		if _speed > 1.0 and _race.moment_since(_events_seen):
+		var moment := _race.moment_event(_events_seen) if _speed > 1.0 else {}
+		if not moment.is_empty():
 			_slow_left = float(Data.races.controls.slow_motion.seconds)
+			_slow_reason = _race.moment_text(moment)
 			_acc = minf(_acc, Race.DT)
 		_events_seen = _race.events.size()
 		_slow_left = maxf(0.0, _slow_left - Race.DT)
@@ -440,6 +445,8 @@ func _refresh_running() -> void:
 	_feeling.text = "Feeling: " + feeling.word
 	_feeling.add_theme_color_override("font_color", FEELING_COLORS[feeling.index])
 	_slow_note.visible = _slow_left > 0.0 and _speed > 1.0 and not _race.finished
+	var head := "SLOWED TO 1x" if not Layout.compact else "SLOWED"   # (a phone has less room beside the Feeling word)
+	_slow_note.text = head + " · " + _slow_reason.to_upper() if _slow_reason != "" else head
 	_bar.refresh()
 	# The rows are made once and only their text changes: rebuilding them every frame re-lays-out the whole
 	# side panel (including the wrapped commentary) 60 times a second.

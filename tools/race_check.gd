@@ -71,7 +71,7 @@ func _run() -> void:
 						missing_fields.append(ev.type)
 				for c in race.card_log:
 					cards_seen[c.id] = int(cards_seen.get(c.id, 0)) + 1
-				if race.cards_shown > 6 or race.card_log.size() != race.cards_shown:
+				if race.cards_shown > int(root.get_node("Data").races.controls.cards.max) or race.card_log.size() != race.cards_shown:
 					over_budget += 1
 				var counts := {}
 				for c in race.card_log:
@@ -81,7 +81,7 @@ func _run() -> void:
 			var asked: Array = CARDS.filter(func(c): return cards.has(c))
 			print("    %-5s %-6s average place %.1f, cards seen: %s" % [plan, policy, places / n, ", ".join(asked)])
 	_ok("no stuck race in %d" % races, stuck == 0)
-	_ok("never more than 6 cards in a race (%d races over)" % over_budget, over_budget == 0)
+	_ok("never more than the data's maximum of cards in a race (%d races over)" % over_budget, over_budget == 0)
 	_ok("break and bell are asked exactly once in every race (%d without)" % bad_always, bad_always == 0)
 	print("    cards seen: ", cards_seen)
 	_ok("every card comes up in the races above (missing: %s)" % str(CARDS.filter(func(c): return not cards_seen.has(c))),
@@ -261,7 +261,7 @@ func _effect_ok(race, id: String, opt: String, before: Dictionary) -> bool:
 		["bell", _]:
 			return race.effort == opt and is_equal_approx(p.pace_factor, float(ctl.effort[opt]))
 		["fall", "chase"]:
-			return is_equal_approx(p.dig_boost, float(ctl.chase.dig)) and race.effort == ctl.chase.effort
+			return is_equal_approx(p.dig_boost, float(ctl.chase.dig)) and race.effort == ctl.chase.effort and p.commit_left > 0.0
 		["fall", "steady"]:
 			return p.dig_boost == 0.0 and race.effort == ctl.steady.effort and p.kick_at <= float(ctl.steady.kick_at)
 		["kick", "now"]:
@@ -271,14 +271,14 @@ func _effect_ok(race, id: String, opt: String, before: Dictionary) -> bool:
 		["box", _]:
 			return p.box_way == opt
 		["move", "go"]:
-			return p.covering or p.kicking
+			return (p.covering and p.commit_left > 0.0) or p.kicking
 		["move", "wait"]:
 			var m = race._card_mover
 			return not p.kicking and (m == null or m.kicking or p.hold_left > 0.0)
 		["move", "counter"]:
 			return p.kicking or p.surge_left > 0.0
 		["dropped", "dig"]:
-			return is_equal_approx(p.dig_boost, float(ctl.dig_in))
+			return is_equal_approx(p.dig_boost, float(ctl.dig_in)) and p.commit_left > 0.0
 		["dropped", "own"]:
 			return p.dig_boost == 0.0
 		["slow", "lead"]:
@@ -362,6 +362,28 @@ func _controls(rng: RandomNumberGenerator) -> void:
 		times[cmd] = sum / 12.0
 	_ok("pushing and easing give different races (push %.1f s, ease %.1f s)" % [times.push, times.ease], absf(times.push - times.ease) > 0.05)
 
+	# Mistakes cost: a kick started far too early dies before the line; pushing hard is paid for later.
+	var base_t := 0.0
+	var early_t := 0.0
+	var n_pair := 24
+	for i in n_pair:
+		for mode in ["natural", "early"]:
+			var r = _RaceScript.new()
+			var frng := RandomNumberGenerator.new()
+			frng.seed = 800 + i
+			r.setup(_field(frng, 9.0, true), "male", false, 15.0, frng, false, "district")
+			r.set_player_plan("pack")
+			while not r.finished and r.time < 400.0:
+				r.step()
+				if mode == "early" and r.player.d >= 330.0 and not r.player.kicking:
+					r.command("kick")
+			if mode == "natural":
+				base_t += r.player.t
+			else:
+				early_t += r.player.t
+	print("    a kick from 470 m to go: %.2f s slower on average than the natural kick" % ((early_t - base_t) / n_pair))
+	_ok("a kick started far too early costs time (%.2f s over %d races)" % [(early_t - base_t) / n_pair, n_pair], early_t - base_t > 0.5 * n_pair)
+
 	# Feeling: the four words, from the felt reserve and fatigue.
 	var words := {}
 	var order_ok := true
@@ -422,7 +444,7 @@ func _controls(rng: RandomNumberGenerator) -> void:
 			if not r.pending.is_empty():
 				var d: Dictionary = r.pending
 				asked += 1
-				consistent = consistent and d.has("coach") == r.coach_sees()
+				consistent = consistent and d.has("coach") == r.card_log[-1].coach_sees   # (as of the moment the card was asked)
 				if d.has("coach"):
 					with_coach += 1
 					consistent = consistent and d.options.any(func(o): return o.id == d.coach.option) and d.coach.text != ""
