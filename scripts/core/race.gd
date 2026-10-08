@@ -103,6 +103,8 @@ class Runner:
 	var d := 0.0                 # distance run (lane 1 equivalent)
 	var v := 0.0
 	var lat := 0.0                # metres outside the lane 1 line
+	var prev_d := 0.0             # d and lat before the last step (the race screen draws in between: smooth at 1x)
+	var prev_lat := 0.0
 	var lat_target := 0.0
 	var personality := ""         # front / pack / kicker / surger (data/races.json); "" = the player
 	var want := "pack"            # the place they run for: lead / pack / back (the player's plan)
@@ -321,6 +323,9 @@ func run() -> void:
 func step() -> void:
 	if shape == "":
 		_roll_shape()
+	for r in runners:
+		r.prev_d = r.d
+		r.prev_lat = r.lat
 	time += DT
 	var order := standings()
 	_leader = null

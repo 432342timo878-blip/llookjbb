@@ -388,6 +388,8 @@ func _process(delta: float) -> void:
 	while _acc >= Race.DT and _race.pending.is_empty() and not _race.finished:
 		_race.step()
 		_acc -= Race.DT
+	# Dots between the last two engine steps, so they glide instead of jumping 10 times a second at 1x.
+	_runners_view.set("blend", 1.0 if _race.finished else clampf(_acc / Race.DT, 0.0, 1.0))
 	_refresh_running()
 
 

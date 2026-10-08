@@ -12,6 +12,9 @@ var race: Race
 var track_only := false
 ## Indoors: the hall track is a separate view underneath, so this one draws just the runners.
 var indoor_floor_below := false
+## How far the clock is into the next engine step (0–1): dots are drawn that far from where they were before
+## the last step towards where they are now, so they move smoothly even at 1x (10 engine steps a second).
+var blend := 1.0
 
 var _k := 1.0
 var _center := Vector2.ZERO
@@ -83,12 +86,12 @@ func _draw_indoor_track(r_out: float) -> void:
 
 ## Position in metres (track coordinates) of a runner.
 func _position(r: Race.Runner) -> Vector2:
-	var d := minf(r.d, Race.DISTANCE + 2.0)
-	if r.d < race.break_line:
+	var d := minf(lerpf(r.prev_d, r.d, blend), Race.DISTANCE + 2.0)
+	if d < race.break_line:
 		# In lanes: each lane starts further round the bend (the stagger), so all reach the break line level.
 		var radius := race.r_in + (r.lane - 0.5) * Race.LANE_W
 		return _stadium_point(radius, race.straight + PI * (radius - race.r1) + d)
-	var radius := race.r1 + r.lat + 0.3
+	var radius := race.r1 + lerpf(r.prev_lat, r.lat, blend) + 0.3
 	return _stadium_point(radius, _path_s(fmod(d, race.lap), radius))
 
 
