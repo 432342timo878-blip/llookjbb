@@ -265,6 +265,11 @@ change of place late is a fade, never a fight.
     through, however many heats there were. Now the automatic places per heat are as many as fit
     (`RaceDay._auto_per_heat`: heats.auto_per_heat, at most final size / heats; none with more heats than lanes, then the
     final goes by time); the heats' easing uses the same number. Help `race_result` v4.
+    Third race (outdoor heats, phone size): the phone layout looks good; heat of 7, final reached, 7th in the final; a
+    rival's kick made 2 m and the pack caught him almost at once (as meant). **To fix:** 5 of the user's heat went through
+    and the player could not see why ("where did the other three come from?"): with 2 heats the first 2 of each go
+    through and 4 more on time, often all from the faster heat. Proposal for the fix session: the result screen shows
+    every heat's results, marked **Q** (through on place) and **q** (through on time), as real result lists do.
 
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
