@@ -173,6 +173,11 @@ func _run() -> void:
 			await _shot("11_race_mid")   # the action bar, the Feeling word under the clock
 			# (the race is held still for these two shots, so no card gets in the way)
 			screen._running = false
+			# Pause (decision 27): the button lit with the play triangle, the PAUSED note under the Feeling word.
+			screen._pause_button.button_pressed = true
+			await _frames(3)
+			await _shot("11a_race_paused")
+			screen._pause_button.button_pressed = false
 			# Kick now needs a second tap: after the first, the button asks for it.
 			var kick: Button = screen._bar._buttons.kick
 			kick.pressed.emit()
@@ -243,11 +248,47 @@ func _run() -> void:
 	await _frames(6)
 	await _shot("18_day_editor_after_load")
 	hub._close_day()
+	await _heats_tour(main)
+	hub = main.get_node("ScreenHost").get_child(-1)
 	await _season_tour(main)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _health_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- The result list after heats (R5 playtest fixes): every heat, Q = through on place, q = on time. A championship ---
+# --- with heats is raced quickly; the date and week are put back afterwards. ----------------------------------------
+
+func _heats_tour(main: Node) -> void:
+	var game = main.get_node("/root/Game")
+	var router = main.get_node("/root/Router")
+	var cal = load("res://scripts/core/calendar.gd")
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_week = game._week
+	var rd = null
+	for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 12, "day": 31}):
+		var cand = load("res://scripts/core/race_day.gd").new(m, game.athlete, game.rivals)
+		if cand.rounds.size() > 1:
+			rd = cand
+			break
+	if rd != null:
+		game.date = rd.meet.date.duplicate()
+		game._week = null
+		game.current_week()
+		game.race_day = rd
+		router.go("race")
+		await _frames(6)
+		var screen: Control = main.get_node("ScreenHost").get_child(-1)
+		screen._start(false)
+		await _frames(4)
+		await _shot("12b_race_heat_results")
+		game.race_day = null
+	game.date = saved_date
+	game._week = saved_week
+	game.current_week()
+	router.go("career_hub")
+	await _frames(6)
 
 
 # --- The season plan UI (M2 step 6e): plan cards, the season, targets, the phase editor, strip caption, -----------

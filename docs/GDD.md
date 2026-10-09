@@ -868,6 +868,42 @@ moved; "before" = the R3 follow-up, measured again from a copy of the commit bef
   16.7–17.1 ms a frame, phone outdoor 4x 16.7–17.0 ms; a few single frames over 33 ms as before); `watch_race.gd`
   reaches outdoor heats (17 Jun 2027) and indoor heats (30 Jan 2027, phone size).
 
+**Built (R5 playtest fixes, 2026-10-09): the race screen, UI only** (decisions 26–27 and the heat results question from
+the playtest; the race engine is untouched, so the R5 numbers above stand). `scripts/ui/race_screen.gd`,
+`scripts/ui/race_action_bar.gd`, `RaceDay` (two fields), `data/races.json` `heats.marks`.
+- **The card no longer hides the race (decision 26).** The full-screen dim layer is gone. PC: the card is a panel at
+  the top of the right column (accent edge, darker than the answer buttons), above the clock and the positions; the
+  commentary folds away while it is open and the column scrolls when the card is taller than the window (1280x720: the
+  card fits and the clock is just below it). Phone portrait: the card is a bottom sheet that starts at the action bar,
+  so the track, the clock, the feeling word and "You: 3rd of 8" stay visible above it; its height fits the card
+  (two frames after it opens, the race waits), longer cards scroll inside it. A short landscape window (844x390) uses
+  the PC column and the card scrolls. The action bar is dimmed while a card is open (`pending`), so a tap cannot
+  disturb the card. `layout_check` proves at all 5 sizes that the card does not overlap the track.
+- **Pause (decision 27).** A toggle beside 1x / 2x / 4x (44 px, 64 px wide on PC, 56 on a phone; two bars, a triangle
+  while paused; drawn in code because the font may lack the symbols); **Space** on PC. While paused nothing moves, the
+  note under the Feeling word reads "PAUSED · SPACE TO RESUME" (phone: "PAUSED"), the action bar works: the command is
+  given at once (`Race.command` changes state, no time passes) and the race acts on it when it runs on. The speed
+  buttons have no keyboard focus so Space cannot press them; Space does nothing while a card or the help is open.
+  A card cannot come up while paused (cards come from steps). Paused frames cost nothing extra (60 fps).
+- **Heat results (the "where did the other three come from" question).** After a heat the result screen lists every
+  heat, the player's first ("HEAT 2 · YOUR HEAT" in the accent colour), the others in order, each as the usual table
+  with a green **Q** (through on place) or **q** (through on time) in the last column, and the legend line under the
+  headline. Under the tables: "You're through to the final on place (Q)." / "...on time (q): one of the fastest of the
+  rest." (or the old line when there is no mark). `RaceDay.heat_results` (all heats' results) and `heat_marks`
+  (name → mark; filled in `_qualifiers`, which already picked the same runners). The marks and their texts are in
+  `data/races.json` `heats.marks`. The final and ordinary races show the one table as before.
+- **Help:** `race_running` v6 (a Pause section, a "The card" section), `race_result` v5 (Q and q).
+- **Tools:** `layout_check.gd -- <dir> [WxH]` (one size only; card clear of the track, sheet position, paused state with
+  the bar and Space, the heat results outdoors and indoors with Q + q = the final's size), the tour (`11a_race_paused`,
+  `12b_race_heat_results`), `race_perf.gd` and `help_check.gd` know the new card.
+- **Checks:** `layout_check` (5 sizes, no OVERFLOW / SQUEEZED / WRONG), the tour on PC and phone (looked at),
+  `help_check` 483 passed, `race_check` ALL PASSED, `day_engine_check` ALL PASSED, all with clean stderr;
+  `race_perf` 60 fps (PC indoor 4x: 16.7–17.1 ms a frame, 2–6 single frames over 33 ms in a phase as before; phone
+  outdoor 4x: 16.7–17.0 ms).
+- **Small choices made without asking (change on request):** the player's heat is listed first, not in heat order; the
+  phone sheet fits the card and may leave the dimmed bar's top row peeking above it; the commentary is hidden on PC
+  while a card is open to make room.
+
 ### 4.4 Season calendar (first version built)
 
 Decisions (user, 2026-10-05): big meets use **real dates**; small local/district meets get **believable estimated dates**

@@ -12,6 +12,8 @@ var fatigue := 0.0                # the player's fatigue going into the current 
 var heats: Array = []             # Array of entrant arrays
 var player_heat := 0
 var final_entrants: Array = []
+var heat_results: Array = []      # after the heats: every heat's results, in heat order (Array of result arrays)
+var heat_marks := {}              # after the heats: runner name → "Q" (through on place) / "q" (through on time)
 var player_results: Array = []    # [{round, place, field, time, status}] (status "dnf" / "dq": no time, time 0)
 var all_results: Array = []       # every race run here (for rival PBs)
 var incidents: Array = []         # the player's falls and spike wounds today: [{kind: fall / spiked, round}] (health model)
@@ -128,7 +130,7 @@ func finish_round() -> void:
 		if current.player.spiked:
 			incidents.append({"kind": "spiked", "round": round_name()})
 	if rounds[round_index] == "heat":
-		var heat_results := []
+		heat_results = []
 		for h in heats.size():
 			if h == player_heat:
 				heat_results.append(res)
@@ -146,20 +148,24 @@ func finish_round() -> void:
 
 
 ## Top N of each heat (_auto_per_heat) plus the fastest of the rest, up to the final size (only runners with a time).
-func _qualifiers(heat_results: Array) -> Array:
+## Fills heat_marks: "Q" for the places, "q" for the times (the marks of a real result list).
+func _qualifiers(results_of_heats: Array) -> Array:
 	var auto := _auto_per_heat()
+	var marks: Dictionary = Data.races.heats.marks
 	var by_name := {}
 	for h in heats:
 		for e in h:
 			by_name[e.name] = e
+	heat_marks = {}
 	var q := []
 	var rest := []
-	for res in heat_results:
+	for res in results_of_heats:
 		for i in res.size():
 			if res[i].get("status", "") != "":
 				continue   # did not finish / disqualified (always listed last)
 			if i < auto:
 				q.append(by_name[res[i].name])
+				heat_marks[res[i].name] = marks.place
 			else:
 				rest.append(res[i])
 	rest.sort_custom(func(x, y): return x.time < y.time)
@@ -167,6 +173,7 @@ func _qualifiers(heat_results: Array) -> Array:
 		if q.size() >= _max_final:
 			break
 		q.append(by_name[r.name])
+		heat_marks[r.name] = marks.time
 	return q
 
 

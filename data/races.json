@@ -23,7 +23,9 @@
   "ceiling_mean": 13.0, "ceiling_sd": 2.5,
   "race_chance_by_month": [0.08, 0.10, 0.10, 0.12, 0.25, 0.30, 0.25, 0.30, 0.25, 0.10, 0.06, 0.06]
  },
- "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2},
+ "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2,
+  "marks": {"place": "Q", "time": "q", "legend": "Q = through on place · q = through on time",
+   "via_place": "You're through to the final on place (Q).", "via_time": "You're through to the final on time (q): one of the fastest of the rest."}},
  "engine": {
   "_note": "Pack racing (GDD 4.3.1, step R1). Each runner has a cruising speed cs and a reserve (metres above cs); running behind someone costs less, the leader pays full price. cs_scale is the one calibration number: it keeps the median race time on the time table.",
   "cs_scale": 1.029,

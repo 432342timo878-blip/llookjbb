@@ -2,8 +2,10 @@ class_name RaceActionBar
 extends VBoxContainer
 ## The always-there action bar of a watched race (GDD 4.3.1 "Player controls", step R3): Push / Hold / Ease (the pace
 ## until the kick; the active one is lit), Move out (a few seconds on the outside going for a pass; lit while it
-## lasts) and Kick now (needs a second tap within controls.bar.kick_confirm_s seconds, against mistaken taps). No
-## pause. 44 px buttons; PC = one row under the track, phone = four buttons and Move out in a second row.
+## lasts) and Kick now (needs a second tap within controls.bar.kick_confirm_s seconds, against mistaken taps). It
+## works while the race is paused (the command is given at once, the race acts on it when it runs on), and is
+## dimmed while a decision card is open. 44 px buttons; PC = one row under the track, phone = four buttons and
+## Move out in a second row.
 ## The race screen calls refresh() every frame; the buttons only change when their state does.
 
 signal commanded(cmd: String)
@@ -55,6 +57,8 @@ func _make(cmd: String) -> Button:
 
 
 func _on_pressed(cmd: String) -> void:
+	if not _race.pending.is_empty():
+		return   # a decision card is open: it answers first
 	if cmd == "kick":
 		var now := Time.get_ticks_msec() / 1000.0
 		if now - _armed_at > _confirm_s:
@@ -77,7 +81,7 @@ func refresh() -> void:
 	if p == null:
 		return
 	for cmd in COMMANDS:
-		var can := _race.can_command(cmd)
+		var can := _race.can_command(cmd) and _race.pending.is_empty()
 		var lit := false
 		var text: String = LABELS[cmd]
 		match cmd:

@@ -54,7 +54,10 @@ func _run() -> void:
 	game.advance_day()
 	hub._refresh_week_ui()
 
+	var only := OS.get_cmdline_user_args()[1] if OS.get_cmdline_user_args().size() > 1 else ""   # e.g. "390x844": one size only
 	for size in SIZES:
+		if only != "" and only != "%dx%d" % [size.x, size.y]:
+			continue
 		root.size = size
 		await _frames(8)
 		var tag := "%dx%d" % [size.x, size.y]
@@ -336,6 +339,7 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		await _frames(3)
 		await _shot(t + "_bar")
 		_check_overflow(screen, t + "_bar")
+		await _pause_views(screen, race, t)
 		var kick: Button = screen._bar._buttons.kick
 		kick.pressed.emit()   # the first tap: "Tap again to kick"
 		await _frames(3)
@@ -349,6 +353,7 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		print("  card: ", race.pending.get("id", "?"), " coach: ", race.pending.get("coach", {}).get("text", "(none)"))
 		await _shot(t + "_card_coach")
 		_check_overflow(screen, t + "_card_coach")
+		_check_card_clear(screen, t + "_card_coach")
 		screen._decision.visible = false
 		race.choose(race.pending.options[0].id)
 		# Something happens next to the player at 4x: the race drops to 1x for a moment.
@@ -373,10 +378,104 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		game.race_day = null
 		router.go("career_hub")
 		await _frames(6)
+	# The heats' result list (all heats, Q / q) outdoors and indoors.
+	for place in ["outdoor", "indoor"]:
+		await _heat_result_views(main, game, cal, place, tag)
 	coach.view_m = saved_view
 	game.date = saved_date
 	game._week = saved_week
 	game.current_week()
+	router.go("career_hub")
+	await _frames(6)
+
+
+## The decision card never covers the track (GDD 4.3.1 decision 26): PC = the card sits in the right column, phone = a
+## sheet that starts below the clock. Prints WRONG when they overlap, and whether the card needs scrolling.
+func _check_card_clear(screen, label: String) -> void:
+	var card: Control = screen._decision
+	var track: Control = screen._track_area
+	var overlap: bool = card.visible and card.get_global_rect().intersects(track.get_global_rect())
+	print("  card clear of the track (%s): %s" % [label, "NO   <-- WRONG" if overlap else "yes"])
+	if not screen._compact_run:
+		var view: Rect2 = screen._side_scroll.get_global_rect()
+		var low: float = card.get_global_rect().end.y
+		print("  card bottom %d, right column ends %d%s" % [low, view.end.y, "" if low <= view.end.y else "   (the card scrolls)"])
+	else:
+		var sheet: Rect2 = card.get_global_rect()
+		print("  sheet from y=%d to %d (window %d), track ends %d, alpha %.2f" % [sheet.position.y, sheet.end.y, screen.size.y,
+				track.get_global_rect().end.y, card.modulate.a])
+
+
+## The pause button (decision 27): the race stands still, the bar still works, Space and the button run it on.
+func _pause_views(screen, race, t: String) -> void:
+	screen._pause_button.button_pressed = true   # (the same as tapping it)
+	var t0: float = race.time
+	screen._running = true
+	screen._process(0.5)
+	screen._running = false
+	var still: bool = race.time == t0
+	print("  paused: race time %s%s, note \"%s\"" % [str(race.time), "" if still else "   <-- WRONG (moved)", screen._slow_note.text])
+	if not screen._slow_note.visible or not screen._slow_note.text.begins_with("PAUSED"):
+		print("  <-- WRONG: no PAUSED note")
+	var was: String = race.effort
+	var other: String = "ease" if was != "ease" else "hold"
+	screen._bar._buttons[other].pressed.emit()
+	print("  bar while paused: effort %s -> %s%s" % [was, race.effort, "" if race.effort == other else "   <-- WRONG"])
+	await _frames(3)
+	await _shot(t + "_paused")
+	_check_overflow(screen, t + "_paused")
+	# Space runs it on again (the key handler needs a running, unpaused-or-paused race with no card open).
+	screen._running = true
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_SPACE
+	ev.pressed = true
+	screen._unhandled_key_input(ev)
+	print("  Space: paused is now %s%s" % [screen._paused, "" if not screen._paused else "   <-- WRONG"])
+	screen._process(0.1)
+	screen._running = false
+	print("  running on: race time %s%s" % [str(race.time), "" if race.time > t0 else "   <-- WRONG (stuck)"])
+	if not race.pending.is_empty():   # (a card came up on the way)
+		screen._decision.visible = false
+		race.choose(race.pending.options[0].id)
+
+
+## The result list after the heats: every heat with its Q / q marks. Looks for a meet with heats and quick-runs it.
+func _heat_result_views(main: Node, game, cal, place: String, tag: String) -> void:
+	var router = main.get_node("/root/Router")
+	var rd = null
+	for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 12, "day": 31}):
+		if bool(m.get("indoor", false)) != (place == "indoor"):
+			continue
+		var cand = load("res://scripts/core/race_day.gd").new(m, game.athlete, game.rivals)
+		if cand.rounds.size() > 1:
+			rd = cand
+			break
+	if rd == null:
+		print("  (no %s meet with heats found for the heat results)" % place)
+		return
+	game.date = rd.meet.date.duplicate()
+	game._week = null
+	game.current_week()
+	game.race_day = rd
+	router.go("race")
+	await _frames(8)
+	var screen: Control = main.get_node("ScreenHost").get_child(-1)
+	screen._start(false)
+	await _frames(4)
+	var t := "%s_heats_%s" % [tag, place]
+	var marks: Dictionary = rd.heat_marks
+	var big := 0
+	var small := 0
+	for n in marks:
+		if marks[n] == "Q":
+			big += 1
+		else:
+			small += 1
+	print("  %s: %s, %d heats, Q %d + q %d = %d, final field %d%s" % [t, rd.meet.name, rd.heats.size(), big, small, marks.size(),
+			rd.final_entrants.size(), "" if marks.size() == rd.final_entrants.size() else "   <-- WRONG"])
+	await _shot(t)
+	_check_overflow(screen, t)
+	game.race_day = null
 	router.go("career_hub")
 	await _frames(6)
 

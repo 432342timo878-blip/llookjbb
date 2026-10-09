@@ -88,10 +88,9 @@ func _run() -> void:
 			_report("phase %d" % phase, times, screen)
 			times.clear()
 			phase += 1
-			await _frames(5)   # the overlay is shown
+			await _frames(5)   # the card is shown
 			# Answer through the real first button on the card.
-			var card = screen._decision.get_node("Margin/Center/Card")
-			var btn := _first_button(card)
+			var btn := _first_button(screen._decision)
 			if btn:
 				btn.pressed.emit()
 			else:

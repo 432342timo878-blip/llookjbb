@@ -199,11 +199,13 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         Youth rows time / table within ±0.5 %; senior finals 1.006–1.009 left for step 7. New `tools/watch_race.gd`
         (playtest: straight to an indoor / outdoor race, with heats). **Watched playtest by the user still to do**
         (GDD 4.3.1 R5 "Playtest plan"; observations go into the next session).
-  - [ ] **R5 playtest fixes (UI):** decisions 26–27 (GDD 4.3.1): the decision card beside the track (PC side panel,
-        phone bottom sheet; the track stays visible), a pause button with 1x / 2x / 4x (action bar works while paused,
-        Space on PC); the result screen shows every heat's results with Q (place) / q (time) marks (playtest: "5 went
-        through from my heat, where did the other three come from?"). *(Sonnet, high)*
-        Check: `layout_check` (5 sizes, card states), the tour, `race_perf` 60 fps, `help_check` (race help: pause).
+  - [x] **R5 playtest fixes (UI), built 2026-10-09:** decisions 26–27 (GDD 4.3.1 "Built (R5 playtest fixes)"): the decision
+        card beside the track (PC: top of the right column; phone: a bottom sheet from the action bar down; the track
+        stays visible), a pause button beside 1x / 2x / 4x (the action bar works while paused, Space on PC); the result
+        screen shows every heat's results (yours first) with Q (place) / q (time) marks. Help `race_running` v6,
+        `race_result` v5. Checks: `layout_check` (5 sizes, card clear of the track, paused, heat results), the tour,
+        `race_perf` 60 fps, `help_check`, `race_check`, `day_engine_check`. Still open from the playtest plan: the other
+        three watched races (outdoor any on PC twice, outdoor heats on the phone).
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
