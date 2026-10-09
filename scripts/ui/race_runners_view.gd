@@ -12,6 +12,8 @@ var race: Race
 var track_only := false
 ## Indoors: the hall track is a separate view underneath, so this one draws just the runners.
 var indoor_floor_below := false
+## Draw the coach's spot (the race screen of a watched race).
+var show_coach := false
 ## How far the clock is into the next engine step (0–1): dots are drawn that far from where they were before
 ## the last step towards where they are now, so they move smoothly even at 1x (10 engine steps a second).
 var blend := 1.0
@@ -39,6 +41,25 @@ func _draw() -> void:
 		_center = size / 2.0
 	if not track_only:
 		_draw_runners()
+		if show_coach:
+			_draw_coach()
+
+
+## The coach by the track (GDD 4.3.1 step R4): a small diamond where he stands, outdoors at the 200 m start on the infield
+## side of lane 1 (he sees the stretch round it, Race.coach_sees_at), indoors in the middle of the infield (he sees all).
+func _draw_coach() -> void:
+	var spot := Vector2.ZERO
+	if not race.indoor:
+		var radius := race.r_in - 3.0
+		spot = _stadium_point(radius, _path_s(fmod(float(Data.races.controls.coach.spot_outdoor), race.lap), radius))
+	var p := _px(spot)
+	var s := maxf(0.9 * _k, 5.0)
+	var diamond := PackedVector2Array([p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), p + Vector2(-s, 0)])
+	draw_colored_polygon(diamond, Palette.ACCENT)
+	draw_polyline(PackedVector2Array([diamond[0], diamond[1], diamond[2], diamond[3], diamond[0]]), Color.WHITE, 1.5)
+	var font := get_theme_default_font()
+	var w := font.get_string_size("Coach", HORIZONTAL_ALIGNMENT_CENTER, -1, 13).x
+	draw_string(font, p + Vector2(-w / 2.0, -s - 5.0), "Coach", HORIZONTAL_ALIGNMENT_CENTER, -1, 13, Color.WHITE)
 
 
 func _draw_runners() -> void:

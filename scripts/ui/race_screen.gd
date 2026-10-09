@@ -31,8 +31,13 @@ var _clock: Label
 var _info: Label
 var _standings: VBoxContainer
 var _stand_rows := []   # [name label, gap label] per position, reused every frame
-var _commentary: VBoxContainer
-var _comment_head: Label       # "COMMENTARY": hidden with the commentary while a card is open (PC)
+var _comment_box: CommentaryBox   # PC: the COMMENTARY box (R4); hidden while a card is open to make room
+var _ticker: CommentaryTicker      # phone: the two-line ticker under the track; a tap opens the log
+var _log: CommentaryLog            # the open log sheet (the race waits while it is open)
+var _comm: RaceCommentary          # the broadcast of a watched race (null in quick mode)
+var _banner: PanelContainer        # PC: the key moments, a short strip along the top edge of the track
+var _banner_label: Label
+var _banner_left := 0.0            # real seconds more the banner shows
 var _feeling: Label            # "Feeling: Working" under the clock (GDD 4.3.1)
 var _slow_note: Label          # "Slowed to 1x" while the race holds at 1x near something happening; "Paused" when paused
 var _bar: RaceActionBar        # Push / Hold / Ease / Move out / Kick now
@@ -171,9 +176,8 @@ func _on_decision_visibility() -> void:
 	var open := _decision.visible
 	if not open:
 		_decision.modulate.a = 1.0
-	if _comment_head != null and is_instance_valid(_comment_head):
-		_comment_head.visible = not (open and not _compact_run)
-		_commentary.visible = _comment_head.visible
+	if _comment_box != null and is_instance_valid(_comment_box):
+		_comment_box.visible = not (open and not _compact_run)
 	if open and _side_scroll != null and is_instance_valid(_side_scroll):
 		_side_scroll.scroll_vertical = 0
 
@@ -266,17 +270,42 @@ func _show_pre() -> void:
 		n.clip_text = true
 		if e.get("is_player", false):
 			n.add_theme_color_override("font_color", Palette.ACCENT)
-		line.add_child(n)
-		if not Layout.compact:
+		var tag := _tag_of(e)   # "Kicker", "Front runner", ...: known after racing that runner twice (GDD 4.3.1)
+		var pb := _pb_of(e)
+		var sb := _sb_of(e)
+		var pb_text := Calendar.format_time(pb) if pb < 9999.0 else "–"
+		var sb_text := Calendar.format_time(sb) if sb < 9999.0 else "–"
+		if Layout.compact:
+			# A phone row: the name (the tag under it) and "PB · SB" on one line, no club.
+			var who := UIKit.vbox(0)
+			who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			who.add_child(n)
+			if tag != "":
+				var t := UIKit.label(tag, "CaptionLabel")
+				t.clip_text = true
+				who.add_child(t)
+			line.add_child(who)
+			var stats := UIKit.label("PB %s · SB %s" % [pb_text, sb_text], "MutedLabel")
+			stats.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			line.add_child(stats)
+			if tag != "":
+				line.custom_minimum_size.y = 44
+		else:
+			line.add_child(n)
 			var club := UIKit.label(e.club, "MutedLabel")
-			club.custom_minimum_size.x = 220
+			club.custom_minimum_size.x = 150
 			club.clip_text = true
 			line.add_child(club)
-		var pb := _pb_of(e)
-		var pb_label := UIKit.label("PB " + (Calendar.format_time(pb) if pb < 9999.0 else "–"), "MutedLabel")
-		pb_label.custom_minimum_size.x = 110
-		pb_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		line.add_child(pb_label)
+			var tag_label := UIKit.label(tag, "CaptionLabel")
+			tag_label.custom_minimum_size.x = 88
+			tag_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			line.add_child(tag_label)
+			for stat in [["PB " + pb_text, 96], ["SB " + sb_text, 96]]:
+				var l := UIKit.label(stat[0], "MutedLabel")
+				l.custom_minimum_size.x = stat[1]
+				l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+				line.add_child(l)
 		field.add_child(line)
 	var field_panel := UIKit.panel(field, 16)
 	field_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -375,6 +404,27 @@ func _pb_of(e: Dictionary) -> float:
 	return rpb if rpb > 0.0 else 9999.0
 
 
+## This calendar year's best (the season best, GDD 4.3.1 decision 30) of an entrant, or 9999 when there is none.
+func _sb_of(e: Dictionary) -> float:
+	var year := int(_rd.meet.date.year)
+	if e.get("is_player", false):
+		var sb := Rankings.player_season_best(Game.athlete, year)
+		return sb if sb > 0.0 else 9999.0
+	var rival: Dictionary = e.get("rival", {})
+	if int(rival.get("sb_season", -1)) == year and float(rival.get("sb", 0.0)) > 0.0:
+		return float(rival.sb)
+	return 9999.0
+
+
+## The rival's running style as a word ("Kicker"), once the player has raced them twice; "" before (and for the player).
+func _tag_of(e: Dictionary) -> String:
+	var rival: Dictionary = e.get("rival", {})
+	var types: Dictionary = Data.races.personalities
+	if e.get("is_player", false) or int(rival.get("met", 0)) < 2 or not types.has(str(rival.get("personality", ""))):
+		return ""
+	return str(types[rival.personality].name)
+
+
 ## A text of data/races.json rounds.texts with {placeholders} filled in.
 func _text(id: String, fill := {}) -> String:
 	return String(Data.races.rounds.texts[id]).format(fill)
@@ -422,6 +472,7 @@ func _round_short(t: Dictionary) -> String:
 
 
 func _start(interactive: bool) -> void:
+	_comm = null   # (a quick race has no broadcast; the Race story still tells it)
 	_race = _rd.start_round(interactive, _plan)
 	if not interactive:
 		_race.run()
@@ -462,6 +513,7 @@ func _show_running() -> void:
 	_runners_view.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_runners_view.set("race", _race)
 	_runners_view.set("indoor_floor_below", true)
+	_runners_view.set("show_coach", true)   # the coach's spot (R4)
 	track_area.add_child(_runners_view)
 
 	_clock = UIKit.label("0.0", "TitleLabel")
@@ -478,7 +530,13 @@ func _show_running() -> void:
 	_target_line.visible = _target_line.text != ""
 	_standings = UIKit.vbox(2)
 	_stand_rows.clear()
-	_commentary = UIKit.vbox(4)
+	# The broadcast (R4): who talks depends on the meet; the box (PC) or the ticker (phone) shows what they say.
+	_comm = RaceCommentary.new(_race, {"meet": _rd.meet, "rd": _rd, "athlete": Game.athlete, "targets": _targets,
+			"today": Game.date, "entries": Game.entries})
+	_comment_box = null if Layout.compact else CommentaryBox.new(_comm.crew_text())   # (only what is shown is made)
+	_ticker = CommentaryTicker.new() if Layout.compact else null
+	if _ticker != null:
+		_ticker.tapped.connect(_open_log)
 	_events_seen = _race.events.size()
 	_slow_left = 0.0
 	# The action bar (not in quick mode, which never gets here) sits under the track and never scrolls away.
@@ -507,14 +565,14 @@ func _show_running() -> void:
 		side.add_child(_target_line)
 	side.add_child(UIKit.label("POSITIONS", "CaptionLabel"))
 	side.add_child(_standings)
-	_comment_head = UIKit.label("COMMENTARY", "CaptionLabel")
-	side.add_child(_comment_head)
-	side.add_child(_commentary)
+	if _comment_box != null:
+		side.add_child(_comment_box)
 	var side_panel := UIKit.panel(side, 16)
 
 	if Layout.compact:
 		var column := UIKit.vbox(8)
 		column.add_child(track_area)
+		column.add_child(_ticker)
 		column.add_child(status)
 		column.add_child(_bar)
 		var scroll := ScrollContainer.new()
@@ -570,22 +628,23 @@ func _show_running() -> void:
 	_pause_button.toggled.connect(_on_pause_toggled)
 	_header_right.add_child(_pause_button)
 
-	_race.commentary.connect(_add_commentary)
 	_race.decision_needed.connect(_show_decision)
-	# Dev (debug builds, e.g. run from the editor): the engine's race events in the Output panel, until the
-	# commentary turns them into words (step R4).
-	_race.print_events = OS.is_debug_build()
+	_make_banner(track_area)
 	_running = true
 	_acc = 0.0
 	_finish_wait = 0.0
 
 
 func _process(delta: float) -> void:
-	if not _running or (is_instance_valid(_help) and not _help.is_queued_for_deletion()):
-		return   # (the race waits while the help is open)
+	if not _running or (is_instance_valid(_help) and not _help.is_queued_for_deletion()) \
+			or (is_instance_valid(_log) and not _log.is_queued_for_deletion()):
+		return   # (the race waits while the help or the commentary log is open)
+	_tick_banner(delta)
 	if _race.finished:
+		_comm.update()   # (the last lines: the finish)
+		_drain_commentary()
 		_finish_wait += delta
-		if _finish_wait > 1.2:
+		if _finish_wait > 2.0:
 			_running = false
 			_show_result()
 		return
@@ -599,6 +658,7 @@ func _process(delta: float) -> void:
 	_acc += delta * (1.0 if _slow_left > 0.0 else _speed)
 	while _acc >= Race.DT and _race.pending.is_empty() and not _race.finished:
 		_race.step()
+		_comm.update()
 		_acc -= Race.DT
 		var moment := _race.moment_event(_events_seen) if _speed > 1.0 else {}
 		if not moment.is_empty():
@@ -607,6 +667,7 @@ func _process(delta: float) -> void:
 			_acc = minf(_acc, Race.DT)
 		_events_seen = _race.events.size()
 		_slow_left = maxf(0.0, _slow_left - Race.DT)
+	_drain_commentary()
 	# Dots between the last two engine steps, so they glide instead of jumping 10 times a second at 1x.
 	_runners_view.set("blend", 1.0 if _race.finished else clampf(_acc / Race.DT, 0.0, 1.0))
 	_refresh_running()
@@ -670,12 +731,69 @@ func _update_slow_note() -> void:
 	_slow_note.text = head + " · " + _slow_reason.to_upper() if _slow_reason != "" else head
 
 
-func _add_commentary(text: String) -> void:
-	_commentary.add_child(UIKit.wrapped(text, ""))
-	while _commentary.get_child_count() > (3 if Layout.compact else 5):
-		var old := _commentary.get_child(0)
-		_commentary.remove_child(old)
-		old.queue_free()
+## The lines said since the last frame go to the box (PC) or the ticker (phone); a key moment also to the banner (PC).
+func _drain_commentary() -> void:
+	for line in _comm.take_new():
+		if _comment_box != null:
+			_comment_box.add_line(line)
+		if _ticker != null:
+			_ticker.show_line(line)
+		if line.has("banner") and not _compact_run:
+			_show_banner(str(line.banner))
+
+
+## The log of everything said so far, as a sheet; the race waits while it is open (like the help).
+func _open_log() -> void:
+	_log = CommentaryLog.open(self, _comm.lines)
+
+
+## The banner for key moments (decision: PC only; a slim strip along the top edge of the track for banner_s real seconds,
+## never over the lanes' middle). The phone has the ticker instead.
+func _make_banner(track_area: Control) -> void:
+	_banner = PanelContainer.new()
+	_banner.name = "Banner"
+	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(Palette.SURFACE, 0.92)
+	style.border_color = Palette.ACCENT
+	style.border_width_bottom = 2
+	style.set_corner_radius_all(Palette.RADIUS)
+	style.content_margin_left = 14
+	style.content_margin_right = 14
+	style.content_margin_top = 4
+	style.content_margin_bottom = 5
+	_banner.add_theme_stylebox_override("panel", style)
+	_banner.anchor_left = 0.5
+	_banner.anchor_right = 0.5
+	_banner.anchor_top = 0.0
+	_banner.anchor_bottom = 0.0
+	_banner.offset_top = 6.0
+	_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_banner_label = UIKit.label("", "HeadingLabel")
+	_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner.add_child(_banner_label)
+	_banner.visible = false
+	track_area.add_child(_banner)
+	_banner_left = 0.0
+
+
+func _show_banner(text: String) -> void:
+	if _banner == null or not is_instance_valid(_banner):
+		return
+	_banner_label.text = text.to_upper()
+	_banner.modulate.a = 1.0
+	_banner.visible = true
+	_banner_left = float(Data.race_commentary.rules.banner_s)
+
+
+func _tick_banner(delta: float) -> void:
+	if _banner == null or not is_instance_valid(_banner) or not _banner.visible:
+		return
+	_banner_left -= delta
+	if _banner_left <= 0.0:
+		_banner.visible = false
+	elif _banner_left < 0.4:
+		_banner.modulate.a = _banner_left / 0.4
 
 
 ## The decision card (decision 26): PC = the panel at the top of the right column, phone = a bottom sheet below the
@@ -789,7 +907,8 @@ func _show_result(fresh := true) -> void:
 					"notes": {}})
 		else:
 			lists.append({"title": "", "res": res, "mine": true, "notes": {}})
-		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks,
+		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete})
+		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks, "story": story,
 				"via": marks.get(mine.name, ""), "next": _rd.rounds[_rd.round_index] if not _rd.is_done() else "",
 				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": kind in ["heat", "semi"]}
 
@@ -801,6 +920,9 @@ func _show_result(fresh := true) -> void:
 
 	var tables := UIKit.vbox(10)
 	tables.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var story_panel := RaceStoryView.build(_result.story)   # the race in detail: splits, key moments, the coach (R4)
+	story_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tables.add_child(story_panel)
 	for list in _result.lists:
 		if list.title != "":
 			var head := UIKit.label(list.title, "CaptionLabel")

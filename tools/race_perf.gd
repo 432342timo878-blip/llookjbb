@@ -142,4 +142,4 @@ func _report(label: String, times: Array[float], screen: Control) -> void:
 			int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)),
 			int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
 			screen._standings.get_child_count() if is_instance_valid(screen._standings) else -1,
-			screen._commentary.get_child_count() if is_instance_valid(screen._commentary) else -1])
+			screen._comm.lines.size() if screen._comm != null else -1])

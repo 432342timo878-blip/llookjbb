@@ -63,6 +63,10 @@ var ref_speed := 0.0              # the field's even speed (m/s)
 var cards_shown := 0
 var effort := "hold"
 var card_log: Array = []
+## R4 (recording only): the player's choices and commands as they happened: {key ("break.lead", "bar.push", ...), t,
+## to_go}, for the commentary's "you" lines. `coach_id` = the player's coach (data/coaches.json): his shouts' wording.
+var say_log: Array = []
+var coach_id := ""
 var _card_counts := {}
 var _last_card_t := -1000.0
 var _ctl: Dictionary              # data/races.json "controls"
@@ -81,6 +85,7 @@ var _card_mover: Runner           # whose move the "A rival makes a move" card i
 var _card_kinds: Array = []       # the card ids, most important first
 var _card_info := {}              # the placeholders of the card being asked (the coach's shout uses them)
 const MARKS := [200, 300, 400, 500, 600]   # pace calls (200 / 400 / 600) and pack shape (300 / 500)
+const SPLIT_MARKS := [200, 400, 600]        # the splits every runner's `marks` records (R4)
 var _next_mark := 0
 var _order: Array[Runner] = []    # standings() keeps its order here
 ## Neighbour searches look this many metres beyond their range in the step's order (runners move < 1 m a step).
@@ -132,6 +137,7 @@ class Runner:
 	var t := 0.0                  # finish time
 	var done := false
 	var split_400 := 0.0
+	var marks: Dictionary = {}    # R4 (recording only): metres → {t (time the runner passed it), pos (their place then)}
 	var scripted: Dictionary = {} # dev tools: a scripted race (tools/race_shape.gd duel rows)
 	# Moves (R2)
 	var surge_left := 0.0         # metres of their surge still to run
@@ -595,6 +601,10 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 		r.commit_left = maxf(0.0, r.commit_left - progress)
 	if r.split_400 == 0.0 and r.d >= 400.0:
 		r.split_400 = time
+	if r.marks.size() < SPLIT_MARKS.size() and r.d >= SPLIT_MARKS[r.marks.size()]:
+		# (R4: splits for the Race story and the coach's calls; recording only, nothing in the race reads it)
+		var at: int = SPLIT_MARKS[r.marks.size()]
+		r.marks[at] = {"t": time - (r.d - at) / maxf(r.v, 0.1), "pos": r.oi + 1}
 
 
 ## The race's pace for this runner now: the shape's lap pace (a scripted runner may lead at their own:
@@ -1498,6 +1508,8 @@ func _apply_choice(p: Runner, id: String, option: String) -> void:
 
 ## A line of the player's choices in the commentary (data/race_cards.json "says").
 func _say_line(key: String) -> void:
+	if player != null:
+		say_log.append({"key": key, "t": snappedf(time, 0.1), "to_go": roundi(DISTANCE - player.d)})
 	var line: String = Data.race_cards.says.get(key, "")
 	if line != "" and player != null:
 		_say(line.format({"to_go": roundi(DISTANCE - player.d)}))
@@ -1566,14 +1578,19 @@ func feeling() -> Dictionary:
 
 
 ## Can the coach see the player now? Outdoors he stands at one spot (controls.coach.spot_outdoor metres round the
-## lap) and sees view_m along the track either way; indoors he sees the whole track. (R4 gives him a real spot.)
+## lap: the 200 m start, on the infield side) and sees view_m along the track either way; indoors he stands on the
+## infield and sees the whole track.
 func coach_sees() -> bool:
-	if player == null:
-		return false
+	return player != null and coach_sees_at(player.d)
+
+
+## Can the coach see what happens `d` metres into the race? (R4: his spot is the 200 m start outdoors, the infield
+## indoors; the commentary lets him speak only about what he can see.)
+func coach_sees_at(d: float) -> bool:
 	if indoor:
 		return true
 	var c: Dictionary = _ctl.coach
-	var dist := absf(fmod(player.d, lap) - float(c.spot_outdoor))
+	var dist := absf(fmod(d, lap) - float(c.spot_outdoor))
 	return minf(dist, lap - dist) <= float(c.view_m)
 
 
@@ -1595,7 +1612,8 @@ func _coach_line(id: String, info: Dictionary) -> Dictionary:
 		var others := shouts.keys().filter(func(k): return k != right)
 		if not others.is_empty():
 			pick = others[_coach_rng.randi_range(0, others.size() - 1)]
-	return {"option": pick, "text": String(shouts[pick]).format({"name": _surname(str(info.get("name", "")))})}
+	var wording: String = Coaches.shout(coach_id, id, pick, String(shouts[pick]))   # (his own words, R4)
+	return {"option": pick, "text": wording.format({"name": _surname(str(info.get("name", "")))})}
 
 
 ## Has something happened since event number `from` that the race screen slows down for (a move, kick, contact,

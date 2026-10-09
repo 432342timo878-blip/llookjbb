@@ -125,6 +125,7 @@ func start_round(interactive: bool, plan: String) -> Race:
 	current.interactive = interactive
 	current.setup(entrants, _gender, is_big_meet(), fatigue, _rng, _indoor, shape_mix())
 	current.auto_places = _auto_places()
+	current.coach_id = Coaches.id_of(athlete)   # (his wording on the cards; R4)
 	current.set_player_plan(plan)
 	return current
 

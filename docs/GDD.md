@@ -136,7 +136,7 @@ on aggregate result standards only, with no individual names or results. Real at
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
   and commentary. See 4.3.1; it replaces the plan lap factors, the fixed decision points and the commentary above.
 
-### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3 player controls 2026-10-08, R5 balance 2026-10-09, R4 to come)
+### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3 player controls 2026-10-08, R5 balance 2026-10-09, meet formats 2026-10-09, R4 commentary, coach and race story 2026-10-09)
 
 Playtest (user, 2026-10-07): the order seems settled early, while real 800 m races are often one bunch with moves
 anywhere. Wanted: pack racing (staying together, drafting, being boxed in), rival moves at any point that can change the
@@ -298,6 +298,20 @@ change of place late is a fade, never a fight.
     above). Finals keep the R5 balance.
 34. **The time you need is shown before and during the race:** a line on the pre-race screen and a short line during
     the race; the result screen shows the overall places across the sections.
+
+**Decisions (user, 2026-10-09, step R4: commentary, coach and race story; built, see "Built (step R4)"):**
+35. **The commentary is a broadcast, not a log.** As on real athletics television: a commentator (*selostaja*) who calls
+    the race and an expert (*asiantuntija*, a former athlete or coach) who explains it, and between the calls talk that
+    is not about the race: the athletes, their season, the other meets coming up. "All the critical moves, but also
+    something else", so that the events feel lived through. (Research in "Built (step R4)".)
+36. **Key moments show as a small strip along the top edge of the track on PC** (about 2.5 s, only for the big moments:
+    a move, a kick, a fall, the bell, the finish); on a phone the ticker under the track does it (tap = the full log).
+37. **Coach personality is key: every coach is different** and tied to the coach the player has. Four personalities now
+    (the calm technician, the hard driver, the warm mentor, the race reader), each with his own words for the cards, the
+    splits he calls, the moments he sees, the verdict on a choice and the line in the Race story. The club coach of a
+    career is one of them (picked from the athlete's name); the Coaching step (later) lets the player choose and hire.
+38. **The commentator is calm with excitement in the big moments**, in the Finnish manner: sober (Yle) or colourful with
+    more detail (MTV, Timanttiliiga), set per meet in the data.
 
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
@@ -1037,6 +1051,117 @@ the realism audit is `docs/AUDIT.md`). `RaceDay` (`scripts/core/race_day.gd`), `
   the heat mix, easing or the indoor break), so the R5 targets stand; `training_balance -- 0` fingerprints identical.
 - **Noted, not changed:** every Nuorten SM field is 41 (the existing rule "everyone with the standard, at most 40
   rivals"); compare with real entry lists in step 7.
+
+**Built (step R4, 2026-10-09): commentary, the coach and the Race story** (decisions 35–38). Texts only in
+`data/race_commentary.json` and `data/coaches.json`; code in `RaceCommentary`, `RaceStory`, `Coaches`
+(`scripts/core/`), `CommentaryBox`, `CommentaryTicker`, `CommentaryLog`, `RaceStoryView` (`scripts/ui/`) and the race
+screen; help `race_before` v5, `race_running` v8, `race_result` v7.
+- **Research (honest, 2026-10-09).** Web search of Yle and MTV pages (no video or YouTube could be watched, so no
+  transcripts; the real commentators' words are not copied and the crews in the game are made up): Finnish athletics
+  broadcasts are always a commentator (*selostaja*) with an expert (*asiantuntija*), usually a former athlete or coach;
+  MTV Urheilu's Timanttiliiga has a commentator and an expert or coaching expert, and MTV's football coverage is
+  described in research as more colourful and fuller of athletes' histories than Yle's; Yle's own commentary sessions
+  are long (about five hours at a championship) and work from prepared notes about the athletes; a small meet has a
+  stadium announcer (*kuuluttaja*, SUL publishes a guide for them) who entertains the crowd and the athletes. In the game
+  this became: announcer alone at local / district meets, commentator + expert at national and international youth meets
+  (streamed) and at senior championships (TV); Yle style = sober, MTV style = colourful with more numbers and history.
+  Sources: yle.fi/a/74-20044407, yle.fi/a/3-5609479, mtvuutiset.fi (Roponen / Timanttiliiga, Saukkonen / Evilä),
+  yleisurheilu.fi "Kuuluttamisen opas" (2024), the BBC / NBC booth pairs (Cram / Backley with Johnson / Lewis; the 1988
+  Seoul call) as the general model.
+- **Data and schema.** `race_commentary.json`: `rules` (every number: gaps, caps, chances), `tiers` + `level_tier` +
+  `style_by_level` / `style_by_meet`, `crews`, `voices` (tags), `events.<type>` (lines per voice: tv / expert /
+  announcer, each a string or `{t, when}`; `weight`, `important`, `max`, `gates` (which events are worth a line),
+  `after_finish`, `banner` + `banner_when`, `story` + `story_weight`, `coach` = which coach line the event triggers, `fan`),
+  `you` (the player's choices and bar commands), `fan`, `fillers` (talk between the calls), `verdicts`, `story`. The
+  condition and placeholder vocabulary is in the file's `_note`. `coaches.json`: four coaches, see below.
+- **How a line is made** (`RaceCommentary`, reads the race only, own dice, so watched = unwatched: `commentary_check.gd`
+  compares results and events of the same race with and without it): every new engine event, plus events the commentary
+  makes itself, gets a context (the event's fields, the race: shape, indoor, round, chase, tier, style, the runner:
+  position, personality when known) and a variant is picked whose `when` holds and whose placeholders all have a value;
+  never one used earlier in the race (marked at queueing; a dropped line is freed), those among the last 30 lines of
+  earlier races only when nothing else fits. Exchanges: the lead voice, then the expert with chance 0.35. Rate rules:
+  2 s between cast exchanges (the commentator, expert, announcer, fans) unless the event is `important`; the coach has
+  his own channel (his `gap_s`), the "you" lines theirs (1 s; action-bar lines 10 s apart); a line waits at most 5 s
+  (9 s if important) and is then dropped; a pace call comes once per 200 m because the engine's pace event does.
+  Gates keep the pack's many small events quiet (a box, a cover, a contact is spoken about only for the player or the
+  front few; caps per race).
+- **What it points out** (the playtest's "couldn't follow by eye"): a rival's move is judged 7 s later (opened a gap /
+  caught / fading) and again at 18 s (still clear / caught); kicks, covers of a kick, a kick dying ("paying for it"),
+  who takes the lead; boxes and how they end (waited, eased and stepped out and what it cost, pushed through) for the
+  player and the front runners; heat runners easing off with the expert saying why; a later heat or section chasing the
+  time to beat (the commentator names the time, the expert says it shows in the pace); the winner is called as they cross
+  the line and close or photo finishes as the second one does (the engine's own come when the last runner is home).
+- **Talk between the calls** (`fillers`, from facts built at the start from the real field: the favourite and their best,
+  the player's club, age, best and season, the player's rank on season bests, a rival they have raced twice and how
+  they run, the next meet they have entered, the meet's description, the time needed, the coach's name and spot; plus
+  tips and some Finnish running history, MTV style also numbers and "this is how careers begin"): after 8 s and 12 s of
+  quiet, at most 1 / 4 / 5 a race (announcer / stream / TV). A filler is only chosen when all its facts exist.
+- **The coach** (`data/coaches.json`, decision 37). Calm technician (Marja Hakala), hard driver (Pekka Rautio), warm
+  mentor (Anneli Saarinen), race reader (Heikki Laine), all made up. Each has: `talk` (how often he speaks), `gap_s`,
+  `shouts` (the wording of every card answer, so the card's coach block reads in his voice; the engine's dice and his
+  accuracy 80 % are unchanged), `lines` (split calls: front / ok / back / hard by how the player looks; a rival's kick or
+  move; the player's kick, box, fall, losing contact, taking the lead; a good or bad verdict; the finish), and `story`
+  (one line per case). He speaks only about what he can see: `Race.coach_sees_at(d)`; outdoors from the 200 m start (the
+  diamond on the infield side of lane 1, drawn by the race view), so he calls the player's split at 200 and 600 m;
+  indoors from the infield (a diamond in the middle), so at 200, 400 and 600 (the 200 m lap makes it every lap, not "twice
+  a lap" as sketched). Rival events only when within 45 m of the player. The finish lines don't need his view (he runs to
+  the line). The club coach of a career: `Coaches.id_of(athlete)` = `Athlete.coach_id` (new field, saved, empty = the
+  club coach) or a hash of the name, so a career always has the same coach; the Coaching step sets `coach_id`.
+- **Verdicts** (`_verdict_score`): 10 s after a card is answered the commentary looks at what changed: places gained, metres
+  closed on the leader (4 m = a place), the Feeling word, and the card's own signs (the mover: close or growing, still
+  boxed, kick dying, the gap to the runner ahead after Dig in / Run your own pace, the break choice). At +1.5 or more it
+  is "good" ("You went with him and it's paying off"), at −1.5 or less "bad", else "flat" (said 4 times in 10). The
+  coach adds a good / bad line of his own when he can see the player.
+- **UI.** PC: the COMMENTARY box in the right column under the positions (fixed height 190 px, newest line on top, tags
+  COMMENTATOR / EXPERT / ANNOUNCER / COACH / YOU / FAN, the coach's lines in the accent colour, the crew's names in the
+  header, hidden while a card is open) and the banner, a strip along the top edge of the track for 2.5 s (a move, a kick, a
+  fall, the bell, the finish; it never sits over the lanes); phone: the ticker under the track (two lines, the newest line,
+  at least 44 px high) and a tap opens the whole log as a bottom sheet, the race waits while it is open. The pre-race field
+  has PB and SB columns (SB = this calendar year's best; a phone row shows "PB · SB") and, after racing a runner twice,
+  their style under or beside the name (Front runner, Pack runner, Kicker, Surger). The result screen starts with the
+  **Race story**: splits at 200 / 400 / 600 m and the finish with the place at each, you against the winner (against 2nd
+  place when you won), four to six key moments (the engine's events with a `story` line, weighted: yours count more, later
+  counts a little more, at most 2 of a kind, plus your verdicts as "You chose “Dig in”. ..."), and the coach's one line
+  from the first case that fits: dnf, dq, fell, won, kick died, boxed in long, faded (too fast when you led or were 2nd at
+  200 m), good kick, podium, better / as expected / below the day's ability ranking in the field (±1 place is "as expected").
+  Quick races get the Race story too (no verdicts).
+- **Engine changes** (recording only; every `race_shape` row and the `training_balance` fingerprints identical to before):
+  `Runner.marks` (time and place at 200 / 400 / 600), `Race.say_log` (the player's choices and commands),
+  `Race.coach_id`, `Race.coach_sees_at(d)`; `Athlete.coach_id`; the race screen no longer prints the engine's events or
+  shows `Race.commentary`'s old lines (the signal is still there for tools).
+- **Measured** (`tools/commentary_check.gd -- 50`: 50 watched races of six kinds, the four coaches in turn, cards answered
+  sensibly (every 4th race badly) and a few bar commands). Lines said per race (min / mean / max): stadium announcer
+  27 / 31 / 37, stream 44 / 54 / 69, TV 39 / 52 / 64. By voice per race (stream): commentator 24.7, expert 10.0, coach
+  7.3, "you" 10.8, fan 0.7; (announcer): announcer 13.3, coach 5.4, you 10.8. The coaches differ: lines per race calm 55 /
+  drill 104 / warm 80 / tactician 88 over the same number of races (his `talk`). Verdicts 173 (51 good, 41 bad, 81 flat,
+  of which 40 % are said). No line twice in a race (0 of 2446), exchanges at least 2 s apart unless important (0
+  breaches), no coach line about something he cannot see, every engine event type has lines in the data and every one
+  that happened got a line unless it was gated, capped, late (after the winner) or had nothing fitting (only quiet ones:
+  pack, covers, contacts, ...), the race is identical with and without the commentary, the same seed gives the same
+  broadcast, 0 of 257 checks failed. 90 of ~400 variants were never used in the 50 races: the rare events (falls, DNFs,
+  disqualifications, moves that got away) and conditioned variants. Most used: the contact / drop-off lines (26 times in
+  50 races: more variants for `dropped` would help), the flat verdicts.
+- **Checks run (2026-10-09):** `commentary_check` ALL PASSED; `race_shape.gd -- 100` all 8 rows **identical to the digit**
+  to the code before R4; `training_balance.gd -- 0` fingerprints identical; `race_check` ALL PASSED; `race_rounds` ALL
+  PASSED; `day_engine_check` ALL PASSED (the save now holds `coach_id`); `health_check` ALL PASSED; `help_check` 500
+  checks, 1 failed, which is old (fails the same on the code before R4: "day editor ?", spun off as its own task);
+  `layout_check` at all 5 sizes (1280x720, 720x1280, 390x844, 1000x900, 844x390): no OVERFLOW / SQUEEZED / WRONG, new
+  screenshots of the box + banner, the ticker, the log sheet, the pre-race field with SB and tags, the Race story; the tour
+  on PC and phone (103 screenshots each, looked at); `race_perf` PC indoor 4x: average 16.7–18.0 ms a frame, 2–4 single
+  frames over 33 ms per phase (as before R4), phone outdoor 4x: 16.7–17.0 ms, 0–1 over 33 ms per phase (measured with the
+  Godot editor open, the game itself closed).
+- **Not done / left:** a switch for how chatty the commentary is (the numbers are in `rules` and `max`); other
+  runners' coaches only as one fan shout; the coach's name only in the Race story and the filler; personalities of the rivals
+  are named by the commentary only after two races (a broadcast would know them: a design choice to revisit); more
+  variants for the rare events; the race ceremony (backlog) is separate; "Race details" (backlog) can grow out of the Race
+  story; Finnish text / translation (D27) is possible because every text is data.
+- **Small choices made without asking (change on request):** tiers by meet level (announcer / stream / TV) and the MTV
+  style for the international youth meets (Tampere Junior Indoor Games, Youth Athletics Games) and Yle for the rest (data
+  `style_by_level`); made-up crews (Jari Tolonen & Sanna Kallio for streams, Olli Vartiainen & Satu Rinne for Yle,
+  Jussi Tammela & Eero Salmi for MTV); the commentary talks about 30 lines a race for an announcer and 50 for a stream or
+  TV (including the player's own lines and the coach), tunable in `rules` / `max` / `gates`; "flat" verdicts 40 %; the
+  PC box shows about three lines at a time (the right column of a 1280x720 window has no more room; the box scrolls);
+  the coach's marker is a diamond with the word "Coach"; no volume / off switch for the commentary yet.
 
 ### 4.4 Season calendar (first version built)
 

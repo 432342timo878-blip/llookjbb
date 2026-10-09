@@ -325,9 +325,20 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		game.current_week()
 		game.race_day = load("res://scripts/core/race_day.gd").new(meet, game.athlete, game.rivals)
 		game.race_day._rng.seed = 4242
+		# Marks and met counts on a few of the field, so the pre-race list shows its SB column and style tags (R4).
+		var shown := 0
+		for e in game.race_day.current_entrants():
+			if not e.get("is_player", false) and shown < 4:
+				e.rival.pb = 138.0 + shown * 3.0
+				e.rival.sb = e.rival.pb + (1.5 if shown % 2 == 0 else 0.0)
+				e.rival.sb_season = meet.date.year if shown != 3 else 2020
+				e.rival.met = 2 + shown
+				shown += 1
 		router.go("race")
 		await _frames(8)
 		var screen: Control = main.get_node("ScreenHost").get_child(-1)
+		await _shot("%s_race_%s_pre" % [tag, place])
+		_check_overflow(screen, "%s_race_%s_pre" % [tag, place])
 		screen._start(true)
 		await _frames(3)
 		screen._running = false   # driven by hand below
@@ -335,10 +346,19 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		race.print_events = false
 		var t := "%s_race_%s" % [tag, place]
 		_drive(screen, race, func(): return race.player.d >= 330.0)
+		screen._drain_commentary()   # (the commentary box / ticker and the banner of the key moment, R4)
 		screen._refresh_running()
 		await _frames(3)
 		await _shot(t + "_bar")
 		_check_overflow(screen, t + "_bar")
+		_check_commentary(screen, t)
+		if Layout.compact:   # the phone's ticker opens the full log as a sheet (the race waits while it is open)
+			screen._open_log()
+			await _frames(4)
+			await _shot(t + "_log")
+			_check_overflow(screen, t + "_log")
+			screen._log.close()
+			await _frames(2)
 		await _pause_views(screen, race, t)
 		var kick: Button = screen._bar._buttons.kick
 		kick.pressed.emit()   # the first tap: "Tap again to kick"
@@ -389,6 +409,25 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 	game.current_week()
 	router.go("career_hub")
 	await _frames(6)
+
+
+## The broadcast (R4): lines were said, the box (PC) or the ticker (phone) shows them, and the banner (PC) sits on the track's top
+## edge and not over the middle of the lanes. Prints WRONG when something is missing.
+func _check_commentary(screen, label: String) -> void:
+	var said: int = screen._comm.lines.size()
+	print("  commentary (%s): %d lines said, crew %s%s" % [label, said, screen._comm.crew_text(), "" if said > 2 else "   <-- WRONG (almost silent)"])
+	if Layout.compact:
+		var ok: bool = screen._ticker.is_inside_tree() and screen._ticker.get_global_rect().size.y >= 44.0
+		print("  ticker (%s): %s, height %d%s" % [label, screen._ticker._label.text.left(40), screen._ticker.size.y, "" if ok else "   <-- WRONG"])
+	else:
+		var banner: Control = screen._banner
+		var track: Rect2 = screen._track_area.get_global_rect()
+		var inside: bool = banner.visible and track.encloses(banner.get_global_rect())
+		print("  banner (%s): %s, \"%s\"%s" % [label, "shown" if banner.visible else "not shown", screen._banner_label.text,
+				"" if (not banner.visible or inside) else "   <-- WRONG (outside the track area)"])
+		var scroll_h: float = screen._comment_box._scroll.size.y
+		var want: float = screen._comment_box.HEIGHT
+		print("  commentary box: scroll area %d px (fixed %d)%s" % [scroll_h, int(want), "" if absf(scroll_h - want) < 1.0 else "   <-- WRONG"])
 
 
 ## The decision card never covers the track (GDD 4.3.1 decision 26): PC = the card sits in the right column, phone = a
@@ -504,6 +543,8 @@ func _drive(screen, race, until: Callable) -> void:
 			screen._decision.visible = false
 			race.choose(race.pending.options[0].id)
 		race.step()
+		if screen._comm != null:
+			screen._comm.update()
 	if not race.pending.is_empty():
 		screen._decision.visible = false
 		race.choose(race.pending.options[0].id)

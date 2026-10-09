@@ -172,12 +172,18 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         `tools/race_value.gd` (what each answer is worth). A bad vs a good race now costs 0.3–0.9 % of the time ✓ (target
         0.5–1 %) but only 0.1–0.5 places; the R2 rows moved (table in the GDD) and the senior final is still too spread.
         **Left for R5:** places (the answers should be worth more places), the upsets at Δ 0.5, a decisive move.
-  - [ ] **R4. Commentary, coach and race story (UI + data):** `data/race_commentary.json` (variants, placeholders,
+  - [x] **R4. Commentary, coach and race story (UI + data):** `data/race_commentary.json` (variants, placeholders,
         tags, voices TV / coach / you), no repeats + rate rules, choice verdicts, the coach's spot by the track, PC box +
         banner, phone ticker + log sheet, the Race story on the result screen, personality tags and the SB column (backlog
         item) in the pre-race field. *(Sonnet, high)*
         Check: a tool plays 50 races and prints how often each line is used (no line twice in a race, no event without
         lines); tour + layout check; `help_check.gd`; look at the screenshots.
+        Done 2026-10-09 (GDD 4.3.1 "Built (step R4)", decisions 35–38): a real broadcast, not a log: stadium announcer at
+        small meets, commentator + expert at championships (Yle / MTV style by meet), talk about the field, the season and
+        the next meets between the calls; moves followed (got away / caught / faded), kicks dying, boxes, heat runners
+        easing off; four coach personalities (`data/coaches.json`) with their own words, splits called from his spot (drawn
+        on the track), verdicts 10 s after a card; Race story on the result screen; PB + SB columns and style tags in the
+        field. New `RaceCommentary`, `RaceStory`, `Coaches`, `data/race_commentary.json`, `tools/commentary_check.gd`.
   - [x] **R5. Balance & playtest:** all GDD 4.3.1 targets in one table before / after, watched races on PC and phone
         (indoor and outdoor, heats + final), fixes, docs + CLAUDE.md. Carried over from R2: the upsets at Δ 0.5 and a
         good vs bad race worth 0.5–1 % (with the player's cards / action bar in place).
@@ -260,7 +266,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 - **Track visuals (user, 2026-10-07):** the user is starting to dislike how the track looks in the main menu and in the races (the
   drawn stadium / hall track). Worth a look later: get reference images of real tracks first (CLAUDE.md: realism, no guessing), then
   redraw. Could go together with M3 (stadium view). *(Opus for the look, then Sonnet)*
-- **Season best (SB) in the race field (user, 2026-10-07):** the pre-race "THE FIELD" list on the race screen (`race_screen.gd`
+- **Season best (SB) in the race field (user, 2026-10-07; done in R4, 2026-10-09):** the pre-race "THE FIELD" list on the race screen (`race_screen.gd`
   `_show_pre`) shows only PB per runner; add an **SB** column next to it (this season's best, "–" when none). Rivals already carry
   `sb` / `sb_season` (Rankings, `Rivals.train_week`); the player's SB comes from `Rankings`. On a phone the row is tight (name + PB), so
   show PB and SB on one line or drop the club first. Small UI task. *(Sonnet, low)*

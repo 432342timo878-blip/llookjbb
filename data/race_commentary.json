@@ -1,0 +1,782 @@
+{
+ "_note": "The race commentary (GDD 4.3.1, step R4). Texts only: scripts/core/race_commentary.gd turns the race's events (Race.events), the player's choices (Race.say_log, Race.card_log) and the race state into lines. A line is a string or {t, when}. `when` is a set of conditions on the event's context: key: value (equal), key: [a, b] (one of), key: true / false, key_min / key_max (number at least / at most). Keys: shape (fast / honest / tactical), tier, style (yle / mtv), indoor, kind (race / sections / heat / semi / final), chase, player (the event is about the player), involves_player (the other runner is the player), known (the personality of the runner is known to the player: met twice), personality (front / pack / kicker / surger), mark, pos, leader, to_go, d, gap, vs_even, group, spread, way, where, seconds, lost, margin, place, pb, sb, late (to_go 200 or less), lap (1 / 2). Placeholders: {name} the runner's surname, {full}, {first}, {club}, {other} a second runner's surname, {to_go}, {m} metres run, {pos} place (3rd), {gap} metres behind the leader, {mark}, {split} (time at the mark), {vs} (percent faster / slower than the field's even pace), {group}, {spread}, {leader}, {time}, {margin}, {bell} (The bell / Halfway) and {bell_l}, {pname} the player's surname, {field}, {meet}, {round}, {coach_name}, plus the facts of fillers. A line is used at most once per race and the last `rules.memory` lines used are avoided across races. Voices: tv (the commentator, selostaja), expert (asiantuntija, a former athlete or coach: analysis, background), announcer (the stadium announcer of a small meet), you (the player's own choices), fan (another runner's supporter), coach (data/coaches.json). All names are made up. Style yle = sober and factual, mtv = colourful with more history. Who talks: tiers (by the meet's level, level_tier): announcer = the stadium announcer alone (local and district meets), stream = commentator + expert (national championships and international youth meets streamed), tv = commentator + expert (senior championships, TV).",
+ "rules": {
+  "gap_s": 2.0,
+  "stale_s": 5.0,
+  "stale_important_s": 9.0,
+  "memory": 30,
+  "expert_chance": 0.35,
+  "filler_after_s": 8.0,
+  "filler_gap_s": 12.0,
+  "filler_max": {"announcer": 1, "stream": 4, "tv": 5},
+  "verdict_after_s": 10.0,
+  "verdict_good": 1.5,
+  "verdict_flat_chance": 0.4,
+  "bar_gap_s": 10.0,
+  "banner_s": 2.5,
+  "coach_near_m": 45.0,
+  "coach_chance": {"split": 1.0, "rival_kick": 0.7, "rival_move": 0.6, "player_kick": 0.8, "boxed": 0.55, "fall": 1.0, "dropped": 0.7, "lead": 0.6, "finish": 1.0, "verdict": 0.65},
+  "fan_chance": 0.4,
+  "you_gap_s": 1.0,
+  "split_hard_feeling": 2,
+  "split_back_gap": 12.0,
+  "split_front_gap": 0.0,
+  "move_check_s": 7.0,
+  "move_final_s": 18.0,
+  "move_away_gap": 4.0,
+  "move_caught_gap": 1.5,
+  "move_fade_places": 2,
+  "box_story_s": 1.5,
+  "box_talk_s": 1.5
+ },
+ "tiers": {
+  "announcer": {"label": "Stadium announcer", "lead": "announcer", "expert": false},
+  "stream": {"label": "Livestream", "lead": "tv", "expert": true},
+  "tv": {"label": "Broadcast", "lead": "tv", "expert": true}
+ },
+ "level_tier": {"local": "announcer", "district": "announcer", "national": "stream", "international": "stream", "elite": "tv"},
+ "style_by_level": {"local": "yle", "district": "yle", "national": "yle", "international": "mtv", "elite": "yle"},
+ "style_by_meet": {},
+ "crews": {
+  "announcer": {"tv": "the stadium announcer", "expert": ""},
+  "stream": {"tv": "Jari Tolonen", "expert": "Sanna Kallio"},
+  "yle": {"tv": "Olli Vartiainen", "expert": "Satu Rinne"},
+  "mtv": {"tv": "Jussi Tammela", "expert": "Eero Salmi"}
+ },
+ "voices": {
+  "tv": {"label": "COMMENTATOR"},
+  "expert": {"label": "EXPERT"},
+  "announcer": {"label": "ANNOUNCER"},
+  "coach": {"label": "COACH"},
+  "you": {"label": "YOU"},
+  "fan": {"label": "FAN"}
+ },
+ "events": {
+  "start": {
+   "weight": 9, "important": true, "max": 1,
+   "tv": [
+    "And they're away! {field} runners, two laps, and every one of them with a plan.",
+    "The gun goes and the 800 metres is under way.",
+    "They're off at {meet}: the first stretch is run in lanes, so the real fight starts at the break.",
+    "Under way! The first bend comes quickly, and the positions are settled in the next hundred metres.",
+    {"t": "The gun! And what a stage for it: {meet}, {field} on the line.", "when": {"style": "mtv"}},
+    {"t": "Here we go! {field} runners, one lap of fuse and one lap of fire at {meet}.", "when": {"style": "mtv"}},
+    {"t": "In the hall they go: two bends in lanes before the break, and then it's elbows and tactics.", "when": {"indoor": true}}
+   ],
+   "expert": [
+    "The first part is run in lanes, so don't fight it. What matters is where they are when they cut to the rail.",
+    "Watch the break. Whoever gets the inside line cheaply has saved metres for later.",
+    "A good start isn't about being first. It's about being comfortable at the break.",
+    {"t": "In the hall you get two bends in lanes before the break. There's room to find your position.", "when": {"indoor": true}}
+   ],
+   "announcer": [
+    "And they're off in the 800 metres!",
+    "The gun has gone: two laps of the track.",
+    "Away they go in the 800 metres. Come on, everyone, cheer for your runners!"
+   ]
+  },
+  "break_leader": {
+   "weight": 5, "max": 1,
+   "tv": [
+    "{name} cuts in first and leads at the break.",
+    "At the break it's {name} in front.",
+    "{name} takes the rail and leads them into the back straight.",
+    "The field settles: {name} at the front, the rest in a string behind.",
+    {"t": "{pname} is the one setting the pace, leading at the break.", "when": {"player": true}},
+    {"t": "And the favourite {name} goes straight to the front.", "when": {"fav": true}},
+    {"t": "{name} grabs the rail and the lead! The tempo is on.", "when": {"style": "mtv"}}
+   ],
+   "expert": [
+    "Taking the lead this early is expensive. There's no one to run behind and no wind shelter.",
+    "It's a bold choice to lead from the break. You decide the pace, but you pay for it.",
+    {"t": "Taking the front yourself is a statement. {name} wants to run this race on their own terms.", "when": {"player": true}}
+   ],
+   "announcer": ["{name} leads at the break.", "{name} is in front as they come out of the first bend."],
+  },
+  "pace": {
+   "weight": 7, "max": 3,
+   "banner": "{bell} · {name} {split}", "banner_when": {"mark": 400},
+   "tv": [
+    {"t": "Through 200 in {split}, and that is quick. {name} is not hanging about.", "when": {"mark": 200, "vs_even_min": 2.5}},
+    {"t": "{split} at 200 metres. A hot start from {name}!", "when": {"mark": 200, "vs_even_min": 2.5}},
+    {"t": "{name} leads through 200 in {split}: they've gone out hard.", "when": {"mark": 200, "vs_even_min": 2.5}},
+    {"t": "200 gone: {split}. Someone is going to pay for that.", "when": {"mark": 200, "vs_even_min": 2.5}},
+    {"t": "{split} through 200, and that is a gentle opening. {name} leads, but nobody is in a hurry.", "when": {"mark": 200, "vs_even_max": -4.0}},
+    {"t": "A slow start: {split} at 200, the field bunched up behind {name}.", "when": {"mark": 200, "vs_even_max": -4.0}},
+    {"t": "{name} jogs through 200 in {split}. This will be about the last 300 metres.", "when": {"mark": 200, "vs_even_max": -4.0}},
+    {"t": "{split} at 200. Tactical, then: the real race is further on.", "when": {"mark": 200, "vs_even_max": -4.0}},
+    {"t": "200 metres: {split}, {name} in front.", "when": {"mark": 200}},
+    {"t": "{name} leads through 200 in {split}, an honest pace.", "when": {"mark": 200}},
+    {"t": "{split} at 200, and {name} is setting the tone for this race.", "when": {"mark": 200, "style": "mtv"}},
+    {"t": "{bell}: {split}! And {name} is the one everybody is chasing.", "when": {"mark": 400, "style": "mtv"}},
+    {"t": "{split} at 600. One bend between them and the answer.", "when": {"mark": 600, "style": "mtv"}},
+    {"t": "Through the first 200 in {split}. {name} on the rail.", "when": {"mark": 200}},
+    {"t": "{split} at 200 and {name} sets a steady tempo.", "when": {"mark": 200}},
+    {"t": "{bell}! {name} at {split}, and that is brisk. The second lap will hurt.", "when": {"mark": 400, "vs_even_min": 2.5}},
+    {"t": "{bell} in {split}. A quick first lap, and now we find out who can stand it.", "when": {"mark": 400, "vs_even_min": 2.5}},
+    {"t": "{split} at {bell_l}, {name} leading a string of runners who all feel it.", "when": {"mark": 400, "vs_even_min": 2.5}},
+    {"t": "{bell} in {split}: slow. Everyone has something left.", "when": {"mark": 400, "vs_even_max": -4.0}},
+    {"t": "{split} at {bell_l}. It's a tactical race, and the pack is right on top of {name}.", "when": {"mark": 400, "vs_even_max": -4.0}},
+    {"t": "A pedestrian {split} at {bell_l}. {name} leads, and the kick is going to be spectacular.", "when": {"mark": 400, "vs_even_max": -4.0}},
+    {"t": "{bell} in {split}. {name} leads, {group} runners within five metres.", "when": {"mark": 400}},
+    {"t": "{name} at {bell_l}: {split}. And now the race begins.", "when": {"mark": 400}},
+    {"t": "{split} through {bell_l}, {name} still in front.", "when": {"mark": 400}},
+    {"t": "{bell}, {split}. {name} controls it for now.", "when": {"mark": 400}},
+    {"t": "{split} at 600. {name} leads and the whole field is still in touch.", "when": {"mark": 600, "group_min": 6}},
+    {"t": "600 metres: {split}, {name} still in front with {group} runners right behind.", "when": {"mark": 600, "group_min": 4}},
+    {"t": "Through 600 in {split}: the field is stretched, {name} leads by a distance.", "when": {"mark": 600, "group_max": 2}},
+    {"t": "Into the last bend: {split} at 600, {name} in front.", "when": {"mark": 600}},
+    {"t": "{name} through 600 in {split}. One bend to go, and the home straight will decide it.", "when": {"mark": 600}},
+    {"t": "{split} at 600. This is where they'll start to go.", "when": {"mark": 600}}
+   ],
+   "expert": [
+    {"t": "That's {vs} percent faster than the field's even pace. You can't hold that for 800 unless you're far better than the rest.", "when": {"mark": 200, "vs_even_min": 2.5}},
+    {"t": "A fast opening favours the strong, aerobic runners. The kickers are going to have to wait and hope.", "when": {"mark": 200, "vs_even_min": 2.5}},
+    {"t": "A slow first lap favours the kickers, and it's dangerous for anyone who likes to run from the front.", "when": {"mark": 200, "vs_even_max": -4.0}},
+    {"t": "{vs} percent below the even pace. Everyone will be keeping something in the tank for the last 300.", "when": {"mark": 200, "vs_even_max": -4.0}},
+    {"t": "That's a sensible opening. An even pace takes you a long way in an 800.", "when": {"mark": 200}},
+    {"t": "Fast first laps usually end in a fade, but the question is who fades the least.", "when": {"mark": 400, "vs_even_min": 2.5}},
+    {"t": "They've saved a lot of energy. The last lap is going to be very quick.", "when": {"mark": 400, "vs_even_max": -4.0}},
+    {"t": "A slightly faster first lap is exactly what you want in an 800.", "when": {"mark": 400}},
+    {"t": "Positioning now. If you want to pass on the bend, you need to be moving.", "when": {"mark": 600}},
+    {"t": "The strong finishers will begin to show their hand any moment.", "when": {"mark": 600}}
+   ],
+   "announcer": [
+    {"t": "{bell}: {name} in front in {split}.", "when": {"mark": 400}},
+    {"t": "{name} leads through {bell_l} in {split}.", "when": {"mark": 400}},
+    {"t": "{name} still leads at {bell_l}. {split} on the clock.", "when": {"mark": 400}},
+    {"t": "Two hundred to go. Cheer them home!", "when": {"mark": 600}}
+   ],
+   "coach": "split"
+  },
+  "pack": {
+   "weight": 3, "max": 1,
+   "tv": [
+    {"t": "Still a tight bunch: {group} runners within five metres of {name}.", "when": {"group_min": 6}},
+    {"t": "They're all together. Nobody has really got away from anybody yet.", "when": {"group_min": 6}},
+    {"t": "{group} of them in a tight knot, and {spread} metres from first to last.", "when": {"group_min": 4, "spread_max": 20}},
+    {"t": "The field is stretched out now: {spread} metres from first to last.", "when": {"spread_min": 30}},
+    {"t": "A long string of runners behind {name}, {spread} metres from first to last.", "when": {"spread_min": 25}},
+    {"t": "Two groups forming: {group} up with {name}, the rest losing touch.", "when": {"group_max": 3, "spread_min": 14}}
+   ],
+   "expert": [
+    {"t": "In a bunch like that, you want to be on the outside of the pack, not boxed in on the rail.", "when": {"group_min": 6}},
+    {"t": "Careful in a bunch like this: one clipped heel and someone is on the ground.", "when": {"group_min": 6}},
+    {"t": "Once the field strings out like this, the tail has a hard job. You need a very big kick to come back.", "when": {"spread_min": 25}}
+   ],
+   "announcer": [{"t": "A tight bunch at the front.", "when": {"group_min": 6}}, {"t": "The field is spreading out.", "when": {"spread_min": 25}}]
+  },
+  "move": {
+   "weight": 8, "important": true, "max": 3,
+   "banner": "{name} makes a move · {to_go} m to go",
+   "tv": [
+    "{name} makes a move!",
+    "{name} goes! {to_go} to go, and they want to get away.",
+    "Here's {name}, pushing on with {to_go} still to run!",
+    "{name} pulls out and goes for it.",
+    "{name} surges! Can the others live with that?",
+    {"t": "{pname} makes a move! This is a brave one.", "when": {"player": true}},
+    {"t": "A surge from the pack's best: {name} takes off!", "when": {"pos_max": 2}},
+    {"t": "From the back of the pack {name} goes. That's a big gamble.", "when": {"pos_min": 5}},
+    {"t": "{name} accelerates, and the shape of the race changes.", "when": {"style": "mtv"}}
+   ],
+   "expert": [
+    {"t": "That's an early move. There's {to_go} metres of running left, and that is a long way.", "when": {"to_go_min": 400}},
+    {"t": "Right place to do it: the pace has dropped, and it can break the pack.", "when": {"to_go_min": 250, "to_go_max": 399}},
+    {"t": "A bold move. If it's too early, it's a very long way home.", "when": {"to_go_min": 300}},
+    {"t": "Everyone behind has to make a decision right now: go with it, or trust the legs.", "when": {"to_go_max": 299}},
+    "The question is how many of them can answer.",
+    "A move like that costs. We'll see if {name} has it in the legs."
+   ],
+   "announcer": ["{name} makes a move!", "{name} pushes on!"],
+   "coach": {"other": "rival_move"},
+   "fan": "fan_move",
+   "story": {"other": "{name} made a move with {to_go} m to go.", "player": "You made a move with {to_go} m to go."}, "story_weight": 6
+  },
+  "move_away": {
+   "weight": 7, "max": 2,
+   "tv": [
+    "{name} has opened a gap: {gap} metres. Is it enough?",
+    "{name} is getting away! {gap} metres clear now.",
+    "{name} is pulling clear, and the chasers are not closing.",
+    {"t": "{pname} is getting away! You can see the gap opening.", "when": {"player": true}},
+    "The move is working. {name} has a gap and holds it."
+   ],
+   "expert": [
+    "When the gap holds for this long, the others have probably left it too late.",
+    "That gap is hard to close on a bend: you can't make up ground there.",
+    "Now it's about {name}'s reserve. If there's anything left in the legs, this is the race."
+   ],
+   "announcer": ["{name} is pulling clear!"],
+   "story": {"other": "{name}'s move opened a gap of {gap} m.", "player": "Your move opened a gap of {gap} m."}, "story_weight": 5
+  },
+  "move_caught": {
+   "weight": 7, "max": 2,
+   "tv": [
+    "They've got {name} back. The move is over.",
+    "{name} is being pulled back by the pack.",
+    "That move has been shut down. {name} is swallowed up.",
+    {"t": "{pname} is caught. The move didn't hold.", "when": {"player": true}},
+    "The pack closes on {name}, and the gap is gone."
+   ],
+   "expert": [
+    "They went too early, and the pack was always going to come back.",
+    "The cover came in time. That's a lot of energy spent for nothing.",
+    "A move that doesn't stick costs twice: the effort and the position."
+   ],
+   "announcer": ["{name} has been caught."],
+   "story": {"other": "{name}'s move was shut down.", "player": "Your move was shut down."}, "story_weight": 5
+  },
+  "move_fading": {
+   "weight": 6, "max": 2,
+   "tv": [
+    "{name} is paying for that move, dropping back through the field.",
+    "The effort is telling on {name}, who is losing places.",
+    "{name} has nothing left now, and the others come past.",
+    {"t": "{pname} is struggling after that move. Places are slipping away.", "when": {"player": true}}
+   ],
+   "expert": [
+    "That's what a move too early looks like: a big effort followed by a long fade.",
+    "You can see it in the stride. The lactic is flooding in."
+   ],
+   "announcer": ["{name} is fading."],
+   "story": {"other": "{name} faded after the move.", "player": "You faded after your move."}, "story_weight": 5
+  },
+  "move_held": {
+   "weight": 6, "max": 1,
+   "tv": [
+    "And {name} is still out there! The move has held.",
+    "{name} has kept the gap. This is turning into a real break.",
+    {"t": "{pname} holds the gap. The move is working.", "when": {"player": true}}
+   ],
+   "expert": ["That's the sign of a strong runner. The gap stays, and the others look beaten."],
+   "announcer": ["{name} is still clear!"],
+   "story": {"other": "{name}'s move held.", "player": "Your move held."}, "story_weight": 5
+  },
+  "cover": {
+   "weight": 3, "max": 1,
+   "gates": [{"player": true}, {"pos_max": 3}],
+   "tv": [
+    "{name} goes with {other}.",
+    "{name} covers it, staying right on {other}'s shoulder.",
+    "Straight onto {other}'s back goes {name}.",
+    {"t": "{name} answers the kick of {other}.", "when": {"kick": true}},
+    {"t": "{pname} goes with {other}! Staying right there.", "when": {"player": true}}
+   ],
+   "expert": [
+    "That's the safe way to answer: sit on them, and let them do the work.",
+    "Good cover. Now they have to decide when to go themselves."
+   ],
+  },
+  "let_go": {
+   "weight": 2, "max": 1,
+   "gates": [{"player": true}, {"pos_max": 4}],
+   "tv": [
+    "{name} lets {other} go.",
+    "{name} stays put and lets {other} get away.",
+    {"t": "{pname} lets {other} go. A calm head, or a mistake?", "when": {"player": true}}
+   ],
+   "expert": ["Not everyone has to answer. Sometimes the right move is no move.", "That's a brave decision, to let a move go. It only works if the legs are there later."]
+  },
+  "dropped": {
+   "weight": 4, "max": 2,
+   "gates": [{"player": true}, {"pos_max": 4}],
+   "tv": [
+    "{name} has lost touch with the group.",
+    "{name} is coming off the back of the pack.",
+    "The gap is opening behind {other}, and {name} can't close it.",
+    {"t": "{pname} is losing contact! The group is moving away.", "when": {"player": true}}
+   ],
+   "expert": [
+    "Once the gap passes five metres, it takes a lot to come back.",
+    "That is the point where you must decide: hang on, or race your own race."
+   ],
+   "announcer": [{"t": "{name} has lost touch.", "when": {"pos_max": 5}}],
+   "coach": {"player": "dropped"}
+  },
+  "boxed": {
+   "weight": 4, "max": 2,
+   "gates": [{"player": true}, {"pos_max": 3, "to_go_max": 300}],
+   "tv": [
+    "{name} is boxed in on the rail!",
+    "Trouble for {name}, trapped behind the runner in front with another alongside.",
+    "No way out for {name} at the moment.",
+    {"t": "{pname} is boxed in! Stuck on the inside with nowhere to go.", "when": {"player": true}}
+   ],
+   "expert": [
+    "That's the danger of the rail. It's a good place to be until someone moves in front of you.",
+    "Patience now. The gap will come, but it has to come soon."
+   ],
+   "coach": {"player": "boxed"}
+  },
+  "escape": {
+   "weight": 4, "max": 2,
+   "gates": [{"player": true}, {"seconds_min": 2.5, "pos_max": 4}],
+   "tv": [
+    {"t": "{name} gets out of the box by easing and stepping outside. That's cost a few metres.", "when": {"way": "ease"}},
+    {"t": "{name} drops back and goes around, losing {lost} metres in the process.", "when": {"way": "ease", "lost_min": 2.0}},
+    {"t": "{name} shoves through the gap! That's brave.", "when": {"way": "push"}},
+    {"t": "{name} muscles out of the box.", "when": {"way": "push"}},
+    {"t": "A gap opens and {name} is out of the box after {seconds} seconds.", "when": {"way": "wait"}},
+    {"t": "{name} waited, and the gap came. Out of the box!", "when": {"way": "wait", "seconds_min": 1.5}},
+    {"t": "{pname} is out of the box!", "when": {"player": true}},
+    "{name} is free."
+   ],
+   "expert": [
+    {"t": "That's the cost of dropping back: a few metres, but you get a clear run.", "when": {"way": "ease"}},
+    {"t": "Pushing through is a risk. A bit of contact and the officials are watching.", "when": {"way": "push"}},
+    {"t": "Waiting is hard, but when it works, it's the cheapest way out.", "when": {"way": "wait"}}
+   ],
+   "story": {"other": "{name} was boxed in for {seconds} s.", "player": "You were boxed in for {seconds} s."}, "story_weight": 4
+  },
+  "gap_opens": {
+   "weight": 2, "max": 1,
+   "gates": [{"player": true}],
+   "tv": ["A gap opens up on the inside for {name}.", "There's some room at last for {name}."]
+  },
+  "contact": {
+   "weight": 4, "max": 1,
+   "gates": [{"player": true}, {"pos_max": 4}],
+   "tv": [
+    "Contact! {name} clips {other}, but they both stay on their feet.",
+    "A bump between {name} and {other}, and both go on.",
+    "Some pushing and shoving near the front: {name} and {other}."
+   ],
+   "expert": ["That's an 800: it's a contact sport in disguise.", "In a bunch like this, a bit of contact is almost inevitable."],
+   "coach": {"player": "boxed"}
+  },
+  "stumble": {
+   "weight": 5, "max": 2,
+   "gates": [{"player": true}, {"pos_max": 5}],
+   "tv": [
+    "{name} stumbles! They stay up, but that cost some metres.",
+    "A stumble for {name}, nearly down.",
+    {"t": "{pname} stumbles! Stays up, but that has cost a few metres.", "when": {"player": true}}
+   ],
+   "expert": ["That's the risk of running tight. One loose step and it's over."]
+  },
+  "fall": {
+   "after_finish": true,
+   "weight": 10, "important": true, "max": 2,
+   "banner": "{name} falls!",
+   "tv": [
+    "{name} is down!",
+    "A fall! {name} hits the track.",
+    "Oh no, {name} has gone down!",
+    {"t": "{pname} has fallen! It's {pname} down on the track!", "when": {"player": true}},
+    "{name} takes a tumble, and the field runs on."
+   ],
+   "expert": [
+    "That's a hard one. In a bunch like this, it only takes a clipped heel.",
+    "That is a terrible piece of luck.",
+    "The rest of the field will have to concentrate now."
+   ],
+   "announcer": ["{name} has fallen!", "A fall on the track, {name} is down."],
+   "coach": {"player": "fall"},
+   "story": {"other": "{name} fell at {m} m.", "player": "You fell at {m} m."}, "story_weight": 10
+  },
+  "brought_down": {
+   "after_finish": true,
+   "weight": 10, "important": true, "max": 1,
+   "banner": "{name} is brought down",
+   "tv": [
+    "{name} is brought down by the fall in front!",
+    "And {name} goes down too, tripping over the fallen runner!",
+    {"t": "{pname} is brought down! A terrible stroke of luck.", "when": {"player": true}}
+   ],
+   "expert": ["The runner behind has nowhere to go in a situation like that."],
+   "announcer": ["{name} is also down!"],
+   "coach": {"player": "fall"},
+   "story": {"other": "{name} was brought down at {m} m.", "player": "You were brought down at {m} m."}, "story_weight": 10
+  },
+  "dnf": {
+   "after_finish": true,
+   "weight": 8, "max": 1,
+   "tv": [
+    "{name} stops. That race is over for them.",
+    "{name} does not finish, pulling off the track.",
+    {"t": "{pname} cannot go on. Their race is over.", "when": {"player": true}}
+   ],
+   "announcer": ["{name} has dropped out."]
+  },
+  "dq": {
+   "after_finish": true,
+   "weight": 8, "important": true, "max": 1,
+   "tv": [
+    "{name} has been disqualified for obstruction.",
+    "The officials have flagged {name}: disqualified.",
+    {"t": "{pname} is disqualified! The officials saw the push.", "when": {"player": true}}
+   ],
+   "expert": ["You can't shove a runner out of the way. The rule is clear, and the officials are watching."]
+  },
+  "spiked": {
+   "after_finish": true,
+   "weight": 4, "max": 1,
+   "tv": ["{name} is spiked by {other}'s shoe, and limps on.", "A spike catches {name} on the heel."]
+  },
+  "lead_change": {
+   "weight": 6, "max": 2,
+   "tv": [
+    "{name} takes over at the front from {other}.",
+    "New leader! {name} goes to the front.",
+    "{name} swings past {other} to lead the race.",
+    {"t": "{pname} takes the lead!", "when": {"player": true}},
+    {"t": "The lead has changed, and {name} is in control now.", "when": {"style": "mtv"}}
+   ],
+   "expert": [
+    "A change of lead, and it will be interesting to see how the pace changes.",
+    {"t": "Leading is a lot of work. {name} had better have the legs for it.", "when": {"late": false}}
+   ],
+   "announcer": ["{name} takes the lead!"],
+   "coach": {"player": "lead"},
+   "fan": "fan_lead"
+  },
+  "kick": {
+   "weight": 9, "important": true, "max": 5,
+   "gates": [{"player": true}, {"pos_max": 4}],
+   "banner": "{name} kicks · {to_go} m to go",
+   "tv": [
+    {"t": "{name} kicks! {to_go} to go, and that's a long way out!", "when": {"to_go_min": 300}},
+    {"t": "{name} goes from {to_go} out. That's a brave one.", "when": {"to_go_min": 300}},
+    {"t": "{name} goes very early, with {to_go} still to run!", "when": {"to_go_min": 300}},
+    {"t": "A surprise: {name} starts the sprint with {to_go} to go.", "when": {"to_go_min": 300}},
+    {"t": "{name} takes off from {to_go} out, and nobody expected that.", "when": {"to_go_min": 300}},
+    {"t": "{name} kicks, and with {to_go} to go it's either brilliant or brave.", "when": {"to_go_min": 300}},
+    {"t": "{name} kicks with {to_go} to go!", "when": {"to_go_min": 200, "to_go_max": 299}},
+    {"t": "Here goes {name}, {to_go} out, and the sprint is on!", "when": {"to_go_min": 200, "to_go_max": 299}},
+    {"t": "{name} goes now, with {to_go} to run, and the pack has to respond.", "when": {"to_go_min": 200, "to_go_max": 299}},
+    {"t": "And {name} opens up with {to_go} to go.", "when": {"to_go_min": 200, "to_go_max": 299}},
+    {"t": "{name} makes the long run for home.", "when": {"to_go_min": 200, "to_go_max": 299}},
+    {"t": "{to_go} to go, and {name} kicks!", "when": {"to_go_min": 200, "to_go_max": 299}},
+    {"t": "{name} kicks for home!", "when": {"to_go_max": 199}},
+    {"t": "{name} unleashes the finish with {to_go} to go!", "when": {"to_go_max": 199}},
+    {"t": "Now {name} goes for it, {to_go} metres left!", "when": {"to_go_max": 199}},
+    {"t": "{name} finds another gear with {to_go} to go.", "when": {"to_go_max": 199}},
+    {"t": "Down towards the home straight comes {name}!", "when": {"to_go_max": 130}},
+    {"t": "{name} sprints, and the order is changing.", "when": {"to_go_max": 199}},
+    {"t": "{name} answers {other}'s kick!", "when": {"answer": true}},
+    {"t": "And {other}'s kick is answered by {name}.", "when": {"answer": true}},
+    {"t": "{name} won't let {other} get away: they go together.", "when": {"answer": true}},
+    {"t": "{pname} kicks! This is the moment!", "when": {"player": true}},
+    {"t": "Here comes {pname}!", "when": {"player": true, "to_go_max": 220}},
+    {"t": "{pname} opens up. Can the legs carry it?", "when": {"player": true}},
+    {"t": "{name} goes now: {to_go} to go, and the whole field is under pressure.", "when": {"style": "mtv", "to_go_max": 250}},
+    {"t": "Explosion from {name}! {to_go} to go!", "when": {"style": "mtv"}},
+    "{name} kicks!",
+    "{name} goes!",
+    "{name} makes the break for home."
+   ],
+   "expert": [
+    {"t": "That's early. From {to_go} out, it's a very long kick and a lot of metres to hold it.", "when": {"to_go_min": 300}},
+    {"t": "A long kick like that will leave nothing for the finish.", "when": {"to_go_min": 250}},
+    {"t": "That's about the right place to go. Now you hold and hope.", "when": {"to_go_min": 150, "to_go_max": 260}},
+    {"t": "The finish is on. The next 100 will tell who has anything left.", "when": {"to_go_max": 160}},
+    {"t": "They've answered. That's a kicking battle now.", "when": {"answer": true}},
+    {"t": "{name} is known as a {tag}, so this was expected.", "when": {"known": true}}
+   ],
+   "announcer": [
+    {"t": "{name} kicks with {to_go} to go!", "when": {"pos_max": 3}},
+    "Here comes the finish!",
+    "{name} goes for it!"
+   ],
+   "coach": {"other": "rival_kick", "player": "player_kick"},
+   "fan": "fan_kick",
+   "story": {"other": "{name} kicked with {to_go} m to go.", "player": "You kicked with {to_go} m to go."}, "story_weight": 7
+  },
+  "kick_dying": {
+   "weight": 8, "important": true, "max": 3,
+   "tv": [
+    "{name} is dying! The kick has gone too early.",
+    "{name} has gone too soon, and the legs are tying up.",
+    "{name} is paying for that kick, and the others are closing.",
+    {"t": "{pname} is tying up! Too early, and now the legs are gone.", "when": {"player": true}},
+    "The kick is fading and {name} is going backwards."
+   ],
+   "expert": [
+    "That's the price of going from {to_go} out. The last 50 are always the longest.",
+    "Look at the stride: it has shortened. The energy is gone.",
+    "A long kick is a gamble, and this time it didn't pay."
+   ],
+   "announcer": ["{name} is tying up!"],
+   "coach": {"player": "bad"},
+   "story": {"other": "{name}'s kick died with {to_go} m to go.", "player": "Your kick died with {to_go} m to go."}, "story_weight": 8
+  },
+  "ease": {
+   "weight": 3, "max": 2,
+   "tv": [
+    {"t": "{name} eases off: safely through, no need to push on.", "when": {"heat": true}},
+    {"t": "{name} is already looking round and easing up. The place is safe.", "when": {"heat": true}},
+    {"t": "{name} shuts down with a clear run to the line. That's one for the final.", "when": {"heat": true}},
+    {"t": "{pname} sees it's safe and eases off.", "when": {"player": true, "heat": true}}
+   ],
+   "expert": [
+    {"t": "That's smart. Save the legs for the next round, because the place is safe.", "when": {"heat": true}},
+    {"t": "Easing in the last 50 saves a bit of energy, and you can see how much they need to hold it.", "when": {"heat": true}},
+    {"t": "Nobody wins a heat for its own sake. The athletes thinking about the final will stay in control.", "when": {"heat": true}}
+   ],
+   "story": {"other": "{name} eased off, safely through.", "player": "You eased off, safely through."}, "story_weight": 3
+  },
+  "close_finish": {
+   "after_finish": true,
+   "weight": 8, "important": true, "max": 1,
+   "banner": "Close finish",
+   "tv": [
+    "A close one, {name} and {other} separated by {margin} seconds!",
+    "What a finish! {margin} seconds between {name} and {other}."
+   ],
+   "expert": ["Those are the finishes that stay with you. Barely a stride between them."],
+   "announcer": ["A tight finish, {margin} seconds between the runners."],
+   "story": {"other": "A close finish: {margin} s between places {place} and {place_next}.", "player": "A close finish: {margin} s between places {place} and {place_next}."}, "story_weight": 6
+  },
+  "photo_finish": {
+   "after_finish": true,
+   "weight": 9, "important": true, "max": 1,
+   "banner": "Photo finish!",
+   "tv": [
+    "A photo finish! Nobody can tell who has won this.",
+    "Photo finish! {name} and {other} cross together!",
+    "It's too close to call, a photo finish between {name} and {other}."
+   ],
+   "expert": ["That's as close as it gets. A hundredth either way."],
+   "announcer": ["A photo finish! Wait for the result."],
+   "story": {"other": "A photo finish between places {place} and {place_next}: {margin} s.", "player": "A photo finish between places {place} and {place_next}: {margin} s."}, "story_weight": 9
+  },
+  "finish": {
+   "after_finish": true,
+   "weight": 10, "important": true, "max": 1,
+   "banner": "{name} wins · {time}",
+   "tv": [
+    "{name} wins it in {time}!",
+    "And it's {name} first across the line in {time}.",
+    "{name} takes the victory, {time} on the clock.",
+    {"t": "{pname} wins! {pname} wins it in {time}!", "when": {"player": true}},
+    {"t": "A personal best for {name}, who wins in {time}!", "when": {"pb": true}},
+    {"t": "A season best for {name}, winning in {time}.", "when": {"sb": true, "pb": false}},
+    {"t": "A win for {name} in {time}. What a performance!", "when": {"style": "mtv"}}
+   ],
+   "expert": [
+    "A well-run race from start to finish.",
+    {"t": "{name} timed the finish to perfection.", "when": {"late": true}},
+    {"t": "A win like that comes from patience in the first lap and nerve in the second.", "when": {"shape": ["tactical", "honest"]}},
+    {"t": "A fast race from the gun, and the strongest legs won out in the end.", "when": {"shape": "fast"}}
+   ],
+   "announcer": [
+    "{name} wins in {time}!",
+    "The winner is {name}, in {time}. A round of applause, please!",
+    {"t": "{pname} wins! Come on, give it up for {pname}!", "when": {"player": true}}
+   ],
+   "coach": {"player": "finish"}
+  },
+  "player_finish": {
+   "after_finish": true,
+   "weight": 8, "important": true, "max": 1,
+   "tv": [
+    "{pname} crosses the line in {place}, {time}.",
+    "{pname} finishes {place} in {time}.",
+    {"t": "{pname} comes home {place} in {time}, and that's a personal best!", "when": {"pb": true}},
+    {"t": "{pname} finishes {place} with a season best of {time}.", "when": {"sb": true, "pb": false}},
+    {"t": "{pname} fought all the way to the line, {place} in {time}.", "when": {"place_min": 4}},
+    {"t": "A podium for {pname}: {place} in {time}!", "when": {"place_max": 3}}
+   ],
+   "expert": [
+    {"t": "A personal best is the thing that counts at this age. That's progress.", "when": {"pb": true}},
+    {"t": "That's a good run, and there's more in there for the next one.", "when": {"place_min": 2}},
+    {"t": "You can see it was a hard race. The legs always know.", "when": {"place_min": 4}}
+   ],
+   "announcer": [
+    "{pname} finishes {place} in {time}.",
+    {"t": "A personal best for {pname}! Well done!", "when": {"pb": true}}
+   ],
+   "coach": {"player": "finish"}
+  }
+ },
+ "you": {
+  "break.lead": ["You go to the front.", "You take the rail and lead.", "You're out in front and nobody is going with you."],
+  "break.shoulder": ["You settle on the leader's shoulder.", "You tuck in just behind the front and wait.", "You sit in second or third and stay covered."],
+  "break.back": ["You tuck in at the back of the field.", "You stay at the back and save your legs.", "You slot in last and let the field go."],
+  "bell.push": ["You push on down the back straight.", "You lift the pace for the second lap.", "You open the legs and go."],
+  "bell.ease": ["You ease off and save something for the finish.", "You back off a touch, keeping it for the last 200.", "You let the pace settle."],
+  "move.go": ["You go with the move!", "You pull out and stay with them.", "You answer straight away."],
+  "move.wait": ["You let them go and stay patient.", "You stay put and keep your own rhythm.", "You trust your own kick and let them go."],
+  "move.counter": ["You hit back!", "You counter, taking it to them.", "You answer with a move of your own!"],
+  "box.ease": ["You ease and step out.", "You drop back a stride and go round.", "You step out to the side for space."],
+  "box.push": ["You push through!", "You squeeze for the gap.", "You shove through the gap."],
+  "dropped.dig": ["You dig in and hold on!", "You find something extra and close the gap.", "You grit your teeth and hang on."],
+  "dropped.own": ["You settle into your own pace.", "You let them go and run your own race.", "You stop chasing and keep your rhythm."],
+  "slow.lead": ["You take over at the front.", "You see the slow pace and take it up yourself.", "You go to the front and lift the tempo."],
+  "fall.chase": ["You scramble up and give chase!", "You're up and running again, hard.", "You get up and go after them!"],
+  "fall.steady": ["You get up and carry on steadily.", "You shake it off and finish calmly.", "You get to your feet and keep going."],
+  "kick.now": ["You kick with {to_go} m to go!", "You go now, {to_go} m to go!", "This is it: {to_go} to go, and you open up."],
+  "straight.wide": ["You swing wide into lane 2 and go for it!", "You go wide on the straight to find clear air."],
+  "straight.gap": ["A gap opens on the inside!", "The gap you were hoping for opens up."],
+  "straight.boxed": ["No gap... you're boxed in.", "There is no way through on the inside."],
+  "bar.push": ["You push on.", "You lift the pace."],
+  "bar.hold": ["You settle.", "You hold the rhythm."],
+  "bar.ease": ["You ease off.", "You relax the pace a touch."],
+  "bar.move_out": ["You move out to find space.", "You swing out to the side for room."],
+  "bar.kick": ["You kick with {to_go} m to go!", "You go! {to_go} m to go!"]
+ },
+ "fan": {
+  "fan_move": ["Go, {first}!", "Come on {first}, stay with it!", "{first}, keep going!"],
+  "fan_lead": ["Go on {first}!", "Keep it up, {first}!", "Hold on, {first}, hold on!"],
+  "fan_kick": ["{first}, kick! Kick!", "Now, {first}! Now!", "Come on, {first}!"]
+ },
+ "fillers": [
+  {"id": "fav", "voice": "tv", "weight": 5, "t": "The favourite today is {fav_full} of {fav_club}, who comes in with {fav_mark_text}.",
+   "reply": "{fav} is the one everyone will be watching. The question is whether they have to carry the race."},
+  {"id": "fav_style", "voice": "expert", "weight": 4, "when": {"after_mark_min": 200}, "t": "{fav} likes {fav_style_text}. Keep an eye on that.", "needs": ["fav_style_text"]},
+  {"id": "player_intro", "voice": "tv", "weight": 6, "when": {"p_has_mark": true}, "t": "In the colours of {pclub}, {pfull}, {page} years old, with {ppb_text}.",
+   "reply": "A runner who has been moving in the right direction. Today shows how far."},
+  {"id": "player_nomark", "voice": "tv", "weight": 6, "when": {"p_has_mark": false}, "t": "Running for {pclub} is {pfull}, {page} years old, and without a recorded time yet.",
+   "reply": "Races without a mark are the most fun. No expectations, just a first benchmark."},
+  {"id": "season_no", "voice": "tv", "weight": 3, "t": "It's the {p_race_no} 800 of the season for {pname}.", "needs": ["p_race_no"]},
+  {"id": "sb_rank", "voice": "expert", "weight": 3, "t": "On season bests, {pname} comes in ranked {p_sb_rank} in this field.", "needs": ["p_sb_rank"]},
+  {"id": "tagged", "voice": "tv", "weight": 5, "t": "{pname} has raced {tagged} {tagged_met} now. {tagged} is known as a {tagged_tag}.", "needs": ["tagged"],
+   "reply": "Knowing how a rival runs is half of the tactics."},
+  {"id": "next_meet", "voice": "tv", "weight": 4, "t": "Next on the calendar for {pname} is {next_meet}, {next_in} away.", "needs": ["next_meet"],
+   "reply": "Races like this are building blocks. What happens today feeds into the next one."},
+  {"id": "meet_desc", "voice": "tv", "weight": 3, "t": "{meet}: {meet_desc}", "needs": ["meet_desc"]},
+  {"id": "targets", "voice": "tv", "weight": 6, "when": {"kind": ["sections"]}, "t": "The time to beat for a medal is around {target_medal}, and {target_top8} gets you into the top eight.", "needs": ["target_medal", "target_top8"]},
+  {"id": "targets_medal", "voice": "tv", "weight": 5, "when": {"kind": ["sections"]}, "t": "Going by the times so far, a medal takes around {target_medal}.", "needs": ["target_medal"]},
+  {"id": "cutoff", "voice": "tv", "weight": 6, "when": {"kind": ["heat", "semi"]}, "t": "The slowest time that would put a runner through on time so far is {target_cutoff}.", "needs": ["target_cutoff"],
+   "reply": "Everyone in this heat who isn't a favourite for a top place knows that number."},
+  {"id": "chase", "voice": "expert", "weight": 7, "when": {"chase": true, "after_mark_min": 200}, "t": "This is a later heat, so the runners know what is needed: {target_cutoff}. You can see it in the pace.", "needs": ["target_cutoff"]},
+  {"id": "chase_sec", "voice": "expert", "weight": 7, "when": {"chase": true, "kind": ["sections"], "after_mark_min": 200}, "t": "The earlier sections have set a standard: {target_medal} for a medal. This section is going after it.", "needs": ["target_medal"]},
+  {"id": "tip_two_halves", "voice": "expert", "weight": 2, "t": "The 800 is the cruellest event in athletics. Go too fast and you die; go too slow and you never catch up."},
+  {"id": "tip_first_lap", "voice": "expert", "weight": 2, "when": {"lap": 1}, "t": "Most winners run the first lap a second or two faster than the second, if you compare the times. Even here, you can see why."},
+  {"id": "tip_draft", "voice": "expert", "weight": 2, "t": "Drafting matters. Running right behind someone saves you something like six percent of your energy."},
+  {"id": "tip_box", "voice": "expert", "weight": 2, "t": "The runner on the inside of the pack can be boxed in. A gap always opens, but you have to be ready for it."},
+  {"id": "tip_relax", "voice": "expert", "weight": 2, "when": {"lap": 2}, "t": "In the last 100 metres it's less about legs and more about who can stay relaxed."},
+  {"id": "tip_bank", "voice": "expert", "weight": 2, "t": "Think of the reserve as a bank account. Every surge is a withdrawal, and the interest is charged on the home straight."},
+  {"id": "tip_bend", "voice": "expert", "weight": 2, "when": {"indoor": false}, "t": "Watch the bends. Running wide round a bend costs real metres, a stride or two per corner."},
+  {"id": "tip_hall", "voice": "expert", "weight": 3, "when": {"indoor": true}, "t": "In the hall the bends are tight, so passing is hard. Position before the bend is everything."},
+  {"id": "tip_tactical", "voice": "expert", "weight": 5, "when": {"shape": "tactical", "after_mark_min": 200}, "t": "A slow pace like this gives the kickers an edge. The strong finishers must be licking their lips."},
+  {"id": "tip_fast", "voice": "expert", "weight": 5, "when": {"shape": "fast", "after_mark_min": 200}, "t": "A fast pace from the gun helps the strong, aerobic runners and punishes the sprinters."},
+  {"id": "tip_age", "voice": "expert", "weight": 2, "t": "At this age, races are decided as much by growth and training age as by talent. A runner can jump a second in a single season."},
+  {"id": "tip_engine", "voice": "expert", "weight": 2, "t": "A good 800 runner needs both: the aerobic engine of a miler and the speed of a sprinter. That's what makes it so hard."},
+  {"id": "mtv_numbers", "voice": "tv", "weight": 5, "when": {"style": "mtv"}, "t": "{fav_full} brings {fav_mark_text} into this race. On paper, that is the number to beat.", "needs": ["fav_full"]},
+  {"id": "mtv_nerve", "voice": "expert", "weight": 4, "when": {"style": "mtv"}, "t": "The numbers tell you who has run fast. They never tell you who has the nerve at 600 metres."},
+  {"id": "mtv_story", "voice": "tv", "weight": 5, "when": {"style": "mtv"}, "t": "{pfull}, {page} years old, running for {pclub}. This is how careers begin.", "needs": ["pclub", "page"]},
+  {"id": "tip_nurmi", "voice": "tv", "weight": 1, "when": {"style": "mtv"}, "t": "Finland has a long distance-running tradition, going back to the days of Paavo Nurmi. The 800 has had fewer headlines, but plenty of quality.",
+   "reply": "The best runners here come from small clubs and long winters. That says something about the sport."},
+  {"id": "coach_out", "voice": "tv", "weight": 4, "when": {"indoor": false}, "t": "At the 200 metre start, {coach_name}, the coach of {pname}, is watching every stride.",
+   "reply": "A coach on the infield sees things the athlete doesn't. The shouts carry further than you'd think."},
+  {"id": "coach_in", "voice": "tv", "weight": 4, "when": {"indoor": true}, "t": "On the infield, {coach_name}, the coach of {pname}, follows every lap.",
+   "reply": "Indoors the coach can see the whole track, so every lap gets a comment."},
+  {"id": "crowd", "voice": "tv", "weight": 1, "t": "The stands are following every runner round the track."},
+  {"id": "a_club", "voice": "announcer", "weight": 5, "t": "Runners from {field_clubs} clubs on the track today. Make some noise for your own!", "needs": ["field_clubs"]},
+  {"id": "a_player", "voice": "announcer", "weight": 5, "t": "And in the colours of {pclub}, {pfull}!"},
+  {"id": "a_meet", "voice": "announcer", "weight": 3, "t": "Welcome to {meet}. The 800 metres is under way."}
+ ],
+ "verdicts": {
+  "any": {
+   "good": ["That's working out well: you've gained {dpos} places.", "That choice is paying off.", "That looks like the right call."],
+   "bad": ["That hasn't worked out. You've lost {dpos} places.", "That choice is costing you.", "That one hasn't paid off."],
+   "flat": ["It's too early to tell how that choice is working out.", "Nothing much has changed since that choice.", "That choice hasn't made much difference yet.", "So far that choice has changed very little."]
+  },
+  "move": {
+   "go": {
+    "good": ["You went with him and it's paying off: you're right there.", "Going with the move is paying off. You're on {name}'s shoulder.", "You stayed with the move and gained places. It's working."],
+    "bad": ["Going with the move has cost you: you're feeling it now.", "You went with it and the legs are paying for it.", "Staying with the move has used a lot of your reserve."]
+   },
+   "wait": {
+    "good": ["Waiting has paid off: {name} is coming back.", "Letting them go was right. The gap is shrinking.", "Patience is paying off. {name} is tiring."],
+    "bad": ["Letting them go has cost you: the gap is opening.", "Waiting hasn't worked, and {name} is getting away.", "The gap to the mover is growing. Maybe you waited too long."]
+   },
+   "counter": {
+    "good": ["The counter-attack worked: you've gained {dpos} places.", "You hit back and it's working."],
+    "bad": ["The counter-attack has cost you a lot of energy.", "Hitting back hasn't paid off, and you're paying for it."]
+   }
+  },
+  "box": {
+   "wait": {
+    "good": ["Waiting was right: you're free and nothing is lost.", "The gap opened and you were patient."],
+    "bad": ["You're still stuck. Waiting has cost you time.", "Still boxed in. The wait has cost places."]
+   },
+   "ease": {
+    "good": ["Easing out has worked: you're in the clear.", "You stepped out and found space."],
+    "bad": ["Easing out cost more than you hoped.", "You dropped back and lost places."]
+   },
+   "push": {
+    "good": ["Pushing through has paid off: you've gained {dpos} places.", "You got through the gap and it's working."],
+    "bad": ["Pushing through has cost you.", "That shove hasn't paid off."]
+   }
+  },
+  "bell": {
+   "push": {
+    "good": ["The push has worked: you're closer to the front.", "Lifting the pace on the second lap is paying off."],
+    "bad": ["The push is costing you: you're hurting.", "Pushing on has used up too much."]
+   },
+   "hold": {
+    "good": ["Holding steady is working out.", "You kept your place and your composure."],
+    "bad": ["Holding your place hasn't worked: you're slipping back."]
+   },
+   "ease": {
+    "good": ["Easing off has saved something. You feel fresh.", "The easy lap is paying off."],
+    "bad": ["Easing off has cost you places.", "You gave away too much by easing."]
+   }
+  },
+  "kick": {
+   "now": {
+    "good": ["The kick is working: you're closing on them.", "You kicked and you're gaining places."],
+    "bad": ["The kick is dying. You went too early.", "It was too far out, and it's costing you."]
+   },
+   "wait": {
+    "good": ["Waiting for the straight is paying off.", "Your patience is paying off."],
+    "bad": ["Waiting has cost you places.", "You left it too late."]
+   }
+  },
+  "dropped": {
+   "dig": {
+    "good": ["Digging in has worked: you're back with them.", "You closed the gap."],
+    "bad": ["Digging in has cost you a lot, and the gap is still there.", "It's costing a lot and you're still behind."]
+   },
+   "own": {
+    "good": ["Running your own pace is paying off.", "The gap isn't growing and you still have something."],
+    "bad": ["The gap is growing. Letting them go has cost you.", "You've lost contact now."]
+   }
+  },
+  "slow": {
+   "lead": {
+    "good": ["Taking the lead is working: you set the pace.", "You took charge and it's paying off."],
+    "bad": ["Taking the lead has cost you energy and the others are close.", "Leading is hard work and it shows."]
+   },
+   "stay": {
+    "good": ["Staying put has saved your legs.", "Staying in the pack is paying off."],
+    "bad": ["Staying put has cost you: you've lost places.", "You waited and the field went by."]
+   }
+  },
+  "fall": {
+   "chase": {
+    "good": ["Chasing is working: you're closing on them.", "You've closed the gap after the fall."],
+    "bad": ["The chase is costing you a lot.", "You're burning energy and not catching them."]
+   },
+   "steady": {
+    "good": ["Finishing steady is working: you're moving up again.", "Steady running is paying off."],
+    "bad": ["The gap hasn't closed, and you've let go of this race."]
+   }
+  },
+  "break": {
+   "lead": {"good": ["Leading from the front is working.", "You set the pace and you're comfortable."], "bad": ["Leading has cost you energy.", "Nobody is helping you at the front."]},
+   "shoulder": {"good": ["Sitting on the shoulder is working.", "You're in a good place."], "bad": ["The shoulder spot has been crowded.", "You've been pushed back from the front."]},
+   "back": {"good": ["Waiting at the back has saved your legs.", "The back of the pack is working out."], "bad": ["The back of the pack has left you with work to do.", "You're a long way back."]}
+  },
+  "straight": {
+   "wide": {"good": ["Going wide was right: you've gained places.", "The wide line is working."], "bad": ["The wide line has cost you metres.", "Going wide hasn't paid off."]},
+   "inside": {"good": ["The inside gap paid off.", "Waiting for the gap worked out."], "bad": ["No gap came on the inside. That cost places.", "Waiting inside has cost you."]}
+  }
+ },
+ "story": {
+  "title": "RACE STORY",
+  "splits_head": ["", "YOU", "WINNER"],
+  "marks": {"200": "200 m", "400": "400 m", "600": "600 m", "800": "Finish"},
+  "no_winner_split": "–",
+  "at": "{m} m",
+  "coach_head": "COACH",
+  "moments_head": "KEY MOMENTS",
+  "empty": "A quiet race: nothing out of the ordinary happened.",
+  "max_moments": 6, "min_moments": 4,
+  "per_type": 2,
+  "expected_band": 1
+ }
+}
