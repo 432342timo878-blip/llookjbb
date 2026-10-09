@@ -316,6 +316,15 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   800 m: all disciplines and the timetable of the meet (programme per day, rounds and times). Needs the programme
   as data: real timetables for the big meets (SUL / Kalevan kisat pages, source dated), a believable generic programme
   for the small ones (marked `estimated`). Extends "Calendar race details" below. *(Sonnet for the UI, research for the data)*
+- **Zoom in on the race (user, 2026-10-09):** on the race screen the dots sometimes look far away. Let the player zoom
+  in on the field (e.g. a camera that follows the pack or the player, zoom buttons / pinch on a phone, 44 px, no
+  hover), keeping the whole-track view as an option. Mind `race_perf` (the stadium is drawn once; the dots view is
+  redrawn every frame) and the decision card that must never cover the track (decision 26). Could go with R4 or M3.
+  *(Opus for the look, then Sonnet)*
+- **Every section's own result list (user, 2026-10-09, playtest of the meet formats):** after sections the result
+  screen shows the overall list and your own section only; the other sections (e.g. section 1's race) are only visible
+  inside the overall list. Also show each section separately, in running order, as heats are (`RaceDay.heat_results`
+  already holds them; `race_screen.gd` `_show_result`). Small UI task. *(Sonnet, low)*
 - **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 
