@@ -28,7 +28,8 @@ var straight := 84.39
 var bend := PI * 36.8             # 115.6 m outdoors
 var lap := 400.0
 var lanes := 8
-var break_line := bend            # 800 m runners stay in lanes for the first bend
+var break_line := bend            # 800 m runners stay in lanes for the first bend (indoors two, decision 29)
+var break_bends := 1              # bends run in lanes (the stagger the race screen draws)
 
 signal decision_needed(decision: Dictionary)
 signal commentary(text: String)
@@ -207,7 +208,10 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 		straight = (200.0 - 2.0 * bend) / 2.0
 		lap = 200.0
 		lanes = 6
-		break_line = bend
+		# In lanes for two bends (the back straight between them), as the 400 m: the World Athletics rule since
+		# 1 Nov 2025 (GDD 4.3.1 decision 29); outdoors one bend.
+		break_bends = int(_eng.get("indoor_break_bends", 1))
+		break_line = bend * break_bends + straight * (break_bends - 1)
 	var lane_order := range(1, lanes + 1)
 	for k in range(lane_order.size() - 1, 0, -1):   # shuffled with the race's own dice
 		var j := rng.randi_range(0, k)
@@ -545,11 +549,13 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 	if r.d >= break_line:
 		target = _traffic(r, order, target, wants_past, rem)
 
-	# Heats (R2): safely in an automatic qualifying place near the line, they ease off.
+	# Heats (R2, decision 33): safely in an automatic qualifying place near the line, they ease off, and go on easing
+	# while the first runner outside the places stays `keep` metres behind.
 	if auto_places > 0 and rem < r.ease_from and order.size() > auto_places:
 		var pos := _idx(r, order) + 1
 		var chaser: Runner = order[auto_places]
-		if pos <= auto_places and r.d - chaser.d >= float(e.heat_ease.margin):
+		var need := float(e.heat_ease.get("keep", e.heat_ease.margin)) if r.easing else float(e.heat_ease.margin)
+		if pos <= auto_places and r.d - chaser.d >= need:
 			target *= float(e.heat_ease.speed)
 			if not r.easing:
 				r.easing = true

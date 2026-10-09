@@ -50,6 +50,8 @@ var _card_holder: Control      # where the card's content goes (the panel itself
 var _card_box: Control         # the content last put there (the sheet is fitted to its height)
 var _help_button: HelpButton   # "?" in the header: the help of this stage (GDD 5 "Help")
 var _help: HelpOverlay         # open help; the race waits while it is open
+var _targets := {}             # RaceDay.targets() of this round: sections / heats and the time needed (decision 34)
+var _target_line: Label        # the short line with the time needed while the race runs
 
 
 func _ready() -> void:
@@ -301,6 +303,13 @@ func _show_pre() -> void:
 	var standard := Calendar.standard_text(a, _rd.meet)
 	if standard != "":
 		side.add_child(UIKit.wrapped(standard))
+	# Sections / heats: how places are decided and the time you need (GDD 4.3.1 decisions 28, 34).
+	_targets = _rd.targets()
+	var round_lines := _round_lines(_targets)
+	if not round_lines.is_empty():
+		side.add_child(UIKit.label(_text("round_head"), "CaptionLabel"))
+		for line in round_lines:
+			side.add_child(UIKit.wrapped(line))
 	side.add_child(UIKit.label("RACE PLAN", "CaptionLabel"))
 	var group := ButtonGroup.new()
 	for p in PLANS:
@@ -366,6 +375,52 @@ func _pb_of(e: Dictionary) -> float:
 	return rpb if rpb > 0.0 else 9999.0
 
 
+## A text of data/races.json rounds.texts with {placeholders} filled in.
+func _text(id: String, fill := {}) -> String:
+	return String(Data.races.rounds.texts[id]).format(fill)
+
+
+## The pre-race lines of a round of sections or heats: how it is decided and the time needed ("about": estimates
+## from the races already run and the entry list's season bests). [] for a single race or a final.
+func _round_lines(t: Dictionary) -> Array:
+	var lines := []
+	match t.get("kind", ""):
+		"sections":
+			lines.append(_text("sections_rule", {"section": t.section, "sections": t.sections}))
+			if t.medal > 0.0 and t.top8 > 0.0:
+				lines.append(_text("sections_need", {"medal": Calendar.format_time(t.medal), "top8": Calendar.format_time(t.top8)}))
+			elif t.medal > 0.0:
+				lines.append(_text("sections_need_medal", {"medal": Calendar.format_time(t.medal)}))
+			else:
+				lines.append(_text("sections_unknown"))
+		"heats":
+			var rule := _text("heats_rule", {"place": t.place})
+			if t.time > 0:
+				rule += _text("heats_rule_time", {"time": t.time})
+			lines.append(rule + ".")
+			if t.time > 0:
+				if t.cutoff > 0.0:
+					lines.append(_text("heats_need", {"cutoff": Calendar.format_time(t.cutoff)}))
+				else:
+					lines.append(_text("heats_first" if t.group == 1 else "heats_open"))
+	return lines
+
+
+## The short line during the race (under the Feeling word / the clock).
+func _round_short(t: Dictionary) -> String:
+	match t.get("kind", ""):
+		"sections":
+			if t.medal > 0.0 and t.top8 > 0.0:
+				return _text("run_sections", {"medal": Calendar.format_time(t.medal), "top8": Calendar.format_time(t.top8)})
+			if t.medal > 0.0:
+				return _text("run_sections_medal", {"medal": Calendar.format_time(t.medal)})
+		"heats":
+			if t.time > 0 and t.cutoff > 0.0:
+				return _text("run_heats", {"place": t.place, "cutoff": Calendar.format_time(t.cutoff)})
+			return _text("run_heats_place", {"place": t.place})
+	return ""
+
+
 func _start(interactive: bool) -> void:
 	_race = _rd.start_round(interactive, _plan)
 	if not interactive:
@@ -418,6 +473,9 @@ func _show_running() -> void:
 	_slow_note.clip_text = true   # a long reason never widens the panel
 	_slow_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if Layout.compact else HORIZONTAL_ALIGNMENT_LEFT
 	_slow_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_target_line = UIKit.label(_round_short(_targets), "CaptionLabel")   # (static: the times to beat don't change mid-race)
+	_target_line.clip_text = true
+	_target_line.visible = _target_line.text != ""
 	_standings = UIKit.vbox(2)
 	_stand_rows.clear()
 	_commentary = UIKit.vbox(4)
@@ -439,12 +497,14 @@ func _show_running() -> void:
 		mood.add_child(_feeling)
 		mood.add_child(_slow_note)
 		status.add_child(mood)
+		status.add_child(_target_line)
 	else:
 		side.custom_minimum_size.x = 330
 		side.add_child(_clock)
 		side.add_child(_feeling)
 		side.add_child(_slow_note)
 		side.add_child(_info)
+		side.add_child(_target_line)
 	side.add_child(UIKit.label("POSITIONS", "CaptionLabel"))
 	side.add_child(_standings)
 	_comment_head = UIKit.label("COMMENTARY", "CaptionLabel")
@@ -681,6 +741,8 @@ func _show_result(fresh := true) -> void:
 	if fresh:
 		var res := _race.results()
 		var old_pb: float = Game.athlete.personal_bests.get(Game.athlete.main_event, 0.0)
+		var kind: String = _rd.rounds[_rd.round_index]   # race / sections / heat / semi / final
+		var group := _rd.player_heat
 		_rd.finish_round()
 		var mine: Dictionary = {}
 		for r in res:
@@ -688,6 +750,13 @@ func _show_result(fresh := true) -> void:
 				mine = r
 		var place := res.find(mine) + 1
 		var headline := "%s in %s" % [Race._ordinal(place), Calendar.format_time(mine.time)]
+		if kind == "sections":
+			var at := 0
+			for i in _rd.overall.size():
+				if _rd.overall[i].is_player:
+					at = i + 1
+			headline = _text("sections_headline", {"place": Race._ordinal(at), "field": _rd.overall.size(),
+					"time": Calendar.format_time(mine.time), "section_place": Race._ordinal(place), "section": group + 1})
 		var best_so_far := old_pb
 		for r in _rd.player_results.slice(0, -1):
 			if r.get("status", "") == "" and (best_so_far == 0.0 or r.time < best_so_far):
@@ -698,26 +767,35 @@ func _show_result(fresh := true) -> void:
 			_:
 				if best_so_far == 0.0 or mine.time < best_so_far:
 					headline += "  ·  Personal best!"
-		# After the heats: every heat's result with the marks of a real result list (Q = through on place, q = on
-		# time), the player's heat first. Otherwise just this race.
-		var lists := []   # [{title, res, mine}]
+		# After heats / semis: every group's result with the marks of a real result list (Q = through on place, q = on
+		# time), the player's first. After sections: everyone by time across the sections (the official result), then
+		# your section. Otherwise just this race.
+		var lists := []   # [{title, res, mine, notes}]
 		var marks := {}
-		if _rd.rounds.size() > 1 and _rd.round_index == 1:
+		if kind in ["heat", "semi"]:
 			marks = _rd.heat_marks.duplicate()
 			for h in _rd.heat_results.size():
-				var own: bool = h == _rd.player_heat
-				lists.append({"title": "HEAT %d%s" % [h + 1, " · YOUR HEAT" if own else ""],
-						"res": _rd.heat_results[h], "mine": own})
+				var own: bool = h == group
+				lists.append({"title": _text("heat_head" if kind == "heat" else "semi_head", {"n": h + 1})
+						+ (_text("yours") if own else ""), "res": _rd.heat_results[h], "mine": own, "notes": {}})
 			lists.sort_custom(func(x, y): return x.mine and not y.mine)
+		elif kind == "sections":
+			var notes := {}
+			for r in _rd.overall:
+				notes[r.name] = _text("section_short", {"n": r.section})
+			lists.append({"title": _text("overall_head", {"sections": _rd.heat_results.size()}), "res": _rd.overall,
+					"mine": false, "notes": notes})
+			lists.append({"title": _text("section_head", {"n": group + 1}) + _text("yours"), "res": res, "mine": true,
+					"notes": {}})
 		else:
-			lists.append({"title": "", "res": res, "mine": true})
+			lists.append({"title": "", "res": res, "mine": true, "notes": {}})
 		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks,
-				"via": marks.get(mine.name, ""),
-				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": _rd.rounds.size() > 1}
+				"via": marks.get(mine.name, ""), "next": _rd.rounds[_rd.round_index] if not _rd.is_done() else "",
+				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": kind in ["heat", "semi"]}
 
 	var col := UIKit.vbox(12)
 	col.add_child(UIKit.wrapped(_result.headline, "HeadingLabel"))
-	var marks_text: Dictionary = Data.races.heats.marks
+	var marks_text: Dictionary = Data.races.rounds.marks
 	if not _result.marks.is_empty():
 		col.add_child(UIKit.wrapped(marks_text.legend))
 
@@ -729,7 +807,7 @@ func _show_result(fresh := true) -> void:
 			if list.mine:
 				head.add_theme_color_override("font_color", Palette.ACCENT)
 			tables.add_child(head)
-		var panel := UIKit.panel(_results_grid(list.res, _result.marks), 16)
+		var panel := UIKit.panel(_results_grid(list.res, _result.marks, list.get("notes", {})), 16)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tables.add_child(panel)
 	var scroll := ScrollContainer.new()
@@ -740,13 +818,14 @@ func _show_result(fresh := true) -> void:
 
 	var next := UIKit.button("", true, 220)
 	if not _result.done:
-		col.add_child(UIKit.wrapped(marks_text.via_place if _result.via == marks_text.place \
-				else marks_text.via_time if _result.via == marks_text.time else "You're through to the final!", ""))
-		next.text = "On to the final"
+		var to: String = _text("to_semi" if _result.get("next", "") == "semi" else "to_final")
+		col.add_child(UIKit.wrapped((marks_text.via_place if _result.via == marks_text.place \
+				else marks_text.via_time if _result.via == marks_text.time else marks_text.via_other).format({"round": to}), ""))
+		next.text = _text("on_to", {"round": to})
 		next.pressed.connect(_show_pre)
 	else:
 		if _result.heats and not _result.qualified:
-			col.add_child(UIKit.wrapped("Not enough to make the final this time.", ""))
+			col.add_child(UIKit.wrapped(_text("not_through"), ""))
 		next.text = "Continue"
 		next.pressed.connect(_leave)
 	col.add_child(next)
@@ -764,8 +843,9 @@ func _show_result(fresh := true) -> void:
 	_set_body(wrap)
 
 
-## One result table: place, name, (club,) time and the Q / q mark ("" when the runner did not go through).
-func _results_grid(res: Array, marks: Dictionary) -> GridContainer:
+## One result table: place, name, (club,) time and the Q / q mark ("" when the runner did not go through), or a
+## muted note in that column (the section in the overall list of sections).
+func _results_grid(res: Array, marks: Dictionary, notes := {}) -> GridContainer:
 	var grid := GridContainer.new()
 	grid.columns = 4 if Layout.compact else 5
 	grid.add_theme_constant_override("h_separation", 14 if Layout.compact else 24)
@@ -777,17 +857,20 @@ func _results_grid(res: Array, marks: Dictionary) -> GridContainer:
 	for i in res.size():
 		var r: Dictionary = res[i]
 		var no_time: bool = r.get("status", "") != ""
-		var cells := ["–" if no_time else str(i + 1), r.name, Race.time_text(r), marks.get(r.name, "")]
+		var note: String = notes.get(r.name, "")
+		var cells := ["–" if no_time else str(i + 1), r.name, Race.time_text(r), note if note != "" else marks.get(r.name, "")]
 		if not Layout.compact:
 			cells.insert(2, r.club)
 		for c in cells.size():
-			var l := UIKit.label(cells[c], "MutedLabel" if (not Layout.compact and c == 2) else "")
+			var last := c == cells.size() - 1
+			var muted := (not Layout.compact and c == 2) or (last and note != "")
+			var l := UIKit.label(cells[c], "MutedLabel" if muted else "")
 			if c == 1:   # the name column takes the room
 				l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				l.clip_text = true
 			if r.is_player:
 				l.add_theme_color_override("font_color", Palette.ACCENT)
-			elif c == cells.size() - 1 and cells[c] != "":
+			elif last and cells[c] != "" and note == "":
 				l.add_theme_color_override("font_color", Palette.RISK_LOW)
 			grid.add_child(l)
 	return grid

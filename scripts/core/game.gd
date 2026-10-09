@@ -94,7 +94,8 @@ func to_dict() -> Dictionary:
 		system_states[s.id] = s.to_dict()
 	return {"athlete": athlete.to_dict(), "date": date, "season": season.to_dict(), "entries": entries,
 			"rivals": rivals, "week": _week.to_dict() if _week else {}, "last_report": last_report,
-			"events": events, "next_event": _next_event, "day_log": day_log, "systems": system_states}
+			"events": events, "next_event": _next_event, "day_log": day_log, "systems": system_states,
+			"stats_year": "calendar"}   # season bests by calendar year (decision 30; older saves are converted on load)
 
 
 ## Works for every save version: version 1 is always on a Monday with no week in progress, so the
@@ -114,6 +115,12 @@ func from_dict(d: Dictionary) -> void:
 		rng.randomize()
 		rivals = Rivals.generate(athlete, rng)
 	Rivals.ensure_personalities(rivals)   # saves from before step R1
+	if not d.has("stats_year"):
+		# Saves from before GDD 4.3.1 decision 30 counted season bests over the training year (Nov–Oct). The current
+		# one becomes this calendar year's (its date is not stored); older ones are dropped.
+		var old_season := int(date.year) if int(date.month) >= 11 else int(date.year) - 1
+		for r in rivals:
+			r.sb_season = int(date.year) if int(r.get("sb_season", -1)) == old_season else -1
 	race_day = null
 	open_report = false
 	_playing_week = false

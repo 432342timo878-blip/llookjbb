@@ -69,9 +69,9 @@
   },
   "rankings": {
    "title": "Rankings",
-   "version": 1,
+   "version": 2,
    "sections": [
-    {"heading": "Season bests", "text": "Everyone's best time this season (1 November to 31 October), indoor and outdoor together. The top 25 are shown, and you always are."},
+    {"heading": "Season bests", "text": "Everyone's best time this calendar year, indoor and outdoor together, as in real result lists. The top 25 are shown, and you always are."},
     {"heading": "Your rivals", "text": "Your rivals train and race on their own, so the list fills up as the season goes on. They get injured too and miss races now and then."}
    ]
   },
@@ -97,9 +97,10 @@
   },
   "race_before": {
    "title": "Before the race",
-   "version": 3,
+   "version": 4,
    "sections": [
-    {"heading": "The field", "text": "The runners in your race, fastest personal best first."},
+    {"heading": "The field", "text": "The runners in your race (your section or heat at a championship), fastest personal best first."},
+    {"heading": "Sections and heats", "text": "Finnish championships run the 800 m in sections: the fastest runners in the last one, places and medals by time across all sections. PLACES says about what a medal and the top 8 will need. Senior and international meets have heats: the first few go through (Q), then the fastest of the rest (q)."},
     {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
     {"heading": "Race plan", "text": "The plan is where you want to run. Lead: set the pace, no traffic, but no shelter from the wind. Sit in the pack: run behind others near the front and save energy. Wait at the back: save the most for a late kick, at the risk of getting boxed in or left behind."},
     {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan, and your athlete makes the decisions as well as their race tactics allow. Watch and decide shows the race, stops for your decisions and gives you the action bar. If you are injured, you can still scratch before the first round."}
@@ -107,9 +108,9 @@
   },
   "race_running": {
    "title": "The race",
-   "version": 6,
+   "version": 7,
    "sections": [
-    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. The race runs in lanes until the first bend is over, then everyone cuts in."},
+    {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. Outdoors the race runs in lanes until the first bend is over, indoors until the second, then everyone cuts in. In a section or heat, the line under the clock says about what time you need."},
     {"heading": "Pause", "text": "The pause button next to 1x, 2x and 4x (on a PC also the Space bar) stops the race, so you can look at the track and the positions. The action bar still works: your command is given at once and the race acts on it when you run on. Tap it again to go on."},
     {"heading": "Slowing down", "text": "At 2x or 4x the race drops to 1x for a few seconds when something happens close to you: a rival kicks or makes a move, someone stumbles or falls, or you get boxed in. A note under the clock says what, then the speed goes back."},
     {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Going faster than your own even pace burns the reserve quickly: spend it too early and you tie up in the finish."},
@@ -123,11 +124,12 @@
   },
   "race_result": {
    "title": "The result",
-   "version": 5,
+   "version": 6,
    "sections": [
     {"heading": "Results", "text": "Your place and time; a new personal best is marked. The time counts in the season rankings."},
+    {"heading": "Sections", "text": "After sections you see everyone by time across all of them (S2 = section 2): that is the official result. Your section's own list comes below it. Winning a slow section can still be 10th overall."},
     {"heading": "DNF and DQ", "text": "DNF: did not finish, after a bad fall. DQ: disqualified for obstruction, after pushing your way out of a box. Neither counts for a personal best or the rankings. A fall can leave you with grazes or a bruise, rarely a sprained ankle.", "see": ["injuries"]},
-    {"heading": "Heats and final", "text": "At big meets there are heats; after yours you see every heat's result, yours first. Q = through on place: the top places of each heat (two, fewer with many heats: the final has 6 lanes indoors, 8 outdoors). q = through on time: the fastest of the rest. Runners safely through often ease off before the line."}
+    {"heading": "Heats and final", "text": "Senior and international meets have heats; after yours you see every heat's result, yours first. Q = through on place, q = through on time: the fastest of the rest. How many go through follows the World Athletics table; a big field adds semi-finals. Runners safely through ease off before the line."}
    ]
   },
   "new_career": {

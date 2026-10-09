@@ -88,9 +88,10 @@ func _draw_indoor_track(r_out: float) -> void:
 func _position(r: Race.Runner) -> Vector2:
 	var d := minf(lerpf(r.prev_d, r.d, blend), Race.DISTANCE + 2.0)
 	if d < race.break_line:
-		# In lanes: each lane starts further round the bend (the stagger), so all reach the break line level.
+		# In lanes: each lane starts further round (the stagger: the extra length of the bends run in lanes), so all
+		# reach the break line level.
 		var radius := race.r_in + (r.lane - 0.5) * Race.LANE_W
-		return _stadium_point(radius, race.straight + PI * (radius - race.r1) + d)
+		return _stadium_point(radius, race.straight + race.break_bends * PI * (radius - race.r1) + d)
 	var radius := race.r1 + lerpf(r.prev_lat, r.lat, blend) + 0.3
 	return _stadium_point(radius, _path_s(fmod(d, race.lap), radius))
 

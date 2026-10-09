@@ -206,12 +206,21 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         `race_result` v5. Checks: `layout_check` (5 sizes, card clear of the track, paused, heat results), the tour,
         `race_perf` 60 fps, `help_check`, `race_check`, `day_engine_check`. Still open from the playtest plan: the other
         three watched races (outdoor any on PC twice, outdoor heats on the phone).
+  - [x] **Realism audit + meet formats, built 2026-10-09** (`docs/AUDIT.md`; GDD 4.3.1 decisions 28–34, "Measured
+        2026-10-09" and "Built (meet formats)"): (1) the audit table (✓ / ≈ / ✗ with sources); (2) surges, kicks and heat
+        easing measured with the new `tools/race_surge_ease.gd`; (3) Finnish championships run the 800 m in seeded timed
+        sections (SUL MK-säännöt 2026), heats + semis + final from the World Athletics table for heats meets, later
+        heats / sections chase the time to beat, heats run to qualify (easing ~0.3 s, heat winners slower than in the
+        final), the time needed shown before and during the race, the indoor break line after two bends (WA 2025),
+        season bests by calendar year. New `tools/race_rounds.gd`; `watch_race.gd -- sections|heats`. All R5 rows
+        identical outdoors. *(Opus)*
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
       plateau). Tune the progression ceiling, maturation and rival growth; also check whether rivals need the health
       model and plan-based training. Also seniors' race-day consistency (GDD 4.3.1 decision 12: the senior final
-      finish target). *(Opus)*
+      finish target). From the audit (`docs/AUDIT.md`): the share of days with a health problem (~6 % vs ~25 % real),
+      championship field sizes (every Nuorten SM field is 41) against real entry lists. *(Opus)*
 
 Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans):
 - [ ] Coaching (hire, veto)

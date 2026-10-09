@@ -1,17 +1,18 @@
 class_name Rankings
 ## Season ranking list of the player's age class: season bests of the player and the fictional rivals.
-## A season is a training year, 1 Nov – 31 Oct (the career starts on 2 Nov), so indoor and outdoor
-## results of the same winter + summer count together.
+## A statistics season is the calendar year, as in real result lists, season bests and the SM standards (GDD 4.3.1
+## decision 30): the indoor season of Jan–Mar and the summer after it count together. (The training year still
+## starts on 1 Nov: SeasonPlan.)
 
 
-## 2026 for any date from 1 Nov 2026 to 31 Oct 2027.
+## 2027 for any date in 2027.
 static func season_of(d: Dictionary) -> int:
-	return int(d.year) if int(d.month) >= 11 else int(d.year) - 1
+	return int(d.year)
 
 
-## "2026–27"
+## "2027"
 static func season_label(season: int) -> String:
-	return "%d–%02d" % [season, (season + 1) % 100]
+	return str(season)
 
 
 ## The player's best time of the season in their main event, or 0.0 (races without a time don't count).

@@ -378,9 +378,11 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		game.race_day = null
 		router.go("career_hub")
 		await _frames(6)
-	# The heats' result list (all heats, Q / q) outdoors and indoors.
-	for place in ["outdoor", "indoor"]:
-		await _heat_result_views(main, game, cal, place, tag)
+	# The result lists of a round of groups outdoors and indoors: sections (overall + your section, Finnish
+	# championships) and heats (all heats, Q / q; forced, as no youth meet runs them). Decision 28.
+	for fmt in ["sections", "heats"]:
+		for place in ["outdoor", "indoor"]:
+			await _heat_result_views(main, game, cal, place, tag, fmt)
 	coach.view_m = saved_view
 	game.date = saved_date
 	game._week = saved_week
@@ -439,19 +441,24 @@ func _pause_views(screen, race, t: String) -> void:
 		race.choose(race.pending.options[0].id)
 
 
-## The result list after the heats: every heat with its Q / q marks. Looks for a meet with heats and quick-runs it.
-func _heat_result_views(main: Node, game, cal, place: String, tag: String) -> void:
+## The result list after a round of groups: sections (everyone by time + your section) or heats (every heat with its
+## Q / q marks). Looks for a meet run that way (heats forced with RaceDay.format_override), shows the pre-race PLACES
+## lines, then quick-runs it.
+func _heat_result_views(main: Node, game, cal, place: String, tag: String, fmt: String) -> void:
 	var router = main.get_node("/root/Router")
+	var RDS = load("res://scripts/core/race_day.gd")
+	RDS.format_override = "heats" if fmt == "heats" else ""
 	var rd = null
 	for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 12, "day": 31}):
-		if bool(m.get("indoor", false)) != (place == "indoor"):
+		if bool(m.get("indoor", false)) != (place == "indoor") or m.get("watch", false):
 			continue
-		var cand = load("res://scripts/core/race_day.gd").new(m, game.athlete, game.rivals)
-		if cand.rounds.size() > 1:
+		var cand = RDS.new(m, game.athlete, game.rivals)
+		if cand.format == fmt and cand.is_group_round():
 			rd = cand
 			break
+	RDS.format_override = ""
 	if rd == null:
-		print("  (no %s meet with heats found for the heat results)" % place)
+		print("  (no %s meet with %s found for the result lists)" % [place, fmt])
 		return
 	game.date = rd.meet.date.duplicate()
 	game._week = null
@@ -460,19 +467,27 @@ func _heat_result_views(main: Node, game, cal, place: String, tag: String) -> vo
 	router.go("race")
 	await _frames(8)
 	var screen: Control = main.get_node("ScreenHost").get_child(-1)
+	var t := "%s_%s_%s" % [tag, fmt, place]
+	await _shot(t + "_before")   # (the PLACES lines: the section / heat and the time needed)
+	_check_overflow(screen, t + "_before")
 	screen._start(false)
 	await _frames(4)
-	var t := "%s_heats_%s" % [tag, place]
-	var marks: Dictionary = rd.heat_marks
-	var big := 0
-	var small := 0
-	for n in marks:
-		if marks[n] == "Q":
-			big += 1
-		else:
-			small += 1
-	print("  %s: %s, %d heats, Q %d + q %d = %d, final field %d%s" % [t, rd.meet.name, rd.heats.size(), big, small, marks.size(),
-			rd.final_entrants.size(), "" if marks.size() == rd.final_entrants.size() else "   <-- WRONG"])
+	if fmt == "heats":
+		var marks: Dictionary = rd.heat_marks
+		var big := 0
+		var small := 0
+		for n in marks:
+			if marks[n] == "Q":
+				big += 1
+			else:
+				small += 1
+		var next_size: int = rd.final_entrants.size() if rd.heats.is_empty() else rd.heats.reduce(func(s, h): return s + h.size(), 0)
+		print("  %s: %s, %d heats, Q %d + q %d = %d, next round %d%s" % [t, rd.meet.name, rd.heat_results.size(), big, small,
+				marks.size(), next_size, "" if marks.size() == next_size else "   <-- WRONG"])
+	else:
+		var n: int = rd.heat_results.reduce(func(s, h): return s + h.size(), 0)
+		print("  %s: %s, %d sections, overall list %d of %d%s" % [t, rd.meet.name, rd.heat_results.size(), rd.overall.size(), n,
+				"" if rd.overall.size() == n else "   <-- WRONG"])
 	await _shot(t)
 	_check_overflow(screen, t)
 	game.race_day = null

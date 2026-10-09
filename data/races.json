@@ -23,9 +23,64 @@
   "ceiling_mean": 13.0, "ceiling_sd": 2.5,
   "race_chance_by_month": [0.08, 0.10, 0.10, 0.12, 0.25, 0.30, 0.25, 0.30, 0.25, 0.10, 0.06, 0.06]
  },
- "heats": {"max_final": 8, "heat_size": 8, "auto_per_heat": 2,
+ "rounds": {
+  "_note": "How a meet's 800 m is run (GDD 4.3.1 decisions 28 and 31-34; RaceDay). format (a meet's `format` in competitions.json, else default_format): sections = a straight final in seeded timed sections, as SUL's Mestaruuskilpailusäännöt 2026 (5.7-5.9, 5.11-5.13) run every Finnish championship 800 m: one race when the field fits in a section, the best seeds together, full sections from the top, the slowest section at least `min`, run slowest first, places by time across all sections; heats = heats (and semi-finals) + final from the World Athletics table (WAS Regulations 2025 Appendix 5: entries from-to, then per round before the final [groups, through on place, through on time]; 8 in an outdoor final, 6 indoors), zigzag seeding and the running order drawn by lot (TR20.3). chase: a later heat chases the time spots when a runner outside its favourites for a Q place could make the time so far (even time on paper at most (1 + reach) x it); a later section when the time for a medal or the top 8 so far is within `window` of what its leaders run. Then the race-shape mix is shapes.mix.chase.",
+  "default_format": "sections",
+  "sections": {"max": {"outdoor": 12, "indoor": 6}, "min": 4},
+  "heats": {
+   "outdoor": [
+    {"entries": [9, 16], "rounds": [[2, 3, 2]]},
+    {"entries": [17, 24], "rounds": [[3, 2, 2]]},
+    {"entries": [25, 32], "rounds": [[4, 3, 4], [2, 3, 2]]},
+    {"entries": [33, 40], "rounds": [[5, 4, 4], [3, 2, 2]]},
+    {"entries": [41, 48], "rounds": [[6, 3, 6], [3, 2, 2]]},
+    {"entries": [49, 56], "rounds": [[7, 3, 3], [3, 2, 2]]},
+    {"entries": [57, 64], "rounds": [[8, 2, 8], [3, 2, 2]]}
+   ],
+   "indoor": [
+    {"entries": [7, 12], "rounds": [[2, 2, 2]]},
+    {"entries": [13, 18], "rounds": [[3, 2, 0]]},
+    {"entries": [19, 24], "rounds": [[4, 1, 2]]},
+    {"entries": [25, 30], "rounds": [[5, 2, 2], [2, 3, 0]]},
+    {"entries": [31, 36], "rounds": [[6, 2, 6], [3, 2, 0]]},
+    {"entries": [37, 42], "rounds": [[7, 2, 4], [3, 2, 0]]},
+    {"entries": [43, 48], "rounds": [[8, 2, 2], [3, 2, 0]]}
+   ]
+  },
+  "chase": {"reach": 0.015, "window": 0.015},
+  "_estimate": "Sections: the time a medal / the top 8 will need is estimated from the times already run and the season bests (else PBs) of those still to run, only when at least estimate_share of the other runners have one.",
+  "estimate_share": 0.75,
   "marks": {"place": "Q", "time": "q", "legend": "Q = through on place · q = through on time",
-   "via_place": "You're through to the final on place (Q).", "via_time": "You're through to the final on time (q): one of the fastest of the rest."}},
+   "via_place": "You're through to the {round} on place (Q).", "via_time": "You're through to the {round} on time (q): one of the fastest of the rest.",
+   "via_other": "You're through to the {round}!"},
+  "texts": {
+   "round_head": "PLACES",
+   "sections_rule": "Section {section} of {sections}. Places and medals go by time across all sections; the fastest runners are in the last section.",
+   "sections_need": "A medal will probably need about {medal}, the top 8 about {top8} (season bests and the sections already run).",
+   "sections_need_medal": "A medal will probably need about {medal} (season bests and the sections already run).",
+   "sections_unknown": "Too few in the field have run a time yet to say what a medal will need.",
+   "heats_rule": "The first {place} of each heat go through (Q)",
+   "heats_rule_time": ", then the {time} fastest of the rest (q)",
+   "heats_need": "The time spots so far: {cutoff}. About that is safe.",
+   "heats_first": "You're in the first heat: no times to go by yet.",
+   "heats_open": "Not enough times yet for the time spots.",
+   "run_sections": "Medal about {medal} · top 8 about {top8}",
+   "run_sections_medal": "Medal about {medal}",
+   "run_heats": "Top {place} = Q · q about {cutoff}",
+   "run_heats_place": "Top {place} = Q",
+   "sections_headline": "{place} of {field} in {time} ({section_place} in section {section})",
+   "overall_head": "OVERALL · ALL {sections} SECTIONS",
+   "section_head": "SECTION {n}",
+   "section_short": "S{n}",
+   "heat_head": "HEAT {n}",
+   "semi_head": "SEMI-FINAL {n}",
+   "yours": " · YOURS",
+   "to_final": "final",
+   "to_semi": "semi-final",
+   "on_to": "On to the {round}",
+   "not_through": "Not enough to go through this time."
+  }
+ },
  "engine": {
   "_note": "Pack racing (GDD 4.3.1, step R1). Each runner has a cruising speed cs and a reserve (metres above cs); running behind someone costs less, the leader pays full price. cs_scale is the one calibration number: it keeps the median race time on the time table.",
   "cs_scale": 1.029,
@@ -95,7 +150,8 @@
    "brought_down": 0.3, "brought_along": 1.5,
    "rival_out": {"chance": 0.12, "dnf_chance": 0.5, "weeks": [1, 3]}
   },
-  "heat_ease": {"_note": "Heats with automatic places (R2): a runner in an automatic place at least `margin` metres ahead of the first runner outside them eases to speed x their speed in the last `from` metres (rolled per runner).", "from": [30.0, 50.0], "margin": 3.0, "speed": 0.95},
+  "heat_ease": {"_note": "Heats with automatic places (R2; 'running to qualify', GDD 4.3.1 decision 33): a runner in an automatic place at least `margin` metres ahead of the first runner outside them eases to speed x their speed in the last `from` metres (rolled per runner), and keeps easing while that runner is at least `keep` metres behind.", "from": [50.0, 80.0], "margin": 4.0, "keep": 1.5, "speed": 0.92},
+  "indoor_break_bends": 2,
   "_events": "Race events (R2): a kick that empties the reserve with more than kick_dying_to_go metres left is 'kick dying'; a new leader counts as a lead change when the old one had led lead_change_s seconds; adjacent finishers under close_finish_s apart are a close finish, under photo_finish_s a photo finish.",
   "kick_dying_to_go": 30.0, "lead_change_s": 2.0, "close_finish_s": 0.3, "photo_finish_s": 0.05
  },
@@ -155,7 +211,7 @@
   }
  },
  "shapes": {
-  "_note": "Race shapes (GDD 4.3.1; tactical lap 1 made 8-12 % slower in step R2, user 2026-10-08: real tactical finals start ~10 % slower, so the kick decides): the leader's pace as a share of the field's even speed (the runner at pace_ref_quantile of the field by ability, 0 = strongest, 0.5 = median), lap 1 and lap 2 ranges. The mix per meet level / round in percent; a front runner in the field moves front_runner_shift points from tactical to fast, no front runner from fast to tactical.",
+  "_note": "Race shapes (GDD 4.3.1; tactical lap 1 made 8-12 % slower in step R2, user 2026-10-08: real tactical finals start ~10 % slower, so the kick decides; heats run to qualify and a heat or section chasing a known target time runs `chase`, decision 33):the leader's pace as a share of the field's even speed (the runner at pace_ref_quantile of the field by ability, 0 = strongest, 0.5 = median), lap 1 and lap 2 ranges. The mix per meet level / round in percent; a front runner in the field moves front_runner_shift points from tactical to fast, no front runner from fast to tactical.",
   "pace_ref_quantile": 0.25,
   "fast":     {"name": "fast from the gun", "lap1": [1.055, 1.075], "lap2": [0.945, 0.965]},
   "honest":   {"name": "honest", "lap1": [1.035, 1.045], "lap2": [0.955, 0.975]},
@@ -163,8 +219,9 @@
   "mix": {
    "local":    {"fast": 50, "honest": 35, "tactical": 15},
    "district": {"fast": 40, "honest": 40, "tactical": 20},
-   "heat":     {"fast": 30, "honest": 50, "tactical": 20},
-   "final":    {"fast": 20, "honest": 35, "tactical": 45}
+   "heat":     {"fast": 15, "honest": 40, "tactical": 45},
+   "final":    {"fast": 20, "honest": 35, "tactical": 45},
+   "chase":    {"fast": 30, "honest": 60, "tactical": 10}
   },
   "default_mix": "district",
   "front_runner_shift": 10

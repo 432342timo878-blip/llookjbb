@@ -266,13 +266,21 @@ func _heats_tour(main: Node) -> void:
 	var cal = load("res://scripts/core/calendar.gd")
 	var saved_date: Dictionary = game.date.duplicate()
 	var saved_week = game._week
-	var rd = null
-	for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 12, "day": 31}):
-		var cand = load("res://scripts/core/race_day.gd").new(m, game.athlete, game.rivals)
-		if cand.rounds.size() > 1:
-			rd = cand
-			break
-	if rd != null:
+	var RDS = load("res://scripts/core/race_day.gd")
+	# Sections (Finnish championships) and heats (forced: no youth meet runs them), GDD 4.3.1 decision 28.
+	for fmt in ["sections", "heats"]:
+		RDS.format_override = "heats" if fmt == "heats" else ""
+		var rd = null
+		for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 12, "day": 31}):
+			if m.get("watch", false):
+				continue
+			var cand = RDS.new(m, game.athlete, game.rivals)
+			if cand.format == fmt and cand.is_group_round():
+				rd = cand
+				break
+		RDS.format_override = ""
+		if rd == null:
+			continue
 		game.date = rd.meet.date.duplicate()
 		game._week = null
 		game.current_week()
@@ -280,9 +288,10 @@ func _heats_tour(main: Node) -> void:
 		router.go("race")
 		await _frames(6)
 		var screen: Control = main.get_node("ScreenHost").get_child(-1)
+		await _shot("12b_race_%s_before" % fmt)
 		screen._start(false)
 		await _frames(4)
-		await _shot("12b_race_heat_results")
+		await _shot("12c_race_%s_results" % fmt)
 		game.race_day = null
 	game.date = saved_date
 	game._week = saved_week

@@ -1,6 +1,7 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.7 — 2026-10-07 (race realism designed, 4.3.1; earlier: M2 steps 3–6 built, 4.6 / 4.8). Living document: updated after each design discussion.
+Version 0.8 — 2026-10-09 (realism audit, `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; earlier: race realism
+R1–R5, M2 steps 3–6). Living document: updated after each design discussion.
 
 ## 1. Vision
 
@@ -128,7 +129,8 @@ on aggregate result standards only, with no individual names or results. Real at
 - **Rivals:** a pool of 150 fictional runners (same birth year and gender, Finnish names, real clubs). They train every
   week like the player (toward their own ceiling), keep PBs and fill the fields: local 5–8, district 8–12,
   international youth 9–14. At the national championships, everyone with the standard enters plus ~12 % without it,
-  with heats when needed (2 auto qualifiers per heat + fastest losers).
+  run in timed sections as real Finnish championships are (since 2026-10-09; heats only at heats meets, from the
+  World Athletics table: 4.3.1 "Built (meet formats)").
 - **Results:** stored on the athlete (results list, PB). They show on the Overview and in the weekly report.
 - **Tuning:** `tools/race_balance.gd` (median times hit the anchors within ~1 s).
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
@@ -270,6 +272,32 @@ change of place late is a fade, never a fight.
     and the player could not see why ("where did the other three come from?"): with 2 heats the first 2 of each go
     through and 4 more on time, often all from the faster heat. Proposal for the fix session: the result screen shows
     every heat's results, marked **Q** (through on place) and **q** (through on time), as real result lists do.
+
+**Decisions (user, 2026-10-09, after the realism audit, `docs/AUDIT.md`):**
+28. **Championship format per meet (replaces "option 2" of the heat-qualification question).** Finnish youth
+    championships (Nuorten SM outdoors and indoors) run the 800 m as a **straight final in seeded timed sections**, as
+    SUL's Mestaruuskilpailusäännöt 2026 (5.7–5.9, 5.11–5.13) say: the best runners in the same section, up to 12 in one
+    section outdoors (the weakest section at least 4), indoors by the hall's size; places and medals by time across all
+    sections. **Heats + final with Q / q** only where real (Kalevan kisat, international championships), with the Q / q
+    split from the World Athletics table (WAS Regulations 2025 Appendix 5) in `data/`. In both formats the later races
+    know the time to beat (sections: for a medal / the top 8; heats: to be safe), runners chase it, and the race
+    screen tells the player ("you need about 2:12 for a medal").
+29. **Indoor 800 m break line ~165 m** (lanes for two bends, as the 400 m), the World Athletics rule since 1 Nov 2025.
+30. **Season bests and rankings by calendar year** (Jan–Dec, as real statistics and SM standards); the training year
+    stays Nov–Oct.
+
+**Decisions (user, 2026-10-09, before building decision 28):**
+31. **Tampere Junior Indoor Games and the Youth Athletics Games run timed sections** too (no rules found; Finnish
+    invitational meets seed sections by time, WA TR20.6 "a series of races"). Until senior meets are enterable, heats
+    are seen only through the tools and `watch_race.gd`.
+32. **Section size:** outdoors up to 12 in one section (SUL: one race up to 12, the weakest section at least 4),
+    indoors 6 (our 6-lane hall track, the WA indoor final size); numbers in `data/`.
+33. **Chasing and running to qualify:** a later section or heat whose leaders can reach a target time (a medal /
+    the top 8 / a time spot) gets a faster race shape and its runners chase it; in heats, runners safely in a Q place
+    run within themselves and ease off clearly (fixes "heats faster than finals" and "easing costs nothing", measured
+    above). Finals keep the R5 balance.
+34. **The time you need is shown before and during the race:** a line on the pre-race screen and a short line during
+    the race; the result screen shows the overall places across the sections.
 
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
@@ -914,6 +942,101 @@ the playtest; the race engine is untouched, so the R5 numbers above stand). `scr
 - **Small choices made without asking (change on request):** the player's heat is listed first, not in heat order; the
   phone sheet fits the card and may leave the dimmed bar's top row peeking above it; the commentary is hidden on PC
   while a card is open to make room.
+
+**Measured (2026-10-09): surges, kicks and heat easing** (no engine change; new `tools/race_surge_ease.gd -- 200`,
+rival-only races, 200 races / heats per row; the user could not follow these by eye in the playtest).
+- **Surges and kicks pay off for the strongest runner on the day, rarely for the others.** Followed from the move to
+  the line: *gained* = finished ahead of where they moved, *caught* = reached a better place and lost it again,
+  *won* = won the race. Rank = the mover's strength on the day in the field of 8 (1 = strongest).
+
+| Row | Surges / race | Surge by rank 1 / 2–3 / 4–5 / 6–8: won, places gained | Surges caught (all) | First kick of the race: won (rank 1 / others), caught | Where the first kick starts |
+|---|---|---|---|---|---|
+| Youth final (9 ± 0.5) | 0.68 | 64 % +1.8 / 18 % +0.6 / 0 % −1.5 / 0 % −2.1 | 76 % | 80 % / 0–7 %, caught 67 % | 70 % at 250–400 m to go, 25 % earlier |
+| Tight final (sd 0.3) | 0.73 | 56 % +1.4 / 20 % +0.4 / 3 % −0.6 / 0 % −2.6 | 74 % | 68 % / 0–7 %, 64 % | same |
+| Youth even field (district) | 0.42 | 86 % +0.9 / 24 % +0.2 / 0 % −1.2 / 0 % −1.1 | 64 % | 76 % / 0–5 %, 60 % | same |
+| Senior final (15 ± 0.4) | 0.75 | 55 % +1.3 / 19 % +0.5 / 11 % −0.3 / 0 % −1.9 | 78 % | 77 % / 0–15 %, 65 % | same |
+
+  80 % of surges come with more than 400 m to go. The first kick of a race is usually a front runner's long kick
+  (300–400 m to go); it wins only 11–14 % overall and is caught 60–67 % of the time, unless the kicker is the
+  strongest on the day (wins 68–80 %). In plain words: a move by the best runner of the day decides the race; a weaker
+  runner's move is nearly always caught (84–100 % for ranks 4–8) and costs them places; the 2nd–3rd strongest gain a
+  little on average and win about one surge in five. Realistic in direction (a weak front runner's long kick fading is
+  the classic 800 m story); no published per-move statistics exist to check the exact shares against.
+- **Heat easing** (each heat run three times from the same field and dice: with N automatic places, with none =
+  nobody eases, and as a final with the final's race-shape mix):
+
+| Row | Easing starts (m to go, median, 10–90 %) | Heats with easing / winner eased | Cost to an easer (median) | Easers who lost their Q | Winner: heat − same runner in a final (mean) | Q runners' time / own even time: heat vs final |
+|---|---|---|---|---|---|---|
+| Outdoor youth heat, 8 runners, 2 Q | 39 (30–47) | 99 % / 99 % | +0.07 s | 6 of 370 | −1.35 s | 0.999 vs 1.008 |
+| Same, 3 Q (WA, 2 heats) | 39 (31–47) | 100 % / 100 % | +0.07 s | 10 of 570 | −1.34 s | 0.999 vs 1.007 |
+| Indoor youth heat, 6 runners, 2 Q | 40 (31–48) | 100 % / 100 % | +0.06 s | 9 of 376 | −1.25 s | 1.009 vs 1.018 |
+| Girls outdoor heat, 2 Q | 39 (31–47) | 99 % / 99 % | +0.07 s | 9 of 374 | −1.50 s | 0.999 vs 1.008 |
+| Senior heat (Kalevan kisat), 3 Q | 38 (30–47) | 100 % / 100 % | +0.05 s | 10 of 537 | −0.92 s | 0.999 vs 1.006 |
+
+  Where easing starts (30–48 m) is as designed (`heat_ease.from` 30–50) and looks like the real thing; an easer
+  sometimes loses the place (1.6–2.4 %), as happens in real heats. **Not realistic:** (1) easing costs almost
+  nothing (0.05–0.08 s): a runner eases only while 3 m clear (`heat_ease.margin`) and speeds up again as soon as a
+  chaser closes, so nearly every qualifier eases for ~40 m at no cost; real heat winners who are clear jog in and
+  give away several tenths. (2) **Heats are faster than finals:** the same runners run ~1 % faster in a heat (time /
+  own even time 0.999 vs 1.007; the winner 0.9–1.5 s faster on average) because the heat mix is fast-heavy
+  (30 / 50 / 20) and the finals' tactical-heavy (20 / 35 / 45), and heat runners race the whole heat like a final.
+  At real championships the favourites run their heat to qualify and the final faster (Paris 2024: Wanyonyi won his
+  heat in 1:44.64 and the final in 1:41.19). Both belong to the heats work of decision 28 (runners who are safe run
+  within themselves, those outside chase the time spots); the user decides there.
+
+**Built (meet formats, 2026-10-09): sections, heats from the WA table, chasing, the time you need** (decisions 28–34;
+the realism audit is `docs/AUDIT.md`). `RaceDay` (`scripts/core/race_day.gd`), `data/races.json` `rounds` (replaces
+`heats`), `shapes.mix.heat` / `chase`, `engine.heat_ease`, `engine.indoor_break_bends`, the race screen, help
+`race_before` v4, `race_running` v7, `race_result` v6, `rankings` v2.
+- **Formats** (decision 28): a meet's `format` in `competitions.json`, else `rounds.default_format` = sections.
+  *single*: one race when the field fits a section (outdoors 12, indoors 6: the indoor local meets of 7–8 now run two
+  sections). *sections*: seeded by season best of the calendar year, else PB (no mark = last, drawn order); full
+  sections from the top, the slowest at least 4; run slowest first; `overall` = everyone by time (finishers, DQ, DNF);
+  the player's result is their overall place of the whole field ("9th of 41 in 2:19.40 (section 2 of 4)").
+  *heats*: the WA table (WAS 2025 Appendix 5, outdoors to 64 runners, indoors to 48), zigzag seeding, the running order
+  drawn by lot, a semi-final round where the table has one, Q / q marks, later rounds seeded on the list improved by
+  today's times (TR20.3.2b). Only the watch-only Kalevan kisat, EYOF, EM-hallit and MM are `heats` in the data; the
+  senior SM-hallit is `sections` (SUL 5.11). `RaceDay.format_override` forces a format for tools.
+- **Running order and the times to beat:** the groups before the player's are run when the race screen opens (so the
+  pre-race screen can tell the player), the rest after the player's race. `targets()`: sections = the 3rd and 8th best
+  of the times already run and the season bests of those still to run (the player left out), shown only when at least
+  75 % of the other runners have one (`estimate_share`; early in a season many have none); heats = the Q places, the
+  time spots and the slowest time inside them so far (none in the first heat). Measured (`race_rounds.gd`, after 40
+  weeks of the rivals' own racing): medal estimate − the real 3rd place +0.05 s outdoors, −1.65 s indoors.
+- **Chasing** (decision 33): a later heat whose runner outside its favourites for a Q place could make the time-spot
+  cutoff (even time on paper ≤ 1.015 × it) runs the `chase` mix (fast 30 / honest 60 / tactical 10); a later section
+  when the medal or top-8 time so far is within 1.5 % of its leaders. Measured: 7–12 of 30–36 later heats chased;
+  sections hardly ever (0 of 66: the fastest section runs last, the times before it are slower), as it should be.
+- **Running to qualify** (decision 33): heats without a target time run the `heat` mix fast 15 / honest 40 / tactical
+  45 (was 30 / 50 / 20); safe Q runners ease from 50–80 m (was 30–50) at 0.92 × speed (was 0.95) once 4 m clear (was
+  3) and go on easing while the first runner outside stays 1.5 m behind (`keep`; before they sped up again at once).
+  `race_surge_ease.gd -- 200 ease` before → after:
+
+| Row | Easing starts (m to go) | Cost to an easer (median) | Easers who lost the Q | Winner: heat − same runner in a final (mean) | Q runners' time / even time: heat vs final |
+|---|---|---|---|---|---|
+| Outdoor youth heat, 2 Q | 39 → 62 | +0.07 → +0.30 s | 6 / 370 → 8 / 350 | −1.35 → **+0.33 s** | 0.999 / 1.008 → 1.008 / 1.006 |
+| Indoor youth heat, 2 Q | 40 → 62 | +0.06 → +0.27 s | 9 / 376 → 14 / 376 | −1.25 → **+0.24 s** | 1.009 / 1.018 → 1.016 / 1.015 |
+| Senior heat, 3 Q | 38 → 62 | +0.05 → +0.22 s | 10 / 537 → 12 / 515 | −0.92 → **+0.19 s** | 0.999 / 1.006 → 1.005 / 1.004 |
+
+  Heats are now run a little slower than finals by the same runners, as at real championships, and easing costs a
+  few tenths; an easer is caught now and then (2–4 %).
+- **Indoor break line** (decision 29): in lanes for two bends and the back straight (155 m on our 200 m track;
+  `Race.break_bends`, the race screen draws the two-bend stagger). `race_shape.gd -- 100 3` youth indoor before →
+  after: 1st→2nd / 4th / last 2.7 / 7.6 / 16.9 → 1.9 / 6.0 / 16.1 s, time / table 1.0157 → 1.0114, contacts per 100
+  races 311 → 170, falls 1 per 67 → 1 per 267 runner-races (the rule's purpose: room to spread out before cutting
+  in). `race_balance.gd -- 60 indoor` (median − anchor, ability 5 / 7 / 9 / 11 / 13): +2.81 / +2.67 / +2.06 / +2.05 /
+  +2.43 → +2.11 / +2.01 / +1.70 / +1.89 / +2.12 s (indoors stays slower by design).
+- **Calendar-year season bests** (decision 30): `Rankings.season_of` = the year; the Rankings tab says "season 2027";
+  saves get `stats_year`, and an older save's rivals keep the current training season's SB as this year's (others are
+  dropped; the player's SB comes from the dated results anyway).
+- **Race screen** (decision 34): PLACES before the race (the section / heat, how places are decided, about what a
+  medal and the top 8 need, or the time spots so far), a one-line target under the clock while running (PC: under
+  "You: 3rd of 6", phone: a third status line), after sections the overall list (S2 = section 2, muted) and your
+  section, after heats / semis every group with Q / q and "On to the semi-final / final". Texts: `rounds.texts`.
+- **Unchanged (checked):** every outdoor `race_shape` row identical to the digit to R5 (finals and fields don't use
+  the heat mix, easing or the indoor break), so the R5 targets stand; `training_balance -- 0` fingerprints identical.
+- **Noted, not changed:** every Nuorten SM field is 41 (the existing rule "everyone with the standard, at most 40
+  rivals"); compare with real entry lists in step 7.
 
 ### 4.4 Season calendar (first version built)
 

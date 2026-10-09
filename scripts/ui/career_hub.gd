@@ -993,7 +993,7 @@ func _build_rankings() -> void:
 	_content.add_child(UIKit.label("%s %s · season %s" % [
 			Calendar.age_class(a, Game.date.year), event_name, Rankings.season_label(season)], "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
-			"Season bests (1 Nov – 31 Oct), indoor and outdoor together. Rivals race on their own too, so the list "
+			"Season bests of the calendar year, indoor and outdoor together. Rivals race on their own too, so the list "
 			+ "fills up as the season goes on."))
 
 	var rows := Rankings.season_list(a, Game.rivals, season)

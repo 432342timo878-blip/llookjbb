@@ -1,15 +1,17 @@
 extends SceneTree
 ## Dev tool for playtests (R5): jumps straight to a race to watch and play by hand. Needs a window:
-##   godot --path . --rendering-driver opengl3 -s res://tools/watch_race.gd -- [indoor|outdoor] [heats|any] [female] [ability=N] [quit]
+##   godot --path . --rendering-driver opengl3 -s res://tools/watch_race.gd -- [indoor|outdoor] [sections|heats|any] [female] [ability=N] [quit]
 ## Add `--resolution 390x844` before `-s` for the phone layout.
 ## Makes a new career (saves go to user://tool_saves/, never over your own), enters every meet the athlete may
 ## enter, plays the weeks (the health model off, so no injury gets in the way) and quick-runs every race until one
-## of the kind asked for: indoor or outdoor, and with `heats` a championship with heats and a final. Then it opens
-## the race screen and leaves the rest to you; after the race the game goes on as usual. `ability=N` sets the
-## athlete's 800 m attributes to about N (default: as created, about 5-6 for a 14-year-old; 9 = a youth finalist).
+## of the kind asked for: indoor or outdoor; `sections` = a meet run in timed sections (Finnish championships,
+## GDD 4.3.1 decision 28); `heats` = every meet is run the World Athletics way (heats, semi-finals when the table
+## says so, final with Q / q), which no youth meet the player can enter really does: for trying the heats. Then it
+## opens the race screen and leaves the rest to you; after the race the game goes on as usual. `ability=N` sets
+## the athlete's 800 m attributes to about N (default: as created, about 5-6 for a 14-year-old; 9 = a youth finalist).
 
 var _indoor := true
-var _heats := false
+var _round := ""   # "" any race, "sections", "heats"
 var _gender := "male"
 var _ability := 0.0
 
@@ -19,8 +21,9 @@ func _initialize() -> void:
 		match a:
 			"indoor": _indoor = true
 			"outdoor": _indoor = false
-			"heats": _heats = true
-			"any": _heats = false
+			"heats": _round = "heats"
+			"sections": _round = "sections"
+			"any": _round = ""
 			"female": _gender = "female"
 			"male": _gender = "male"
 			_:
@@ -38,6 +41,8 @@ func _frames(n: int) -> void:
 func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	load("res://scripts/core/health_system.gd").model_enabled = false
+	if _round == "heats":
+		load("res://scripts/core/race_day.gd").format_override = "heats"
 	await _frames(10)
 	var main := current_scene
 	var router = main.get_node("/root/Router")
@@ -68,12 +73,12 @@ func _run() -> void:
 	while true:
 		if not _to_race(game):
 			print("watch_race: no %s race%s found this season (skipped %d races)" % ["indoor" if _indoor else "outdoor",
-					" with heats" if _heats else "", skipped])
+					"" if _round == "" else " with " + _round, skipped])
 			quit()
 			return
 		var rd = game.race_day
 		var indoor: bool = rd.meet.get("indoor", false)
-		if indoor == _indoor and (not _heats or rd.rounds.size() > 1):
+		if indoor == _indoor and (_round == "" or rd.format == _round):
 			break
 		while not rd.is_done():   # not the kind asked for: quick-run it
 			rd.start_round(false, "pack").run()
@@ -87,11 +92,21 @@ func _run() -> void:
 		await _frames(30)
 		print("watch_race: race screen open: ", main.get_node("ScreenHost").get_child(-1).name)
 		var rd = game.race_day
-		if rd.rounds.size() > 1:   # (the heats: how many, and the final's size, never more than the lanes)
+		if rd.is_group_round():   # (sections / heats: the groups, what the player is told, and what came of it)
+			var groups: int = rd.heats.size()
+			var sizes: Array = rd.heats.map(func(h): return h.size())
+			var auto: int = rd._auto_places()
+			var spots: int = rd._time_spots()
+			print("watch_race: %s, %d groups of %s, the player in %d; targets %s" % [rd.rounds[0], groups, str(sizes),
+					rd.player_heat + 1, str(rd.targets())])
 			rd.start_round(false, "pack").run()
 			rd.finish_round()
-			print("watch_race: %d heats, %d automatic places each, final of %d (lanes %d)" % [rd.heats.size(),
-					rd._auto_per_heat(), rd.final_entrants.size(), 6 if rd.meet.get("indoor", false) else 8])
+			if rd.overall.is_empty():
+				print("watch_race: Q %d + q %d per round -> next round %d runners (lanes %d)" % [auto, spots,
+						rd.final_entrants.size() if rd.heats.is_empty() else rd.heats.reduce(func(s, h): return s + h.size(), 0),
+						6 if rd.meet.get("indoor", false) else 8])
+			else:
+				print("watch_race: overall list %d runners; the player %s" % [rd.overall.size(), str(rd.player_results)])
 		quit()
 
 
