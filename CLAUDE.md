@@ -47,3 +47,8 @@ In-depth career mode track and field (yleisurheilu) game, built in Godot togethe
 - Keep sessions focused on one task; record decisions in docs, not just chat.
 - **Every new feature adds or updates its help entry** in `data/help.json` (a new screen gets a "?"; raise `version` when an entry changes meaningfully) and `tools/help_check.gd` must still pass.
 - Commit and push at the end of every work session.
+- **Check-ins (user, 2026-10-09):** after each larger step (next: after R4, after step 7, at the end of M2) remind the
+  user that a check-in is due: a realism audit of what was built since the last one plus a project review (progress
+  vs GDD 1–2 and the roadmap, what's missing, what's fragile, Claude's honest opinions, priorities together). Output: a
+  dated section in `docs/AUDIT.md`; roadmap changes only with the user's OK. Recommend Opus for it (ROADMAP ideas
+  backlog "Regular check-ins").
