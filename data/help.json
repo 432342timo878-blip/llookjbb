@@ -121,11 +121,11 @@
   },
   "race_result": {
    "title": "The result",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "Results", "text": "Your place and time; a new personal best is marked. The time counts in the season rankings."},
     {"heading": "DNF and DQ", "text": "DNF: did not finish, after a bad fall. DQ: disqualified for obstruction, after pushing your way out of a box. Neither counts for a personal best or the rankings. A fall can leave you with grazes or a bruise, rarely a sprained ankle.", "see": ["injuries"]},
-    {"heading": "Heats and final", "text": "At big meets there are heats. Q marks the runners through to the final: the top two of each heat and the fastest of the rest. Runners safely in the top two often ease off before the line."}
+    {"heading": "Heats and final", "text": "At big meets there are heats. Q marks the runners through to the final: the top places of each heat (two, fewer when there are many heats: the final has 6 lanes indoors, 8 outdoors) and the fastest of the rest. Runners safely through often ease off before the line."}
    ]
   },
   "new_career": {

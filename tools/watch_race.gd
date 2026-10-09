@@ -86,6 +86,12 @@ func _run() -> void:
 	if OS.get_cmdline_user_args().has("quit"):   # (the tool's own test: open the race screen, then stop)
 		await _frames(30)
 		print("watch_race: race screen open: ", main.get_node("ScreenHost").get_child(-1).name)
+		var rd = game.race_day
+		if rd.rounds.size() > 1:   # (the heats: how many, and the final's size, never more than the lanes)
+			rd.start_round(false, "pack").run()
+			rd.finish_round()
+			print("watch_race: %d heats, %d automatic places each, final of %d (lanes %d)" % [rd.heats.size(),
+					rd._auto_per_heat(), rd.final_entrants.size(), 6 if rd.meet.get("indoor", false) else 8])
 		quit()
 
 

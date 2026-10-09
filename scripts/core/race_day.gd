@@ -95,7 +95,14 @@ func start_round(interactive: bool, plan: String) -> Race:
 
 ## Heats: the automatic qualifying places (runners safely in one ease off near the line); 0 in a final.
 func _auto_places() -> int:
-	return int(Data.races.heats.auto_per_heat) if rounds[round_index] == "heat" else 0
+	return _auto_per_heat() if rounds[round_index] == "heat" else 0
+
+
+## Automatic places per heat: heats.auto_per_heat, but never more than fit in the final (6 lanes indoors, 8 outdoors):
+## with many heats fewer, and with more heats than final places none (the final then goes by time). Before the R5
+## playtest a meet with 7 heats sent 14 runners into a 6-lane indoor final.
+func _auto_per_heat() -> int:
+	return mini(int(Data.races.heats.auto_per_heat), floori(float(_max_final) / maxi(heats.size(), 1)))
 
 
 ## Which race-shape mix (data/races.json shapes.mix) fits this meet and round: local and district meets by
@@ -138,9 +145,9 @@ func finish_round() -> void:
 	round_index += 1
 
 
-## Top N of each heat plus the fastest of the rest, up to the final size (only runners with a time).
+## Top N of each heat (_auto_per_heat) plus the fastest of the rest, up to the final size (only runners with a time).
 func _qualifiers(heat_results: Array) -> Array:
-	var cfg: Dictionary = Data.races.heats
+	var auto := _auto_per_heat()
 	var by_name := {}
 	for h in heats:
 		for e in h:
@@ -151,7 +158,7 @@ func _qualifiers(heat_results: Array) -> Array:
 		for i in res.size():
 			if res[i].get("status", "") != "":
 				continue   # did not finish / disqualified (always listed last)
-			if i < int(cfg.auto_per_heat):
+			if i < auto:
 				q.append(by_name[res[i].name])
 			else:
 				rest.append(res[i])

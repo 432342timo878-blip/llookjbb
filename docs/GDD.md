@@ -259,7 +259,12 @@ change of place late is a fade, never a fight.
     still works (the command happens on resume); the Space bar pauses on PC.
     Playtest notes too: Move out works, the coach's advice seemed sensible; a "rival makes a move" card for Nurmi was
     followed by Nurmi never passing (the player held their ground): a surge can fail (boxed, short, can't afford it);
-    if it feels like a broken promise again, word the card "tries to go past".
+    if it feels like a broken promise again, word the card "tries to go past". Second race (the final): a surger moved
+    up places after being let go (the R5 drive, as meant); "Ease and step out" worked on the home straight.
+    **Bug fixed the same day:** the final had 14–15 runners on the 6-lane indoor track: every heat sent its first two
+    through, however many heats there were. Now the automatic places per heat are as many as fit
+    (`RaceDay._auto_per_heat`: heats.auto_per_heat, at most final size / heats; none with more heats than lanes, then the
+    final goes by time); the heats' easing uses the same number. Help `race_result` v4.
 
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
