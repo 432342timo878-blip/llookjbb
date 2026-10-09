@@ -228,6 +228,20 @@ change of place late is a fade, never a fight.
     limits the cards is that one needs a real moment and comes at least 8 race seconds after the last (about 5–6 a race).
 19. **The drop to 1x says why** ("SLOWED TO 1x · SAVOLAINEN KICKS"): the user could not tell which moves merit it.
 
+**Decisions (user, 2026-10-09, before R5):**
+20. **No difficulty setting, ever.** Opponents are as hard as their attributes make them: fields come from the meet's level
+    (never from the player's level), rivals train toward their own ceilings and race by the same rules, no rubber-banding.
+    A far stronger rival is hard or impossible to beat. (Checked at step 7 against real Finnish development.)
+21. **Time and place are one thing:** no artificial place effect for answers; what a time cost does to the place depends on
+    how tight the field is (0.5 s is 1–2 places in a tight final, nothing in a wide field). R5 measures the answers' worth
+    in tight finals as well.
+22. **Boxed in: every way out is realistic, none is a trap.** Waiting works early and fails late (the race runs out), easing
+    back and stepping out costs the 2–4 m of the design (not 7 % of speed for as long as the box lasts), pushing through is
+    the right call late when a gap exists (contact / DQ risk stays). The best answer depends on the distance left. R5.
+23. **A move is decisive when the mover can carry it to the end:** chasers pay a lot to close a gap on someone with more
+    reserve (or a better kick), and a mover who is going to fade is caught. R5 first measures how often a mover who surged
+    finishes ahead of those who let it go, then tunes (surge size, closing cost, `let_go_close`).
+
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
   the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 8–12 % slower, then a

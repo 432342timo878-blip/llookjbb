@@ -180,7 +180,11 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         lines); tour + layout check; `help_check.gd`; look at the screenshots.
   - [ ] **R5. Balance & playtest:** all GDD 4.3.1 targets in one table before / after, watched races on PC and phone
         (indoor and outdoor, heats + final), fixes, docs + CLAUDE.md. Carried over from R2: the upsets at Δ 0.5 and a
-        good vs bad race worth 0.5–1 % (with the player's cards / action bar in place). *(Opus, medium: tuning;
+        good vs bad race worth 0.5–1 % (with the player's cards / action bar in place).
+        **Decided 2026-10-09 (GDD decisions 20–23):** rework the box ways so the best answer depends on the distance left
+        (wait early / step out mid-race / push through late), make a move decisive when the mover can carry it (measure
+        first with `race_value.gd`: how often a mover finishes ahead of those who let it go), judge the answers' worth
+        in tight finals too, no difficulty setting. Reset `sensible_choice` and the coach's advice from the new numbers. *(Opus, medium: tuning;
         Sonnet for the fixes)*
         Check: every check tool above, `training_balance.gd -- 0` fingerprints identical, `season_check.gd`.
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
@@ -261,6 +265,29 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   licence terms checked) athlete and track photos, ideally Finnish athletics, with the credits added to the README there and
   to the in-game Credits screen (still missing). No photos of identifiable minors (youth meets) unless the licence and
   privacy allow it; keep `mipmaps/generate=true`. Research + asset task; downloads need the user's OK per file. *(Sonnet)*
+- **Training screen with training PBs (user, 2026-10-09):** a dedicated screen for training results and detailed training
+  info: gym PBs (squat, deadlift, jumps, medicine-ball throws...), long / easy run PBs (distance, pace, time), interval PBs
+  (e.g. 6 x 400 m average, best 200 m / 300 m / 600 m rep), tempo and test sessions, with history and PB marks, per
+  season. The numbers come from the athlete's attributes, the session and the day's form / fatigue (so they rise as
+  the athlete improves), stored per session type; the Stats tab (above) can link to it. Needs a design session
+  first: which results per session in `data/training.json`, how they follow the attributes. *(Opus, then Sonnet)*
+- **Venue-specific stadiums (user, 2026-10-09):** a meet in a small Finnish town looks like it is run at Olympiastadion,
+  because there is one stadium model. Give venues their own look and size (small town track with a little grandstand,
+  a big arena, an indoor hall, Helsinki's Olympiastadion...) from data per venue (`data/competitions.json` venues: stands,
+  capacity, colours, lighting, lanes). Get reference photos / specs of the real venues first (CLAUDE.md: realism, no
+  guessing); goes with "Track visuals" below and M3. *(Opus for the look, then Sonnet)*
+- **Other events in the stadium during your race (user, 2026-10-09, "if at all possible"):** field events running in the
+  infield at the same time (jumps, throws, with athletes warming up and attempts happening), so the stadium is alive.
+  Fits M3 "simultaneous events"; needs the meet's programme (next item) and the venue models above.
+- **Race ceremony: introductions and the start (user, 2026-10-09):** before the start the athletes are introduced (name,
+  club, PB / SB, maybe a short line from the commentator), then they walk out and take their places on the track (the
+  800 m start in lanes), and "On your marks - set - go" like in real life (Finnish: paikoillenne - valmiina - laukaus),
+  with the gun. Goes with R4's commentary and the Race story; a pre-start stage on the race screen between the field
+  list and the running stage. *(Opus for the design, then Sonnet)*
+- **Whole event card in the Calendar (user, 2026-10-09):** clicking an event shows the full event card, not only our
+  800 m: all disciplines and the timetable of the meet (programme per day, rounds and times). Needs the programme
+  as data: real timetables for the big meets (SUL / Kalevan kisat pages, source dated), a believable generic programme
+  for the small ones (marked `estimated`). Extends "Calendar race details" below. *(Sonnet for the UI, research for the data)*
 - **Calendar race details (user, 2026-10-06):** click a race in the Calendar to see all its details: participants, level, place, standards, etc. *(Sonnet)*
 - **More name variety (user, 2026-10-06):** too many repeated first names, and some last names, among rivals. Enlarge `data/names_fi.json` (and check how `Rivals` draws names). *(Sonnet)*
 
