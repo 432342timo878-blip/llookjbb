@@ -316,6 +316,13 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   800 m: all disciplines and the timetable of the meet (programme per day, rounds and times). Needs the programme
   as data: real timetables for the big meets (SUL / Kalevan kisat pages, source dated), a believable generic programme
   for the small ones (marked `estimated`). Extends "Calendar race details" below. *(Sonnet for the UI, research for the data)*
+- **Regular check-ins: realism audit + project review (user, 2026-10-09):** every now and then a session that (1)
+  repeats the realism audit for what was built since the last one (`docs/AUDIT.md`: matches / simplification / gap,
+  with sources and our tools' numbers), and (2) reviews the development itself: where we are against the vision
+  (GDD 1–2) and the roadmap, what is still missing, what is fragile or slow (tools, checks, code), Claude's honest
+  feedback and opinions, and an open dialogue about priorities. Claude's proposed rhythm: after each larger step (next:
+  after R4, after step 7, at the end of M2), or whenever the user asks. Output: a dated section in `docs/AUDIT.md`
+  + roadmap changes the user agrees to. *(Opus)*
 - **Zoom in on the race (user, 2026-10-09):** on the race screen the dots sometimes look far away. Let the player zoom
   in on the field (e.g. a camera that follows the pack or the player, zoom buttons / pinch on a phone, 44 px, no
   hover), keeping the whole-track view as an option. Mind `race_perf` (the stadium is drawn once; the dots view is
