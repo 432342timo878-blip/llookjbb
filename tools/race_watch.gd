@@ -17,6 +17,9 @@ const CONFIGS := [
 	["girls even field", "female", false, 7.0, 0.8, 7.0, "district"],
 	["senior final", "male", false, 15.0, 0.4, 15.0, "final"],
 	["indoor heat", "male", true, 8.0, 0.8, 8.2, "heat"],
+	# R5 (decision 21): tight finals, where a second is 1-2 places (8th value: the field's consistency mean, default 9)
+	["tight final (sd 0.3)", "male", false, 9.0, 0.3, 9.0, "final"],
+	["tight final, consistent field (sd 0.3, consistency 15)", "male", false, 9.0, 0.3, 9.0, "final", 15.0],
 ]
 
 
@@ -49,16 +52,17 @@ func _run() -> void:
 				sensible = res
 			if mode == "poor":
 				poor = res
-			print("   %-9s place %.2f  time %.2f s  cards/race %.2f  1x share %2d %%  | %s" % [mode, res.place, res.time,
-					res.cards, roundi(res.slow * 100.0), _counts(res.by_card)])
+			print("   %-9s place %.2f  time %.2f s%s  cards/race %.2f  1x share %2d %%  | %s" % [mode, res.place, res.time,
+					(" (DNF/DQ %d)" % res.lost) if res.lost > 0 else "", res.cards, roundi(res.slow * 100.0), _counts(res.by_card)])
 			if mode != "quick":
 				print("             answers: %s" % _counts(res.answers))
 			if mode == "coach":
 				print("             coach: shouts %.2f per race, right %d %%, silent cards %d %%" % [res.shouts,
 						roundi(res.right * 100.0), roundi(res.silent * 100.0)])
 		print("   felt reserve at the cards (share of the reserve, mean): %s" % _means(sensible.share))
-		print("   sensible vs quick: %+.2f places better on average (target: at most about 1); sensible vs poor: %+.2f places" % [
-				quick.place - sensible.place, poor.place - sensible.place])
+		print("   sensible vs quick: %+.2f places better on average (target: at most about 1); sensible vs poor: %+.2f places, %+.2f s (%+.2f %%)" % [
+				quick.place - sensible.place, poor.place - sensible.place, poor.time - sensible.time,
+				100.0 * (poor.time - sensible.time) / sensible.time])
 	quit()
 
 
@@ -77,15 +81,18 @@ func _play(cfg: Array, n: int, mode: String, tactics: float) -> Dictionary:
 	var silent := 0
 	var asked := 0
 	var share_log := {}
+	var timed := 0
+	var lost := 0
 	for i in n:
 		var frng := RandomNumberGenerator.new()
 		frng.seed = 1000 + i
 		var entrants := []
+		var cons: float = cfg[7] if cfg.size() > 7 else 9.0
 		for k in 8:
 			var ab: float = cfg[3] + frng.randfn(0, cfg[4])
 			entrants.append({"name": "Rival R%d" % k, "club": "", "ability": ab, "speed": ab + frng.randfn(0, 2),
 					"anaerobic": frng.randfn(0, 2), "tactics": clampf(frng.randfn(8.0, 3.0), 1.0, 20.0),
-					"consistency": clampf(frng.randfn(9.0, 3.0), 1.0, 20.0), "composure": 10.0,
+					"consistency": clampf(frng.randfn(cons, 3.0), 1.0, 20.0), "composure": 10.0,
 					"competitiveness": clampf(frng.randfn(9.0, 3.0), 1.0, 20.0)})
 		entrants[7] = {"name": "You Player", "club": "", "ability": cfg[5], "speed": cfg[5], "anaerobic": 0.0, "tactics": tactics,
 				"consistency": 10.0, "composure": 10.0, "determination": 10.0, "is_player": true}
@@ -129,11 +136,15 @@ func _play(cfg: Array, n: int, mode: String, tactics: float) -> Dictionary:
 				slow_left -= 0.1
 			race_time += 0.1
 		place += race.results().map(func(x): return x.is_player).find(true) + 1
-		time += race.player.t
+		if race.player.status == "":
+			time += race.player.t
+			timed += 1
+		else:
+			lost += 1
 		cards += race.cards_shown
 		for c in race.card_log:
 			by_card[c.id] = int(by_card.get(c.id, 0)) + 1
-	return {"place": place / n, "time": time / n, "cards": float(cards) / n, "by_card": by_card, "answers": answers,
+	return {"place": place / n, "time": time / maxf(timed, 1), "lost": lost, "cards": float(cards) / n, "by_card": by_card, "answers": answers,
 			"slow": slow_time / maxf(race_time, 1.0), "shouts": float(shouts) / n,
 			"right": float(right) / maxf(shouts, 1), "silent": float(silent) / maxf(asked, 1), "share": share_log}
 

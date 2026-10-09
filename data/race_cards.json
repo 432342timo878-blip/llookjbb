@@ -1,5 +1,5 @@
 {
- "_note": "Texts of the player's controls in a watched race (GDD 4.3.1, step R3): the pause cards (title, text, answers), the lines the player's choices put in the commentary (R4 turns the commentary into data/race_commentary.json), and the coach's shouts. Placeholders in {braces} are filled by the race: {pos} your place, {to_go} metres to go, {name} / {leader} a runner, {gap} metres, {call} 'Bell!' or 'Halfway!', {split} / {leader_split} times, {what} kicks / surges, {where} where they are, {context} a sentence about the move that is going. The card ids and the answer ids are used by scripts/core/race.gd.",
+ "_note": "Texts of the player's controls in a watched race (GDD 4.3.1, step R3): the pause cards (title, text, answers), the lines the player's choices put in the commentary (R4 turns the commentary into data/race_commentary.json), and the coach's shouts. Placeholders in {braces} are filled by the race: {pos} your place, {to_go} metres to go, {name} / {leader} a runner, {gap} metres, {call} 'Bell!' or 'Halfway!', {split} / {leader_split} times, {what} kicks / surges, {where} where they are, {context} a sentence about the move that is going, {room} whether there is room to get out of a box (R5). The card ids and the answer ids are used by scripts/core/race.gd.",
  "cards": {
   "break": {
    "title": "Break from the lanes",
@@ -40,11 +40,11 @@
   },
   "box": {
    "title": "Boxed in",
-   "text": "You're stuck behind {name} with a runner on your shoulder. {context} How do you get out?",
+   "text": "You're stuck behind {name} on the inside. {room} {context} How do you get out?",
    "options": [
-    {"id": "wait", "label": "Wait for a gap", "detail": "Stay put. A gap often opens, but you may be too late for the move."},
-    {"id": "ease", "label": "Ease and step out", "detail": "Reliable, but you lose a few metres."},
-    {"id": "push", "label": "Push through", "detail": "The quickest way, but risk of contact, and a small risk of disqualification for obstruction."}
+    {"id": "wait", "label": "Wait for a gap", "detail": "Stay put and save energy. With someone right on your shoulder, a gap usually comes in a second or two."},
+    {"id": "ease", "label": "Ease and step out", "detail": "Drop back a stride and go round: costs a metre or so. Best when there's room."},
+    {"id": "push", "label": "Push through", "detail": "The quickest way out. With room it's a nudge; without, a shove: contact, and a risk of disqualification."}
    ]
   },
   "move": {
@@ -97,6 +97,8 @@
   "where_beside": "Right beside you",
   "where_behind": "{m} m behind you",
   "rival_move": "{name} {what} nearby.",
+  "room": "There's half a gap on your outside.",
+  "no_room": "{name} is right on your shoulder.",
   "own_move": "You want to get past."
  },
  "says": {

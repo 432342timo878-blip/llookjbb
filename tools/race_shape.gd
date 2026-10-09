@@ -12,7 +12,8 @@ extends SceneTree
 ## Real numbers to compare with: GDD 4.3.1 "Measured".
 ## Duel rows (GDD 4.3.1 "Upsets"): runner A is stronger than runner B by delta ability, in an even final of 8.
 ## Each race is run five times with the same field and dice: both neutral, A with a bad race (leads too fast /
-## waits boxed at the back / kicks from 400 m) against B with a good race, and A with a good race. Prints how often
+## sits at the back and pushes out of every box / kicks from 400 m) against B with a good race, and A with a good
+## race (B's and A's good race take the best way out of boxes). Prints how often
 ## B beats A and how much a bad race costs A against a good one (% of time, measured against the median time of the
 ## other six in the same race, since a scripted fast pace changes everyone's time).
 
@@ -87,6 +88,7 @@ func _row(row: Array, n: int) -> void:
 	var shapes := {}
 	var runner_races := 0
 	var box_secs := []
+	var box_lost := {}   # way -> metres lost
 	var e2 := []   # the same gaps if everyone ran their even time for the day (no race tactics at all)
 	var e4 := []
 	var elast := []
@@ -130,6 +132,10 @@ func _row(row: Array, n: int) -> void:
 			if key == "escape":
 				box_secs.append(float(ev.seconds))
 				key = "escape_" + str(ev.way)
+				if ev.has("lost"):   # (R5: metres the box cost against the runner who was ahead)
+					var l: Array = box_lost.get(ev.way, [])
+					l.append(float(ev.lost))
+					box_lost[ev.way] = l
 			count[key] = int(count.get(key, 0)) + 1
 			if key == "kick" and ev.answer_to != "":
 				count.answer = int(count.get("answer", 0)) + 1
@@ -199,17 +205,27 @@ func _row(row: Array, n: int) -> void:
 			int(count.get("contact_straight", 0)), int(count.get("contact_push", 0)), int(count.get("fall_break", 0)),
 			int(count.get("fall_swing", 0)), int(count.get("fall_bend", 0)), int(count.get("fall_straight", 0)),
 			int(count.get("fall_push", 0)), float(long_boxes) / n, _median(box_secs) if not box_secs.is_empty() else 0.0])
+	if not box_lost.is_empty():
+		var parts2 := []
+		for w in ["wait", "ease", "push"]:
+			var l: Array = box_lost.get(w, [])
+			if not l.is_empty():
+				var long := l.filter(func(x): return absf(x) >= 0.5)
+				parts2.append("%s %.1f m (median of those over 0.5 m: %.1f, %d)" % [w, _mean(l),
+						_median(long) if not long.is_empty() else 0.0, long.size()])
+		print("    metres a box cost against the runner ahead (mean): ", ", ".join(parts2))
 
 
 ## The duel rows (GDD 4.3.1 "Upsets").
 func _duels(n: int, deltas: Array) -> void:
 	var RaceScript = load("res://scripts/core/race.gd")
-	var good := {"perfect": true, "want": "pack", "kick_at": 200.0, "box_way": "ease"}
+	var good := {"perfect": true, "want": "pack", "kick_at": 200.0, "box_way": "best"}   # (R2-R3: always "ease")
 	var configs := [
 		# name, A's script, B's script
 		["neutral", {}, {}],
 		["leads too fast", {"want": "lead", "lead_pace": 1.07, "kick_at": 300.0}, good],
-		["waits boxed", {"want": "back", "box_way": "wait", "kick_at": 120.0, "cover": 0.0, "answer": 0.0}, good],
+		# (R2-R3: "waits boxed", box_way wait; since R5 waiting is the right way out without room, user 2026-10-09)
+		["pushes boxed", {"want": "back", "box_way": "push", "kick_at": 120.0, "cover": 0.0, "answer": 0.0}, good],
 		["kicks from 400", {"kick_at": 400.0, "answer": 1.0}, good],
 		["A good", good, {}],
 	]
@@ -280,6 +296,13 @@ func _pct(x: Array, y: Array) -> float:
 
 func _per(count: Dictionary, key: String, n: int) -> float:
 	return float(count.get(key, 0)) / n
+
+
+func _mean(values: Array) -> float:
+	var s := 0.0
+	for x in values:
+		s += x
+	return s / maxf(values.size(), 1)
 
 
 func _median(values: Array) -> float:

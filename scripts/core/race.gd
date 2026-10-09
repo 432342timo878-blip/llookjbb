@@ -138,6 +138,8 @@ class Runner:
 	var surges := 0
 	var covering: Runner = null   # the surger they go with
 	var hold_left := 0.0          # letting a move go: metres more at no more than hold_v
+	var driving := false          # after their surge, leading: pressing on while they can afford it (R5)
+	var let_go_of := -1           # the mover they let go (index): no chasing while that move goes on (R5)
 	# The player's controls (R3)
 	var out_left := 0.0           # Move out: seconds more outside, going for a pass
 	var out_to := 0.0             # ... and how far out (metres from the rail)
@@ -154,6 +156,9 @@ class Runner:
 	var boxed := false
 	var box_way := ""             # wait / ease / push while a box lasts
 	var box_time := 0.0
+	var box_ref := -1             # the runner ahead when the box began (index), and the gap to them then (the
+	var box_gap0 := 0.0           # escape event reports the metres the box cost against them)
+	var room := false             # boxed: room to push out (the runner on the shoulder is half a stride back)
 	var push_left := 0.0          # pushing through: seconds of squeezing out regardless
 	# Contact, stumbles and falls (R2)
 	var down_left := 0.0          # on the ground after a fall: seconds left
@@ -498,13 +503,25 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 		# Moves (R2): a surge of their own, going with someone's surge, or letting it go.
 		if r.d >= break_line:
 			_maybe_surge(r, order, pace)
+		if r.driving and r.surge_left <= 0.0:
+			# After their surge the mover presses on (moves.drive), past anyone slower, while they can afford it;
+			# one who can't settles back into the race and is caught (R5, decision 23).
+			var dv: Dictionary = e.moves.drive
+			var cap0 := _cap(r, 0.0)
+			if cap0 >= pace * float(dv.min):
+				target = maxf(target, minf(pace * float(dv.speed), cap0))
+				wants_past = true
+			else:
+				r.driving = false
 		if r.surge_left > 0.0:
 			target = minf(r.surge_v, top)
 			wants_past = true
 			r.surge_left -= r.v * DT
+			if r.surge_left <= 0.0 and not r.is_player:
+				r.driving = true   # the surge is over: press on if they lead and can afford it (above)
 		elif r.covering != null:
 			var s := r.covering
-			if s.done or s.down_left > 0.0 or (s.surge_left <= 0.0 and not s.kicking) or s.d < r.d - 2.0:
+			if s.done or s.down_left > 0.0 or (s.surge_left <= 0.0 and not s.kicking and not s.driving) or s.d < r.d - 2.0:
 				r.covering = null
 			else:
 				var mv: Dictionary = e.moves
@@ -516,6 +533,13 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 		if r.hold_left > 0.0:
 			target = minf(target, maxf(r.hold_v, pace))
 			r.hold_left -= r.v * DT
+		if r.let_go_of >= 0:
+			# They let the move go: no chasing while it goes on (the mover's surge and drive), until their own kick.
+			var m: Runner = runners[r.let_go_of]
+			if (m.surge_left > 0.0 or m.driving) and not m.done and r.d < r.let_go_until:
+				target = minf(target, maxf(r.hold_v, pace))
+			else:
+				r.let_go_of = -1
 		target *= r.pace_factor
 
 	if r.d >= break_line:
@@ -603,8 +627,9 @@ func _traffic(r: Runner, order: Array[Runner], target: float, wants_past: bool, 
 	var in_box := false
 	if ahead != null:
 		var gap := ahead.d - r.d
-		# (a box lasts while they ease back a little to step out: box.hold metres)
-		if (gap < 2.0 or (r.box_way != "" and gap < float(b.hold))) and absf(ahead.lat - r.lat) < 0.9:
+		# (a box lasts while they drop back to step out: up to box.hold metres behind, easing box.ease_hold)
+		var hold := float(b.ease_hold) if r.box_way == "ease" else float(b.hold)
+		if (gap < 2.0 or (r.box_way != "" and gap < hold)) and absf(ahead.lat - r.lat) < 0.9:
 			wants_past = wants_past or r.kicking or target > ahead.v * 1.02
 			var out_lat := ahead.lat + 1.0
 			if wants_past and (r.push_left > 0.0 or _outside_clear(r, out_lat, order)):
@@ -621,11 +646,19 @@ func _traffic(r: Runner, order: Array[Runner], target: float, wants_past: bool, 
 			r.lat_target = _inside_target(r, order)
 	else:
 		r.lat_target = _inside_target(r, order)
-	if moving_out and not in_box and _outside_clear(r, r.out_to, order):
-		r.lat_target = maxf(r.lat_target, r.out_to)   # stay out instead of drifting back to the rail
+	if moving_out and not in_box:
+		var beside := _at(r, r.out_to, order)
+		if beside == null or r.d - beside.d >= float(b.room_m):
+			r.lat_target = maxf(r.lat_target, r.out_to)   # out (stay out instead of drifting back to the rail)
+		else:
+			# Someone right beside them: drop back a stride and step out behind them, as easing out of a box (R5).
+			target = minf(target, beside.v * float(b.ease_speed))
 	r.boxed = in_box
 	if not in_box and r.box_way != "":
-		_event("escape", r, {"way": r.box_way, "seconds": snappedf(r.box_time, 0.1)}, order)
+		var lost := 0.0
+		if r.box_ref >= 0 and not runners[r.box_ref].done:
+			lost = (runners[r.box_ref].d - r.d) - r.box_gap0
+		_event("escape", r, {"way": r.box_way, "seconds": snappedf(r.box_time, 0.1), "lost": snappedf(lost, 0.1)}, order)
 		r.box_way = ""
 		r.box_pending = false
 	return target
@@ -639,8 +672,12 @@ func _urgent(r: Runner, rem: float) -> bool:
 ## Boxed in: no faster than the runner ahead, and a way out: wait for a gap, ease and step out, push through.
 func _boxed(r: Runner, ahead: Runner, out_lat: float, target: float, order: Array[Runner]) -> float:
 	var b: Dictionary = _eng.box
+	var blocker := _blocker(r, out_lat, order)
+	r.room = _room(r, blocker)
 	if r.box_way == "":
 		r.box_time = 0.0
+		r.box_ref = ahead.index
+		r.box_gap0 = ahead.d - r.d
 		if r == player:
 			# The player waits at first; if the box lasts and a move is going, the box card asks (R3); else the
 			# way is rolled like a rival's.
@@ -653,45 +690,76 @@ func _boxed(r: Runner, ahead: Runner, out_lat: float, target: float, order: Arra
 	if r.box_pending and r.box_time >= float(_ctl.cards.box_after_s):
 		r.box_pending = false
 		if _move_going(r) and _card_ok("box"):
-			var ahead_name: String = ahead.name
-			_ask("box", {"name": ahead_name.get_slice(" ", ahead_name.get_slice_count(" ") - 1),
-					"context": _move_context(r)})
+			var ph: Dictionary = Data.race_cards.phrases
+			var room_line: String = ph.room if r.room else String(ph.no_room).format(
+					{"name": _surname(blocker.name if blocker != null else ahead.name)})
+			_ask("box", {"name": _surname(ahead.name), "room": room_line, "context": _move_context(r)})
 		else:
 			r.box_way = _box_way(r)
-	var blocker := _blocker(r, out_lat, order)
 	match r.box_way:
 		"wait":
 			target = minf(target, ahead.v)
-			var rate := lerpf(float(b.gap_rate.at_1), float(b.gap_rate.at_20), r.skill)
+			# On a bend nobody drifts wide (it costs distance): a gap rarely opens there, so a box on the last bend
+			# lasts until the home straight (R5: waiting works early, fails late).
+			var rate := lerpf(float(b.gap_rate.at_1), float(b.gap_rate.at_20), r.skill) \
+					* (float(b.gap_bend) if is_bend(r.d) else 1.0)
 			if blocker != null and _rng.randf() < rate * DT:
 				# The runner on their shoulder drifts wide (or moves on): a gap opens.
 				blocker.lat_target = maxf(blocker.lat_target, blocker.lat + 1.0)
 				_event("gap_opens", r, {"by": blocker.name}, order)
 		"ease":
-			target = minf(target, ahead.v * float(b.ease_speed))
+			# Ease off a stride and step out behind the runner on the shoulder: a little slower than them until the
+			# outside is clear (then _traffic moves out). It costs the metres it takes to get behind them.
+			target = minf(target, (blocker if blocker != null else ahead).v * float(b.ease_speed))
 		"push":
 			target = minf(target, ahead.v)
 			if r.push_left <= 0.0:
 				r.push_left = float(b.push_time)
 				var other := blocker if blocker != null else ahead
+				# With room (the runner on the shoulder is half a stride back) it is a nudge; without, a shove.
+				var k := 1 if r.room else 0
 				other.lat_target = maxf(other.lat_target, out_lat + 0.6)
-				if _rng.randf() < float(b.push_contact):
+				if _rng.randf() < float(b.push_contact[k]):
 					_contact(r, other, "push", order)
-				if r.status == "" and _rng.randf() < float(b.push_dq):
+				if r.status == "" and _rng.randf() < float(b.push_dq[k]):
 					r.status = "dq"
 					_event("dq", r, {"reason": "obstruction"}, order)
 	return target
 
 
-## How a runner gets out of a box: weights by time left, race tactics and grit (data races.json engine.box).
+## Is there room to push out of the box? The runner on the outside shoulder is at least box.room_m behind (the
+## boxed runner is half a stride up on them) or nobody is there.
+func _room(r: Runner, blocker: Runner) -> bool:
+	return blocker == null or r.d - blocker.d >= float(_eng.box.room_m)
+
+
+## Was there room in the runner's box at its last step (the box card's text, the tools)?
+func box_room(r: Runner) -> bool:
+	return r.room
+
+
+## The best way out of a box (R5, user 2026-10-09: the room decides; measured with tools/race_value.gd): with
+## someone right on the shoulder, wait (the field moves and a gap comes in a second or two); with room, ease and
+## step out, or push through in the last box.best.push_to_go metres. The sensible answer to the box card, and what
+## a rival does with a chance that grows with race tactics.
+func _box_best(r: Runner) -> String:
+	if not r.room:
+		return "wait"
+	return "push" if DISTANCE - r.d < float(_eng.box.best.push_to_go) else "ease"
+
+
+## How a runner gets out of a box: the best way with a chance from race tactics (box.smart), otherwise by their
+## habits (weights wait / ease / push, push more with grit and in the last `late` metres).
 func _box_way(r: Runner) -> String:
 	if r.scripted.has("box_way"):
-		return r.scripted.box_way
+		return _box_best(r) if r.scripted.box_way == "best" else r.scripted.box_way
 	var b: Dictionary = _eng.box
+	if _rng.randf() < lerpf(float(b.smart[0]), float(b.smart[1]), r.skill):
+		return _box_best(r)
 	var rem := DISTANCE - r.d
 	var w := {
-		"wait": float(b.wait) * clampf(rem / float(b.wait_to_go), 0.2, 2.0) * (1.0 + r.skill),
-		"ease": float(b.ease) + float(b.ease_skill) * r.skill,
+		"wait": float(b.wait),
+		"ease": float(b.ease),
 		"push": (float(b.push) + float(b.push_grit) * maxf(0.0, r.grit - 10.0)) * (float(b.push_late) if rem < float(b.late) else 1.0),
 	}
 	return _pick(w)
@@ -784,6 +852,7 @@ func _let_go(o: Runner, s: Runner, order: Array[Runner]) -> void:
 	o.let_go_until = DISTANCE - o.kick_at   # no closing on them (moves.let_go_close) until their own kick point
 	o.hold_left = maxf(s.surge_left, 0.0) + float(_eng.moves.let_go_after)
 	o.hold_v = o.v
+	o.let_go_of = s.index
 	_event("let_go", o, {"of": s.name}, order)
 
 
@@ -800,6 +869,7 @@ func _cover_chance(o: Runner, s: Runner) -> float:
 
 func _start_kick(r: Runner, order: Array[Runner], answer_to: Runner) -> void:
 	r.kicking = true
+	r.driving = false
 	r.surge_left = 0.0
 	r.covering = null
 	r.hold_left = 0.0
@@ -930,6 +1000,7 @@ func _fall(r: Runner, where: String, by: Runner, order: Array[Runner]) -> void:
 	r.down_left = _rng.randf_range(float(c.fall_down[0]), float(c.fall_down[1]))
 	r.dleft -= float(c.fall_reserve)
 	r.surge_left = 0.0
+	r.driving = false
 	r.covering = null
 	r.hold_left = 0.0
 	r.box_way = ""
@@ -1302,9 +1373,7 @@ func sensible_choice(id: String) -> String:
 			var f := _runner_in_front(p, standings())
 			return "chase" if f != null and f.d - p.d < float(s.chase_gap) else "steady"
 		"box":
-			if rem > float(s.box_wait_to_go):
-				return "wait"
-			return "push" if rem < float(s.box_push_to_go) else "ease"
+			return _box_best(p)
 		"dropped":
 			var ahead := _runner_in_front(p, standings())
 			var close: bool = ahead != null and ahead.d - p.d <= float(s.dig_gap)
@@ -1327,9 +1396,10 @@ func sensible_choice(id: String) -> String:
 			if can and share >= float(s.counter_share) and rem <= float(s.counter_to_go) \
 					and p.kick_v >= m.kick_v * float(s.counter_edge):
 				return "counter"
-			# Letting a move go costs nothing when your own kick is the better one (the mover pays for the move), so
-			# cover only a mover you could not out-kick, and only when you can afford it.
-			return "go" if can and m.kick_v >= p.kick_v * float(s.go_edge) else "wait"
+			# Go with a mover who is clearly weaker on the day (they press on, and letting them go costs you the gap)
+			# when you can afford it; let an equal or stronger one go: going with them is a commitment (no holding
+			# back for the kick) that costs more than the gap (R5, measured with tools/race_value.gd).
+			return "go" if can and m.even_v <= p.even_v * (1.0 + float(s.go_edge)) else "wait"
 	return ""
 
 

@@ -134,7 +134,7 @@ on aggregate result standards only, with no individual names or results. Real at
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
   and commentary. See 4.3.1; it replaces the plan lap factors, the fixed decision points and the commentary above.
 
-### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3 player controls 2026-10-08, R4–R5 to come)
+### 4.3.1 Race realism (designed 2026-10-07; R1 pack engine built 2026-10-07, R2 moves / boxes / falls 2026-10-08, R3 player controls 2026-10-08, R5 balance 2026-10-09, R4 to come)
 
 Playtest (user, 2026-10-07): the order seems settled early, while real 800 m races are often one bunch with moves
 anywhere. Wanted: pack racing (staying together, drafting, being boxed in), rival moves at any point that can change the
@@ -241,6 +241,15 @@ change of place late is a fade, never a fight.
 23. **A move is decisive when the mover can carry it to the end:** chasers pay a lot to close a gap on someone with more
     reserve (or a better kick), and a mover who is going to fade is caught. R5 first measures how often a mover who surged
     finishes ahead of those who let it go, then tunes (surge size, closing cost, `let_go_close`).
+
+**Decision (user, 2026-10-09, during R5):**
+24. **Boxed in: the room decides** (replaces "the best answer depends on the distance left" of decision 22; "none is a
+    trap" stays). Measured in R5: the best way out depended on whether someone is right on your shoulder, hardly on the
+    distance left, because a box in a moving field clears within a second or two. With someone right on your shoulder:
+    wait (on a bend a gap rarely opens); with room (the runner on your shoulder half a stride back): ease and step out, or
+    push through on the home straight. The box card says which it is.
+25. **Upsets: keep a good vs bad race at 0.5–1 % of time; the Δ 0.5 upset target becomes 35–45 %** (was 45–55 %, which
+    would need a bad race to cost 1.3–1.8 %; measured in R5: neutral 31 %, A's bad + B's good race 34–38 %).
 
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
@@ -356,7 +365,7 @@ Card (dimmed overlay)                         Phone
   local fields stay strung out (1st→last ≥ 20 s).
 - **Upsets** (new duel rows in `race_shape.gd`: runner A stronger by Δ ability with a bad race, e.g. leads too fast /
   waits boxed / kicks from 400 m, runner B with a good race, in an even field): a good vs bad race is worth ≈ 0.5–1 %
-  of time on average; at Δ = 0.5 B beats A ≈ 45–55 % (vs ≈ 30 % when both race neutrally); at Δ = 1 ≈ 20–30 %; at
+  of time on average; at Δ = 0.5 B beats A ≈ 35–45 % (decision 25; was 45–55 %) (vs ≈ 30 % when both race neutrally); at Δ = 1 ≈ 20–30 %; at
   Δ = 2 under 5 %. Watched with sensible choices vs quick mode: at most ~1 place better on average.
 - **Falls:** ≈ 1 per 60–100 bunched races per runner; printed by `race_shape.gd`.
 - Form (4.8) works on ability before the race, so `form_check.gd` must still pass unchanged; `training_balance.gd`
@@ -675,6 +684,169 @@ change the R2 rows, which the user allowed).
   draw their field from the weakest 80 % of the pool (`fields.local.pool_range` 0–0.8), so he met runners of 5.2–8.4
   and beat 7 of the 10 he has met. Winning one local race at the median is normal (≈ one in ten, more after a good
   training spell); the first sims were fresh 14-year-olds around ability 5–6, below the pool.
+
+**Built (step R5, 2026-10-09): balance and playtest** (decisions 20–25; the rivals' engine changed, so every row below
+moved; "before" = the R3 follow-up, measured again from a copy of the commit before R5 with the same tools).
+- **No difficulty setting (decision 20):** nothing adapts to the player; fields still come from the meet's level. All
+  changes below are the same rules for every runner.
+- **Boxed in (decisions 22, 24):** *ease and step out* drops back at `ease_speed` 0.88 × the speed of the runner on the
+  shoulder until the outside is clear and then steps out (the box lasts up to `ease_hold` 6 m behind the runner ahead):
+  it costs a median **1.1 m** (boxes that cost over 0.5 m; mean 0.4 m), not 7 % of speed for as long as the box lasts
+  (that rule cost 0.3–2.6 s). **Room** = the runner on the outside shoulder is at least `room_m` 0.5 m behind: *push
+  through* with room is a nudge (contact 20 %, obstruction DQ 0.2 %), without room a shove (60 %, 1 %). *Wait*: a gap
+  opens at `gap_rate` × `gap_bend` 0.25 on a bend (nobody drifts wide there). The best way (`box.best`, the coach's
+  advice and quick mode): no room → wait, room → ease and step out, room in the last 100 m → push. Rivals take the best
+  way with a chance from 30 % (race tactics 1) to 90 % (20), otherwise by habit (wait 1 / ease 0.5 / push 0.1 + grit).
+  The box card says whether there is room (`{room}`: "There's half a gap on your outside." / "X is right on your
+  shoulder."). The escape event reports `lost` (metres against the runner who was ahead). The action bar's Move out
+  with a runner right beside the player now drops back a stride and steps out behind them (before it did nothing for
+  the 5 s: 3 of 10 presses in `race_check`).
+  Measured (`race_value.gd -- 800 box <config> back`: the box card is rare, ~140 cards in 800 races from the back;
+  seconds against the then-advice, negative = better):
+
+| Box card | wait | ease and step out | push through |
+|---|---|---|---|
+| Before (R3 follow-up, `race_value`) | best at every distance | +0.3…+2.6 s | +0.2…+1.3 s (incl. DQ as 200 s) |
+| Youth final, no room (111 cards) | **−0.11** | +0.11 | +0.05 |
+| Youth final, room (27) | −0.07 | **−0.53** | −0.35 |
+| Tight final, no room (117) | **−0.05** | +0.16 | +0.46 |
+| Tight final, room (24) | −0.15 | **−0.46** | −0.19 |
+| Tight final, > 400 / 250–400 / < 250 m to go | **0 / −0.14 / −0.05** | +0.21 / 0 / +0.01 | +0.74 / +0.24 / +0.18 |
+
+  None is a trap any more (worst ≈ 0.5 s); the room decides, the distance hardly (decision 24).
+  **R2 box numbers, before → after** (`race_shape.gd -- 100`, per race; out by wait / ease / push; boxes lasting 2 s or
+  more): youth even field 8.5 (5.8 / 2.3 / 0.3; 1.17) → 7.2 (5.7 / 1.2 / 0.2; 1.15); youth final 16.8 (11.8 / 4.1 / 0.8;
+  2.85) → 16.4 (12.6 / 3.2 / 0.6; 2.21); senior final 16.8 (11.4 / 4.4 / 0.9; 2.88) → 16.5 (12.6 / 3.1 / 0.8; 2.53); 8
+  identical runners 28.6 (19.3 / 8.1 / 1.1; 4.44) → 27.5 (21.4 / 5.1 / 1.0; 4.07). Most boxes last under half a second
+  (median 0.1–0.3 s). DQ 0–2 per 100 races in every row (before 0–2).
+- **Moves (decision 23).** Measured first (new `tools/race_moves.gd`: every rival surge, the runners who covered it or let
+  it go, and the same race played again with that runner covering every move vs letting every move go): before, the
+  mover finished ahead of those who let it go 55 % (tight final) / 71 % (even field) / 55 % (senior final) of the time,
+  decided by who was stronger on the day (83–94 % when the mover was, 10–24 % when not), and **covering changed nothing**:
+  the mover finished ahead equally often either way (61 / 62 %; close pairs 37 / 39 %) while covering cost +0.05…+0.39 s.
+  Why: after the surge the mover settled straight back into the race's pace and the runners who let it go followed at
+  that pace and closed the gap in their kick for free.
+  **Built:** after their surge a mover **presses on** (`moves.drive`: 1.03 × the race's pace, at most their speed cap,
+  past anyone slower) until their kick, while the cap is at least 1.005 × the pace; those who covered stay with them;
+  those who let it go keep the race's pace (no chasing) while the move goes on, until their own kick. A mover who can't
+  afford the drive settles back and is caught. Covering closes a gap at most `cover_max` 1.04 × the mover's speed (was
+  1.08). `let_go_close` stays 1.0, the surge size 4–8 % for 50–150 m stays.
+  **After** (tight final, the rivals' counterfactual, cover every move − let every move go; mover ahead covered / let go):
+
+| Mover vs the runner reacting (day) | Before | After |
+|---|---|---|
+| Within 1 % | +0.20 s / +0.07 places; 37 % / 39 % | **−0.16 s / −0.27 places; 32 % / 48 %** |
+| Over 1 % stronger | +0.48 s / +0.24; 97 % / 97 % | +0.47 s / +0.36; 98 % / 97 % |
+| Over 1 % weaker | +0.36 s / +0.34; 10 % / 10 % | +0.44 s / +0.20; 9 % / 3 % |
+
+  Robust in every row: a clearly stronger mover gets away either way (91–98 %) and covering their drive costs
+  (+0.26…+0.51 s); a clearly weaker one is caught (let go: 3–11 % finish ahead). **Between equals it is not settled:** the
+  tight final shows the decisive effect (the mover beats a let-goer 48 % vs 32 % covered, covering pays −0.16 s), but the
+  youth final (44 close pairs: +0.46 s, 48 % / 41 %) and the senior final (65: +0.29 s, 60 % / 43 %) go the other way;
+  ±0.3 s is the noise of these samples. Left for the playtest and R4 (the commentary will show moves and drives).
+  Moves per race: youth final 0.99 → 0.70 (runners covering a drive don't surge), senior 0.82 → 0.87.
+  **The player's move card** (`race_value.gd`, youth final / tight final, 150 races; going with a move commits the player,
+  decision 17): against a mover over 1 % stronger on the day going costs +0.7…+1.2 s and letting go is right; within 1 %
+  letting go is better by 0.1–0.3 s; against one over 1 % weaker letting them press on costs +0.2…+0.5 s, so going is
+  right. Before, letting go was best in every bucket (going +0.2…+0.5 s, against a stronger mover −0.8 s for letting go).
+- **Sensible answers reset (the coach's advice, quick mode)** from `race_value.gd`: box = the best way (above); move =
+  go with a mover more than 1 % weaker on the day when you can afford it, let the others go (`go_edge` −0.01; was "the
+  mover's kick is better"); dropped = dig in hardly ever (`dig_share` 0.9: digging in cost +0.5…+0.6 s in finals); slow
+  pace = take the lead whatever your rank when you feel ≥ 0.7 (`slow_rank` 8, `slow_share` 0.7: leading gained ~0.5 s over
+  staying put). Bell (ease), kick (now), straight (wide), fall: unchanged, still right.
+- **Time and place are one thing (decision 21):** no place effect; `race_value` / `race_watch` got tight finals (field sd
+  0.3, and sd 0.3 with consistency 15) and print DNF / DQ separately (a DQ used to count as 200 s).
+- **Measured with `race_watch.gd`** (100 races per mode; average place, time of finished races; poor = never the sensible
+  answer; before in brackets):
+
+| Config | quick | sensible | coach | poor | poor − sensible |
+|---|---|---|---|---|---|
+| Youth final, player a little stronger | 3.73 (3.68) | 3.49 (3.88) | 3.59 (4.00) | 4.03 (4.05) | +0.54 places, +1.28 s, 0.92 % (+0.17, +0.39 s, 0.28 %) |
+| District meet, wide field | 3.13 (3.28) | 2.97 (3.21) | 3.14 (3.28) | 3.81 (3.44) | +0.84, +2.97 s, 2.0 % (+0.23, +0.77 s, 0.52 %) |
+| Girls even field | 4.84 (5.07) | 4.54 (4.92) | 4.53 (4.91) | 5.61 (5.42) | +1.07, +2.96 s, 1.8 % (+0.50, +1.68 s, 1.00 %) |
+| Senior final | 4.64 (4.82) | 4.45 (4.74) | 4.64 (4.78) | 5.14 (5.13) | +0.69, +1.13 s, 1.0 % (+0.39, +0.62 s, 0.55 %) |
+| Indoor heat | 4.10 (4.26) | 3.99 (4.05) | 4.10 (4.25) | 4.75 (4.68) | +0.76, +2.08 s, 1.4 % (+0.63, +1.28 s, 0.87 %) |
+| Tight final (sd 0.3) | 4.71 (5.00) | 4.60 (4.80) | 4.52 (4.80) | 5.28 (5.30) | +0.68, +1.50 s, 1.1 % (+0.50, +1.12 s, 0.79 %) |
+| Tight final, consistent field | 4.76 (5.17) | 4.56 (4.96) | 4.58 (4.84) | 5.44 (5.38) | +0.88, +1.78 s, 1.3 % (+0.42, +1.21 s, 0.86 %) |
+
+  Sensible vs quick: within 0.1–0.3 places (target: at most about 1 ✓); the sensible watched player is now the best
+  of the four (before the athlete's own quick answers beat it in the youth final). A watched race with every answer
+  wrong costs 0.9–2.0 % of time and 0.5–1.1 places (before 0.3–1.0 %, 0.2–0.6 places); in the tight finals 1.5–1.8 s ≈
+  0.7–0.9 places. (Every answer wrong is the worst case; one bad race in the duel rows costs 0.5–1.0 %, decision 8.) Cards per race 5.3–5.9, 15–29 % of the time at 1x.
+- **What the answers are worth now** (`race_value.gd -- 100 all`, youth final / tight final, against the sensible
+  answer; before in brackets, against the R3 advice):
+  - *bell:* push +0.36 / +0.72 s (+0.20 / +0.75), hold +0.13 / +0.23; ease (the advice) right;
+  - *kick card:* wait for the straight +0.19 / +0.13 s (+0.12 / +0.19); kick now right;
+  - *move, mover over 1 % stronger on the day:* go +0.95 s, +0.78 places / +0.71 s, +0.16 (before going was the advice
+    for a better kicker: then letting go was −0.77 / −0.28 s better); *within 1 %:* go −0.12 s / +0.02 s against letting
+    go (three runs: ±0.25 s either way, an even call); *over 1 % weaker:* letting go +0.31 s, +0.17 places / +0.16 s,
+    +0.28 (going is right); *counter-attack* > 400 m out +1.97 / +1.91 s (+0.64 / +0.91), under 250 m about even;
+  - *dropped:* dig in +0.92 / +0.30 s (+0.67 / +1.08): run your own pace;
+  - *slow pace:* take the lead −0.36 / −0.35 s against staying (measured before the reset; now the advice);
+  - *break:* "back" −0.20 / −0.05 s and −0.08 / −0.14 places against the plan "shoulder" (−0.31 / −0.19 before): the
+    break answer is the player's own plan, left as it is (playtest point 6 below);
+  - *box:* see the box table above; *straight:* wide / inside within 0.05 s.
+  With the R5 advice no answer beats the sensible one by more than noise, and the worst answers (counter-attacking early,
+  going with a much stronger mover, pushing the bell lap) cost 0.7–2 s.
+- **Upsets and good vs bad** (`race_shape.gd duel…`; the box mistake is now "sits at the back and pushes out of every
+  box", since waiting is right without room; B's and A's good race take the best way out):
+
+| Δ | B beats A, both neutral | A bad + B good (leads too fast / pushes out of boxes / kicks from 400) | A's bad vs good race | Target |
+|---|---|---|---|---|
+| 0.5 (300 races) | 31 % (37 %) | 38 / 28 / 34 % (42 / waits boxed 38 / 46 %) | +1.02 / −0.02 / +0.50 % | 35–45 % (decision 25) |
+| 1 | 27 % (24 %) | 24 / 22 / 25 % (28 / waits boxed 15 / 23 %) | +1.02 / +0.36 / +0.45 % | 20–30 % ✓ |
+| 2 | 3 % (1 %) | 4 / 2 / 5 % (3 / waits boxed 1 / 3 %) | +0.85 / +0.52 / −0.05 % | under 5 % ✓ (5 % at the edge) |
+
+  **Decision 25 (user, 2026-10-09):** a good vs bad race stays worth 0.5–1 % of time (decision 8); the Δ 0.5 upset
+  target becomes **35–45 %** (was 45–55 %: with a neutral 31 % and the day-to-day spread of A − B ≈ 5 s, B winning 45–55 % needs a
+  bad race to cost 1.3–1.8 %). Leading too fast and kicking from 400 m are inside 0.5–1 % ✓; a box mistake costs about
+  nothing now (none is a trap, decision 22).
+- **Rows** (`race_shape.gd -- 100`, the 8 rows; before → after):
+
+| Row | 1st→last 200/400/600 m | 1st→4th at 400 | Within 5 m at 400 | Leader at 400 / 600 wins | r 400 / 600 | Finish 1st→2nd / 4th / last | < 0.2 s | Time / table |
+|---|---|---|---|---|---|---|---|---|
+| Youth even field | 16/34/46 → 16/35/48 | 12 → 13 | 2.7 → 2.6 | 60/73 → 64/71 % | 0.80/0.90 → 0.83/0.89 | 2.0/6.5/15.4 → 2.3/6.6/16.7 s | 6 → 9 % | 0.9985 → 0.9987 |
+| Youth local meet, wide | 29/59/87 → 28/58/84 | 17 → 16 | 2.5 → 2.3 | 65/76 → 71/73 % | 0.91/0.94 → 0.89/0.95 | 3.0/9.3/27.9 → 2.6/9.2/27.5 s | 7 → 4 % | 0.9970 → 0.9984 |
+| Youth championship final | 8/19/28 → 9/20/32 | 7 → 8 | 4.4 → 4.0 | 40/59 → 51/70 % | 0.51/0.77 → 0.60/0.80 | 1.1/3.6/10.0 → 1.4/4.1/10.4 s | 14 → 10 % | 1.0077 → 1.0046 |
+| Youth indoor | 18/37/52 → 17/36/51 | 14 → 14 | 2.6 → 2.4 | 74/83 → 68/75 % | 0.82/0.90 → 0.79/0.86 | 2.6/7.9/17.3 → 2.7/7.6/16.9 s | 8 → 6 % | 1.0156 → 1.0157 |
+| Girls even field | 16/34/46 → 17/34/47 | 12 → 11 | 2.6 → 2.8 | 61/69 → 61/67 % | 0.82/0.88 → 0.79/0.89 | 2.2/6.8/17.0 → 2.0/6.1/16.0 s | 5 → 4 % | 0.9984 → 0.9975 |
+| Senior national final | 7/15/22 → 6/14/22 | 6 → 5 | 4.5 → 4.8 | 44/63 → 44/57 % | 0.52/0.75 → 0.47/0.69 | 0.7/2.3/6.1 → 1.0/2.5/6.3 s | 15 → 19 % | 1.0065 → 1.0093 |
+| 8 identical runners | 5/12/16 → 4/10/14 | 4 → 3 | 5.0 → 5.1 | 45/56 → 31/48 % | 0.40/0.67 → 0.42/0.65 | 0.5/1.9/4.9 → 0.6/1.8/5.0 s | 15 → 23 % | 1.0054 → 1.0064 |
+| Senior final, consistent field | 4/11/15 → 6/14/20 | 4 → 5 | 5.1 → 4.4 | 34/46 → 41/48 % | 0.40/0.65 → 0.49/0.67 | 0.6/1.8/5.2 → 0.8/2.2/5.2 s | 16 → 18 % | 1.0083 → 1.0071 |
+
+  **Targets:** youth final 1.4 / 4.1 / 10.4 s ✓ (0.6–1.5 / 2.5–4.5 / 9–15); leader at 400 wins 51 % (youth final, a
+  little over 30–50; was 40 %); falls in the bunched finals (youth final, senior final, identical) 27 in 2 400
+  runner-races = **1 per 89** ✓ (60–100; before 1 per 73); winner's laps (youth final) fast 65.7 + 68.7 (+3.0 s), honest
+  66.2 + 67.9 (+1.7 s), tactical 74.5 + 63.9 (decision 11); senior fast / honest +1.7 s each: positive splits ✓. **Time /
+  table:** every youth row within ±0.5 % ✓ (0.9975–1.0046; the youth final was 1.0077 before); the senior rows 1.0064–1.0093
+  (before 1.0054–1.0083) are not: the outdoor rows span 1.2 % (fast-heavy district mixes ~0.998, tactical-heavy finals
+  ~1.005–1.009), so one `cs_scale` can't put both ends inside; `cs_scale` stays 1.029 and the senior finals go to step 7
+  with decision 12. `race_balance.gd -- 60` (median − anchor, ability 5 / 7 / 9 / 11 /
+  13): boys +0.15 / +0.10 / 0.00 / −0.75 / +0.43 s (before +0.50 / −0.09 / +0.04 / +0.16 / +0.51), girls +0.60 / +0.35 /
+  +0.04 / +0.11 / 0.00 s (before +0.55 / +0.03 / +0.06 / −0.11 / +0.18): within ±1 s ✓.
+- **Tools:** new `tools/race_moves.gd` (moves: observed + counterfactual, by the mover's edge), new `tools/watch_race.gd`
+  (playtests: a new career straight to an indoor / outdoor race, with heats if asked, saves in `user://tool_saves/`);
+  `race_value.gd` (configs 5–6 tight finals, a plan argument, `card+card`, DNF / DQ apart, move buckets by the mover's
+  edge and distance, box buckets by room), `race_watch.gd` (configs 5–6, DNF / DQ apart, poor − sensible in s and %),
+  `race_shape.gd` (what a box cost by way; duel "pushes boxed"; B's good race takes the best way), `race_check.gd` (R5
+  boxes: the best way, easing costs a few metres, the room line on the card; the rare-incident check knows the
+  [no room, room] numbers). Help `race_running` v5 (moves, boxes) and `race_result` v3.
+- **Playtest plan (the user, watched):** `tools/watch_race.gd` starts a new career in a separate save folder and takes
+  you straight to a race: `-- indoor any` (a small hall meet), `-- indoor heats` (district indoor final day, 30 Jan
+  2027), `-- outdoor any`, `-- outdoor heats` (Youth Athletics Games, 17 Jun 2027); `ability=9` makes the athlete a
+  youth finalist so the races are close; `--resolution 390x844` before `-s` for the phone. Six races: indoor any + indoor
+  heats on PC, outdoor heats (heat and final) on the phone, outdoor any on PC twice (once following the coach, once
+  doing the opposite). Look for: (1) does a box card say "room" or "right on your shoulder", and does the answer it
+  suggests feel right; (2) when a rival surges and presses on, do the ones who let it go fall away, and does a weaker
+  mover come back; (3) does Move out always do something; (4) does the "SLOWED TO 1x" reason match what you see; (5) does
+  the coach's shout feel sensible (it is right ~80 % of the time); (6) is sitting at the back too good (measured: at the
+  break "back" beats "shoulder" by 0.2–0.3 s in finals; not changed in R5); (7) anything that looks unrealistic.
+- **Checks:** `race_check` ALL PASSED (+ the R5 box checks: easing out of boxes lasting 1 s or more costs a median 1.2 m,
+  90 % under 3.4 m; Move out 9 of 10), `help_check` (479), `day_engine_check`, `health_check`, `form_check` all passed
+  with clean stderr; `rankings_check` fills its list; `training_balance.gd -- 0` fingerprints identical (215.999957139 /
+  13.751549603 / 1203.029795007); `layout_check` (5 sizes, no OVERFLOW / SQUEEZED); `race_perf` 60 fps (PC indoor 4x
+  16.7–17.1 ms a frame, phone outdoor 4x 16.7–17.0 ms; a few single frames over 33 ms as before); `watch_race.gd`
+  reaches outdoor heats (17 Jun 2027) and indoor heats (30 Jan 2027, phone size).
 
 ### 4.4 Season calendar (first version built)
 

@@ -178,7 +178,7 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         item) in the pre-race field. *(Sonnet, high)*
         Check: a tool plays 50 races and prints how often each line is used (no line twice in a race, no event without
         lines); tour + layout check; `help_check.gd`; look at the screenshots.
-  - [ ] **R5. Balance & playtest:** all GDD 4.3.1 targets in one table before / after, watched races on PC and phone
+  - [x] **R5. Balance & playtest:** all GDD 4.3.1 targets in one table before / after, watched races on PC and phone
         (indoor and outdoor, heats + final), fixes, docs + CLAUDE.md. Carried over from R2: the upsets at Δ 0.5 and a
         good vs bad race worth 0.5–1 % (with the player's cards / action bar in place).
         **Decided 2026-10-09 (GDD decisions 20–23):** rework the box ways so the best answer depends on the distance left
@@ -187,6 +187,18 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         in tight finals too, no difficulty setting. Reset `sensible_choice` and the coach's advice from the new numbers. *(Opus, medium: tuning;
         Sonnet for the fixes)*
         Check: every check tool above, `training_balance.gd -- 0` fingerprints identical, `season_check.gd`.
+        Done 2026-10-09 (GDD 4.3.1 "Built (step R5)", decisions 24–25): boxes — easing out drops back behind the
+        runner on the shoulder (median 1.1 m, was 7 % of speed for the whole box), room (shoulder runner half a stride
+        back) makes pushing a nudge, no gaps open on bends; measured: the room decides, not the distance (decision 24:
+        no room wait, room ease, last 100 m push), none is a trap. Moves — new `tools/race_moves.gd` showed covering
+        changed nothing (61 / 62 %); now a mover presses on after the surge (`moves.drive`) and those who let it go don't
+        chase: a clearly stronger mover gets away (91–98 %), a clearly weaker one is caught (3–11 %); between equals not
+        settled (tight final decisive, youth / senior finals the other way, noise-level samples: playtest + R4). Sensible answers reset (move: go with a mover over 1 % weaker; dig in hardly
+        ever; take the lead on a slow pace). A watched race with every answer wrong costs 0.9–2.0 % (was 0.3–1.0 %);
+        sensible vs quick within 0.3 places. Upsets at Δ 0.5: 34–38 % → decision 25 sets the target to 35–45 %.
+        Youth rows time / table within ±0.5 %; senior finals 1.006–1.009 left for step 7. New `tools/watch_race.gd`
+        (playtest: straight to an indoor / outdoor race, with heats). **Watched playtest by the user still to do**
+        (GDD 4.3.1 R5 "Playtest plan"; observations go into the next session).
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals

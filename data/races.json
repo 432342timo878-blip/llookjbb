@@ -62,8 +62,10 @@
    "react_range": 15.0,
    "cover": {"front": 0.6, "pack": 0.75, "kicker": 0.2, "surger": 0.5, "player": 0.5},
    "cover_smart": [0.15, 0.9],
-   "cover_max": 1.08, "cover_dig": 0.3, "let_go_after": 20.0,
-   "let_go_close": 1.0
+   "cover_max": 1.04, "cover_dig": 0.3, "let_go_after": 20.0,
+   "let_go_close": 1.0,
+   "_drive": "R5 (decision 23): a mover who leads when their surge is over presses on at drive.speed x the race's pace (at most what they can afford: their speed cap) until their kick, while the cap is at least drive.min x the pace; those who covered stay with them, those who let it go keep the race's pace (no chasing) until the drive ends or their own kick. A strong mover gets away; one who can't afford it settles back and is caught.",
+   "drive": {"speed": 1.03, "min": 1.005}
   },
   "chain": {
    "_note": "The kick chain (R2): when a runner starts their kick in the first front_pos places or within front_m metres of the leader, every runner from `ahead` metres in front of them to answer_range behind who is not kicking yet answers with chance answer[personality or player] (x early when it comes before their own kick point), moved towards smart[can't hold it, can] by race tactics: 'can' = the speed they could hold to the line is at least can_share x the kicker's. Answering = their own kick now when they have at most kick_now_share x their own kick distance to go, else going with the kicker (covering, as a move: they kick at their own point); a runner near the front who goes with it passes the decision on to those behind them.",
@@ -72,11 +74,14 @@
    "early": 0.6, "can_share": 0.97, "smart": [0.2, 0.95]
   },
   "box": {
-   "_note": "Boxed in (R2): a runner who wants past (kicking, in a move, covering, or in the last urgent_to_go metres) with a runner under `gap` metres ahead in the same line and someone alongside on the outside runs no faster than the runner ahead and picks a way out (weights: wait = wait x (metres to go / wait_to_go, 0.2-2) x (1 + tactics); ease = ease + ease_skill x tactics; push = push + push_grit x (grit - 10), x push_late in the last `late` metres; tactics = race tactics as 0-1). wait: a gap opens with gap_rate per second (race tactics 1 to 20). ease: ease_speed x the speed of the runner ahead until the outside is clear (the box lasts up to `hold` metres behind). push: squeezes out for push_time s, contact with chance push_contact, obstruction DQ with chance push_dq.",
-   "gap": 1.5, "hold": 3.0, "urgent_to_go": 300.0,
-   "wait": 1.0, "wait_to_go": 200.0, "ease": 0.3, "ease_skill": 1.0, "push": 0.1, "push_grit": 0.03, "push_late": 2.0, "late": 150.0,
-   "gap_rate": {"at_1": 0.02, "at_20": 0.25},
-   "ease_speed": 0.93, "push_time": 1.0, "push_contact": 0.5, "push_dq": 0.01
+   "_note": "Boxed in (R2, reworked in R5, decision 22): a runner who wants past (kicking, in a move, covering, or in the last urgent_to_go metres) with a runner under `gap` metres ahead in the same line and someone alongside on the outside runs no faster than the runner ahead and picks a way out: the best way (`best`, user 2026-10-09 'the room decides', measured with tools/race_value.gd: no room = wait, room = ease and step out, or push through with under push_to_go metres to go) with a chance from smart[0] (race tactics 1) to smart[1] (20), otherwise by habit (weights wait / ease / push; push + push_grit x (grit - 10), x push_late in the last `late` metres). Room = the runner on the outside shoulder is at least room_m behind (half a stride). wait: no faster than the runner ahead; a gap opens with gap_rate per second (race tactics 1 to 20), x gap_bend on a bend (nobody drifts wide there). ease: ease_speed x the speed of the runner on the shoulder until the outside is clear, then step out (the box lasts up to ease_hold metres behind the runner ahead; otherwise `hold`). push: squeezes out for push_time s; contact and obstruction DQ with chance push_contact / push_dq [no room, room].",
+   "gap": 1.5, "hold": 3.0, "ease_hold": 6.0, "urgent_to_go": 300.0,
+   "best": {"push_to_go": 100.0},
+   "smart": [0.3, 0.9],
+   "wait": 1.0, "ease": 0.5, "push": 0.1, "push_grit": 0.03, "push_late": 2.0, "late": 150.0,
+   "gap_rate": {"at_1": 0.02, "at_20": 0.25}, "gap_bend": 0.25,
+   "room_m": 0.5,
+   "ease_speed": 0.88, "push_time": 1.0, "push_contact": [0.6, 0.2], "push_dq": [0.01, 0.002]
   },
   "contact": {
    "_note": "Contact (R2): a runner on someone's heels (under `along` metres behind, lateral gap under `lat`) has a contact with chance rate[where] per second: break = cutting in within break_zone metres after the break line, swing = either runner moving sideways, bend, straight. A contact: the runner behind is the one in trouble with chance victim_behind (else the one ahead); stumble with chance `stumble` (loses stumble_m metres and stumble_reserve metres of reserve), fall with chance `fall` (down fall_down seconds, fall_reserve metres of reserve, DNF with chance dnf; the runner right behind within brought_along metres goes down too with chance brought_down); the one ahead is spiked with chance `spiked`. rival_out: a rival who falls is out for `weeks` weeks with chance `chance` (dnf_chance after a DNF), applied when the health model is on.",
@@ -134,13 +139,12 @@
    "sensible_at_1": 0.45, "sensible_at_20": 0.9
   },
   "sensible": {
-   "_note": "What a sensible runner answers (the coach's advice, quick mode, the checks): bell - push when they feel at least bell_push_share of the reserve and are 3rd or worse, ease below bell_ease_share; counter when they feel counter_share, have counter_to_go or less to go and a kick at least counter_edge times the mover's; the kick card - go now when they feel at least kick_now_factor x the reserve an even kick from here needs; slow pace - take the lead when they are among the first slow_rank by even speed and feel at least slow_share; boxed - wait with more than box_wait_to_go to go, push through in the last box_push_to_go (measured with tools/race_value.gd: waiting beats easing out and pushing through at every distance, easing back costs 0.3-2.6 s and pushing 0.2-1.3 s); dropped - dig in only when within dig_gap metres of the runner ahead and they feel at least dig_share (a long dig costs the kick); move - go with a mover only when they can afford it and the mover's kick is at least go_edge x their own (otherwise let them go: the mover pays for the move); fall - chase when the runner ahead is under chase_gap away.",
-   "bell_push_share": 0.9, "bell_ease_share": 0.75, "go_edge": 0.99, "dig_gap": 10.0,
+   "_note": "What a sensible runner answers (the coach's advice, quick mode, the checks): bell - push when they feel at least bell_push_share of the reserve and are 3rd or worse, ease below bell_ease_share; counter when they feel counter_share, have counter_to_go or less to go and a kick at least counter_edge times the mover's; the kick card - go now when they feel at least kick_now_factor x the reserve an even kick from here needs; slow pace - take the lead when they are among the first slow_rank by even speed and feel at least slow_share; boxed - the best way out (engine.box.best, R5); dropped - dig in only when within dig_gap metres of the runner ahead and they feel at least dig_share (R5: digging in cost 0.5-0.6 s in finals, so hardly ever); move - go with a mover whose even speed on the day is at most (1 + go_edge) x their own, i.e. more than 1 % weaker, when they can afford it, and let the others go (R5, tools/race_value.gd: going with a mover over 1 % stronger costs 1.0-1.2 s, with an equal one 0.2-0.3 s; letting a weaker one press on costs 0.2-0.5 s); fall - chase when the runner ahead is under chase_gap away. slow pace (R5: taking the lead gained ~0.5 s over staying put in finals): slow_rank 8 = whatever their rank.",
+   "bell_push_share": 0.9, "bell_ease_share": 0.75, "go_edge": -0.01, "dig_gap": 10.0,
    "counter_share": 0.9, "counter_to_go": 300.0, "counter_edge": 1.03,
    "kick_now_factor": 0.9,
-   "slow_rank": 3, "slow_share": 0.8,
-   "box_wait_to_go": 800.0, "box_push_to_go": 0.0,
-   "dig_share": 0.6,
+   "slow_rank": 8, "slow_share": 0.7,
+   "dig_share": 0.9,
    "chase_gap": 35.0
   },
   "coach": {

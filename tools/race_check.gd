@@ -1,8 +1,9 @@
 extends SceneTree
-## Dev tool: checks of the race engine (GDD 4.3.1, steps R2 and R3). Prints PASS / FAIL per check.
+## Dev tool: checks of the race engine (GDD 4.3.1, steps R2, R3 and R5). Prints PASS / FAIL per check.
 ## Run: godot --headless --path . -s res://tools/race_check.gd [-- races_per_case]
 ## - every pre-race plan (front / pack / back) x answer policy (first / last / random answer + random action bar
-##   commands, quick mode) finishes (no stuck races), shows at most 6 cards, break / bell once each;
+##   commands, quick mode) finishes (no stuck races), shows at most the data's maximum of cards, break / bell once each;
+## - R5 boxes: the best way out (the room decides), easing out costs a few metres, the box card says if there is room;
 ## - rare incidents with their rates raised (falls, DNF, brought down, DQ): every path runs, races finish, results
 ##   list finishers, then DQ, then DNF;
 ## - over all those races every event type the commentary (R4) needs occurs, each with who / where / place / gap;
@@ -96,7 +97,7 @@ func _run() -> void:
 	c.dnf = 0.3
 	c.brought_down = 0.8
 	b.push = 5.0
-	b.push_dq = 0.5
+	b.push_dq = [0.5, 0.5]   # [no room, room]
 	var rare := {}
 	var order_ok := true
 	for i in 30:
@@ -149,6 +150,9 @@ func _run() -> void:
 	_ok("every event type occurs (missing: %s)" % str(missing), missing.is_empty())
 	_ok("every runner event has who / where / place / gap (%d without)" % missing_fields.size(), missing_fields.is_empty())
 
+	print("-- R5: boxed in (decision 22)")
+	_boxes(rng)
+
 	print("-- R3: every answer of every card does something")
 	_effects(rng)
 	print("-- R3: the action bar, Feeling, the coach, slow motion, quick mode")
@@ -156,6 +160,57 @@ func _run() -> void:
 
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
+
+
+# --- R5: boxed in ---------------------------------------------------------------------------------------
+
+## The best way out depends on the distance left (wait early, ease mid-race, push late with room); easing and
+## stepping out costs a few metres, not the race; the box card says whether there is room.
+func _boxes(rng: RandomNumberGenerator) -> void:
+	var data = root.get_node("Data")
+	var best: Dictionary = data.races.engine.box.best
+	var race = _RaceScript.new()
+	race.setup(_field(rng, 9.0, true), "male", false, 15.0, rng, false, "final")
+	var p = race.player
+	var ways := {}
+	var near: float = float(best.push_to_go) / 2.0
+	for case in [[500.0, false], [near, false], [500.0, true], [300.0, true], [near, true]]:
+		p.d = 800.0 - case[0]
+		p.room = case[1]
+		ways["%d m to go%s" % [roundi(case[0]), ", room" if case[1] else ""]] = race._box_best(p)
+	print("    best way out: ", ways)
+	_ok("the best way out (the room decides): no room wait, room ease and step out, push through near the line",
+			ways.values() == ["wait", "wait", "ease", "ease", "push"])
+	# Over many finals: what easing and stepping out costs against the runner who was ahead, for boxes that lasted.
+	var lost := []
+	var rooms := {true: 0, false: 0}
+	var texts_ok := true
+	var ph: Dictionary = data.race_cards.phrases
+	for i in 40:
+		var r = _RaceScript.new()
+		r.interactive = true
+		r.setup(_field(rng, 9.0, true), "male", false, 15.0, rng, false, "final")
+		r.set_player_plan("back")
+		while not r.finished and r.time < 400.0:
+			if not r.pending.is_empty():
+				var d: Dictionary = r.pending
+				if d.id == "box":
+					rooms[r.player.room] += 1
+					var line: String = ph.room if r.player.room else String(ph.no_room).replace("{name}", "")
+					texts_ok = texts_ok and String(d.text).contains(line)
+				r.choose(r.sensible_choice(d.id))
+				continue
+			r.step()
+		for ev in r.events:
+			if ev.type == "escape" and ev.way == "ease" and float(ev.seconds) >= 1.0:
+				lost.append(float(ev.lost))
+	lost.sort()
+	var med: float = lost[lost.size() / 2] if not lost.is_empty() else 0.0
+	print("    easing out of boxes that lasted 1 s or more: %d, median %.1f m lost against the runner ahead (90th percentile %.1f m)" % [
+			lost.size(), med, lost[int(lost.size() * 0.9)] if not lost.is_empty() else 0.0])
+	_ok("easing and stepping out costs a few metres (median %.1f m, design 2-4 m: at most 4)" % med, lost.size() >= 10 and med > 0.3 and med <= 4.0)
+	print("    box cards: with room %d, without %d" % [rooms[true], rooms[false]])
+	_ok("the box card says whether there is room", texts_ok and rooms[true] + rooms[false] > 0)
 
 
 # --- R3: the answers ---------------------------------------------------------------------------------
