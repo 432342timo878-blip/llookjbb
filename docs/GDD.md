@@ -251,6 +251,16 @@ change of place late is a fade, never a fight.
 25. **Upsets: keep a good vs bad race at 0.5–1 % of time; the Δ 0.5 upset target becomes 35–45 %** (was 45–55 %, which
     would need a bad race to cost 1.3–1.8 %; measured in R5: neutral 31 %, A's bad + B's good race 34–38 %).
 
+**Decisions (user, 2026-10-09, R5 playtest, first race: indoor heats):**
+26. **The decision card must not hide the race:** on PC the card sits in the side panel and the track stays fully
+    visible (the race is still paused); on a phone it is a smaller sheet at the bottom with the track visible above it.
+    (Playtest: "I can't move the prompt window out of the way so I can't see what the move is that's happening.")
+27. **A pause button** (⏸) beside 1x / 2x / 4x; while paused the track and positions can be read, and the action bar
+    still works (the command happens on resume); the Space bar pauses on PC.
+    Playtest notes too: Move out works, the coach's advice seemed sensible; a "rival makes a move" card for Nurmi was
+    followed by Nurmi never passing (the player held their ground): a surge can fail (boxed, short, can't afford it);
+    if it feels like a broken promise again, word the card "tries to go past".
+
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
   the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 8–12 % slower, then a

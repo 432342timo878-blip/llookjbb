@@ -199,6 +199,10 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         Youth rows time / table within ±0.5 %; senior finals 1.006–1.009 left for step 7. New `tools/watch_race.gd`
         (playtest: straight to an indoor / outdoor race, with heats). **Watched playtest by the user still to do**
         (GDD 4.3.1 R5 "Playtest plan"; observations go into the next session).
+  - [ ] **R5 playtest fixes (UI):** decisions 26–27 (GDD 4.3.1): the decision card beside the track (PC side panel,
+        phone bottom sheet; the track stays visible), a pause button with 1x / 2x / 4x (action bar works while paused,
+        Space on PC); plus whatever the rest of the user's playtest finds. *(Sonnet, high)*
+        Check: `layout_check` (5 sizes, card states), the tour, `race_perf` 60 fps, `help_check` (race help: pause).
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
