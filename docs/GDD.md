@@ -900,6 +900,17 @@ the playtest; the race engine is untouched, so the R5 numbers above stand). `scr
   `help_check` 483 passed, `race_check` ALL PASSED, `day_engine_check` ALL PASSED, all with clean stderr;
   `race_perf` 60 fps (PC indoor 4x: 16.7–17.1 ms a frame, 2–6 single frames over 33 ms in a phase as before; phone
   outdoor 4x: 16.7–17.0 ms).
+- **Playtest after the fixes (user, 2026-10-09):** indoor on PC: Space pauses, Space with a card open does nothing, the
+  track and dots stay visible; the user won an indoor heat easily (4 Q + 2 q from 2 heats: the rule as coded, not "all
+  q"; the all-q case only happens with more heats than final places). Outdoor heats on the phone: looks "really
+  good"; 3 heats, 6 Q + 2 q = the 8-lane final ✓; 6th in the heat while keeping their own pace and not following kicks
+  (so waiting at the back is not overpowered); the coach's shouts felt sensible. Could not judge rivals' surges
+  pressing on, or heat winners easing off (too many things to watch: R4's commentary should point them out).
+  **Open design question from this playtest (decided: option 2):** the heats' Q / q split is one fixed rule today;
+  real meets differ by number of heats and competition. Next session (Opus): look up the World Athletics qualification
+  table and the Finnish federation's rules, put the splits in `data/` (by level, number of heats, final size), let
+  later heats chase the time spots (the runners outside the automatic places run harder; heat 1 has no target yet)
+  and tell the player the time needed ("you need about 2:25 to be safe"). Re-run the balance checks after it.
 - **Small choices made without asking (change on request):** the player's heat is listed first, not in heat order; the
   phone sheet fits the card and may leave the dimmed bar's top row peeking above it; the commentary is hidden on PC
   while a card is open to make room.
