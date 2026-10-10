@@ -130,16 +130,17 @@ static func _moments(race: Race, commentary, cfg: Dictionary) -> Array:
 			continue
 		if ev.type == "escape" and float(ev.get("seconds", 0.0)) < float(Data.race_commentary.rules.box_story_s) and not mine:
 			continue
+		var d_at: Variant = ev.get("d", Race.DISTANCE if ev.type in ["finish", "close_finish", "photo_finish"] else 0)   # (the finish has no spot of its own)
 		var weight := float(spec.get("story_weight", 3))
 		if mine:
 			weight += 3.0
-		weight += float(ev.get("d", 0)) / 400.0   # (later in the race counts a little more)
+		weight += float(d_at) / 400.0   # (later in the race counts a little more)
 		var tpl: String = str(spec.story.player if mine else spec.story.other)
-		var f := {"name": Race._surname(str(ev.get("who", ""))), "to_go": str(roundi(Race.DISTANCE - float(ev.get("d", 0)))),
-				"m": str(roundi(float(ev.get("d", 0)))), "gap": str(roundi(float(ev.get("gap", 0)))),
+		var f := {"name": Race._surname(str(ev.get("who", ""))), "to_go": str(roundi(Race.DISTANCE - float(d_at))),
+				"m": str(roundi(float(d_at))), "gap": str(roundi(float(ev.get("gap", 0)))),
 				"seconds": "%.1f" % float(ev.get("seconds", 0.0)), "place": Race._ordinal(int(ev.get("place", 1))),
 				"place_next": Race._ordinal(int(ev.get("place", 1)) + 1), "margin": "%.2f" % float(ev.get("margin", 0.0))}
-		cands.append({"m": roundi(float(ev.get("d", 0))), "t": float(ev.get("t", 0.0)), "type": ev.type, "weight": weight,
+		cands.append({"m": roundi(float(d_at)), "t": float(ev.get("t", 0.0)), "type": ev.type, "weight": weight,
 				"text": tpl.format(f)})
 	if commentary != null:
 		for v in commentary.verdicts:

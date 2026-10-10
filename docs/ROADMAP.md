@@ -318,6 +318,38 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   800 m start in lanes), and "On your marks - set - go" like in real life (Finnish: paikoillenne - valmiina - laukaus),
   with the gun. Goes with R4's commentary and the Race story; a pre-start stage on the race screen between the field
   list and the running stage. *(Opus for the design, then Sonnet)*
+- **Pre-race studio and post-race studio with interviews (user, 2026-10-10):** the broadcast around the race, built on
+  R4's commentator + expert crews and the race ceremony above: before the race a studio piece (the crew on the favourites,
+  the field, the stakes, the player's story, perhaps a short interview with the player or their coach on the way to the
+  start); after it a studio piece and a finish-area interview, given or not by how the race went and how well known
+  the athlete is: a win, a medal, an upset (the player beat a clearly stronger runner: needs the rivals' ability / ranking
+  from `Race.results`), a PB, a fall. The player's answers (modest / confident / blunt, thanking the coach...) could
+  feed reputation and, later, sponsors and fame & media (GDD 2 D9). Needs **athlete reputation** (next item) to decide
+  who gets interviewed. Texts as data like `race_commentary.json`; the Race story and the coach's lines are the seed.
+  *(Opus for the design, then Sonnet)*
+- **Athlete reputation / popularity (user, 2026-10-10):** a hidden-but-hinted number (and a few words: unknown, one to
+  watch, local hero, national name...) from results (wins, medals, upsets, PBs, streaks), age (a young talent counts
+  more), meet level and media moments (interviews). Drives who is interviewed and how the commentators talk about the
+  player ("the young runner everyone is talking about"), later sponsors, fans, offers, the coaches who want to work
+  with you. Design with Statistics and the studio / interview items. *(Opus)*
+- **Audio (user, 2026-10-10, "can we implement any audio at any point?"): yes, from Godot's own audio nodes.** Plan: a
+  small `Sound` autoload (one place that plays sounds, with master / effects / music volume and a mute, saved in the
+  settings), then in steps: (1) the race: starting gun, bell, stadium crowd ambience that swells on the home straight
+  and at a kick, footsteps / breathing at low volume, a finish-line beep; (2) UI clicks and soft confirmations; (3)
+  music for menus (calm) and results; (4) the commentary voiced: not text-to-speech (it sounds wrong for a broadcast); a
+  few recorded voice lines per crew would need real voice actors, so later or never, but the crowd could react to
+  the commentary events (a roar on a kick, a groan on a fall). All sounds need free licences (CC0 / CC BY, credits in
+  the Credits screen) found and approved by the user file by file (downloads need the user's OK); mobile: keep files small
+  (OGG, mono for effects) and respect the phone's silent mode. *(Sonnet for the plumbing, the user for the taste, assets
+  need a research session first)*
+- **Character creation: a points pool from the answers (user, 2026-10-10):** the 12 free points feel arbitrary. Idea:
+  the background answers decide how many points the athlete gets to allocate (a runner from a sporty family with years
+  of training starts with a bigger pool than a beginner; maybe the pool also follows the maturation answer), the base
+  ranges stay or shrink, and the player spreads the pool as they like (still a cap per attribute). Needs a design
+  session: what the pool's size range is (e.g. 8–16), how the answers add to it and whether the ones that give attribute
+  bonuses today (`data/background_questions.json`) become pool points instead, so that the same story gives the same
+  total strength; and `tools/training_balance.gd` (the 14-year-old's starting level feeds every balance number).
+  *(Opus for the design, then Sonnet)*
 - **Whole event card in the Calendar (user, 2026-10-09):** clicking an event shows the full event card, not only our
   800 m: all disciplines and the timetable of the meet (programme per day, rounds and times). Needs the programme
   as data: real timetables for the big meets (SUL / Kalevan kisat pages, source dated), a believable generic programme
@@ -334,7 +366,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   hover), keeping the whole-track view as an option. Mind `race_perf` (the stadium is drawn once; the dots view is
   redrawn every frame) and the decision card that must never cover the track (decision 26). Could go with R4 or M3.
   *(Opus for the look, then Sonnet)*
-- **Every section's own result list (user, 2026-10-09, playtest of the meet formats):** after sections the result
+- **Every section's own result list (user, 2026-10-09, playtest of the meet formats; done 2026-10-10: the result screen lists every section after yours):** after sections the result
   screen shows the overall list and your own section only; the other sections (e.g. section 1's race) are only visible
   inside the overall list. Also show each section separately, in running order, as heats are (`RaceDay.heat_results`
   already holds them; `race_screen.gd` `_show_result`). Small UI task. *(Sonnet, low)*

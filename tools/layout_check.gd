@@ -426,6 +426,11 @@ func _check_commentary(screen, label: String) -> void:
 		print("  banner (%s): %s, \"%s\"%s" % [label, "shown" if banner.visible else "not shown", screen._banner_label.text,
 				"" if (not banner.visible or inside) else "   <-- WRONG (outside the track area)"])
 		var scroll_h: float = screen._comment_box._scroll.size.y
+		var strip: Control = screen._strip
+		var clash: bool = strip.get_global_rect().intersects(track)
+		var inside_window: bool = Rect2(Vector2.ZERO, screen.size).encloses(strip.get_global_rect())
+		print("  subtitle strip (%s): \"%s\", %d px high%s" % [label, screen._strip._now.text.left(50), strip.size.y,
+				"" if (not clash and inside_window) else "   <-- WRONG (over the track or outside the window)"])
 		var want: float = screen._comment_box.HEIGHT
 		print("  commentary box: scroll area %d px (fixed %d)%s" % [scroll_h, int(want), "" if absf(scroll_h - want) < 1.0 else "   <-- WRONG"])
 

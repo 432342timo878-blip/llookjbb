@@ -1578,13 +1578,13 @@ func feeling() -> Dictionary:
 
 
 ## Can the coach see the player now? Outdoors he stands at one spot (controls.coach.spot_outdoor metres round the
-## lap: the 200 m start, on the infield side) and sees view_m along the track either way; indoors he stands on the
-## infield and sees the whole track.
+## lap: the 200 m start, in the stands) and sees view_m along the track either way; indoors he stands on the
+## rail of the hall and sees the whole track.
 func coach_sees() -> bool:
 	return player != null and coach_sees_at(player.d)
 
 
-## Can the coach see what happens `d` metres into the race? (R4: his spot is the 200 m start outdoors, the infield
+## Can the coach see what happens `d` metres into the race? (R4: his spot is the 200 m start outdoors (in the stands), the hall rail
 ## indoors; the commentary lets him speak only about what he can see.)
 func coach_sees_at(d: float) -> bool:
 	if indoor:

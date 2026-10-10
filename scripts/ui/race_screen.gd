@@ -33,6 +33,7 @@ var _standings: VBoxContainer
 var _stand_rows := []   # [name label, gap label] per position, reused every frame
 var _comment_box: CommentaryBox   # PC: the COMMENTARY box (R4); hidden while a card is open to make room
 var _ticker: CommentaryTicker      # phone: the two-line ticker under the track; a tap opens the log
+var _strip: CommentaryStrip        # PC: the subtitle strip under the track (the eyes stay on the race)
 var _log: CommentaryLog            # the open log sheet (the race waits while it is open)
 var _comm: RaceCommentary          # the broadcast of a watched race (null in quick mode)
 var _banner: PanelContainer        # PC: the key moments, a short strip along the top edge of the track
@@ -261,6 +262,10 @@ func _show_pre() -> void:
 	field.add_child(UIKit.label("THE FIELD", "CaptionLabel"))
 	var entrants := _rd.current_entrants().duplicate()
 	entrants.sort_custom(func(x, y): return _pb_of(x) < _pb_of(y))
+	var any_tag := false   # (the style column only takes room when someone has one)
+	for e in entrants:
+		if _tag_of(e) != "":
+			any_tag = true
 	for e in entrants:
 		var line := UIKit.hbox(8)
 		line.custom_minimum_size.y = 30
@@ -292,15 +297,21 @@ func _show_pre() -> void:
 			if tag != "":
 				line.custom_minimum_size.y = 44
 		else:
+			# Name and club share the room (the club gets the larger share: the long club names must fit).
+			n.custom_minimum_size.x = 125
+			n.size_flags_stretch_ratio = 1.4
 			line.add_child(n)
 			var club := UIKit.label(e.club, "MutedLabel")
 			club.custom_minimum_size.x = 150
+			club.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			club.size_flags_stretch_ratio = 3.0
 			club.clip_text = true
 			line.add_child(club)
-			var tag_label := UIKit.label(tag, "CaptionLabel")
-			tag_label.custom_minimum_size.x = 88
-			tag_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			line.add_child(tag_label)
+			if any_tag:
+				var tag_label := UIKit.label(tag, "CaptionLabel")
+				tag_label.custom_minimum_size.x = 84
+				tag_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				line.add_child(tag_label)
 			for stat in [["PB " + pb_text, 96], ["SB " + sb_text, 96]]:
 				var l := UIKit.label(stat[0], "MutedLabel")
 				l.custom_minimum_size.x = stat[1]
@@ -535,6 +546,7 @@ func _show_running() -> void:
 			"today": Game.date, "entries": Game.entries})
 	_comment_box = null if Layout.compact else CommentaryBox.new(_comm.crew_text())   # (only what is shown is made)
 	_ticker = CommentaryTicker.new() if Layout.compact else null
+	_strip = null if Layout.compact else CommentaryStrip.new()
 	if _ticker != null:
 		_ticker.tapped.connect(_open_log)
 	_events_seen = _race.events.size()
@@ -586,6 +598,7 @@ func _show_running() -> void:
 		var left := UIKit.vbox(10)
 		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		left.add_child(track_area)
+		left.add_child(_strip)
 		left.add_child(_bar)
 		# The right column: a decision card (decision 26) on top of the clock, positions and commentary. It scrolls
 		# when the card and the rest are taller than the window; the track on the left is never covered.
@@ -738,6 +751,8 @@ func _drain_commentary() -> void:
 			_comment_box.add_line(line)
 		if _ticker != null:
 			_ticker.show_line(line)
+		if _strip != null:
+			_strip.show_line(line)
 		if line.has("banner") and not _compact_run:
 			_show_banner(str(line.banner))
 
@@ -905,6 +920,10 @@ func _show_result(fresh := true) -> void:
 					"mine": false, "notes": notes})
 			lists.append({"title": _text("section_head", {"n": group + 1}) + _text("yours"), "res": res, "mine": true,
 					"notes": {}})
+			for h in _rd.heat_results.size():   # every other section as run, in running order (user playtest 2026-10-10)
+				if h != group:
+					lists.append({"title": _text("section_head", {"n": h + 1}), "res": _rd.heat_results[h], "mine": false,
+							"notes": {}})
 		else:
 			lists.append({"title": "", "res": res, "mine": true, "notes": {}})
 		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete})

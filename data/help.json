@@ -108,7 +108,7 @@
   },
   "race_running": {
    "title": "The race",
-   "version": 8,
+   "version": 9,
    "sections": [
     {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. Outdoors the race runs in lanes until the first bend is over, indoors until the second, then everyone cuts in. In a section or heat, the line under the clock says about what time you need."},
     {"heading": "Pause", "text": "The pause button next to 1x, 2x and 4x (on a PC also the Space bar) stops the race, so you can look at the track and the positions. The action bar still works: your command is given at once and the race acts on it when you run on. Tap it again to go on."},
@@ -120,17 +120,17 @@
     {"heading": "Boxed in and falls", "text": "Stuck on the inside behind a runner, with one on your shoulder, you're boxed in. Someone right on your shoulder: wait, a gap usually comes soon (rarely on a bend). Room on your outside: ease off and step out, or push through near the line. Tight bunches clip heels: stumbles, now and then a fall."},
     {"heading": "Decisions", "text": "The race pauses when something really happens: after the break, at the bell, a rival's move, being boxed in, losing contact, a slow pace, your own kick, the home straight, after a fall. If your coach can see you, the coach shouts what to do. The advice is usually right, not always."},
     {"heading": "The card", "text": "A decision card sits beside the track (on a phone, in a sheet below it), so you can see what is happening while you choose. The race waits until you answer, and the action bar is dimmed meanwhile."},
-    {"heading": "Commentary", "text": "A stadium announcer calls small meets; at championships a commentator and an expert explain what you may miss: moves that get away, kicks that die, boxes, heat runners easing off. Key moments flash over the top of the track. On a phone the ticker under it shows the latest line; tap it for the whole log (the race waits)."},
-    {"heading": "Your coach", "text": "Your coach stands at the 200 m start outdoors (the diamond), on the infield indoors, and speaks only about what he can see: your splits as you pass him, the cards, your kick. Each coach has a personality: calm, hard, warm or tactical. About ten seconds after a choice you hear how it is working out."}
+    {"heading": "Commentary", "text": "A stadium announcer calls small meets; at championships a commentator and an expert explain what you may miss: moves that get away, kicks that die, boxes, heat runners easing off. Key moments flash over the top of the track. The newest line is also under the track (a phone: the ticker; tap it for the whole log, the race waits)."},
+    {"heading": "Your coach", "text": "Your coach sits in the stands: outdoors by the 200 m start (the diamond), indoors at the hall rail. He speaks only about what he can see: your splits as you pass him, the cards, your kick. Each coach has a personality: calm, hard, warm or tactical. About ten seconds after a choice you hear how it is working out."}
    ]
   },
   "race_result": {
    "title": "The result",
-   "version": 7,
+   "version": 8,
    "sections": [
     {"heading": "Results", "text": "Your place and time; a new personal best is marked. The time counts in the season rankings."},
     {"heading": "Race story", "text": "Your times at 200, 400 and 600 m and the finish with your place at each, next to the winner's (or the runner-up's when you won), the key moments of the race and what your coach thinks of it."},
-    {"heading": "Sections", "text": "After sections you see everyone by time across all of them (S2 = section 2): that is the official result. Your section's own list comes below it. Winning a slow section can still be 10th overall."},
+    {"heading": "Sections", "text": "After sections you see everyone by time across all of them (S2 = section 2): that is the official result. Your section's own list comes below it, then the other sections. Winning a slow section can still be 10th overall."},
     {"heading": "DNF and DQ", "text": "DNF: did not finish, after a bad fall. DQ: disqualified for obstruction, after pushing your way out of a box. Neither counts for a personal best or the rankings. A fall can leave you with grazes or a bruise, rarely a sprained ankle.", "see": ["injuries"]},
     {"heading": "Heats and final", "text": "Senior and international meets have heats; after yours you see every heat's result, yours first. Q = through on place, q = through on time: the fastest of the rest. How many go through follows the World Athletics table; a big field adds semi-finals. Runners safely through ease off before the line."}
    ]

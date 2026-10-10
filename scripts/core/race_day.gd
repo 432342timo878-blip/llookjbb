@@ -328,16 +328,18 @@ func _section_max() -> int:
 	return int(_cfg.sections.max.indoor if _indoor else _cfg.sections.max.outdoor)
 
 
-## Sections: the best seeds together, full sections from the top, the slowest at least `min` runners; run slowest first.
+## Sections: the best seeds together, as many sections as needed (at most `max` runners each) of as even a size as possible,
+## the slowest at least `min` runners where that can be; run slowest first.
 func _make_sections(entrants: Array) -> void:
 	var order := _seeded(entrants)
 	var cap := _section_max()
 	var low := int(_cfg.sections.min)
 	var k := ceili(order.size() / float(cap))
 	var sizes := []
+	# As even as possible (13 runners, up to 12 a section: 7 + 6, not 9 + 4, user playtest 2026-10-10; real Nuorten SM races
+	# had 6–11 runners each); the stronger sections get the extra runner. The weakest keeps at least `min` where it can.
 	for s in k:
-		sizes.append(cap)
-	sizes[k - 1] = order.size() - (k - 1) * cap
+		sizes.append(order.size() / k + (1 if s < order.size() % k else 0))
 	for j in range(k - 2, -1, -1):
 		while sizes[k - 1] < low and sizes[j] > low:
 			sizes[j] -= 1

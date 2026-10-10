@@ -313,6 +313,18 @@ change of place late is a fade, never a fight.
 38. **The commentator is calm with excitement in the big moments**, in the Finnish manner: sober (Yle) or colourful with
     more detail (MTV, Timanttiliiga), set per meet in the data.
 
+**Decisions (user, 2026-10-10, playtest of R4):**
+39. **A subtitle strip under the track on PC** (the newest line in bigger text, the one before it small and dimmed, as wide
+    as the track; the track gets about 70 px shorter) so the eyes stay on the race; the box with the older lines stays in
+    the right column. ("I can't quite follow the commentary on the right and the running.")
+40. **Timed sections are as even as possible** (13 runners, at most 12 a section: 7 + 6, not 9 + 4; the stronger sections get
+    the extra runner; 41 runners: 10 + 10 + 10 + 11), still at most 12 (indoors 6) and the weakest at least 4 where that can be.
+    The result screen lists every section after yours.
+41. **The coach stands in the stands, not on the field:** outdoors in the front row by the 200 m start, indoors at the rail of the
+    hall by the back straight. What he can see is unchanged.
+42. (Answer, no change) Push / Hold / Ease are dimmed once you kick: the bar sets the pace *until* the kick, and the kick runs
+    the rest of the race on its own (R3, "Kicking!" on the button). Open idea: a short note on the bar while it is dimmed.
+
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
   the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 8–12 % slower, then a
@@ -1102,8 +1114,9 @@ screen; help `race_before` v5, `race_running` v8, `race_result` v7.
   accuracy 80 % are unchanged), `lines` (split calls: front / ok / back / hard by how the player looks; a rival's kick or
   move; the player's kick, box, fall, losing contact, taking the lead; a good or bad verdict; the finish), and `story`
   (one line per case). He speaks only about what he can see: `Race.coach_sees_at(d)`; outdoors from the 200 m start (the
-  diamond on the infield side of lane 1, drawn by the race view), so he calls the player's split at 200 and 600 m;
-  indoors from the infield (a diamond in the middle), so at 200, 400 and 600 (the 200 m lap makes it every lap, not "twice
+  diamond in the front row of the stands, drawn by the race view; moved there from the infield after the user's
+  playtest 2026-10-10: "the coach wouldn't be on the field"), so he calls the player's split at 200 and 600 m;
+  indoors from the rail of the hall by the back straight (a diamond there), so at 200, 400 and 600 (the 200 m lap makes it every lap, not "twice
   a lap" as sketched). Rival events only when within 45 m of the player. The finish lines don't need his view (he runs to
   the line). The club coach of a career: `Coaches.id_of(athlete)` = `Athlete.coach_id` (new field, saved, empty = the
   club coach) or a hash of the name, so a career always has the same coach; the Coaching step sets `coach_id`.

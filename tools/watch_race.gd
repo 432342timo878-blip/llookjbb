@@ -1,6 +1,6 @@
 extends SceneTree
 ## Dev tool for playtests (R5): jumps straight to a race to watch and play by hand. Needs a window:
-##   godot --path . --rendering-driver opengl3 -s res://tools/watch_race.gd -- [indoor|outdoor] [sections|heats|any] [female] [ability=N] [quit]
+##   godot --path . --rendering-driver opengl3 -s res://tools/watch_race.gd -- [indoor|outdoor] [sections|heats|any] [level=local|district|national|international] [female] [ability=N] [quit]
 ## Add `--resolution 390x844` before `-s` for the phone layout.
 ## Makes a new career (saves go to user://tool_saves/, never over your own), enters every meet the athlete may
 ## enter, plays the weeks (the health model off, so no injury gets in the way) and quick-runs every race until one
@@ -14,6 +14,7 @@ var _indoor := true
 var _round := ""   # "" any race, "sections", "heats"
 var _gender := "male"
 var _ability := 0.0
+var _level := ""   # "" any, or local / district / national / international: the meet's level (who commentates follows it, R4)
 
 
 func _initialize() -> void:
@@ -29,6 +30,8 @@ func _initialize() -> void:
 			_:
 				if a.begins_with("ability="):
 					_ability = float(a.substr(8))
+				if a.begins_with("level="):
+					_level = a.substr(6)
 	change_scene_to_file("res://scenes/main.tscn")
 	_run.call_deferred()
 
@@ -78,7 +81,7 @@ func _run() -> void:
 			return
 		var rd = game.race_day
 		var indoor: bool = rd.meet.get("indoor", false)
-		if indoor == _indoor and (_round == "" or rd.format == _round):
+		if indoor == _indoor and (_round == "" or rd.format == _round) and (_level == "" or rd.meet.level == _level):
 			break
 		while not rd.is_done():   # not the kind asked for: quick-run it
 			rd.start_round(false, "pack").run()

@@ -45,12 +45,16 @@ func _draw() -> void:
 			_draw_coach()
 
 
-## The coach by the track (GDD 4.3.1 step R4): a small diamond where he stands, outdoors at the 200 m start on the infield
-## side of lane 1 (he sees the stretch round it, Race.coach_sees_at), indoors in the middle of the infield (he sees all).
+## The coach (GDD 4.3.1 step R4): a small diamond where he stands, in the stands: outdoors in the front row by the 200 m
+## start (he sees the stretch round it, Race.coach_sees_at), indoors at the rail of the hall by the middle of the back
+## straight (he sees the whole track).
 func _draw_coach() -> void:
-	var spot := Vector2.ZERO
-	if not race.indoor:
-		var radius := race.r_in - 3.0
+	var spot: Vector2
+	if race.indoor:
+		var radius := race.r_in + Race.LANE_W * race.lanes + 3.0
+		spot = _stadium_point(radius, _path_s(race.bend + race.straight / 2.0, radius))
+	else:
+		var radius: float = TD.R_IN + TD.LANE * 8.0 + TD.APRON + TD.CONCOURSE + 1.5
 		spot = _stadium_point(radius, _path_s(fmod(float(Data.races.controls.coach.spot_outdoor), race.lap), radius))
 	var p := _px(spot)
 	var s := maxf(0.9 * _k, 5.0)
