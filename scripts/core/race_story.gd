@@ -7,7 +7,9 @@ extends RefCounted
 ## and `story`.
 
 
-## `ctx`: commentary (a RaceCommentary or null), coach_id ("" = the athlete's coach), athlete (or null).
+## `ctx`: commentary (a RaceCommentary or null), coach_id ("" = the athlete's coach), athlete (or null), and for a meet with
+## rounds (decisions 43, 47): kind (race / sections / heat / semi / final), overall_place (sections: the place by time across
+## all sections, 0 = unknown), pre_rank (the player's rank by seeding before the race, 0 = no mark, see RaceDay.pre_race_rank).
 ## → {title, splits [{label, you, winner}], other_head, moments [{m, text}], coach_name, coach_title, coach, case, place}
 static func build(race: Race, ctx := {}) -> Dictionary:
 	var cfg: Dictionary = Data.race_commentary.story
@@ -17,6 +19,8 @@ static func build(race: Race, ctx := {}) -> Dictionary:
 	for i in res.size():
 		if res[i].is_player:
 			place = i + 1
+	var kind: String = str(ctx.get("kind", "race"))
+	var overall := int(ctx.get("overall_place", 0))
 	var winner: Race.Runner = null
 	var second: Race.Runner = null
 	var fin := race.runners.filter(func(r): return r.done and r.status == "")
@@ -30,12 +34,12 @@ static func build(race: Race, ctx := {}) -> Dictionary:
 	if winner == p and second != null:
 		other = second
 		other_head = "2ND PLACE"
-	var out := {"title": cfg.title, "other_head": other_head, "place": place, "splits": [], "moments": []}
+	var out := {"title": cfg.title, "other_head": other_head, "place": overall if overall > 0 else place, "splits": [], "moments": []}
 	for m in Race.SPLIT_MARKS:
 		out.splits.append({"label": cfg.marks[str(m)], "you": _mark_text(p, m), "winner": _mark_text(other, m)})
 	out.splits.append({"label": cfg.marks["800"], "you": _finish_text(p), "winner": _finish_text(other)})
 	out.moments = _moments(race, ctx.get("commentary", null), cfg)
-	var case_id := verdict_case(race, place)
+	var case_id := verdict_case(race, place, {"kind": kind, "overall": overall, "pre_rank": int(ctx.get("pre_rank", -1))})
 	var coach_id: String = str(ctx.get("coach_id", race.coach_id))
 	if coach_id == "":
 		coach_id = Coaches.id_of(ctx.get("athlete", null))
@@ -62,18 +66,33 @@ static func _finish_text(r: Race.Runner) -> String:
 	return Calendar.format_time(snappedf(r.t, 0.01))
 
 
-## The case the coach talks about: the first that fits (dnf, dq, fell, won, kick_died, boxed, faded / too_fast, good_kick,
-## podium, better, as_expected, below).
-static func verdict_case(race: Race, place: int) -> String:
+## The case the coach talks about: the first that fits (dnf, dq, fell, won / won_part, kick_died, boxed, faded / too_fast,
+## good_kick, podium, better, as_expected, below).
+## `place` = the place in this race (a section or heat for those rounds). `opts` (decisions 43, 47): kind (race / sections /
+## heat / semi / final), overall (sections: the overall place, 0 = unknown), pre_rank (the rank by seeding before the race
+## among the same field, 0 = no mark, -1 = not given: then the day's ability is compared, for the tools). In sections the
+## win and the podium go by the overall place; a heat or section place alone is never a podium ("won_part" = won the heat /
+## section).
+static func verdict_case(race: Race, place: int, opts := {}) -> String:
 	var p := race.player
+	var kind: String = str(opts.get("kind", "race"))
+	var grouped := kind in ["heat", "semi", "sections"]
+	var overall := int(opts.get("overall", 0))
+	var medal_place := place
+	if kind == "sections":
+		medal_place = overall if overall > 0 else 99
+	elif grouped:
+		medal_place = 99
 	if p.status == "dnf":
 		return "dnf"
 	if p.status == "dq":
 		return "dq"
 	if p.falls > 0:
 		return "fell"
-	if place == 1:
+	if medal_place == 1:
 		return "won"
+	if grouped and place == 1:
+		return "won_part"
 	var kick_died := false
 	var boxed_long := false
 	for ev in race.events:
@@ -93,14 +112,23 @@ static func verdict_case(race: Race, place: int) -> String:
 		return "too_fast" if pos200 <= 2 else "faded"
 	if pos600 - place >= 2:
 		return "good_kick"
-	if place <= 3:
+	if medal_place <= 3:
 		return "podium"
-	# Where the day's ability says they should finish (1 = the strongest) against where they finished.
-	var stronger := 0
-	for r in race.runners:
-		if r != p and r.ability > p.ability:
-			stronger += 1
-	var diff := (stronger + 1) - place
+	# Where the pre-race picture (the seeding by season best / PB) put them against where they finished. Not the day's ability:
+	# that includes the hidden race-day form, so a bad day would count as "as expected".
+	var pre_rank := int(opts.get("pre_rank", -1))
+	if pre_rank == 0:
+		return "as_expected"   # (no mark yet: nothing to compare with)
+	var compare := place if kind != "sections" or overall <= 0 else overall
+	var diff := 0
+	if pre_rank > 0:
+		diff = pre_rank - compare
+	else:
+		var stronger := 0
+		for r in race.runners:
+			if r != p and r.ability > p.ability:
+				stronger += 1
+		diff = (stronger + 1) - place
 	var band := int(Data.race_commentary.story.expected_band)
 	if diff > band:
 		return "better"
@@ -143,16 +171,14 @@ static func _moments(race: Race, commentary, cfg: Dictionary) -> Array:
 		cands.append({"m": roundi(float(d_at)), "t": float(ev.get("t", 0.0)), "type": ev.type, "weight": weight,
 				"text": tpl.format(f)})
 	if commentary != null:
-		for v in commentary.verdicts:
-			if v.outcome == "flat":
-				continue
+		for v in commentary.final_verdicts():   # (the 10 s lines are only "so far": the real verdict is in hindsight, decision 44)
 			# (the verdict line alone reads oddly without its card: "You chose “Dig in”. It's costing a lot...")
 			var label := ""
 			for o in Data.race_cards.cards.get(str(v.card), {}).get("options", []):
 				if o.id == v.answer:
 					label = str(o.label)
 			var text := str(v.text) if label == "" else "You chose “%s”. %s" % [label, v.text]
-			cands.append({"m": int(v.d), "t": float(v.t), "type": "verdict", "weight": 6.0, "text": text})
+			cands.append({"m": int(v.m), "t": float(v.t), "type": "verdict", "weight": 6.0, "text": text})
 	cands.sort_custom(func(a, b): return a.weight > b.weight)
 	var picked := []
 	var per_type := {}

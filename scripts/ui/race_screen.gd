@@ -876,6 +876,7 @@ func _show_result(fresh := true) -> void:
 		var old_pb: float = Game.athlete.personal_bests.get(Game.athlete.main_event, 0.0)
 		var kind: String = _rd.rounds[_rd.round_index]   # race / sections / heat / semi / final
 		var group := _rd.player_heat
+		var pre_rank := _rd.pre_race_rank()   # (before the round is over: the seeding picture, decision 47)
 		_rd.finish_round()
 		var mine: Dictionary = {}
 		for r in res:
@@ -926,7 +927,13 @@ func _show_result(fresh := true) -> void:
 							"notes": {}})
 		else:
 			lists.append({"title": "", "res": res, "mine": true, "notes": {}})
-		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete})
+		var overall_place := 0
+		if kind == "sections":
+			for i in _rd.overall.size():
+				if _rd.overall[i].is_player:
+					overall_place = i + 1
+		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete, "kind": kind,
+				"overall_place": overall_place, "pre_rank": pre_rank})
 		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks, "story": story,
 				"via": marks.get(mine.name, ""), "next": _rd.rounds[_rd.round_index] if not _rd.is_done() else "",
 				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": kind in ["heat", "semi"]}

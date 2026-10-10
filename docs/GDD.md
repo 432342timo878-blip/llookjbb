@@ -1192,6 +1192,72 @@ screen; help `race_before` v5, `race_running` v8, `race_result` v7.
   PC box shows about three lines at a time (the right column of a 1280x720 window has no more room; the box scrolls);
   the coach's marker is a diamond with the word "Coach"; no volume / off switch for the commentary yet.
 
+**Built (check-in fixes, 2026-10-10): the R4 realism fixes, the two open chips, the run-all-checks script and the Dev menu**
+(decisions 43–47, `docs/AUDIT.md` "Check-in (2026-10-10)"; the race engine and the training balance are untouched).
+- **Medals (43).** `RaceCommentary` knows whether the race is a heat / semi-final / section (`grouped`, `kind`). A heat or
+  section winner "wins the heat / section" (placeholders `{win_obj}` = it / the heat / the semi-final / the section,
+  `{win_of}`), the player's place reads "4th in the heat" (`{in_part}`), and the "A podium for ..." line and the coach's
+  podium line need a real medal place (`medal`): a single race, a final, or, in sections, the overall place **when the
+  player's section is the last one** (`RaceDay.sections_last`, `overall_place_so_far`: the earlier sections are known,
+  the later ones cannot be faster by seeding order). Any other section or heat place gets the coach's new neutral
+  `finish_part` lines. `RaceStory` takes `kind`, `overall_place` and `pre_rank`: in sections the place, "won" and "podium"
+  go by the overall place (the story's `place` too), a heat / section winner is the new case `won_part` (all four coaches
+  have lines), a heat place is never a podium.
+- **Verdicts (44).** The 10 s line is "so far" (a random "So far, / For now, / At the moment, " in front, unless the line
+  says it already) and **neutral on moves** (`verdicts.move_neutral`: only the place, no judgement; no coach verdict on
+  a move). The real verdict on every answered card is made after the finish by `RaceCommentary.final_verdicts()`:
+  places gained or lost from the card to the finish, a kick that died is bad whatever the places (`verdicts_final`,
+  past tense, "1 place / 3 places"); the Race story uses these instead of the 10 s lines.
+- **Talk between the calls (45).** Only on lap 1 (`rules.filler_until_m` 400), at most 2 facts a race (`filler_max`),
+  no second voice answering (`filler_reply` false). The introductions, the season, the next meet and history moved to
+  `ceremony` in `race_commentary.json` (parked for the race ceremony / studios; nothing reads them). New `fav_noclub`.
+- **Crew knowledge (46).** At streamed and TV meets the crew knows the style of the three best-marked rivals
+  (`rules.crew_favourites`) from the first race (`known` / the style tag in the events and the `fav_style` filler); the
+  player's own field list (scouting, `_tag_of`) still needs two races.
+- **Nuorten SM (47).** Tier `stream` = one commentator, no expert (national level); the old commentator + expert tier is
+  now `stream_expert` (international youth meets); `tv` unchanged (`level_tier`, `tiers`, `crews`, `filler_max`).
+- **Smaller fixes.** No "sweetheart" / "love" from the warm coach; "ranked x of y" counts the whole field (rivals without
+  a season best rank behind); no "his club" (a favourite without a club gets the line without it); the two trailing commas in
+  `race_commentary.json` removed and `json_check.gd` now also finds trailing commas and BOMs (Godot's own parser accepts
+  both); "better / as expected / below" compares the finish with the **pre-race ranking** by season best / PB
+  (`RaceDay.pre_race_rank()`, the whole field in sections; a player without a mark gets "as expected"), not the day's
+  hidden form. Optional `{in_part}` and `{win_of}` may be empty (`OPTIONAL_HOLES`).
+- **Open chip 1: `help_check` "day editor ?".** It was the check, not the game: on PC the help opens in the hub's side
+  slot, but the check looked for a phone-style overlay. `_press_help` takes the hub; now 500 checks (PC) / 493 (phone) pass.
+- **Open chip 2: heat Q / q marks vs the next round.** Could not be reproduced (`race_rounds` passed), but reading the
+  code found the cause: a Q place left empty by a runner who did not finish was not given to anyone, so the marks
+  added up to less than the table's round size. `RaceDay._qualifiers` now fills the fixed total (Q places + q spots) with
+  the next fastest times; `race_rounds` checks the marks equal the next round's size exactly (or the number of finishers).
+- **`run_all_checks.bat` / `tools/run_all_checks.ps1`.** Double-click: json_check, help_check in the phone layout
+  (headless) and the PC layout (a real 1280x720 window), day_engine_check, health_check, form_check, season_plan_check,
+  dev_menu_check, race_rounds, commentary_check (24 races), one PASS / FAIL list. A check passes only if it finished, printed its
+  "all good" line, printed no FAIL line **and** its output and error output hold no SCRIPT ERROR / Parse Error /
+  Identifier not found (several tools print "ALL CHECKS PASSED" after a script error aborted a check). Each check's full
+  output is kept in a folder under `%TEMP%` (printed at the end); `-Only help,health` runs some; about 10 minutes.
+- **Dev menu (debug builds only: the game run from the Godot editor).** Main menu → "Dev menu (test build)" (`DevMenu`,
+  `scripts/ui/dev_menu.gd`, help entry `dev_menu`). *Watch a test race*: indoor / outdoor, any / sections / heats, any /
+  local / district / national / international level, boy / girl, runner strength; `DevTools.start_test_race` makes a
+  separate test career (`Game.dev_test`: `SaveGame.save` does nothing, so the player's saves are never touched; the hub
+  says TEST CAREER; the health model is off), plays it to a race of that kind and opens the race screen (what
+  `tools/watch_race.gd` does, without a command line). *Jump the career forward*: next race day or the next 1 Jan / Mar /
+  May / Jul / Sep / Nov, played for real a day at a time, saved once at the end, stopping early at a race day or a stop
+  event (`DevTools.jump`). A new or loaded career ends test mode. `tools/dev_menu_check.gd` (27 checks).
+- **Checks (stderr read too).** `run_all_checks.bat` ALL 11 PASSED (help_check 513 checks phone / 520 PC, race_rounds 467 s
+  on a busy PC, commentary_check 24 races, dev_menu_check 27); `commentary_check -- 50`: 4784 checks, 0 failed (no line twice,
+  the 2 s rule, the coach only sees what he can see, the race the same with and without the commentary, the same seed
+  the same broadcast; new: no podium / medal talk in a heat or a not-last section, no "wins it" for a heat winner, no ceremony
+  line between the calls, at most 2 facts, no expert at the national stream, the 10 s verdict on a move neutral, no
+  "sweetheart" / "love" / "his club"); lines per race now announcer 29, stream (one commentator) 45, stream_expert 50, TV 52;
+  `race_shape.gd -- 100` (all 8 rows, 59 lines) and `training_balance.gd -- 0` (31 lines) **identical to the digit** before
+  and after (run in a copy of the project made before the first edit); `layout_check` at the 5 sizes (1280x720, 720x1280,
+  390x844, 1000x900, 844x390): no OVERFLOW / SQUEEZED / WRONG, the Dev menu at every size; the tour on PC and phone (103
+  screenshots each, looked at: main menu with the Dev menu button, a sections result with the overall place). The Race
+  story has 2–6 key moments a race now (it was 3–6: the 10 s verdicts used to fill it).
+- **Small choices made without asking (change on request):** a stand-in for the unknown overall place of a not-last
+  section is "no place yet" (only the section place is spoken); a Dev menu on the main menu rather than the hub header (the
+  header has no room on a phone); test careers are never saved at all; the 10 s verdict openers "So far, / For now, / At the
+  moment, "; filler facts without the expert's reply.
+
 ### 4.4 Season calendar (first version built)
 
 Decisions (user, 2026-10-05): big meets use **real dates**; small local/district meets get **believable estimated dates**

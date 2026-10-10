@@ -238,7 +238,7 @@ func _save() -> void:
 	SaveGame.save_snapshot()
 	if not is_instance_valid(_save_button):
 		return
-	_save_button.text = "Saved ✓"
+	_save_button.text = "Test: not saved" if Game.dev_test else "Saved ✓"
 	get_tree().create_timer(1.5).timeout.connect(func():
 		if is_instance_valid(_save_button):
 			_save_button.text = "Save")
@@ -265,6 +265,8 @@ func _refresh_header() -> void:
 	_name_label.text = a.full_name()
 	_info_label.text = "%s · %d years · %s · %s" % [
 		Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", ""), a.hometown]
+	if Game.dev_test:
+		_info_label.text = "TEST CAREER (Dev menu, never saved) · " + _info_label.text
 	_date_label.text = Calendar.format_day(Game.date)
 	# The season plan's caption over the week strip (GDD 4.8 UI): "General base · week 3 of 10 · lighter week".
 	var caption := SeasonUI.week_caption()

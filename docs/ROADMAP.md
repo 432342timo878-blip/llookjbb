@@ -222,7 +222,7 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         identical outdoors. *(Opus)*
 - [x] **Check-in 2026-10-10** (realism audit of R4 + project review, `docs/AUDIT.md` "Check-in (2026-10-10)"): order of
       work agreed with the user below; next check-in after step 7.
-- [ ] **Fix session (after the check-in):** (1) R4 realism fixes: section / heat places never called a podium or medal
+- [x] **Fix session (after the check-in, done 2026-10-10; GDD 4.3.1 "Built (check-in fixes)"; `run_all_checks.bat`, Dev menu in the main menu of a test build):** (1) R4 realism fixes: section / heat places never called a podium or medal
       ("wins the heat / section"; Race story and coach use the overall place in sections); the 10 s verdict says "so
       far" and the real verdict on a choice comes in the Race story after the finish; talk between the calls only 1–2
       short facts on lap 1; the crew knows the favourites' styles at streamed / TV meets (the player's own tag still

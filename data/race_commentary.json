@@ -1,5 +1,5 @@
 {
- "_note": "The race commentary (GDD 4.3.1, step R4). Texts only: scripts/core/race_commentary.gd turns the race's events (Race.events), the player's choices (Race.say_log, Race.card_log) and the race state into lines. A line is a string or {t, when}. `when` is a set of conditions on the event's context: key: value (equal), key: [a, b] (one of), key: true / false, key_min / key_max (number at least / at most). Keys: shape (fast / honest / tactical), tier, style (yle / mtv), indoor, kind (race / sections / heat / semi / final), chase, player (the event is about the player), involves_player (the other runner is the player), known (the personality of the runner is known to the player: met twice), personality (front / pack / kicker / surger), mark, pos, leader, to_go, d, gap, vs_even, group, spread, way, where, seconds, lost, margin, place, pb, sb, late (to_go 200 or less), lap (1 / 2). Placeholders: {name} the runner's surname, {full}, {first}, {club}, {other} a second runner's surname, {to_go}, {m} metres run, {pos} place (3rd), {gap} metres behind the leader, {mark}, {split} (time at the mark), {vs} (percent faster / slower than the field's even pace), {group}, {spread}, {leader}, {time}, {margin}, {bell} (The bell / Halfway) and {bell_l}, {pname} the player's surname, {field}, {meet}, {round}, {coach_name}, plus the facts of fillers. A line is used at most once per race and the last `rules.memory` lines used are avoided across races. Voices: tv (the commentator, selostaja), expert (asiantuntija, a former athlete or coach: analysis, background), announcer (the stadium announcer of a small meet), you (the player's own choices), fan (another runner's supporter), coach (data/coaches.json). All names are made up. Style yle = sober and factual, mtv = colourful with more history. Who talks: tiers (by the meet's level, level_tier): announcer = the stadium announcer alone (local and district meets), stream = commentator + expert (national championships and international youth meets streamed), tv = commentator + expert (senior championships, TV).",
+ "_note": "The race commentary (GDD 4.3.1, step R4). Texts only: scripts/core/race_commentary.gd turns the race's events (Race.events), the player's choices (Race.say_log, Race.card_log) and the race state into lines. A line is a string or {t, when}. `when` is a set of conditions on the event's context: key: value (equal), key: [a, b] (one of), key: true / false, key_min / key_max (number at least / at most). Keys: shape (fast / honest / tactical), tier, style (yle / mtv), indoor, kind (race / sections / heat / semi / final), chase, player (the event is about the player), involves_player (the other runner is the player), known (the personality of the runner is known to the player: met twice), personality (front / pack / kicker / surger), mark, pos, leader, to_go, d, gap, vs_even, group, spread, way, where, seconds, lost, margin, place, pb, sb, late (to_go 200 or less), lap (1 / 2). Placeholders: {name} the runner's surname, {full}, {first}, {club}, {other} a second runner's surname, {to_go}, {m} metres run, {pos} place (3rd), {gap} metres behind the leader, {mark}, {split} (time at the mark), {vs} (percent faster / slower than the field's even pace), {group}, {spread}, {leader}, {time}, {margin}, {bell} (The bell / Halfway) and {bell_l}, {pname} the player's surname, {field}, {meet}, {round}, {coach_name}, plus the facts of fillers. A line is used at most once per race and the last `rules.memory` lines used are avoided across races. Voices: tv (the commentator, selostaja), expert (asiantuntija, a former athlete or coach: analysis, background), announcer (the stadium announcer of a small meet), you (the player's own choices), fan (another runner's supporter), coach (data/coaches.json). All names are made up. Style yle = sober and factual, mtv = colourful with more history. Who talks: tiers (by the meet's level, level_tier): announcer = the stadium announcer alone (local and district meets), stream = one commentator, no expert (national championships such as Nuorten SM, streamed; decision 47), stream_expert = commentator + expert (international youth meets streamed), tv = commentator + expert (senior championships, TV). More keys: grouped (the race is a heat / semi-final / section: its winner 'wins the heat', its places are no medals, decision 43), medal (the place in the event is a real medal place: a single race, a final, or the overall place of the last section), scope and the placeholders {in_part} (' in the heat' for a heat or section place, else empty), {win_obj} ('it' / 'the heat' / 'the section') and {win_of} (the same as ' of the heat'), fav_club (the favourite has a club). Talk between the calls (`fillers`) only on lap 1 and 1-2 facts (decision 45); introductions, the season, the next meet and history are parked in `ceremony`. The crew knows the style of the `rules.crew_favourites` best-marked rivals at streamed and TV meets (decision 46). `verdicts` are the 10 s 'so far' lines (neutral on moves: `move_neutral`), `verdicts_final` the real verdict on each choice, told in the Race story (decision 44).",
  "rules": {
   "gap_s": 2.0,
   "stale_s": 5.0,
@@ -8,7 +8,11 @@
   "expert_chance": 0.35,
   "filler_after_s": 8.0,
   "filler_gap_s": 12.0,
-  "filler_max": {"announcer": 1, "stream": 4, "tv": 5},
+  "filler_max": {"announcer": 1, "stream": 2, "stream_expert": 2, "tv": 2},
+  "filler_until_m": 400.0,
+  "filler_reply": false,
+  "crew_favourites": 3,
+  "so_far": ["So far, ", "For now, ", "At the moment, "],
   "verdict_after_s": 10.0,
   "verdict_good": 1.5,
   "verdict_flat_chance": 0.4,
@@ -31,15 +35,17 @@
  },
  "tiers": {
   "announcer": {"label": "Stadium announcer", "lead": "announcer", "expert": false},
-  "stream": {"label": "Livestream", "lead": "tv", "expert": true},
+  "stream": {"label": "Livestream", "lead": "tv", "expert": false},
+  "stream_expert": {"label": "Livestream", "lead": "tv", "expert": true},
   "tv": {"label": "Broadcast", "lead": "tv", "expert": true}
  },
- "level_tier": {"local": "announcer", "district": "announcer", "national": "stream", "international": "stream", "elite": "tv"},
+ "level_tier": {"local": "announcer", "district": "announcer", "national": "stream", "international": "stream_expert", "elite": "tv"},
  "style_by_level": {"local": "yle", "district": "yle", "national": "yle", "international": "mtv", "elite": "yle"},
  "style_by_meet": {},
  "crews": {
   "announcer": {"tv": "the stadium announcer", "expert": ""},
-  "stream": {"tv": "Jari Tolonen", "expert": "Sanna Kallio"},
+  "stream": {"tv": "Jari Tolonen", "expert": ""},
+  "stream_expert": {"tv": "Jari Tolonen", "expert": "Sanna Kallio"},
   "yle": {"tv": "Olli Vartiainen", "expert": "Satu Rinne"},
   "mtv": {"tv": "Jussi Tammela", "expert": "Eero Salmi"}
  },
@@ -91,7 +97,7 @@
     "It's a bold choice to lead from the break. You decide the pace, but you pay for it.",
     {"t": "Taking the front yourself is a statement. {name} wants to run this race on their own terms.", "when": {"player": true}}
    ],
-   "announcer": ["{name} leads at the break.", "{name} is in front as they come out of the first bend."],
+   "announcer": ["{name} leads at the break.", "{name} is in front as they come out of the first bend."]
   },
   "pace": {
    "weight": 7, "max": 3,
@@ -266,7 +272,7 @@
    "expert": [
     "That's the safe way to answer: sit on them, and let them do the work.",
     "Good cover. Now they have to decide when to go themselves."
-   ],
+   ]
   },
   "let_go": {
    "weight": 2, "max": 1,
@@ -544,15 +550,16 @@
   "finish": {
    "after_finish": true,
    "weight": 10, "important": true, "max": 1,
-   "banner": "{name} wins · {time}",
+   "banner": "{name} wins {win_obj} · {time}",
    "tv": [
-    "{name} wins it in {time}!",
+    "{name} wins {win_obj} in {time}!",
     "And it's {name} first across the line in {time}.",
-    "{name} takes the victory, {time} on the clock.",
-    {"t": "{pname} wins! {pname} wins it in {time}!", "when": {"player": true}},
-    {"t": "A personal best for {name}, who wins in {time}!", "when": {"pb": true}},
-    {"t": "A season best for {name}, winning in {time}.", "when": {"sb": true, "pb": false}},
-    {"t": "A win for {name} in {time}. What a performance!", "when": {"style": "mtv"}}
+    "{name} takes {win_obj}, {time} on the clock.",
+    {"t": "{pname} wins! {pname} wins {win_obj} in {time}!", "when": {"player": true}},
+    {"t": "A personal best for {name}, who wins {win_obj} in {time}!", "when": {"pb": true}},
+    {"t": "A season best for {name}, winning {win_obj} in {time}.", "when": {"sb": true, "pb": false}},
+    {"t": "A win for {name} in {time}. What a performance!", "when": {"style": "mtv", "grouped": false}},
+    {"t": "{name} wins {win_obj} in {time}, and that is a statement.", "when": {"style": "mtv", "grouped": true}}
    ],
    "expert": [
     "A well-run race from start to finish.",
@@ -561,8 +568,8 @@
     {"t": "A fast race from the gun, and the strongest legs won out in the end.", "when": {"shape": "fast"}}
    ],
    "announcer": [
-    "{name} wins in {time}!",
-    "The winner is {name}, in {time}. A round of applause, please!",
+    "{name} wins {win_obj} in {time}!",
+    "The winner{win_of} is {name}, in {time}. A round of applause, please!",
     {"t": "{pname} wins! Come on, give it up for {pname}!", "when": {"player": true}}
    ],
    "coach": {"player": "finish"}
@@ -571,12 +578,12 @@
    "after_finish": true,
    "weight": 8, "important": true, "max": 1,
    "tv": [
-    "{pname} crosses the line in {place}, {time}.",
-    "{pname} finishes {place} in {time}.",
-    {"t": "{pname} comes home {place} in {time}, and that's a personal best!", "when": {"pb": true}},
-    {"t": "{pname} finishes {place} with a season best of {time}.", "when": {"sb": true, "pb": false}},
-    {"t": "{pname} fought all the way to the line, {place} in {time}.", "when": {"place_min": 4}},
-    {"t": "A podium for {pname}: {place} in {time}!", "when": {"place_max": 3}}
+    "{pname} crosses the line in {place}{in_part}, {time}.",
+    "{pname} finishes {place}{in_part} in {time}.",
+    {"t": "{pname} comes home {place}{in_part} in {time}, and that's a personal best!", "when": {"pb": true}},
+    {"t": "{pname} finishes {place}{in_part} with a season best of {time}.", "when": {"sb": true, "pb": false}},
+    {"t": "{pname} fought all the way to the line, {place}{in_part} in {time}.", "when": {"place_min": 4}},
+    {"t": "A podium for {pname}: {place} in {time}!", "when": {"place_max": 3, "medal": true}}
    ],
    "expert": [
     {"t": "A personal best is the thing that counts at this age. That's progress.", "when": {"pb": true}},
@@ -584,7 +591,7 @@
     {"t": "You can see it was a hard race. The legs always know.", "when": {"place_min": 4}}
    ],
    "announcer": [
-    "{pname} finishes {place} in {time}.",
+    "{pname} finishes {place}{in_part} in {time}.",
     {"t": "A personal best for {pname}! Well done!", "when": {"pb": true}}
    ],
    "coach": {"player": "finish"}
@@ -622,20 +629,11 @@
   "fan_kick": ["{first}, kick! Kick!", "Now, {first}! Now!", "Come on, {first}!"]
  },
  "fillers": [
-  {"id": "fav", "voice": "tv", "weight": 5, "t": "The favourite today is {fav_full} of {fav_club}, who comes in with {fav_mark_text}.",
+  {"id": "fav", "voice": "tv", "weight": 5, "when": {"fav_club": true}, "t": "The favourite today is {fav_full} of {fav_club}, who comes in with {fav_mark_text}.",
    "reply": "{fav} is the one everyone will be watching. The question is whether they have to carry the race."},
   {"id": "fav_style", "voice": "expert", "weight": 4, "when": {"after_mark_min": 200}, "t": "{fav} likes {fav_style_text}. Keep an eye on that.", "needs": ["fav_style_text"]},
-  {"id": "player_intro", "voice": "tv", "weight": 6, "when": {"p_has_mark": true}, "t": "In the colours of {pclub}, {pfull}, {page} years old, with {ppb_text}.",
-   "reply": "A runner who has been moving in the right direction. Today shows how far."},
-  {"id": "player_nomark", "voice": "tv", "weight": 6, "when": {"p_has_mark": false}, "t": "Running for {pclub} is {pfull}, {page} years old, and without a recorded time yet.",
-   "reply": "Races without a mark are the most fun. No expectations, just a first benchmark."},
-  {"id": "season_no", "voice": "tv", "weight": 3, "t": "It's the {p_race_no} 800 of the season for {pname}.", "needs": ["p_race_no"]},
-  {"id": "sb_rank", "voice": "expert", "weight": 3, "t": "On season bests, {pname} comes in ranked {p_sb_rank} in this field.", "needs": ["p_sb_rank"]},
-  {"id": "tagged", "voice": "tv", "weight": 5, "t": "{pname} has raced {tagged} {tagged_met} now. {tagged} is known as a {tagged_tag}.", "needs": ["tagged"],
-   "reply": "Knowing how a rival runs is half of the tactics."},
-  {"id": "next_meet", "voice": "tv", "weight": 4, "t": "Next on the calendar for {pname} is {next_meet}, {next_in} away.", "needs": ["next_meet"],
-   "reply": "Races like this are building blocks. What happens today feeds into the next one."},
-  {"id": "meet_desc", "voice": "tv", "weight": 3, "t": "{meet}: {meet_desc}", "needs": ["meet_desc"]},
+  {"id": "fav_noclub", "voice": "tv", "weight": 5, "when": {"fav_club": false}, "t": "The one to beat today is {fav_full}, who comes in with {fav_mark_text}.", "needs": ["fav_full"]},
+  {"id": "tagged", "voice": "tv", "weight": 5, "t": "{pname} has raced {tagged} {tagged_met} now. {tagged} is known as a {tagged_tag}.", "needs": ["tagged"]},
   {"id": "targets", "voice": "tv", "weight": 6, "when": {"kind": ["sections"]}, "t": "The time to beat for a medal is around {target_medal}, and {target_top8} gets you into the top eight.", "needs": ["target_medal", "target_top8"]},
   {"id": "targets_medal", "voice": "tv", "weight": 5, "when": {"kind": ["sections"]}, "t": "Going by the times so far, a medal takes around {target_medal}.", "needs": ["target_medal"]},
   {"id": "cutoff", "voice": "tv", "weight": 6, "when": {"kind": ["heat", "semi"]}, "t": "The slowest time that would put a runner through on time so far is {target_cutoff}.", "needs": ["target_cutoff"],
@@ -656,38 +654,37 @@
   {"id": "tip_engine", "voice": "expert", "weight": 2, "t": "A good 800 runner needs both: the aerobic engine of a miler and the speed of a sprinter. That's what makes it so hard."},
   {"id": "mtv_numbers", "voice": "tv", "weight": 5, "when": {"style": "mtv"}, "t": "{fav_full} brings {fav_mark_text} into this race. On paper, that is the number to beat.", "needs": ["fav_full"]},
   {"id": "mtv_nerve", "voice": "expert", "weight": 4, "when": {"style": "mtv"}, "t": "The numbers tell you who has run fast. They never tell you who has the nerve at 600 metres."},
-  {"id": "mtv_story", "voice": "tv", "weight": 5, "when": {"style": "mtv"}, "t": "{pfull}, {page} years old, running for {pclub}. This is how careers begin.", "needs": ["pclub", "page"]},
+  {"id": "crowd", "voice": "tv", "weight": 1, "t": "The stands are following every runner round the track."},
+  {"id": "a_club", "voice": "announcer", "weight": 5, "t": "Runners from {field_clubs} clubs on the track today. Make some noise for your own!", "needs": ["field_clubs"]}
+ ],
+ "ceremony": [
+  {"_note": "PARKED (decision 45, fix session): talk that real broadcasts do at the line-up, after the finish and in the studio, not between the calls of a race. Not used by the race commentary; they wait for the race ceremony / studios (ROADMAP ideas backlog). Same format as `fillers`."},
+  {"id": "player_intro", "voice": "tv", "weight": 6, "when": {"p_has_mark": true}, "t": "In the colours of {pclub}, {pfull}, {page} years old, with {ppb_text}.",
+   "reply": "A runner who has been moving in the right direction. Today shows how far."},
+  {"id": "player_nomark", "voice": "tv", "weight": 6, "when": {"p_has_mark": false}, "t": "Running for {pclub} is {pfull}, {page} years old, and without a recorded time yet.",
+   "reply": "Races without a mark are the most fun. No expectations, just a first benchmark."},
+  {"id": "season_no", "voice": "tv", "weight": 3, "t": "It's the {p_race_no} 800 of the season for {pname}.", "needs": ["p_race_no"]},
+  {"id": "sb_rank", "voice": "expert", "weight": 3, "t": "On season bests, {pname} comes in ranked {p_sb_rank} in this field.", "needs": ["p_sb_rank"]},
+  {"id": "next_meet", "voice": "tv", "weight": 4, "t": "Next on the calendar for {pname} is {next_meet}, {next_in} away.", "needs": ["next_meet"],
+   "reply": "Races like this are building blocks. What happens today feeds into the next one."},
+  {"id": "meet_desc", "voice": "tv", "weight": 3, "t": "{meet}: {meet_desc}", "needs": ["meet_desc"]},
   {"id": "tip_nurmi", "voice": "tv", "weight": 1, "when": {"style": "mtv"}, "t": "Finland has a long distance-running tradition, going back to the days of Paavo Nurmi. The 800 has had fewer headlines, but plenty of quality.",
    "reply": "The best runners here come from small clubs and long winters. That says something about the sport."},
+  {"id": "mtv_story", "voice": "tv", "weight": 5, "when": {"style": "mtv"}, "t": "{pfull}, {page} years old, running for {pclub}. This is how careers begin.", "needs": ["pclub", "page"]},
   {"id": "coach_out", "voice": "tv", "weight": 4, "when": {"indoor": false}, "t": "In the stands by the 200 metre start, {coach_name}, the coach of {pname}, is watching every stride.",
    "reply": "A coach in the stands sees things the athlete doesn't. The shouts carry further than you'd think."},
   {"id": "coach_in", "voice": "tv", "weight": 4, "when": {"indoor": true}, "t": "At the rail of the hall, {coach_name}, the coach of {pname}, follows every lap.",
    "reply": "Indoors the coach can see the whole track, so every lap gets a comment."},
-  {"id": "crowd", "voice": "tv", "weight": 1, "t": "The stands are following every runner round the track."},
-  {"id": "a_club", "voice": "announcer", "weight": 5, "t": "Runners from {field_clubs} clubs on the track today. Make some noise for your own!", "needs": ["field_clubs"]},
   {"id": "a_player", "voice": "announcer", "weight": 5, "t": "And in the colours of {pclub}, {pfull}!"},
   {"id": "a_meet", "voice": "announcer", "weight": 3, "t": "Welcome to {meet}. The 800 metres is under way."}
  ],
  "verdicts": {
   "any": {
-   "good": ["That's working out well: you've gained {dpos} places.", "That choice is paying off.", "That looks like the right call."],
-   "bad": ["That hasn't worked out. You've lost {dpos} places.", "That choice is costing you.", "That one hasn't paid off."],
+   "good": ["That's working out well: you've gained {dpos_places}.", "That choice is paying off.", "That looks like the right call."],
+   "bad": ["That hasn't worked out. You've lost {dpos_places}.", "That choice is costing you.", "That one hasn't paid off."],
    "flat": ["It's too early to tell how that choice is working out.", "Nothing much has changed since that choice.", "That choice hasn't made much difference yet.", "So far that choice has changed very little."]
   },
-  "move": {
-   "go": {
-    "good": ["You went with him and it's paying off: you're right there.", "Going with the move is paying off. You're on {name}'s shoulder.", "You stayed with the move and gained places. It's working."],
-    "bad": ["Going with the move has cost you: you're feeling it now.", "You went with it and the legs are paying for it.", "Staying with the move has used a lot of your reserve."]
-   },
-   "wait": {
-    "good": ["Waiting has paid off: {name} is coming back.", "Letting them go was right. The gap is shrinking.", "Patience is paying off. {name} is tiring."],
-    "bad": ["Letting them go has cost you: the gap is opening.", "Waiting hasn't worked, and {name} is getting away.", "The gap to the mover is growing. Maybe you waited too long."]
-   },
-   "counter": {
-    "good": ["The counter-attack worked: you've gained {dpos} places.", "You hit back and it's working."],
-    "bad": ["The counter-attack has cost you a lot of energy.", "Hitting back hasn't paid off, and you're paying for it."]
-   }
-  },
+  "move_neutral": ["You're {pos} for now. The finish will show whether that was right.", "Whether that was the right answer, we'll only know at the line. You're {pos}.", "It's {pos} for you at this point. A move is judged at the finish, not now."],
   "box": {
    "wait": {
     "good": ["Waiting was right: you're free and nothing is lost.", "The gap opened and you were patient."],
@@ -698,7 +695,7 @@
     "bad": ["Easing out cost more than you hoped.", "You dropped back and lost places."]
    },
    "push": {
-    "good": ["Pushing through has paid off: you've gained {dpos} places.", "You got through the gap and it's working."],
+    "good": ["Pushing through has paid off: you've gained {dpos_places}.", "You got through the gap and it's working."],
     "bad": ["Pushing through has cost you.", "That shove hasn't paid off."]
    }
   },
@@ -764,6 +761,51 @@
   "straight": {
    "wide": {"good": ["Going wide was right: you've gained places.", "The wide line is working."], "bad": ["The wide line has cost you metres.", "Going wide hasn't paid off."]},
    "inside": {"good": ["The inside gap paid off.", "Waiting for the gap worked out."], "bad": ["No gap came on the inside. That cost places.", "Waiting inside has cost you."]}
+  }
+ },
+ "verdicts_final": {
+  "_note": "The real verdict on a choice, told in the Race story after the finish (decision 44): places gained or lost from the card to the finish ({dpos}, {pos} = the final place, {at} = metres run at the card); the kick that died is bad whatever the places.",
+  "any": {
+   "good": ["It paid off: from there you gained {dpos_places} and finished {pos}.", "It worked: {dpos_places} gained from there to the line.", "A good call. You were {dpos_places} better off at the finish."],
+   "bad": ["It cost you: {dpos_places} lost from there to the line.", "It did not pay: you finished {dpos_places} lower than at that moment.", "A poor call in hindsight. You lost {dpos_places} after it."]
+  },
+  "move": {
+   "go": {
+    "good": ["Going with the move held up to the line: {dpos_places} gained.", "You stayed with them and it paid at the finish."],
+    "bad": ["Going with the move was costly. You paid for it later and lost {dpos_places}."]
+   },
+   "wait": {
+    "good": ["Letting them go was the right call: you got places back later ({dpos_places} gained).", "Patience paid at the finish: {dpos_places} gained."],
+    "bad": ["Letting them go cost you. You never got back to them and lost {dpos_places}."]
+   },
+   "counter": {
+    "good": ["Hitting back paid off: {dpos_places} gained."],
+    "bad": ["Hitting back used too much. You lost {dpos_places} after it."]
+   }
+  },
+  "kick": {
+   "now": {
+    "good": ["The kick held to the line: {dpos_places} gained."],
+    "bad": ["The kick started too far out and died. A later start would have kept the places."]
+   },
+   "wait": {
+    "good": ["Waiting for the straight paid off: {dpos_places} gained."],
+    "bad": ["Waiting cost you. You left the kick too late and lost {dpos_places}."]
+   }
+  },
+  "box": {
+   "wait": {
+    "good": ["Waiting out the box was right: you ended {dpos_places} higher."],
+    "bad": ["Waiting in the box cost you {dpos_places}."]
+   },
+   "ease": {
+    "good": ["Stepping out of the box paid off: {dpos_places} gained."],
+    "bad": ["Easing out of the box cost places: {dpos_places} lost."]
+   },
+   "push": {
+    "good": ["Pushing through the gap paid off: {dpos_places} gained."],
+    "bad": ["Pushing through did not pay: {dpos_places} lost."]
+   }
   }
  },
  "story": {

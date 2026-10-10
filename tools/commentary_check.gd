@@ -32,7 +32,23 @@ const KINDS := [
 	["indoor heat", "national", true, "heat", 8.0, 0.8, 8.2],
 	["international youth meet (MTV style)", "international", false, "district", 8.0, 1.0, 8.5],
 	["chasing heat", "elite", false, "chase", 14.0, 0.8, 14.2],
+	# (the 8th item: the round the race is, with a stand-in RaceDay; decisions 43, 47)
+	["heat of a championship", "national", false, "heat", 8.0, 0.8, 8.2, "heat"],
+	["section, not the last", "national", false, "final", 9.0, 0.5, 9.2, "sections"],
+	["last section", "national", false, "final", 9.0, 0.5, 9.2, "sections_last"],
 ]
+
+## A stand-in for RaceDay: what the commentary asks it (round kind, whether the player's section is the last, the overall place).
+class FakeRd extends RefCounted:
+	var rounds: Array = []
+	var round_index := 0
+	var last := false
+	func round_name() -> String:
+		return "Heat 1 of 3" if rounds[0] == "heat" else "Section 1 of 3"
+	func sections_last() -> bool:
+		return last
+	func overall_place_so_far(_t: float, k: int) -> int:
+		return k + 1
 
 
 func _initialize() -> void:
@@ -85,6 +101,8 @@ func _run() -> void:
 		var comm = res.comm
 		var race = res.race
 		per_tier_lines[comm.tier] = per_tier_lines.get(comm.tier, []) + [comm.lines.size()]
+		var round_kind := str(kind[7]) if kind.size() > 7 else ""
+		_round_checks(comm, round_kind, data)
 		# no line twice in a race
 		var ids := {}
 		for l in comm.lines:
@@ -126,7 +144,11 @@ func _run() -> void:
 			verdict_by[v.outcome] = int(verdict_by.get(v.outcome, 0)) + 1
 			var vk := "%s.%s" % [v.card, v.answer]
 			verdict_scores[vk] = verdict_scores.get(vk, []) + [v.score]
-		var story = StoryS.build(race, {"commentary": comm, "coach_id": coach_id})
+		var story_kind := "race" if round_kind == "" else ("heat" if round_kind == "heat" else "sections")
+		var story = StoryS.build(race, {"commentary": comm, "coach_id": coach_id, "kind": story_kind,
+				"overall_place": 2 if round_kind == "sections_last" else 0, "pre_rank": 3 if i % 2 == 0 else 0})
+		if story_kind != "race" and round_kind != "sections_last":
+			_ok(story.case != "podium", "a heat / section place is no podium in the Race story (race %d: %s)" % [i, story.case])
 		story_moments.append(story.moments.size())
 		story_cases[story.case] = int(story_cases.get(story.case, 0)) + 1
 		_ok(story.splits.size() == 4 and story.coach != "", "story has 4 split rows and a coach line (race %d)" % i)
@@ -170,7 +192,7 @@ func _run() -> void:
 	print("")
 	print("== Events by tier (seen / said / gated / capped / no variant fits / used up / silent / dropped by rate rules)")
 	var types := ENGINE_EVENTS + SYNTH_EVENTS
-	for t in ["announcer", "stream", "tv"]:
+	for t in ["announcer", "stream", "stream_expert", "tv"]:
 		for e in types:
 			var s: Dictionary = tier_stats.get(t + ":" + e, {})
 			if s.is_empty():
@@ -276,8 +298,13 @@ func _play(i: int, kind: Array, coach_id: String, poor: bool, with_comm: bool, R
 		targets = {"kind": "sections", "medal": 131.0, "top8": 136.0}
 	var comm = null
 	if with_comm:
+		var rd = null
+		if kind.size() > 7:
+			rd = FakeRd.new()
+			rd.rounds = ["heat" if kind[7] == "heat" else "sections"]
+			rd.last = kind[7] == "sections_last"
 		comm = CommS.new(race, {"meet": meet, "athlete": ath, "targets": targets, "seed": seed_ if seed_ != 0 else 9000 + i,
-				"today": {"year": 2027, "month": 6, "day": 1}, "entries": []})
+				"today": {"year": 2027, "month": 6, "day": 1}, "entries": [], "rd": rd})
 	var cmd_rng := _rng(77 + i)
 	var steps := 0
 	while not race.finished and race.time < 400.0:
@@ -300,6 +327,35 @@ func _play(i: int, kind: Array, coach_id: String, poor: bool, with_comm: bool, R
 		for k in 30:   # (the finish: the screen keeps calling update while it waits)
 			comm.update()
 	return {"race": race, "comm": comm}
+
+
+## Decisions 43-47 in one race: a heat or section place is no medal and its winner "wins the heat / section"; talk between the
+## calls is 1-2 short facts (none of the parked ceremony lines); the 10 s verdict on a move is neutral; one commentator and no
+## expert at the national streamed meet; no "sweetheart" / "love" from the coach.
+func _round_checks(comm, round_kind: String, data) -> void:
+	var ceremony := []
+	for f in data.race_commentary.get("ceremony", []):
+		if f.has("id"):
+			ceremony.append("filler." + str(f.id))
+	var fillers := 0
+	for l in comm.lines:
+		var low: String = str(l.text).to_lower()
+		var words: Array = low.replace(",", " ").replace("!", " ").replace(".", " ").replace("?", " ").split(" ", false)
+		if round_kind in ["heat", "sections"]:
+			# (a section's "time to beat for a medal" is about the overall result and fine; a place in the section is not a podium)
+			_ok(not low.contains("podium") and (round_kind == "sections" or not low.contains("medal")),
+					"no podium / medal talk in a %s: \"%s\"" % [round_kind, l.text])
+			_ok(not low.contains("wins it"), "a %s winner does not 'win it': \"%s\"" % [round_kind, l.text])
+		if str(l.key) == "filler":
+			fillers += 1
+			_ok(not (str(l.id).trim_suffix(".reply") in ceremony), "no ceremony line between the calls: %s" % l.id)
+		_ok(not low.contains("sweetheart") and not ("love" in words) and not low.contains("his club"), "wording fits a minor: \"%s\"" % l.text)
+		if comm.tier == "stream":
+			_ok(l.voice != "expert", "no expert at a national streamed meet")
+	_ok(fillers <= 2, "at most 2 facts between the calls (got %d)" % fillers)
+	for v in comm.verdicts:
+		if str(v.card) == "move":
+			_ok(str(v.outcome) == "neutral", "the 10 s verdict on a move is neutral")
 
 
 func _static_checks(data, CoachesS) -> void:

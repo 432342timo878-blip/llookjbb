@@ -34,6 +34,9 @@ var events: Array = []
 var day_log: Array = []
 ## Autosave after every played day. Dev tools that play thousands of days switch it off.
 var autosave := true
+## A throw-away test career made by the Dev menu (DevTools, debug builds): nothing of it is ever saved (SaveGame.save does
+## nothing) and the health model is off. A new or loaded career ends it.
+var dev_test := false
 
 var _week: WeekSim
 var _playing_week := false   # the current day is being played by advance_week (it goes on after a race)
@@ -45,6 +48,7 @@ var _next_event := 1
 ## Dev tools that play days ask for REPEAT so no meets are entered and no stop events come.
 ## `variant`: the coach's plan to start on ("" = the coach's ★ pick, SeasonPlan.coach_pick).
 func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := "") -> void:
+	_leave_test()
 	athlete = new_athlete
 	date = START_DATE.duplicate()
 	entries = []
@@ -70,6 +74,13 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 		(get_system("season") as SeasonSystem).offer(season.first_season)
 	if autosave:
 		SaveGame.save(SaveGame.AUTOSAVE)
+
+
+## A test career of the Dev menu ends when a real career starts or loads: saving works again, the health model is back on.
+func _leave_test() -> void:
+	if dev_test:
+		dev_test = false
+		HealthSystem.model_enabled = true
 
 
 func _make_systems() -> Array:
@@ -102,6 +113,7 @@ func to_dict() -> Dictionary:
 ## newer parts simply start empty. Versions 1 and 2 have a plain `training_plan` (Mon..Sun session ids):
 ## it becomes the repeating week with every day Normal. Version 3 has the `season`.
 func from_dict(d: Dictionary) -> void:
+	_leave_test()
 	athlete = Athlete.from_dict(d.athlete)
 	date = int_date(d.date)
 	if d.has("season"):

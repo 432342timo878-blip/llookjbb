@@ -1,5 +1,5 @@
 {
- "_note": "The coaches by the track (GDD 4.3.1, step R4; user 2026-10-09: 'coach personality is key, every coach cannot be the same'). Every coach is a personality with his own words. The club coach of a career is one of `pool`, picked from a hash of the athlete's name (Coaches.id_of), so the same career always has the same coach; a hired coach (the Coaching step, later) sets Athlete.coach_id. All names are made up. A coach speaks only about what he can see from his spot (outdoors in the stands by the 200 m start, indoors in the stands at the rail of the hall; races.json controls.coach). Placeholders: {name} a rival's surname, {split} the player's time at the mark, {pos} the player's place (3rd), {gap} metres to the leader, {to_go} metres to go, {m} metres. talk = how often he speaks unprompted (1 = the base chances in race_commentary.json coach), gap_s = race seconds between his lines at least. shouts = the words on the decision cards (card id -> answer id -> text); the default wording is race_cards.json coach.shouts. lines = what he calls during the race: split_* when the player passes his spot (front = leading, back = 12 m or more behind the leader, hard = the Feeling word says hurting or empty, ok = the rest), rival_kick / rival_move (a rival goes near the player), player_kick, boxed, fall, dropped, lead (the player takes the lead), good / bad (a verdict on a choice 10 s later), finish_win / finish_podium / finish_other (when the player crosses the line). story = his one line in the Race story, by case (RaceStory picks the first that fits: dnf, dq, fell, won, kick_died, boxed, too_fast, faded, good_kick, podium, better, as_expected, below).",
+ "_note": "The coaches by the track (GDD 4.3.1, step R4; user 2026-10-09: 'coach personality is key, every coach cannot be the same'). Every coach is a personality with his own words. The club coach of a career is one of `pool`, picked from a hash of the athlete's name (Coaches.id_of), so the same career always has the same coach; a hired coach (the Coaching step, later) sets Athlete.coach_id. All names are made up. A coach speaks only about what he can see from his spot (outdoors in the stands by the 200 m start, indoors in the stands at the rail of the hall; races.json controls.coach). Placeholders: {name} a rival's surname, {split} the player's time at the mark, {pos} the player's place (3rd), {gap} metres to the leader, {to_go} metres to go, {m} metres. talk = how often he speaks unprompted (1 = the base chances in race_commentary.json coach), gap_s = race seconds between his lines at least. shouts = the words on the decision cards (card id -> answer id -> text); the default wording is race_cards.json coach.shouts. lines = what he calls during the race: split_* when the player passes his spot (front = leading, back = 12 m or more behind the leader, hard = the Feeling word says hurting or empty, ok = the rest), rival_kick / rival_move (a rival goes near the player), player_kick, boxed, fall, dropped, lead (the player takes the lead), good / bad (a verdict on a choice 10 s later), finish_win / finish_podium / finish_other (when the player crosses the line). finish_part = the finish of a heat or section place that is no medal (decision 43). story = his one line in the Race story, by case (RaceStory picks the first that fits: dnf, dq, fell, won, won_part (won a heat / section), kick_died, boxed, too_fast, faded, good_kick, podium, better, as_expected, below).",
  "pool": ["calm", "drill", "warm", "tactician"],
  "coaches": {
   "calm": {
@@ -33,13 +33,15 @@
     "bad": ["It's all right. Settle again.", "Don't worry about it. Next step."],
     "finish_win": ["Wonderful. Wonderful running.", "Yes. You did it so calmly."],
     "finish_podium": ["Good race. We'll talk about it later.", "Well done. Breathe, walk it out."],
-    "finish_other": ["Walk it out. We'll look at it together.", "It's done. Breathe. We learn from it."]
+    "finish_other": ["Walk it out. We'll look at it together.", "It's done. Breathe. We learn from it."],
+    "finish_part": ["Good. Walk it out. We'll see what the times say.", "Done. Breathe. Rest the legs now."]
    },
    "story": {
     "dnf": ["Rest first. We'll look at what happened another day.", "You were hurt. Nothing more to say today."],
     "dq": ["A rule is a rule. We'll practise running a cleaner line."],
     "fell": ["A fall is not your fault. You got up and finished, and that matters.", "The fall cost the race, not your running. Rest well."],
     "won": ["A very controlled race. That is exactly how we practised it.", "You stayed relaxed and it showed. Well run."],
+    "won_part": ["You won it calmly, and that is all it needed to be. Now rest.", "A controlled win. Keep the legs fresh for what comes next."],
     "kick_died": ["You went a little too early. Your kick is good, we just need to wait for it.", "The kick started too far out. Trust the last 200."],
     "boxed": ["You lost time in the traffic. Next time look for the space earlier.", "Boxed in too long. We'll work on moving out in time."],
     "too_fast": ["The first lap was a bit hard. Keep the first 400 calmer.", "You went out too fast and paid for it. Rhythm first."],
@@ -82,13 +84,15 @@
     "bad": ["No! That wasn't it!", "What was that? Fix it!"],
     "finish_win": ["Yes!! That's what I'm talking about!", "Finally! Nobody gave you that!"],
     "finish_podium": ["Good. But you had more.", "Fine. Next time, the top step."],
-    "finish_other": ["That wasn't enough. We talk in the morning.", "Not good enough. You know it."]
+    "finish_other": ["That wasn't enough. We talk in the morning.", "Not good enough. You know it."],
+    "finish_part": ["Done. Now wait for the times. Don't sit around.", "Fine. Recover. This isn't over."]
    },
    "story": {
     "dnf": ["That was not a race. We rest, then we find out why.", "A DNF. Rest. Then we work."],
     "dq": ["A disqualification? Unacceptable. Run clean."],
     "fell": ["You fell and you got up. That's the only good thing I can say.", "The fall decided it. Next time you're not the one on the ground."],
     "won": ["That was a win. I won't say more, don't get cocky.", "Won. Good. Now we want to run it faster."],
+    "won_part": ["You won it. It's a heat, not a title. Don't get cocky.", "Won the round. Good. Now save something for the next one."],
     "kick_died": ["You kicked from too far. Do that again and I'll stand there with a stopwatch until you learn.", "You went too early and died. Be patient!"],
     "boxed": ["You sat in the box like a tourist. Get out of there next time!", "Boxed in and passive. That is a decision, and it was a poor one."],
     "too_fast": ["You went out like a rocket and paid for it. First lap, think!", "Too hot, too early. You gave that race away on lap one."],
@@ -108,7 +112,7 @@
     "break": {"lead": "Go for it! You can lead!", "shoulder": "Right behind them, you're fine!", "back": "Stay back, you're doing fine!"},
     "bell": {"push": "You're strong, push now!", "hold": "You're doing great, hold on!", "ease": "Easy, you've got plenty left!"},
     "fall": {"chase": "You can still get them! Go!", "steady": "Up, you're fine! Finish nicely!"},
-    "kick": {"now": "Go on, you've got this!", "wait": "Wait, sweetheart, wait for the straight!"},
+    "kick": {"now": "Go on, you've got this!", "wait": "Wait, wait for the straight!"},
     "box": {"wait": "Patience, it'll open up!", "ease": "Step out, you'll get round!", "push": "Go for the gap, you can do it!"},
     "move": {"go": "Go with {name}, you're strong enough!", "wait": "Let {name} go, you'll get them back!", "counter": "Go past {name}, show them!"},
     "straight": {"wide": "Go wide, there's room!", "inside": "Wait, a gap will come!"},
@@ -124,20 +128,22 @@
     "rival_move": ["{name} is moving! You decide, you're doing great!", "{name} goes! Stay with it!"],
     "player_kick": ["Go on! Go on!", "Yes! That's it, that's it!"],
     "boxed": ["Don't worry, it'll open!", "Stay calm, you're fine!"],
-    "fall": ["Oh no! Up you get, you're fine!", "Get up, love! Finish it!"],
+    "fall": ["Oh no! Up you get, you're fine!", "Get up! Finish it, you can!"],
     "dropped": ["Don't give up, keep going!", "You can still catch them!"],
     "lead": ["Wonderful! You're leading!", "Look at you! Lovely!"],
     "good": ["That was exactly right!", "Smart! Well done!"],
     "bad": ["It's all right, just keep going!", "No worries, you'll get it back!"],
     "finish_win": ["You did it! I'm so proud of you!", "YES! You won! Oh, well done!"],
     "finish_podium": ["Well done, I'm so proud!", "A medal! Look at you!"],
-    "finish_other": ["It's all right, you tried so hard!", "Come here. You did well. We'll go through it together."]
+    "finish_other": ["It's all right, you tried so hard!", "Come here. You did well. We'll go through it together."],
+    "finish_part": ["Well run! Now let's see what the times say.", "That's done, you ran so well. Rest your legs."]
    },
    "story": {
     "dnf": ["Rest and be kind to yourself. There will be other races.", "You couldn't go on, and that's all right. We'll come back stronger."],
     "dq": ["That was a shame, but it's a lesson. We'll run it clean next time."],
     "fell": ["You fell and still got up and finished. I am very proud of that.", "The fall wasn't your fault. Go and get a good rest."],
     "won": ["You won! I'm so proud of you. You ran it beautifully.", "A win, and a lovely race. Enjoy it!"],
+    "won_part": ["You won it! A lovely run. Now rest well.", "A win in your round, and so smoothly! Well done."],
     "kick_died": ["You were brave to go early, even if it cost the finish. We'll work on the timing.", "The kick started a bit early, but it was a brave one."],
     "boxed": ["The traffic wasn't kind to you. We'll practise finding the space.", "You got stuck, and that happens. Next time you'll find the gap sooner."],
     "too_fast": ["You were so eager at the start! We'll practise the first lap together.", "You went out fast because you're strong. Next time, a bit calmer."],
@@ -180,13 +186,15 @@
     "bad": ["That cost you. Adjust.", "Wrong call. Don't compound it."],
     "finish_win": ["Perfectly read. That was your race from the start.", "Won it exactly where it was there to win."],
     "finish_podium": ["Podium. One decision away from the top.", "Good. Look at the video, there's something to take."],
-    "finish_other": ["We'll go through it tonight. There were chances.", "The race had other options. We'll look."]
+    "finish_other": ["We'll go through it tonight. There were chances.", "The race had other options. We'll look."],
+    "finish_part": ["Done. Now the times from the other races decide. Recover.", "Place noted. The overall result comes after the others."]
    },
    "story": {
     "dnf": ["No result. We analyse after you've rested.", "A DNF. Nothing to read from a race that stops."],
     "dq": ["Obstruction. The line choice at the finish was wrong. We'll go through it."],
     "fell": ["The fall decided the race. Nothing to learn but that bunched fields are risky.", "A fall. You lost the race there, not on the track."],
     "won": ["You read it right and went at the right moment. A textbook win.", "The win came from the timing. Keep it."],
+    "won_part": ["You won the round by reading it right. The overall picture comes from the times.", "A round win from the timing. Now see what the others run."],
     "kick_died": ["The kick began too far out. Your kick is worth about 150, not 300.", "You kicked early and paid for it in the last 100. Timing."],
     "boxed": ["The box cost you the race. Look for the outside earlier.", "Boxed at the wrong time. Position before the bell, not after."],
     "too_fast": ["First lap faster than your fitness. The last 200 paid for it.", "You spent the energy before the race started. Lap one is the problem."],

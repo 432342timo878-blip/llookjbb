@@ -60,6 +60,11 @@ var _tier_cfg: Dictionary
 var _coach: Dictionary
 var _exhausted := false           # the last _pick found lines that fit, all used in this race already
 var _last_bar := -100.0           # when a line for an action-bar command was last said
+var _part_word := ""              # "heat" / "semi-final" / "section" for a round of groups, else ""
+var _final: Array = []
+var _final_done := false
+var _answered: Array = []       # every answered card: {t, d, card, answer, pos0}, judged in hindsight after the finish
+var _crew_knows := {}             # runner name → true: the favourites whose style the crew knows (streamed / TV meets)
 
 
 ## `ctx`: meet (the meet's dictionary), rd (RaceDay, or null), athlete (or null), targets (RaceDay.targets()),
@@ -248,6 +253,7 @@ func _ctx(ev: Dictionary) -> Array:
 	f.seconds = _num(float(ev.seconds)) if ev.has("seconds") else ""
 	f.lost = _num(float(ev.lost)) if ev.has("lost") else ""
 	f.place = Race._ordinal(int(ev.place)) if ev.has("place") else ""
+	f.in_part = (" in the " + str(ev.scope)) if str(ev.get("scope", "")) != "" else ""
 	f.place_next = Race._ordinal(int(ev.place) + 1) if ev.has("place") else ""
 	f.bell = "Halfway" if race.indoor else "The bell"
 	f.bell_l = "halfway" if race.indoor else "the bell"
@@ -256,7 +262,7 @@ func _ctx(ev: Dictionary) -> Array:
 	f.tag = ""
 	if r != null and not r.is_player and not r.rival.is_empty():
 		c.personality = r.personality
-		if int(r.rival.get("met", 0)) >= 2 and Data.races.personalities.has(r.personality):
+		if (int(r.rival.get("met", 0)) >= 2 or _crew_knows.has(r.name)) and Data.races.personalities.has(r.personality):
 			c.known = true
 			f.tag = str(Data.races.personalities[r.personality].name).to_lower()
 	return [c, f]
@@ -304,6 +310,7 @@ func _pick(list: Array, key: String, c: Dictionary, f: Dictionary) -> Dictionary
 
 
 static var _holes: RegEx = null
+const OPTIONAL_HOLES := ["in_part", "win_of"]
 
 
 ## Do all {placeholders} of the text have a value?
@@ -313,6 +320,8 @@ static func _resolvable(text: String, f: Dictionary) -> bool:
 		_holes.compile("\\{(\\w+)\\}")
 	for m in _holes.search_all(text):
 		var k := m.get_string(1)
+		if k in OPTIONAL_HOLES and f.has(k):
+			continue   # (empty when there is nothing to add: "" for a meet-wide place, " in the heat" for a heat place)
 		if not f.has(k) or str(f[k]) == "":
 			return false
 	return true
@@ -427,7 +436,10 @@ func _coach_event(spec: Dictionary, ev: Dictionary, c: Dictionary, f: Dictionary
 	var d := float(ev.get("d", race.player.d))
 	if str(key) == "finish":
 		var place := int(ev.get("place", 1))
-		key = "finish_win" if place == 1 else ("finish_podium" if place <= 3 else "finish_other")
+		if bool(ev.get("medal", true)):
+			key = "finish_win" if place == 1 else ("finish_podium" if place <= 3 else "finish_other")
+		else:   # a heat / section place (or a section whose overall place is not known yet): no medal talk (decision 43)
+			key = "finish_win" if place == 1 else "finish_part"
 	elif not race.coach_sees_at(d):
 		return
 	elif not c.player and absf(d - race.player.d) > float(_rules.coach_near_m):
@@ -531,6 +543,7 @@ func _card_answers() -> void:
 		var p := race.player
 		var order := race.standings()
 		var mover: Race.Runner = _pending_mover if str(e.id) == "move" else null
+		_answered.append({"t": race.time, "d": roundi(p.d), "card": e.id, "answer": e.answer, "pos0": order.find(p) + 1})
 		_verdict_wait.append({"due": race.time + float(_rules.verdict_after_s), "card": e.id, "answer": e.answer,
 				"pos0": order.find(p) + 1, "gap0": maxf(0.0, order[0].d - p.d), "feel0": int(race.feeling().index),
 				"mover": mover, "dm0": (mover.d - p.d) if mover != null else 0.0})
@@ -598,7 +611,12 @@ func _give_verdict(v: Dictionary) -> void:
 	var score := _verdict_score(v, p, pos, gap, mover)
 	var edge := float(_rules.verdict_good)
 	var outcome := "good" if score >= edge else ("bad" if score <= -edge else "flat")
-	if outcome == "flat" and _rng.randf() >= float(_rules.verdict_flat_chance):
+	# Going with a mover looks good at once and costs at the finish (R5): after 10 s the line stays neutral on moves and
+	# the real verdict comes in the Race story (decision 44).
+	var neutral: bool = str(v.card) == "move"
+	if neutral:
+		outcome = "neutral"
+	elif outcome == "flat" and _rng.randf() >= float(_rules.verdict_flat_chance):
 		return   # (nothing to say about a choice that has not changed much)
 	var f := _base_f.duplicate()
 	f.pos = Race._ordinal(pos)
@@ -606,22 +624,87 @@ func _give_verdict(v: Dictionary) -> void:
 	f.to_go = str(roundi(Race.DISTANCE - p.d))
 	if absi(dpos) > 0 and (dpos > 0) == (outcome == "good"):
 		f.dpos = str(absi(dpos))
+		f.dpos_places = _places_word(absi(dpos))
 	if mover != null:
 		f.name = Race._surname(mover.name)
 	var vd: Dictionary = _cfg.verdicts
 	var pick := {}
-	var list: Array = vd.get(str(v.card), {}).get(str(v.answer), {}).get(outcome, [])
-	if outcome != "flat" and not list.is_empty():
-		pick = _pick(list, "verdict.%s.%s.%s" % [v.card, v.answer, outcome], {}, f)
-	if pick.is_empty():
-		pick = _pick(vd.any[outcome], "verdict.any.%s" % outcome, {}, f)
+	if neutral:
+		pick = _pick(vd.move_neutral, "verdict.move.neutral", {}, f)
+	else:
+		var list: Array = vd.get(str(v.card), {}).get(str(v.answer), {}).get(outcome, [])
+		if outcome != "flat" and not list.is_empty():
+			pick = _pick(list, "verdict.%s.%s.%s" % [v.card, v.answer, outcome], {}, f)
+		if pick.is_empty():
+			pick = _pick(vd.any[outcome], "verdict.any.%s" % outcome, {}, f)
 	if pick.is_empty():
 		return
 	var out := [_line("you", pick, f, "verdict")]
+	if not neutral:
+		out[0].text = _so_far(str(out[0].text))
 	verdicts.append({"t": race.time, "d": roundi(p.d), "card": v.card, "answer": v.answer, "outcome": outcome, "text": out[0].text, "score": score})
 	_enqueue("you", out, 6, false, "verdict")
-	if outcome != "flat" and race.coach_sees():
+	if not neutral and outcome != "flat" and race.coach_sees():
 		_coach_say(outcome, f, {}, false)
+
+
+## "So far, ..." in front of a 10 s verdict that does not already say it (the choice is judged for real at the finish).
+func _so_far(text: String) -> String:
+	var low := text.to_lower()
+	for w in ["so far", "for now", "yet", "at the moment", "too early", "at this point"]:
+		if low.contains(w):
+			return text
+	if text.begins_with("{") or text == "":
+		return text
+	var openers: Array = _rules.so_far
+	var o: String = openers[_rng.randi_range(0, openers.size() - 1)]
+	# (the verdict lines never start with a name or "I": a name comes from a {placeholder}, which was excluded above)
+	return o + text.substr(0, 1).to_lower() + text.substr(1)
+
+
+## The real verdict on each answered card, with hindsight: how many places the player gained or lost between the card and
+## the finish (and the kick that died), for the Race story (decision 44). Only for a finished race.
+## → [{m, t, card, answer, outcome (good / bad), text}] (flat choices left out)
+func final_verdicts() -> Array:
+	if _final_done:
+		return _final
+	var out := []
+	var p := race.player
+	if p == null or p.status != "" or not p.done:
+		return out
+	_final_done = true
+	_final = out
+	var order := race.standings()
+	var final_pos := order.find(p) + 1
+	var fv: Dictionary = _cfg.verdicts_final
+	for a in _answered:
+		var gained := int(a.pos0) - final_pos
+		var outcome := "flat"
+		if str(a.card) == "kick" and p.kick_died and str(a.answer) == "now":
+			outcome = "bad"
+		elif gained >= 1:
+			outcome = "good"
+		elif gained <= -1:
+			outcome = "bad"
+		if outcome == "flat":
+			continue
+		var f := _base_f.duplicate()
+		f.dpos = str(absi(gained))
+		f.dpos_places = _places_word(absi(gained))
+		f.pos = Race._ordinal(final_pos)
+		f.at = str(a.d)
+		var list: Array = fv.get(str(a.card), {}).get(str(a.answer), {}).get(outcome, [])
+		if list.is_empty():
+			list = fv.any[outcome]
+		var pick := _pick(list, "verdict_final.%s.%s.%s" % [a.card, a.answer, outcome], {}, f)
+		if pick.is_empty():
+			pick = _pick(fv.any[outcome], "verdict_final.any.%s" % outcome, {}, f)
+		if pick.is_empty():
+			continue
+		_used[pick.id] = true
+		out.append({"m": int(a.d), "t": float(a.t), "card": a.card, "answer": a.answer, "outcome": outcome,
+				"text": String(pick.text).format(f), "gained": gained})
+	return out
 
 
 # --- Moves: did they get away? -------------------------------------------------------------------------------
@@ -702,7 +785,17 @@ func _crossings() -> void:
 		_crossed[r.index] = true
 		var k := _crossed.size()
 		var marks := _record_flags(r)
-		var extra := {"time": snappedf(r.t, 0.01), "place": k, "pb": marks.pb, "sb": marks.sb, "d": 800}
+		var extra := {"time": snappedf(r.t, 0.01), "place": k, "pb": marks.pb, "sb": marks.sb, "d": 800,
+				"medal": true, "scope": ""}
+		if bool(_base_c.grouped):
+			# A heat / section place is not a medal. Only when the player's section is the last of the sections is the
+			# overall place known as they cross the line: then it is the place (and a medal is possible).
+			extra.medal = false
+			extra.scope = _part_word
+			if _rd != null and _base_c.kind == "sections" and _rd.sections_last():
+				extra.place = _rd.overall_place_so_far(snappedf(r.t, 0.01), k)
+				extra.medal = true
+				extra.scope = ""
 		if k == 1:
 			_first_t = r.t
 			_synth("finish", r, extra)
@@ -749,8 +842,8 @@ func _maybe_filler() -> void:
 	for q in _queue:
 		if q.chan == "cast":
 			return
-	if race._leader != null and race._leader.d > 720.0:
-		return
+	if race._leader != null and race._leader.d > float(_rules.filler_until_m):
+		return   # (talk between the calls only on lap 1, decision 45)
 	var c := _base_c.duplicate()
 	var f := _base_f.duplicate()
 	var voices := [str(_tier_cfg.lead)]
@@ -782,7 +875,7 @@ func _maybe_filler() -> void:
 			break
 	var id := "filler." + str(chosen.id)
 	var out := [{"voice": str(chosen.voice), "text": str(chosen.t).format(f), "id": id, "key": "filler"}]
-	if _tier_cfg.expert and chosen.has("reply") and _resolvable(str(chosen.reply), f):
+	if bool(_rules.get("filler_reply", false)) and _tier_cfg.expert and chosen.has("reply") and _resolvable(str(chosen.reply), f):
 		out.append({"voice": "expert", "text": str(chosen.reply).format(f), "id": id + ".reply", "key": "filler"})
 	_fillers_said += 1
 	_enqueue("cast", out, 1, false, "filler")
@@ -799,9 +892,16 @@ func _build_base(ctx: Dictionary) -> void:
 	if _rd != null and _rd.round_index < _rd.rounds.size():
 		kind = str(_rd.rounds[_rd.round_index])
 	_base_c = {"tier": tier, "style": style, "indoor": race.indoor, "kind": kind, "chase": race._mix == "chase",
-			"shape": race.shape, "lap": 1, "after_mark": 0, "heat": race.auto_places > 0}
+			"shape": race.shape, "lap": 1, "after_mark": 0, "heat": race.auto_places > 0,
+			"grouped": kind in ["heat", "semi", "sections"]}
 	_base_f = {"field": str(race.runners.size()), "meet": str(_meet.get("name", "the meet")),
 			"round": _rd.round_name() if _rd != null else "Race", "coach_name": str(_coach.name)}
+	# A heat / semi-final / section is not the meet (decision 43): its winner "wins the heat", its places are not medals.
+	var part: String = {"heat": "heat", "semi": "semi-final", "sections": "section"}.get(kind, "")
+	_part_word = part
+	_base_f.win_obj = ("the " + part) if part != "" else "it"
+	_base_f.win_of = (" of the " + part) if part != "" else ""
+	_base_f.in_part = ""
 	var p := race.player
 	if p != null:
 		_base_f.pname = Race._surname(p.name)
@@ -842,6 +942,7 @@ func _build_facts(ctx: Dictionary) -> void:
 	var best: Race.Runner = null
 	var clubs := {}
 	var sbs := []
+	var marked := []   # [time, runner]: the rivals with a mark, for the favourites the crew knows
 	for r in race.runners:
 		if r.club != "":
 			clubs[r.club] = true
@@ -853,19 +954,27 @@ func _build_facts(ctx: Dictionary) -> void:
 		if sb_ok:
 			t = float(rv.sb)
 			sbs.append(t)
+		if t > 0.0:
+			marked.append([t, r])
 		if t > 0.0 and t < best_t:
 			best_t = t
 			best = r
+	# Streamed and TV crews work from prepared notes: they know the favourites' styles (the three best marks) without the
+	# player having met them (decision 46). The player's own field list (scouting) still needs two races.
+	if tier != "announcer":
+		marked.sort_custom(func(a, b): return a[0] < b[0])
+		for i in mini(int(_rules.crew_favourites), marked.size()):
+			_crew_knows[marked[i][1].name] = true
 	if best != null:
 		_fav_name = best.name
 		f.fav = Race._surname(best.name)
 		f.fav_full = best.name
-		f.fav_club = best.club if best.club != "" else "his club"
+		if best.club != "":
+			f.fav_club = best.club   # (no club: the line without it is used; nobody is "his club")
+		_base_c.fav_club = best.club != ""
 		var sbv := int(best.rival.get("sb_season", -1)) == season
 		f.fav_mark_text = ("a season best of %s" if sbv else "a personal best of %s") % Calendar.format_time(best_t)
-		if best.club == "":
-			f.erase("fav_club")
-		if int(best.rival.get("met", 0)) >= 2 and Data.races.personalities.has(best.personality):
+		if (int(best.rival.get("met", 0)) >= 2 or _crew_knows.has(best.name)) and Data.races.personalities.has(best.personality):
 			f.fav_style_text = {"front": "to run from the front", "pack": "to sit in the pack and cover the moves",
 					"kicker": "to wait and kick late", "surger": "to throw in a surge in the middle of the race"}.get(best.personality, "")
 	if clubs.size() >= 3:
@@ -887,7 +996,8 @@ func _build_facts(ctx: Dictionary) -> void:
 			for t in sbs:
 				if t < mine:
 					rank += 1
-			f.p_sb_rank = "%s of %d" % [Race._ordinal(rank), sbs.size() + 1]
+			# (rivals without a season best rank behind: "of" is the whole field)
+			f.p_sb_rank = "%s of %d" % [Race._ordinal(rank), race.runners.size()]
 	if _meet.has("description"):
 		f.meet_desc = str(_meet.description)
 	# The next meet the player has entered.
@@ -929,6 +1039,11 @@ static func _t1(seconds: float) -> String:
 	if m == 0:
 		return "%.1f" % s
 	return "%d:%04.1f" % [m, s]
+
+
+## 1 -> "1 place", 3 -> "3 places".
+static func _places_word(n: int) -> String:
+	return "1 place" if n == 1 else "%d places" % n
 
 
 static func _num(x: float) -> String:

@@ -11,6 +11,8 @@ const VERSION := 3
 
 
 static func save(slot: String) -> void:
+	if Game.dev_test:
+		return   # a test career of the Dev menu is never saved
 	DirAccess.make_dir_recursive_absolute(DIR)
 	var a := Game.athlete
 	var data := {

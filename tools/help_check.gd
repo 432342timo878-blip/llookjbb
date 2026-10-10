@@ -44,6 +44,9 @@ func _run() -> void:
 	print("--- 2. every screen's ?")
 	var router = main.get_node("/root/Router")
 	var game = main.get_node("/root/Game")
+	router.go("dev_menu")   # (debug builds only; the tool is one)
+	await _frames(5)
+	await _press_help(main.get_node("ScreenHost").get_child(-1), "dev menu", "dev_menu", false)
 	router.go("new_career")
 	await _frames(5)
 	var wizard: Control = main.get_node("ScreenHost").get_child(-1)
@@ -104,7 +107,7 @@ func _run() -> void:
 	hub._show("overview")
 	hub._open_day(2)
 	await _frames(4)
-	await _press_help(hub._editor, "day editor", "day_editor", false)
+	await _press_help(hub._editor, "day editor", "day_editor", false, hub)
 	var pc: bool = hub._help != null
 	if pc:
 		_check(hub._help_stack == ["day_editor"] and not hub._editor.visible and hub._help.visible,
@@ -288,7 +291,7 @@ func _check_data(help: Dictionary) -> void:
 
 ## Finds the visible "?" under `node`, checks its entry and presses it: the help must show that entry (the hub on PC
 ## in its side slot, `in_hub_side`; everything else in a HelpOverlay). Closes nothing.
-func _press_help(node: Node, where: String, expected: String, in_hub_side: bool) -> void:
+func _press_help(node: Node, where: String, expected: String, in_hub_side: bool, hub = null) -> void:
 	var b = _find_help_button(node)
 	_check(b != null, "%s: has a ?" % where)
 	if b == null:
@@ -300,11 +303,13 @@ func _press_help(node: Node, where: String, expected: String, in_hub_side: bool)
 	b.pressed.emit()
 	await _frames(3)
 	var shown := ""
-	in_hub_side = in_hub_side and node._help != null   # (on a phone the hub's help is a HelpOverlay too)
-	if in_hub_side:
-		var hub = node
-		shown = hub._help.current() if hub._help and hub._help.visible else ""
-		_check(hub._side.visible, "%s: the side panel is shown" % where)
+	# The help shows in the hub's side slot on PC (also for the day editor's "?", which sits in that slot's neighbour: pass
+	# the hub as `hub`), as a HelpOverlay on a phone (fix session: the PC case of the day editor used to look for an overlay).
+	var host = node if in_hub_side else hub
+	if host != null and host.get("_help") != null:
+		shown = host._help.current() if host._help.visible else ""
+		if in_hub_side:
+			_check(host._side.visible, "%s: the side panel is shown" % where)
 	else:
 		var o = _find_overlay(current_scene)
 		shown = o.panel.current() if o else ""

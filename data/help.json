@@ -171,6 +171,17 @@
     {"heading": "The weeks", "text": "The first week is one easy session a day, with no hard or fast running. Then one session a day at Normal with one hard session kept. A long break ends with a lighter week. Your races stay as they are.", "see": ["easing_back_in"]},
     {"heading": "Accept or No thanks", "text": "Accept puts the weeks over your plan from tomorrow; you can stop them early in the Training tab or the day editor. No thanks keeps your plan as it is."}
    ]
+  },
+  "dev_menu": {
+   "title": "Dev menu",
+   "version": 1,
+   "sections": [
+    {"heading": "What this is", "text": "A menu for testing the game, only in a test build (the game run from the Godot editor). A finished game does not show it. Nothing here counts as real play."},
+    {"heading": "Watch a test race", "text": "Pick indoor or outdoor, sections or heats, and a meet level, then Start test race. A separate test career is played to such a race and the race opens. Your own saves are never touched and the test career is never saved."},
+    {"heading": "The level", "text": "The meet's level decides who commentates: a stadium announcer at local and district meets, one commentator at a national championship, a commentator and an expert at international youth meets and on TV."},
+    {"heading": "Jump the career forward", "text": "Plays the career you have open to the next race day or to a date. The days are played for real and the game is saved once at the end. The jump stops early at a race or when something needs your answer."},
+    {"heading": "Back to your own career", "text": "After a test race, press Main menu and then Continue or Load. A test career shows TEST CAREER at the top and cannot be saved."}
+   ]
   }
  },
  "topics": {

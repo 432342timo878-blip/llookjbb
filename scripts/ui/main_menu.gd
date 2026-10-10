@@ -13,6 +13,11 @@ func _ready() -> void:
 	_quit.pressed.connect(get_tree().quit)
 	# Quitting isn't a thing on mobile; the OS handles it.
 	_quit.visible = not OS.has_feature("mobile")
+	if DevTools.available():   # (a test build, i.e. the game run from the Godot editor: a menu for playtesting)
+		var dev := UIKit.button("Dev menu (test build)", false, 280)
+		dev.pressed.connect(Router.go.bind("dev_menu"))
+		_quit.add_sibling(dev)
+		_quit.get_parent().move_child(dev, _quit.get_index())
 	_footer.text = "v0.1 · %d events · %d attributes loaded" % [Data.events.size(), Data.attributes.size()]
 
 	var saves := SaveGame.list()

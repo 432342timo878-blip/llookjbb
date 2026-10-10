@@ -224,7 +224,12 @@ func _check_heats(key: String) -> void:
 			rd.finish_round()
 			if round_kind in ["heat", "semi"]:
 				var expect: int = groups * int(rd._plan[rd.round_index - 1][1]) + int(rd._plan[rd.round_index - 1][2])
-				marks_ok = marks_ok and rd.heat_marks.size() <= expect and rd.heat_marks.size() >= expect - 2
+				# (exactly the table's size: a Q place left empty by a DNF / DQ goes to the next fastest time; fewer only when
+				# too few runners finished)
+				var finishers := 0
+				for res in rd.heat_results:
+					finishers += res.filter(func(r): return str(r.get("status", "")) == "").size()
+				marks_ok = marks_ok and rd.heat_marks.size() == mini(expect, finishers)
 				# The cutoff the player was told is a real time from an earlier heat (or none).
 			if not rd.qualified:
 				break

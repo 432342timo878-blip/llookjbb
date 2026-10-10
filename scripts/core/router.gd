@@ -13,6 +13,7 @@ const SCREENS := {
 	"career_hub": "res://scenes/screens/career_hub.tscn",
 	"load_game": "res://scenes/screens/load_game.tscn",
 	"race": "res://scenes/screens/race.tscn",
+	"dev_menu": "res://scenes/screens/dev_menu.tscn",   # debug builds only (the main menu offers it there)
 }
 
 

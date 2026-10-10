@@ -289,7 +289,10 @@ func _qualifiers(results_of_groups: Array) -> Array:
 			else:
 				rest.append(res[i])
 	rest.sort_custom(func(x, y): return x.time < y.time)
-	for k in mini(spots, rest.size()):
+	# The size of the next round is fixed by the table (Q places + q spots): a place left empty by a runner who did not finish
+	# goes to the next fastest time (fix session: the marks used to add up to less than the next round's size).
+	var total_spots := heats.size() * auto + spots
+	for k in mini(total_spots - q.size(), rest.size()):
 		q.append(by_name[rest[k].name])
 		heat_marks[rest[k].name] = marks.time
 	# The next round is seeded on the original list, improved by today's times (WA TR20.3.2b for the 800 m).
@@ -459,6 +462,47 @@ func targets() -> Dictionary:
 				"top8": float(times[7]) if enough and times.size() >= 8 else 0.0}
 	return {"kind": "heats", "place": _auto_places(), "time": _time_spots(), "groups": heats.size(),
 			"group": player_heat + 1, "cutoff": _cutoff_so_far(player_heat)}
+
+
+## The player's rank by seeding time (season best of the year, else PB; no mark = after everyone with a mark) among
+## everyone in the round about to be run (0 = the player has no mark): the pre-race picture a coach compares the result with (decision 47). Call it
+## BEFORE finish_round(). Sections count the whole field, other rounds the player's race.
+func pre_race_rank() -> int:
+	var entrants: Array = []
+	if is_group_round() and rounds[round_index] == "sections":
+		for g in heats:
+			entrants.append_array(g)
+	else:
+		entrants = current_entrants()
+	var mine := 9999.0
+	for e in entrants:
+		if e.get("is_player", false):
+			mine = float(_seed.get(e.name, 9999.0))
+	if mine >= 9999.0:
+		return 0   # no mark yet: nothing to compare the result with
+	var ahead := 0
+	for e in entrants:
+		if not e.get("is_player", false) and float(_seed.get(e.name, 9999.0)) < mine:
+			ahead += 1
+	return ahead + 1
+
+
+## Sections: is the player's section the last one (so the overall place is known when they cross the line)?
+func sections_last() -> bool:
+	return is_group_round() and rounds[round_index] == "sections" and player_heat == heats.size() - 1
+
+
+## Sections: the overall place of a runner who crosses the line in `time` as the k-th of the player's section, among the
+## sections already run (exact when the player's section is the last, see sections_last).
+func overall_place_so_far(time: float, k: int) -> int:
+	var ahead := 0
+	for g in heats.size():
+		if g == player_heat or _group_res[g] == null:
+			continue
+		for row in _group_res[g]:
+			if str(row.get("status", "")) == "" and float(row.time) < time:
+				ahead += 1
+	return ahead + k
 
 
 ## A line for the weekly report.
