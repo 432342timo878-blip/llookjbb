@@ -240,7 +240,7 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       6 + the experience behind the answers (6–16), max +3, experience costs trainability; every answer re-priced (no
       free answers); the coach's guess of the 800 m time, dots for what counts for the 800 m, "Let the coach spread
       them", the summary's "where it came from". New `tools/start_spread.gd`. *(Opus)*
-- [ ] **Quick fixes from the season playtest (Claude's placement 2026-10-10: before step 7, because the race-time swings
+- [x] **Quick fixes from the season playtest (done 2026-10-10, GDD 4.3.1 "Built (playtest fixes)"; Claude's placement 2026-10-10: before step 7, because the race-time swings
       and the missing attribute history would spoil step 7's measurements, and the coach / PB fixes touch every race
       the user plays):** (1) the race-time swings (2:49.80 → 2:28.57 in two weeks, 2:25.71 → 2:45.00 in 17 days): find
       the cause (quick-sim answers? racing sore or injured? form?) and fix it; (2) the kick: "Wait for the home
@@ -252,6 +252,13 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       the attributes and the best time (in the save; step 7 and the Statistics tab use it); (8) the Report tab: a short
       summary first, the day-by-day details folded away; (9) the Rankings tab: highlight the player, explain it, help
       entry. *(Sonnet, high; Opus for (1) if the cause is not obvious)*
+      **Done 2026-10-10** — (1) no bug: the day-form roll is wide for a low consistency (sd 4.3 s at consistency 5.5), plus injury
+      slowdowns (~4 %) and quick mode's wrong answers; the spread was narrowed by 25 % (user's choice); (2) Wait never kicks by
+      itself in a watched race, Kick now works at any distance, a Quick result follows a kick plan; (3) the late-kick wording;
+      (4) no contradicting coach advice; (5)–(6) PB / SB in verdicts, the coach's lines and every result list; (7) the monthly
+      record + its Progress page; (8) the Report tab folded; (9) the Rankings tab. New `tools/playtest_fix_check.gd`,
+      `tools/race_spread.gd`, `tools/race_season_times.gd`. Left for later (from the same playtest): the whole-race controls
+      idea and the coach's/people interaction (Coaching + School).
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
@@ -393,7 +400,10 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
   with a system where I just control the whole race (via buttons, slider, or something) based on what I see and what
   the coach says to me". The action bar (Push / Hold / Ease / Kick now / Move out) already does part of it; the cards
   would become optional or rarer. Touches GDD D2 / D26 (decisions at suitable points, no dexterity): needs its own
-  design session with the user. The quick fix before step 7 only frees the kick. *(Opus)*
+  design session with the user. The quick fix before step 7 only frees the kick (built 2026-10-10: Wait never kicks by
+  itself in a watched race, Kick now works at any distance; plus a **kick plan** for Quick result, the first piece of "a
+  tactic my AI self follows": the user asked for it, and more of it (an effort plan, a reaction to moves) belongs in this
+  design session). *(Opus)*
 - ~~**Character creation: a points pool from the answers**~~ — built 2026-10-10 (GDD 4.1.1 "Built (points pool)"). The original idea (user, 2026-10-10; moved into M2 before step 7, check-in 2026-10-10): the 12 free points feel arbitrary. Idea:
   the background answers decide how many points the athlete gets to allocate (a runner from a sporty family with years
   of training starts with a bigger pool than a beginner; maybe the pool also follows the maturation answer), the base

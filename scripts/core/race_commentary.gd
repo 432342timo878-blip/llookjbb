@@ -239,6 +239,7 @@ func _ctx(ev: Dictionary) -> Array:
 	f.club = r.club if r != null else ""
 	f.other = Race._surname(other) if other != "" else ""
 	f.to_go = str(roundi(to_go))
+	f.began = str(roundi(float(ev.began))) if ev.has("began") else ""
 	f.m = str(roundi(d))
 	f.pos = Race._ordinal(int(ev.get("pos", 1)))
 	f.gap = _num(float(ev.get("gap", 0.0)))
@@ -436,10 +437,20 @@ func _coach_event(spec: Dictionary, ev: Dictionary, c: Dictionary, f: Dictionary
 	var d := float(ev.get("d", race.player.d))
 	if str(key) == "finish":
 		var place := int(ev.get("place", 1))
+		# A personal best (against an earlier mark) or a season best is never "not good enough" (playtest fix 5).
+		var pb_run: bool = bool(ev.get("pb", false)) and _p_pb > 0.0
+		var sb_run: bool = bool(ev.get("sb", false)) and (_p_sb > 0.0 or _p_pb > 0.0)
 		if bool(ev.get("medal", true)):
-			key = "finish_win" if place == 1 else ("finish_podium" if place <= 3 else "finish_other")
+			if place == 1:
+				key = "finish_win"
+			elif pb_run:
+				key = "finish_pb"
+			elif place <= 3:
+				key = "finish_podium"
+			else:
+				key = "finish_sb" if sb_run else "finish_other"
 		else:   # a heat / section place (or a section whose overall place is not known yet): no medal talk (decision 43)
-			key = "finish_win" if place == 1 else "finish_part"
+			key = "finish_win" if place == 1 else ("finish_pb" if pb_run else ("finish_sb" if sb_run else "finish_part"))
 	elif not race.coach_sees_at(d):
 		return
 	elif not c.player and absf(d - race.player.d) > float(_rules.coach_near_m):
@@ -462,11 +473,16 @@ func _coach_say(key: String, f: Dictionary, ev: Dictionary, always: bool) -> voi
 	var chance := minf(1.0, float(_rules.coach_chance.get(cat, 0.5)) * float(_coach.get("talk", 1.0)))
 	if not always and _rng.randf() >= chance:
 		return
+	# No advice that contradicts what he just said (a card shout included), unless the race has changed (playtest fix 4).
+	var dir := str(_coach.get("dirs", {}).get(key, _rules.coach_dir.get(key, "")))
+	if race.coach_conflicts(dir):
+		return
 	var pick := _pick(list, "coach.%s.%s" % [coach_id, key], {}, f)
 	if pick.is_empty():
 		return
 	var line := _line("coach", pick, f, "coach." + key)
 	line.d = float(ev.get("d", race.player.d))   # (where it happened: the tools check that he could see it)
+	race.coach_note(dir)
 	_enqueue("coach", [line], 5, key.begins_with("finish_") or key == "fall", "coach." + key)
 
 
@@ -614,6 +630,8 @@ func _give_verdict(v: Dictionary) -> void:
 	# Going with a mover looks good at once and costs at the finish (R5): after 10 s the line stays neutral on moves and
 	# the real verdict comes in the Race story (decision 44).
 	var neutral: bool = str(v.card) == "move"
+	if str(v.card) == "kick" and str(v.answer) == "wait":
+		return   # (waiting means the player decides when to kick: nothing to judge after 10 s; the Race story judges it)
 	if neutral:
 		outcome = "neutral"
 	elif outcome == "flat" and _rng.randf() >= float(_rules.verdict_flat_chance):
@@ -633,8 +651,12 @@ func _give_verdict(v: Dictionary) -> void:
 		pick = _pick(vd.move_neutral, "verdict.move.neutral", {}, f)
 	else:
 		var list: Array = vd.get(str(v.card), {}).get(str(v.answer), {}).get(outcome, [])
+		var list_key := "verdict.%s.%s.%s" % [v.card, v.answer, outcome]
+		if str(v.card) == "kick" and outcome == "bad" and p.kick_died and p.kick_began <= float(_cfg.story.late_kick_to_go):
+			list = vd.kick_died_late   # (the kick began in the home straight: it did not go "too early", the legs were empty)
+			list_key = "verdict.kick.late"
 		if outcome != "flat" and not list.is_empty():
-			pick = _pick(list, "verdict.%s.%s.%s" % [v.card, v.answer, outcome], {}, f)
+			pick = _pick(list, list_key, {}, f)
 		if pick.is_empty():
 			pick = _pick(vd.any[outcome], "verdict.any.%s" % outcome, {}, f)
 	if pick.is_empty():
@@ -680,7 +702,8 @@ func final_verdicts() -> Array:
 	for a in _answered:
 		var gained := int(a.pos0) - final_pos
 		var outcome := "flat"
-		if str(a.card) == "kick" and p.kick_died and str(a.answer) == "now":
+		var died_kick: bool = str(a.card) == "kick" and p.kick_died
+		if died_kick:
 			outcome = "bad"
 		elif gained >= 1:
 			outcome = "good"
@@ -694,9 +717,15 @@ func final_verdicts() -> Array:
 		f.pos = Race._ordinal(final_pos)
 		f.at = str(a.d)
 		var list: Array = fv.get(str(a.card), {}).get(str(a.answer), {}).get(outcome, [])
+		var list_key := "verdict_final.%s.%s.%s" % [a.card, a.answer, outcome]
+		if died_kick:   # the kick died, whatever was answered: the words depend on where it began (decision of fix 3)
+			var late: bool = p.kick_began <= float(_cfg.story.late_kick_to_go)
+			list = fv.kick_died["late" if late else "early"]
+			list_key = "verdict_final.kick_died.%s" % ("late" if late else "early")
+			f.began = str(roundi(p.kick_began))
 		if list.is_empty():
 			list = fv.any[outcome]
-		var pick := _pick(list, "verdict_final.%s.%s.%s" % [a.card, a.answer, outcome], {}, f)
+		var pick := _pick(list, list_key, {}, f)
 		if pick.is_empty():
 			pick = _pick(fv.any[outcome], "verdict_final.any.%s" % outcome, {}, f)
 		if pick.is_empty():

@@ -3,7 +3,7 @@
  "screens": {
   "overview": {
    "title": "Overview",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Playing the days", "text": "Next day plays one day. Play week plays on to Sunday night, but it stops early when something needs you: a race, a new injury or a warning sign. The game saves itself after every day."},
     {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
@@ -13,6 +13,7 @@
     {"heading": "Warning signs", "text": "Body areas that feel sore after training, worst first. Tap one to see why it is sore and what helps. \"A bit sore\" is the early warning.", "see": ["soreness"]},
     {"heading": "Injury and illness", "text": "What you have now, what you are allowed to do, and when you are expected back. Tap it for a plain explanation.", "see": ["injuries"]},
     {"heading": "Attributes", "text": "Your abilities on a scale of 1 to 20. Training changes them once a week, on Sunday night, and growing up helps too. Abilities you don't train fade slowly. Arrows show what has been rising or falling lately; tap an attribute to see what it does."},
+    {"heading": "Progress by month", "text": "The button under your body facts opens the Progress page: a record of your attributes and best time at the end of every month, so you can see how fast you are really improving."},
     {"heading": "Saving", "text": "Besides the automatic save, the Save button makes an extra copy you can load later from the main menu. On a computer, Ctrl+S does the same."}
    ]
   },
@@ -69,18 +70,29 @@
   },
   "rankings": {
    "title": "Rankings",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "Season bests", "text": "Everyone's best time this calendar year, indoor and outdoor together, as in real result lists. The top 25 are shown, and you always are."},
+    {"heading": "What this list is", "text": "Everyone's best 800 m time of the calendar year in your age class: you and your rivals, ranked fastest first. It fills up as the season goes on, because rivals only appear once they have raced this year."},
+    {"heading": "You", "text": "The YOU box at the top gives your place, your season best and the gap to the runner just ahead. Your row in the list is highlighted and marked (you)."},
+    {"heading": "Season bests", "text": "Indoor and outdoor times count together, as in real result lists. The top 25 are shown, and you always are."},
     {"heading": "Your rivals", "text": "Your rivals train and race on their own, so the list fills up as the season goes on. They get injured too and miss races now and then."}
    ]
   },
   "report": {
    "title": "Report",
+   "version": 2,
+   "sections": [
+    {"heading": "This week", "text": "A short summary of the week so far: days played, sessions, training load, how tired you are, races and health. Tap Day by day to open every day: what you did, your fatigue, sore areas, injuries and anything that happened."},
+    {"heading": "Last week", "text": "Sessions, training load and how your fatigue went, plus races, health and the season plan line. Attributes are shown when one moved a whole point: progress is added on Sunday night and builds up slowly. The days of that week are folded under Day by day."}
+   ]
+  },
+  "progress": {
+   "title": "Progress",
    "version": 1,
    "sections": [
-    {"heading": "This week", "text": "Every day played so far: what you did, your fatigue, sore areas, injuries and anything that happened."},
-    {"heading": "Last week", "text": "Sessions, training load and how your fatigue went, plus the health and the season plan line. Attributes are shown when one moved a whole point: progress is added on Sunday night and builds up slowly."}
+    {"heading": "The record", "text": "A snapshot of all your attributes, your 800 m ability and your personal best, taken when your career started and at the end of every month. It is saved with your career. An older save starts its record the day you first load it."},
+    {"heading": "Since the start", "text": "The box at the top compares the first record with now: how much your ability and best time improved and which attributes grew most."},
+    {"heading": "A month", "text": "Tap a record to open it: every attribute with its value and how much it changed since the record before (a dash means hardly at all). Races that month are listed under the title with the best time."}
    ]
   },
   "day_editor": {
@@ -97,25 +109,27 @@
   },
   "race_before": {
    "title": "Before the race",
-   "version": 5,
+   "version": 6,
    "sections": [
     {"heading": "The field", "text": "The runners in your race (your section or heat at a championship), fastest personal best first, with this year's best (SB). Once you have raced a runner twice you also see how they run: Front runner, Pack runner, Kicker or Surger."},
     {"heading": "Sections and heats", "text": "Finnish championships run the 800 m in sections: the fastest runners in the last one, places and medals by time across all sections. PLACES says about what a medal and the top 8 will need. Senior and international meets have heats: the first few go through (Q), then the fastest of the rest (q)."},
     {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
     {"heading": "Race plan", "text": "The plan is where you want to run. Lead: set the pace, no traffic, but no shelter from the wind. Sit in the pack: run behind others near the front and save energy. Wait at the back: save the most for a late kick, at the risk of getting boxed in or left behind."},
-    {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan, and your athlete makes the decisions as well as their race tactics allow. Watch and decide shows the race, stops for your decisions and gives you the action bar. If you are injured, you can still scratch before the first round."}
+    {"heading": "Kick plan", "text": "For a Quick result only: the distance at which your athlete starts the kick. Natural means where their body suits. An earlier start than your body suits looks brave but dies before the line. When you watch the race, you decide the kick yourself."},
+    {"heading": "Quick result or Watch and decide", "text": "Quick result runs the race at once with your plan and your kick plan, and your athlete makes the decisions as well as their race tactics allow. Watch and decide shows the race, stops for your decisions and gives you the action bar. If you are injured, you can still scratch before the first round."}
    ]
   },
   "race_running": {
    "title": "The race",
-   "version": 9,
+   "version": 10,
    "sections": [
     {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. Outdoors the race runs in lanes until the first bend is over, indoors until the second, then everyone cuts in. In a section or heat, the line under the clock says about what time you need."},
     {"heading": "Pause", "text": "The pause button next to 1x, 2x and 4x (on a PC also the Space bar) stops the race, so you can look at the track and the positions. The action bar still works: your command is given at once and the race acts on it when you run on. Tap it again to go on."},
     {"heading": "Slowing down", "text": "At 2x or 4x the race drops to 1x for a few seconds when something happens close to you: a rival kicks or makes a move, someone stumbles or falls, or you get boxed in. A note under the clock says what, then the speed goes back."},
     {"heading": "Your energy", "text": "Every runner has a pace they can hold and a reserve for anything faster. Running behind someone saves a little. Going faster than your own even pace burns the reserve quickly: spend it too early and you tie up in the finish."},
     {"heading": "Feeling", "text": "The word under the clock says how much you have left, as you feel it: Comfortable, Working, Hurting or Empty. Your race tactics decide how well you judge it, so it can be wrong. Being tired before the race makes it worse."},
-    {"heading": "The action bar", "text": "Always there; the race does not stop. Push, Hold and Ease set your pace until you kick. Move out takes you wide for a few seconds to go past. Kick now starts your kick: tap it twice within two seconds, so a slip of the thumb does not."},
+    {"heading": "The action bar", "text": "Always there; the race does not stop. Push, Hold and Ease set your pace until you kick. Move out takes you wide for a few seconds to go past. Kick now starts your kick at any distance, even in the last 100 m: tap it twice within two seconds, so a slip of the thumb does not."},
+    {"heading": "Your kick", "text": "At your kick point a card asks when you go. Kick now starts it. Wait, I'll call it means nothing starts the kick for you: you press Kick now when you want to go. The note under the clock says YOUR CALL. If you never press it, you never kick."},
     {"heading": "In the pack", "text": "Rivals make moves: a surge, or a kick for home. A mover who has the strength presses on and gets away from those who let it go; one who hasn't is caught. Going with a move costs energy: worth it against an equal, rarely against someone clearly stronger."},
     {"heading": "Boxed in and falls", "text": "Stuck on the inside behind a runner, with one on your shoulder, you're boxed in. Someone right on your shoulder: wait, a gap usually comes soon (rarely on a bend). Room on your outside: ease off and step out, or push through near the line. Tight bunches clip heels: stumbles, now and then a fall."},
     {"heading": "Decisions", "text": "The race pauses when something really happens: after the break, at the bell, a rival's move, being boxed in, losing contact, a slow pace, your own kick, the home straight, after a fall. If your coach can see you, the coach shouts what to do. The advice is usually right, not always."},
@@ -126,10 +140,10 @@
   },
   "race_result": {
    "title": "The result",
-   "version": 8,
+   "version": 9,
    "sections": [
-    {"heading": "Results", "text": "Your place and time; a new personal best is marked. The time counts in the season rankings."},
-    {"heading": "Race story", "text": "Your times at 200, 400 and 600 m and the finish with your place at each, next to the winner's (or the runner-up's when you won), the key moments of the race and what your coach thinks of it."},
+    {"heading": "Results", "text": "Your place and time. PB marks a personal best and SB the best time of the year, for you and for the others in every list. The time counts in the season rankings."},
+    {"heading": "Race story", "text": "Your times at 200, 400 and 600 m and the finish with your place at each, next to the winner's (or the runner-up's when you won), the key moments of the race and what your coach thinks of it. The coach judges your time against your own level too: a personal best is never a bad race."},
     {"heading": "Sections", "text": "After sections you see everyone by time across all of them (S2 = section 2): that is the official result. Your section's own list comes below it, then the other sections. Winning a slow section can still be 10th overall."},
     {"heading": "DNF and DQ", "text": "DNF: did not finish, after a bad fall. DQ: disqualified for obstruction, after pushing your way out of a box. Neither counts for a personal best or the rankings. A fall can leave you with grazes or a bruise, rarely a sprained ankle.", "see": ["injuries"]},
     {"heading": "Heats and final", "text": "Senior and international meets have heats; after yours you see every heat's result, yours first. Q = through on place, q = through on time: the fastest of the rest. How many go through follows the World Athletics table; a big field adds semi-finals. Runners safely through ease off before the line."}

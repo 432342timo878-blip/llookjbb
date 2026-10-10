@@ -216,6 +216,9 @@ func _run() -> void:
 	hub._show("rankings")
 	await _frames(5)
 	await _shot("14b_rankings")
+	hub._show("progress")   # the monthly record (playtest fix 7): only the start record this early
+	await _frames(5)
+	await _shot("14b2_progress")
 	await _form_tour(game, hub)
 
 	# The Report tab in the middle of a week: this week so far, then last week.
@@ -225,6 +228,11 @@ func _run() -> void:
 	hub._show("report")
 	await _frames(5)
 	await _shot("14c_report_midweek")
+	var fold := _find_button_prefix(main, "▸  Day by day")   # the days are folded away; open them (playtest fix 8)
+	if fold:
+		fold.pressed.emit()
+		await _frames(4)
+		await _shot("14c2_report_days_open")
 	hub._show("overview")
 
 	# A day change must survive save and load: Friday easy + a rest-day Saturday, this week only.

@@ -1291,6 +1291,68 @@ screen; help `race_before` v5, `race_running` v8, `race_result` v7.
   header has no room on a phone); test careers are never saved at all; the 10 s verdict openers "So far, / For now, / At the
   moment, "; filler facts without the expert's reply.
 
+**Built (playtest fixes, 2026-10-10): the nine quick fixes from the user's season playtest** (`docs/PLAYTESTS.md`; ROADMAP "Quick
+fixes from the season playtest"; user decisions below; the only balance change is fix 1).
+1. **Race-time swings (decision: narrow the day-form spread by 25 %).** Measured first (`tools/race_spread.gd`: one athlete,
+   many races; `tools/race_season_times.gd`: whole seasons through the game loop, every race run). Cause: **no bug**. The
+   race-day form (`Race.setup`: ability + a roll with sd 0.25 + (20 − consistency) / 20 × 0.6 ability points) is large for a low
+   consistency: the user's athlete (consistency 5.5) ran with an sd of 4.3 s (2.7 %) on a 151 s level, extremes 141 and 167 s
+   from the dice alone; consistency 10 / 14 / 18 gave 3.7 / 3.1 / 2.4 s. Quick mode adds ~0.5 s on average (its random
+   answers) and a longer bad tail (worst race 177 s against 164 s in a tight final); fatigue over 25 is almost nothing
+   (+0.7 %); racing with a niggle, injury or cold is on average 4 % (about 6 s) slower (`race_slowdown` 1–8 %): in the user's
+   save the 15 May race fell on an Achilles niggle and the 6 Aug race on a hamstring injury. In six simulated seasons 3 % of
+   consecutive races differed by more than 15 s (the user's save had 4 of 17: bad luck on top of the model's tail). Fix:
+   `races.json` `engine.form_sd` = {base 0.25, per_inconsistency 0.6, **scale 0.75**} (the number of dice rolled is the same).
+   Everyone's form uses it, the rivals' too. Measured on the user's athlete (150 races): quick sd 4.32 → 3.67 s, watched
+   with sensible answers 4.05 → 3.15 s; race_shape (100 races a row, all 8 rows) before / after: the finishing spread is a
+   little tighter (1st-to-last finisher youth even field 16.7 → 15.5 s, youth final 10.4 → 9.5 s, senior national final 6.3 →
+   5.9 s), the median race time / table time stays 0.997–1.010. The rest of each row moved by the 100-race noise.
+2. **The kick (decision: "I decide when I kick. I don't want the game to decide anything for me").** In a **watched** race the
+   kick card's second answer is now *Wait, I'll call it*: nothing starts the kick (`Runner.kick_hold`; the 100 m rule, the
+   home-straight card and rivals' kicks no longer start it) until the player presses **Kick now**, which works at any distance,
+   also inside the last 100 m (`can_command("kick")` is only "past the break and not kicking yet"). No last-resort kick:
+   a player who never presses it never kicks. A note under the clock says YOUR CALL: PRESS KICK NOW. `Race.manual_kick` is set
+   by the race screen only, so tools and the engine's quick mode keep Wait = a kick at 100 m (the tools' numbers are unchanged).
+   **Quick result follows a kick plan** (new, asked for in the same answer): a dropdown on the pre-race screen, "Natural" or
+   300 / 250 / 200 / 150 / 100 / 60 m to go (`races.json` `controls.kick_plans`, `Race.set_kick_plan`, `RaceDay.kick_plan`): the
+   athlete's kick point becomes the plan, the kick card is answered "Kick now" there, the home-straight card does not start it
+   earlier. A kick earlier than the body suits still overshoots (the R3 follow-up rule), so the plan has a price. Whole race
+   control ("run the whole race yourself") is still its own design session.
+3. **"Kicked from too far out" after a kick at 100 m.** The engine's `kick_dying` event (the reserve is empty with more than
+   30 m left) now carries `began` (metres to go when the kick started, `Runner.kick_began`). A kick that began with 130 m or less
+   to go (`story.late_kick_to_go`) and still died is **kick_died_late** in the Race story (all four coaches have lines: the timing
+   was right, the pace before it took too much), the 10 s verdict, the final verdict and the commentary's `kick_dying` lines
+   (`when` `began_min` / `began_max`) say so; the old "too early" wording stays for kicks that began further out.
+4. **Contradicting coach shouts.** Every card shout (`race_cards.json` `coach.dir`) and every line of the coach
+   (`race_commentary.json` `rules.coach_dir`, the coach's own `dirs`) has a direction, push or ease. `Race.coach_dir_log` /
+   `coach_conflicts` / `coach_note`: advice opposite to his last within `controls.coach.conflict_s` (20 s) is not said, unless the
+   race changed (gap to the leader by 8 m or the player's place by 2). The card then has no coach block. The coach's own
+   dice are used first, so nothing about the race changes. Display only.
+5. **Verdicts count the athlete's own level (decision: the rule below).** `RaceDay._mark_rows` gives every result row a `mark`
+   (PB / SB, below) and the race's `pb_before` / `sb_before`; `RaceStory.verdict_case` gets `mark`, `time` and `ref` (the season
+   best, else the PB, going in). A **PB against an earlier mark is its own case "pb"** and beats every negative case; a **season
+   best stands in for "as expected" / "below"** ("sb"); "below" needs a worse place **and** a time more than 1.5 % slower than
+   the athlete's own best (`story.below_pct`); a time more than 1 % faster is "better" (`better_pct`). The coach's finish line:
+   win, then **finish_pb**, podium, **finish_sb**, other (a heat or section: win, pb, sb, part). Texts in `coaches.json` (every
+   coach has `pb`, `sb`, `kick_died_late` story lines and `finish_pb` / `finish_sb`).
+6. **PB / SB marks in every result list** (the player's and the rivals', heats, sections and the headline): "PB" = faster than the
+   runner's personal best, "SB" = faster than their best this calendar year, or their first time this year; the earlier
+   rounds of the same meet count; a runner with no earlier mark gets none (the player's first ever time is a PB, as in the
+   records); `RaceDay.mark_refs`, `last_rows`. Green, in the last column next to Q / q, with a legend line.
+7. **Monthly record (decision: its own small Progress page).** `ProgressLog` (`scripts/core/progress_log.gd`): `Game.progress`
+   holds a record at the start of the career (`start`) and at the end of every month (`month`: all attributes, 800 m ability, PB,
+   SB, age); saved in the career file (`"progress"`); a save without it gets a `first` record when it loads (the earlier
+   months are not known; the monthly best times come from `Athlete.results`). `ProgressView` (hub page "progress", the
+   button *Progress by month* on the Overview tab, "?" entry `progress`): a "since the start" summary and a record per month, tap
+   to open every attribute with its change since the record before. Step 7 and the Statistics tab read `Game.progress`.
+8. **Report tab.** *This week* starts with a short summary (days played, sessions, load, fatigue, races, health), the days
+   are folded under *Day by day (n days)* (tap to open); *Last week* has its summary panel (now with the races) and the days folded.
+9. **Rankings tab.** A YOU box on top (place of n, season best, the gap to the runner ahead), the player's row tinted and
+   marked "(you)", one line saying what the list is; help entry `rankings` v3.
+- **Help:** `overview` v2, `progress` (new), `rankings` v3, `report` v2, `race_before` v6, `race_running` v10, `race_result` v9.
+- **Checks:** `tools/playtest_fix_check.gd` (33 checks: the kick in a watched race, Wait / Kick now / the kick plan, the coach
+  conflict rule, the verdict rules, the marks, the monthly record through a save and an old save; in `run_all_checks`).
+
 ### 4.4 Season calendar (first version built)
 
 Decisions (user, 2026-10-05): big meets use **real dates**; small local/district meets get **believable estimated dates**

@@ -16,7 +16,7 @@ func _ready() -> void:
 		add_child(note)
 	add_child(UIKit.label("This week", "HeadingLabel"))
 	add_child(UIKit.wrapped(_range(monday), "MutedLabel"))
-	_add_days(monday, "No days played yet this week. Press Next day or Play week.")
+	_add_week(monday, "No days played yet this week. Press Next day or Play week.", true)
 
 	if not Game.last_report.is_empty():
 		_add_last_week(Game.last_report)
@@ -27,8 +27,8 @@ func _range(monday: Dictionary) -> String:
 	return "%s – %s" % [DayInfo.short_day(monday), DayInfo.short_day(Game.add_days(monday, 6))]
 
 
-## The played days of the week starting `monday`, one block each, in a panel.
-func _add_days(monday: Dictionary, none_text: String) -> void:
+## The played days of the week starting `monday` from the day log, in order.
+func _days_of(monday: Dictionary) -> Array:
 	var lo := Calendar.date_key(monday)
 	var hi := Calendar.date_key(Game.add_days(monday, 6))
 	var rows := []
@@ -36,15 +36,66 @@ func _add_days(monday: Dictionary, none_text: String) -> void:
 		var key := Calendar.date_key(e.date)
 		if key >= lo and key <= hi:
 			rows.append(e)
+	return rows
+
+
+## A week of the day log: with `summary`, a few lines first (days, sessions, load, fatigue, races, health), then the days
+## day by day folded away (tap to open, playtest fix 8); without it only the folded days.
+func _add_week(monday: Dictionary, none_text: String, summary: bool) -> void:
+	var rows := _days_of(monday)
 	if rows.is_empty():
 		add_child(UIKit.wrapped(none_text, "MutedLabel"))
 		return
+	if summary:
+		add_child(UIKit.panel(_week_summary(monday, rows), 16))
 	var box := UIKit.vbox(12)
 	for i in rows.size():
 		if i > 0:
 			box.add_child(HSeparator.new())
 		box.add_child(_day_row(rows[i]))
-	add_child(UIKit.panel(box, 16))
+	add_child(_fold("Day by day (%d day%s)" % [rows.size(), "" if rows.size() == 1 else "s"], UIKit.panel(box, 16)))
+
+
+## The week so far in a few lines: days played, sessions, training load, fatigue now, races and health.
+func _week_summary(monday: Dictionary, rows: Array) -> Control:
+	var facts := UIKit.vbox(6)
+	var sessions := 0
+	var load := 0.0
+	var races := []
+	for e in rows:
+		load += float(e.load)
+		if e.race != "":
+			var text: String = Calendar.get_meet(e.race).get("name", e.race)
+			var result := DayInfo.race_result_text(e.race)
+			races.append(text + (" (%s)" % result if result != "" else ""))
+		else:
+			sessions += e.sessions.size()
+	facts.add_child(UIKit.fact_row("Days played", UIKit.label("%d of 7" % rows.size())))
+	facts.add_child(UIKit.fact_row("Sessions", UIKit.label(str(sessions))))
+	facts.add_child(UIKit.fact_row("Training load", UIKit.label(str(roundi(load)))))
+	facts.add_child(UIKit.fact_row("Fatigue now", UIKit.fatigue_label(rows[-1].fatigue)))
+	for race in races:
+		facts.add_child(UIKit.wrapped("Race: " + race, ""))
+	var health := _week_health(monday)
+	if health != "":
+		facts.add_child(UIKit.wrapped("Health: " + health, ""))
+	return facts
+
+
+## A folded section: a 44 px header button with ▸ / ▾; the content is hidden until it is tapped (phone and PC alike).
+func _fold(title: String, content: Control) -> Control:
+	var box := UIKit.vbox(8)
+	var head := UIKit.button("▸  " + title, false, 140)
+	head.custom_minimum_size.y = 44
+	head.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(head)
+	content.visible = false
+	box.add_child(content)
+	head.pressed.connect(func():
+		content.visible = not content.visible
+		head.text = ("▾  " if content.visible else "▸  ") + title)
+	return box
 
 
 ## One played day: date and fatigue, what was done, intensity and load, then its events.
@@ -160,6 +211,11 @@ func _add_last_week(r: Dictionary) -> void:
 	fat.add_child(UIKit.label("→", "MutedLabel"))
 	fat.add_child(UIKit.fatigue_label(r.fatigue_end))
 	facts.add_child(UIKit.fact_row("Fatigue (Mon → Sun)", fat))
+	for e in _days_of(r.monday):   # (the days are still in the log for a week or so)
+		if e.race != "":
+			var result := DayInfo.race_result_text(e.race)
+			facts.add_child(UIKit.wrapped("Race: " + str(Calendar.get_meet(e.race).get("name", e.race)) \
+					+ (" (%s)" % result if result != "" else ""), ""))
 	var health := _week_health(r.monday)
 	if health != "":
 		facts.add_child(UIKit.wrapped("Health: " + health, ""))
@@ -198,5 +254,4 @@ func _add_last_week(r: Dictionary) -> void:
 		box.add_child(UIKit.wrapped("Improving lately: %s." % ", ".join(improving)))
 	add_child(UIKit.panel(box, 16))
 
-	add_child(UIKit.label("Last week, day by day", "SubheadingLabel"))
-	_add_days(r.monday, "The day-by-day log of that week is no longer kept.")
+	_add_week(r.monday, "The day-by-day log of that week is no longer kept.", false)   # (its summary is the panel above)

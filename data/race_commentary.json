@@ -19,6 +19,7 @@
   "bar_gap_s": 10.0,
   "banner_s": 2.5,
   "coach_near_m": 45.0,
+  "coach_dir": {"split_back": "push", "split_hard": "ease", "rival_kick": "push", "rival_move": "push", "player_kick": "push", "boxed": "push", "dropped": "push", "fall": "push"},
   "coach_chance": {"split": 1.0, "rival_kick": 0.7, "rival_move": 0.6, "player_kick": 0.8, "boxed": 0.55, "fall": 1.0, "dropped": 0.7, "lead": 0.6, "finish": 1.0, "verdict": 0.65},
   "fan_chance": 0.4,
   "you_gap_s": 1.0,
@@ -492,16 +493,20 @@
   "kick_dying": {
    "weight": 8, "important": true, "max": 3,
    "tv": [
-    "{name} is dying! The kick has gone too early.",
-    "{name} has gone too soon, and the legs are tying up.",
+    {"t": "{name} is dying! The kick has gone too early.", "when": {"began_min": 131}},
+    {"t": "{name} has gone too soon, and the legs are tying up.", "when": {"began_min": 131}},
     "{name} is paying for that kick, and the others are closing.",
-    {"t": "{pname} is tying up! Too early, and now the legs are gone.", "when": {"player": true}},
+    {"t": "{pname} is tying up! Too early, and now the legs are gone.", "when": {"player": true, "began_min": 131}},
+    {"t": "{pname} is tying up in the home straight! The legs have nothing left.", "when": {"player": true, "began_max": 130}},
+    {"t": "{name} went for home, but the tank is empty.", "when": {"began_max": 130}},
+    {"t": "{name} is running out of road. The legs have gone in the finishing straight.", "when": {"began_max": 130}},
     "The kick is fading and {name} is going backwards."
    ],
    "expert": [
-    "That's the price of going from {to_go} out. The last 50 are always the longest.",
+    {"t": "That's the price of going from {began} out. The last 50 are always the longest.", "when": {"began_min": 131}},
     "Look at the stride: it has shortened. The energy is gone.",
-    "A long kick is a gamble, and this time it didn't pay."
+    {"t": "The kick started in the right place. It's the earlier laps that took the legs.", "when": {"began_max": 130}},
+    {"t": "A long kick is a gamble, and this time it didn't pay.", "when": {"began_min": 131}}
    ],
    "announcer": ["{name} is tying up!"],
    "coach": {"player": "bad"},
@@ -719,10 +724,11 @@
     "bad": ["The kick is dying. You went too early.", "It was too far out, and it's costing you."]
    },
    "wait": {
-    "good": ["Waiting for the straight is paying off.", "Your patience is paying off."],
-    "bad": ["Waiting has cost you places.", "You left it too late."]
+    "good": ["Waiting is paying off.", "Your patience is paying off."],
+    "bad": ["Waiting has cost you places.", "You left it late."]
    }
   },
+  "kick_died_late": ["The kick is dying even in the home straight: the legs were already empty.", "You started the kick in the right place, but there is nothing left in the tank."],
   "dropped": {
    "dig": {
     "good": ["Digging in has worked: you're back with them.", "You closed the gap."],
@@ -789,9 +795,13 @@
     "bad": ["The kick started too far out and died. A later start would have kept the places."]
    },
    "wait": {
-    "good": ["Waiting for the straight paid off: {dpos_places} gained."],
+    "good": ["Holding your kick paid off: {dpos_places} gained."],
     "bad": ["Waiting cost you. You left the kick too late and lost {dpos_places}."]
    }
+  },
+  "kick_died": {
+   "early": ["The kick started with {began} m to go and died. A later start would have kept the places."],
+   "late": ["The kick started with {began} m to go, the right place, but the legs were already empty. The pace before it took too much."]
   },
   "box": {
    "wait": {
@@ -819,6 +829,8 @@
   "empty": "A quiet race: nothing out of the ordinary happened.",
   "max_moments": 6, "min_moments": 4,
   "per_type": 2,
-  "expected_band": 1
+  "expected_band": 1,
+  "_rules": "Playtest fix 5 (2026-10-10): a kick that began with late_kick_to_go m or less to go and still died is kick_died_late (the pace before it was the problem), not 'too early'; a time more than better_pct % faster than the athlete's own best (season best, else PB) is 'better'; 'below' needs a time more than below_pct % slower than it too; a PB (against an earlier mark) is its own case 'pb'; a season best stands in for as_expected / below ('sb').",
+  "late_kick_to_go": 130.0, "better_pct": 1.0, "below_pct": 1.5
  }
 }

@@ -5,6 +5,13 @@ roadmap and the GDD; this file keeps the raw picture so it isn't lost in a chat.
 
 ## Season playtest 1 (2026-10-10)
 
+**What was fixed (quick-fix session, 2026-10-10; GDD 4.3.1 "Built (playtest fixes)"):** the race-time swings (no bug: a wide
+race-day form for a low consistency, plus racing injured; narrowed by 25 % for everyone), the kick (Wait never starts it by
+itself, Kick now at any distance, a kick plan for Quick result), the "too far out" coach line after a 100 m kick, contradicting
+coach shouts, PB / SB in the verdicts and in every result list, the monthly record (Progress page), the Report tab (summary
+first, days folded), the Rankings tab (YOU box, highlighted row, a line on what it is). Not fixed here: the notes marked
+step 7, Coaching, School, rival profiles and the race-controls idea (see the table below).
+
 **Setup (user):** new career, the coach's plan, nothing changed in training, every race entered (targets Nuorten
 SM-hallit, Tampere Junior Indoor Games, Nuorten SM), the Balanced plan, 12 points on determination, race tactics,
 pain tolerance and professionalism; races watched and quick-simmed. Background: early developer ("Taller and

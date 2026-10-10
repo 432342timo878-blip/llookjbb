@@ -25,6 +25,7 @@ var fatigue := 0.0                # the player's fatigue going into the current 
 var heats: Array = []             # the current round's groups (heats / sections; one group in a final), in running order
 var player_heat := 0              # the player's group in `heats`
 var final_entrants: Array = []    # a single race / the final: who runs
+var last_rows: Array = []         # the result rows of the player's race just run (with the PB / SB `mark` of every row)
 var heat_results: Array = []      # after a round of groups: every group's results, in running order
 var heat_marks := {}              # after heats / semis: runner name → "Q" (through on place) / "q" (through on time)
 var overall: Array = []           # after sections: everyone by time across the sections (result rows + "section")
@@ -32,6 +33,7 @@ var player_results: Array = []    # [{round, place, field, time, status}] (statu
 var all_results: Array = []       # every race run here (for rival PBs)
 var incidents: Array = []         # the player's falls and spike wounds today: [{kind: fall / spiked, round}] (health model)
 var current: Race
+var kick_plan := 0.0              # a quick result: the metres to go at which the athlete kicks (0 = their natural point), set on the race screen
 var slowdown := 0.0               # share slower because of a niggle or illness (HealthSystem.race_slowdown)
 var form := 0.0                   # share faster (+) or slower (-) from race-day form (FormSystem.race_form)
 
@@ -42,6 +44,7 @@ var _cfg: Dictionary              # data/races.json "rounds"
 var _plan: Array = []             # heats: the table's rounds before the final, [groups, place, time] each
 var _group_res: Array = []        # the current round: each group's results once run (null until then)
 var _seed := {}                   # runner name → seeding time (season best, else PB; 9999 = no mark)
+var _best_today := {}             # runner name → their best time in the rounds of this meet already run (PB / SB marks)
 
 
 func _init(m: Dictionary, a: Athlete, pool: Array) -> void:
@@ -127,6 +130,8 @@ func start_round(interactive: bool, plan: String) -> Race:
 	current.auto_places = _auto_places()
 	current.coach_id = Coaches.id_of(athlete)   # (his wording on the cards; R4)
 	current.set_player_plan(plan)
+	if not interactive:
+		current.set_kick_plan(kick_plan)   # (a quick result follows the player's kick plan)
 	return current
 
 
@@ -204,7 +209,50 @@ func _run_group(g: int) -> void:
 	other.auto_places = _auto_places()
 	other.run()
 	_group_res[g] = other.results()
+	_mark_rows(_group_res[g])
 	all_results.append(_group_res[g])
+
+
+## PB / SB marks for the finishers of a race just run (playtest fix 6): `mark` = "PB" (faster than their personal best),
+## "SB" (faster than their best this calendar year, or their first time this year), else "". A runner with no earlier
+## mark at all gets none (the player's first ever time counts as a PB, as in the records). Earlier rounds of this meet
+## count (a PB in the heat means the final must beat it). Rows are changed in place, so every list shows the same marks.
+func _mark_rows(res: Array) -> void:
+	for row in res:
+		row["mark"] = ""
+		if str(row.get("status", "")) != "" or float(row.time) <= 0.0:
+			continue
+		var best := mark_refs(row)
+		var t := float(row.time)
+		var pb: float = best.pb
+		var sb: float = best.sb
+		row["pb_before"] = pb   # (what the runner went into this race with: the Race story judges the time against it)
+		row["sb_before"] = sb
+		if pb > 0.0 and t < pb or (pb == 0.0 and bool(row.get("is_player", false))):
+			row["mark"] = "PB"
+		elif sb > 0.0 and t < sb or (sb == 0.0 and pb > 0.0):
+			row["mark"] = "SB"
+		_best_today[row.name] = minf(float(_best_today.get(row.name, 9999.0)), t)
+
+
+## The personal best and this year's best of a result row's runner going into the round ({pb, sb}, 0 = none yet).
+func mark_refs(row: Dictionary) -> Dictionary:
+	var year := int(meet.date.year)
+	var pb := 0.0
+	var sb := 0.0
+	if bool(row.get("is_player", false)):
+		pb = float(athlete.personal_bests.get(athlete.main_event, 0.0))
+		sb = Rankings.player_season_best(athlete, year)
+	else:
+		var rival: Dictionary = row.get("rival", {})
+		pb = float(rival.get("pb", 0.0))
+		if int(rival.get("sb_season", -1)) == year:
+			sb = float(rival.get("sb", 0.0))
+	var today := float(_best_today.get(row.name, 0.0))
+	if today > 0.0:
+		pb = today if pb == 0.0 else minf(pb, today)
+		sb = today if sb == 0.0 else minf(sb, today)
+	return {"pb": pb, "sb": sb}
 
 
 ## Call when the player's current race is over.
@@ -216,6 +264,8 @@ func finish_round() -> void:
 			incidents.append({"kind": "fall", "round": name})
 		if current.player.spiked:
 			incidents.append({"kind": "spiked", "round": name})
+	_mark_rows(res)
+	last_rows = res
 	all_results.append(res)
 	if not is_group_round():
 		_add_player_result(name, res, res.size())
@@ -246,7 +296,8 @@ func _add_player_result(name: String, res: Array, field: int) -> void:
 	for i in res.size():
 		if res[i].is_player:
 			player_results.append({"round": name, "place": i + 1, "field": field, "time": res[i].time,
-					"status": res[i].status})
+					"status": res[i].status, "mark": res[i].get("mark", ""),
+					"ref": float(res[i].get("sb_before", 0.0)) if float(res[i].get("sb_before", 0.0)) > 0.0 else float(res[i].get("pb_before", 0.0))})
 
 
 ## Sections: every finisher by time across the sections, then the disqualified, then those who did not finish.

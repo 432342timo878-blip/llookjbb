@@ -53,8 +53,20 @@ func _run() -> void:
 	game.advance_day()   # a mid-week date in the header (Wednesday)
 	game.advance_day()
 	hub._refresh_week_ui()
+	# A monthly record to look at on the Progress page (the career is only days old): three made-up months, everything creeping up.
+	for m in 3:
+		var rec: Dictionary = game.progress[0].duplicate(true)
+		rec.kind = "month"
+		rec.year = 2026 if m < 2 else 2027
+		rec.month = [11, 12, 1][m]
+		rec.day = [30, 31, 31][m]
+		for id in rec.attrs:
+			rec.attrs[id] = float(rec.attrs[id]) + 0.12 * (m + 1) * (1.0 if int(hash(id)) % 3 != 0 else 0.0)
+		rec.ability = float(rec.ability) + 0.15 * (m + 1)
+		rec.pb = [0.0, 168.4, 164.26][m]
+		game.progress.append(rec)
 
-	var only := OS.get_cmdline_user_args()[1] if OS.get_cmdline_user_args().size() > 1 else ""   # e.g. "390x844": one size only
+	var only :=OS.get_cmdline_user_args()[1] if OS.get_cmdline_user_args().size() > 1 else ""   # e.g. "390x844": one size only
 	for size in SIZES:
 		if only != "" and only != "%dx%d" % [size.x, size.y]:
 			continue
@@ -62,11 +74,18 @@ func _run() -> void:
 		await _frames(8)
 		var tag := "%dx%d" % [size.x, size.y]
 		print("size ", tag, " compact=", main.get_node("/root/Router") != null and Layout.compact, " logical=", root.content_scale_size)
-		for view in ["overview", "training", "calendar", "rankings", "report"]:
+		for view in ["overview", "progress", "training", "calendar", "rankings", "report"]:
 			hub._show(view)
 			await _frames(4)
 			await _shot("%s_%s" % [tag, view])
 			_check_overflow(hub, "%s %s" % [tag, view])
+			if view == "report":   # and the folded days opened
+				var fold := _find_button_prefix(main, "▸  Day by day")
+				if fold:
+					fold.pressed.emit()
+					await _frames(4)
+					await _shot("%s_report_days_open" % tag)
+					_check_overflow(hub, "%s report_days_open" % tag)
 		# The day editor: an editable day with changes (Thu: Hard + a second session), the "add session" row,
 		# and a played day (Mon). Side panel on PC, bottom sheet on a phone.
 		hub._show("overview")
@@ -371,6 +390,16 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		_check_overflow(screen, t + "_tap_again")
 		print("  kick button after one tap: \"", kick.text, "\"", "" if kick.text.begins_with("Tap again") else "   <-- WRONG")
 		screen._bar._armed_at = -1000.0
+		# The player chose to wait for the kick: the note under the clock says it is their call (playtest fix 2).
+		race.player.kick_hold = true
+		screen._slow_left = 0.0   # (a rival's move near you shows "SLOWED TO 1x" instead for a moment)
+		screen._update_slow_note()
+		await _frames(3)
+		print("  your-call note: ", screen._slow_note.visible, " \"", screen._slow_note.text, "\"", "" if screen._slow_note.visible and "YOUR CALL" in screen._slow_note.text else "   <-- WRONG")
+		await _shot(t + "_your_call")
+		_check_overflow(screen, t + "_your_call")
+		race.player.kick_hold = false
+		screen._update_slow_note()
 		# A card with the coach's shout: the next card that comes up.
 		_drive_to_card(race)
 		await _frames(4)
@@ -786,7 +815,7 @@ func _find_script(node: Node, script):
 func _help_views(main: Node, game, tag: String) -> void:
 	var router = main.get_node("/root/Router")
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
-	for view in ["overview", "training", "calendar", "rankings", "report"]:
+	for view in ["overview", "progress", "training", "calendar", "rankings", "report"]:
 		hub._show(view)
 		await _frames(3)
 		hub._toggle_help()

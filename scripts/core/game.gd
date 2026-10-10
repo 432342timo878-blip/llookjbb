@@ -32,6 +32,9 @@ var events: Array = []
 ## What was actually done each day, oldest first:
 ## {date, day_type, sessions, intensity, race (meet key or ""), load, fatigue, events (ids)}
 var day_log: Array = []
+## The monthly record of the attributes and best times (ProgressLog, playtest fix 7): a record at the start of the career
+## and at the end of every month, saved with the career.
+var progress: Array = []
 ## Autosave after every played day. Dev tools that play thousands of days switch it off.
 var autosave := true
 ## A throw-away test career made by the Dev menu (DevTools, debug builds): nothing of it is ever saved (SaveGame.save does
@@ -62,6 +65,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 	race_day = null
 	events = []
 	day_log = []
+	progress = [ProgressLog.snapshot(athlete, date, "start")]
 	_next_event = 1
 	_week = null
 	systems = _make_systems()
@@ -106,7 +110,7 @@ func to_dict() -> Dictionary:
 	return {"athlete": athlete.to_dict(), "date": date, "season": season.to_dict(), "entries": entries,
 			"rivals": rivals, "week": _week.to_dict() if _week else {}, "last_report": last_report,
 			"events": events, "next_event": _next_event, "day_log": day_log, "systems": system_states,
-			"stats_year": "calendar"}   # season bests by calendar year (decision 30; older saves are converted on load)
+			"progress": progress, "stats_year": "calendar"}   # season bests by calendar year (decision 30; older saves are converted on load)
 
 
 ## Works for every save version: version 1 is always on a Monday with no week in progress, so the
@@ -149,6 +153,9 @@ func from_dict(d: Dictionary) -> void:
 	for entry in day_log:
 		entry.date = int_date(entry.date)
 	_next_event = int(d.get("next_event", 1))
+	progress = ProgressLog.fixed(d.get("progress", []))
+	if progress.is_empty():   # a save from before the monthly record: it starts now (the earlier months are not known)
+		progress = [ProgressLog.snapshot(athlete, date, "first")]
 	systems = _make_systems()
 	var states: Dictionary = d.get("systems", {})
 	for s in systems:
@@ -315,7 +322,10 @@ func _end_day() -> String:
 	for e in events:
 		if Calendar.date_key(e.date) == Calendar.date_key(date):
 			entry.events.append(e.id)
+	var played := date
 	date = add_days(date, 1)
+	if int(date.month) != int(played.month):   # the month is over: its record (ProgressLog)
+		ProgressLog.add(progress, ProgressLog.snapshot(athlete, played, "month"))
 	_prune()
 	if autosave:
 		SaveGame.save(SaveGame.AUTOSAVE)

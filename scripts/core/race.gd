@@ -39,6 +39,8 @@ var player: Runner
 var time := 0.0
 var finished := false
 var interactive := false          # detailed mode: pause at decision points
+var manual_kick := false          # the watched race on the race screen: "wait" means the player kicks by pressing Kick now (set by the screen; tools and quick mode keep "wait" = kick at 100 m)
+var kick_plan := 0.0              # quick result: the metres to go at which the athlete kicks (0 = their own natural point; set_kick_plan)
 var pending: Dictionary = {}      # decision waiting for the player
 var log_lines: Array[String] = []
 ## Heats: the automatic qualifying places (0 = none). Runners safely in one ease off near the line.
@@ -159,6 +161,8 @@ class Runner:
 	var hold_v := 0.0
 	var decided := {}             # "move <i> <n>" / "kick <i>" -> already decided about that move or kick
 	var kick_free := true         # answers kicks (off when the player chose to wait for the home straight)
+	var kick_hold := false        # watched race, the player chose to wait: the kick starts only when they press Kick now
+	var kick_began := 0.0         # metres to go when the kick started (the commentary tells a late kick from an early one)
 	# Boxed in (R2)
 	var boxed := false
 	var box_way := ""             # wait / ease / push while a box lasts
@@ -237,7 +241,8 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 		r.speed = e.speed
 		r.tactics = e.tactics
 		# Race-day form: consistency narrows the spread, composure matters at big meets.
-		var form := rng.randfn(0.0, 0.25 + (20.0 - float(e.consistency)) / 20.0 * 0.6)
+		var fsd: Dictionary = e_cfg.form_sd
+		var form := rng.randfn(0.0, (float(fsd.base) + (20.0 - float(e.consistency)) / 20.0 * float(fsd.per_inconsistency)) * float(fsd.scale))
 		if big_meet:
 			form += (float(e.composure) - 10.0) * 0.04
 		if r.is_player:
@@ -315,6 +320,20 @@ func _apply_script(r: Runner, s: Dictionary) -> void:
 func set_player_plan(plan: String) -> void:
 	if player:
 		player.want = "lead" if plan == "front" else plan
+
+
+## The player's kick plan for a quick result (the athlete follows it): kick at `to_go` metres to go (0 = their natural
+## point, with the usual noise). The kick card is then answered "Kick now" there. A kick earlier than the body suits
+## still overshoots and dies (controls.kick_early), so the plan has a price.
+func set_kick_plan(to_go: float) -> void:
+	kick_plan = to_go
+	if player and to_go > 0.0:
+		player.kick_at = to_go
+
+
+## The player's kick plan (a Quick result) says the kick comes later than this: the home straight card does not start it.
+func _plan_waits(p: Runner) -> bool:
+	return kick_plan > 0.0 and DISTANCE - p.d > kick_plan
 
 
 ## Rolled when the race starts (after the player's plan is known): the race shape from the mix, moved
@@ -462,15 +481,15 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 			# kick (or waits for the home straight). If another card is open, the kick waits a step.
 			if pending.is_empty():
 				_ask("kick")
-		else:
-			_start_kick(r, order, null)
+		elif not r.kick_hold:
+			_start_kick(r, order, null)   # (a player who chose to wait kicks only when they press Kick now)
 	var target: float
 	if r.kicking:
 		# Fastest speed the reserve they feel they have can hold to the line: rem / (rem - felt) times cs.
 		target = _kick_speed(r)
 		if r.dleft <= 0.0 and not r.kick_died and rem > float(e.kick_dying_to_go):
 			r.kick_died = true
-			_event("kick_dying", r, {"to_go": roundi(rem)}, order)
+			_event("kick_dying", r, {"to_go": roundi(rem), "began": roundi(r.kick_began)}, order)
 	else:
 		var follow: Runner = front if gap_front <= float(e.follow_range) else null
 		var cap := _cap(r, float(e.draft) if follow else 0.0)
@@ -885,6 +904,8 @@ func _cover_chance(o: Runner, s: Runner) -> float:
 
 func _start_kick(r: Runner, order: Array[Runner], answer_to: Runner) -> void:
 	r.kicking = true
+	r.kick_hold = false
+	r.kick_began = DISTANCE - r.d
 	r.driving = false
 	r.surge_left = 0.0
 	r.covering = null
@@ -1360,6 +1381,8 @@ func _auto_choice(id: String) -> String:
 	var sensible := sensible_choice(id)
 	if id == "break":
 		return sensible
+	if id == "kick" and kick_plan > 0.0:
+		return "now"   # (the athlete follows the player's kick plan)
 	var a: Dictionary = _ctl.auto
 	if _rng.randf() < lerpf(float(a.sensible_at_1), float(a.sensible_at_20), player.skill):
 		return sensible
@@ -1487,14 +1510,16 @@ func _apply_choice(p: Runner, id: String, option: String) -> void:
 			p.kick_at = 100.0
 			if interactive:
 				p.kick_free = false   # your call: no answering other kicks before the home straight
+			if manual_kick:
+				p.kick_hold = true    # and nothing starts the kick for you: Kick now, at any distance, is yours to press
 		["straight", "wide"]:
 			var ahead := _runner_ahead(p, order)
 			if ahead:
 				p.lat_target = ahead.lat + 1.2
-			if not p.kicking:
+			if not p.kicking and not p.kick_hold and not _plan_waits(p):
 				_start_kick(p, order, null)
 		["straight", "inside"]:
-			if not p.kicking:
+			if not p.kicking and not p.kick_hold and not _plan_waits(p):
 				_start_kick(p, order, null)
 			var ahead := _runner_ahead(p, order)
 			if ahead and _rng.randf() < 0.35 + p.tactics / 40.0:
@@ -1612,8 +1637,43 @@ func _coach_line(id: String, info: Dictionary) -> Dictionary:
 		var others := shouts.keys().filter(func(k): return k != right)
 		if not others.is_empty():
 			pick = others[_coach_rng.randi_range(0, others.size() - 1)]
+	# No advice that contradicts what he just said, unless the race has changed (playtest fix 4): the shout is dropped.
+	var dir := str(Data.race_cards.coach.get("dir", {}).get(id, {}).get(pick, ""))
+	if coach_conflicts(dir):
+		return {}
+	coach_note(dir)
 	var wording: String = Coaches.shout(coach_id, id, pick, String(shouts[pick]))   # (his own words, R4)
 	return {"option": pick, "text": wording.format({"name": _surname(str(info.get("name", "")))})}
+
+
+## What the coach advised lately: [{t, dir (push / ease), pos, gap}], newest last (the card shouts and, through
+## coach_note, the commentary's coach lines). Display only: nothing in the race depends on it.
+var coach_dir_log: Array = []
+
+
+func coach_note(dir: String) -> void:
+	if dir == "" or player == null:
+		return
+	coach_dir_log.append({"t": time, "dir": dir, "pos": position_of(player), "gap": _gap_to_leader()})
+
+
+## Would advice in direction `dir` (push / ease) contradict the coach's last advice, said within controls.coach.conflict_s
+## seconds, with the race much the same since (the gap to the leader and the player's place have hardly changed)?
+func coach_conflicts(dir: String) -> bool:
+	if dir == "" or coach_dir_log.is_empty() or player == null:
+		return false
+	var last: Dictionary = coach_dir_log[-1]
+	var c: Dictionary = _ctl.coach
+	if last.dir == dir or time - float(last.t) > float(c.conflict_s):
+		return false
+	if absf(_gap_to_leader() - float(last.gap)) >= float(c.changed_gap_m) or absi(position_of(player) - int(last.pos)) >= int(c.changed_places):
+		return false
+	return true
+
+
+func _gap_to_leader() -> float:
+	var order := standings()
+	return maxf(0.0, order[0].d - player.d) if not order.is_empty() else 0.0
 
 
 ## Has something happened since event number `from` that the race screen slows down for (a move, kick, contact,

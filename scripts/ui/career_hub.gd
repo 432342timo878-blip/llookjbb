@@ -540,7 +540,7 @@ func _on_event_answer(event_id: String, choice: String) -> void:
 
 func _show(view: String) -> void:
 	_view = view
-	_tabs[view].button_pressed = true
+	_tabs[view if _tabs.has(view) else "overview"].button_pressed = true   # ("progress" is a page of the Overview tab)
 	# PC with the side panel open: pages with wide rows (Training) build their stacked, phone-like layout.
 	Layout.side_open = not Layout.compact and _side_is_open()
 	_built_side_open = Layout.side_open
@@ -553,6 +553,10 @@ func _show(view: String) -> void:
 		"calendar": _build_calendar()
 		"rankings": _build_rankings()
 		"report": _content.add_child(ReportView.new())
+		"progress":
+			var page := ProgressView.new()
+			page.back_pressed.connect(func(): _show("overview"))
+			_content.add_child(page)
 	# The header "?" belongs to what is shown now; help opened with it follows to the new tab / page.
 	var help_id := _help_entry()
 	_help_button.entry_id = help_id
@@ -680,6 +684,11 @@ func _build_profile(a: Athlete) -> void:
 			var line := "%d.%d. %s%s: %s" % [int(r.date.day), int(r.date.month), r.meet, where,
 					Race.result_text(r, " ")]
 			body.add_child(UIKit.wrapped(line + (" PB" if r.pb else ""), "MutedLabel"))
+	body.add_child(UIKit.label(" "))
+	var progress_button := UIKit.button("Progress by month", false, 200)
+	progress_button.custom_minimum_size.y = 44
+	progress_button.pressed.connect(func(): _show("progress"))   # the monthly record of attributes and times (ProgressLog)
+	body.add_child(progress_button)
 	columns.add_child(_column_panel(body))
 	if Layout.compact:   # the body and results first, then the attributes
 		for p in attribute_panels:
@@ -994,21 +1003,29 @@ func _build_rankings() -> void:
 	var event_name: String = Data.get_event(a.main_event).name
 	_content.add_child(UIKit.label("%s %s · season %s" % [
 			Calendar.age_class(a, Game.date.year), event_name, Rankings.season_label(season)], "HeadingLabel"))
+	# One line on what this list is (playtest fix 9); more in the help (data/help.json, "rankings").
 	_content.add_child(UIKit.wrapped(
-			"Season bests of the calendar year, indoor and outdoor together. Rivals race on their own too, so the list "
-			+ "fills up as the season goes on."))
+			"Everyone's best %s time this year in your age class, rivals included. Rivals race on their own too, so the "
+			% event_name + "list fills up as the season goes on."))
 
 	var rows := Rankings.season_list(a, Game.rivals, season)
-	var box := UIKit.vbox(6)
 	var mine := 0
 	for r in rows:
 		if r.is_player:
 			mine = r.rank
+	# Where you are, in a panel of its own, so you don't have to hunt for your row.
+	var you := UIKit.vbox(4)
+	you.add_child(UIKit.label("YOU", "CaptionLabel"))
 	if mine == 0:
-		box.add_child(UIKit.wrapped("You have no %s time this season yet. Enter a race in the Calendar." % event_name))
+		you.add_child(UIKit.wrapped("You have no %s time this year yet. Enter a race in the Calendar." % event_name, ""))
 	else:
-		box.add_child(UIKit.wrapped("You're ranked %d of %d." % [mine, rows.size()]))
-	box.add_child(UIKit.label(" "))
+		var line := "%s of %d · season best %s" % [Race._ordinal(mine), rows.size(), Calendar.format_time(rows[mine - 1].time)]
+		you.add_child(UIKit.label(line, "SubheadingLabel"))
+		if mine > 1:
+			you.add_child(UIKit.wrapped("%.2f s behind %s." % [rows[mine - 1].time - rows[mine - 2].time, Race._ordinal(mine - 1)]))
+	_content.add_child(UIKit.alert_panel(you, Palette.ACCENT, 16))
+
+	var box := UIKit.vbox(6)
 	box.add_child(_ranking_header())
 	for r in rows:
 		if r.rank <= RANKING_TOP or r.is_player:
@@ -1043,8 +1060,9 @@ func _ranking_header() -> HBoxContainer:
 func _ranking_row(r: Dictionary) -> Control:
 	var row := UIKit.hbox(10)
 	row.custom_minimum_size.y = 30
-	var texts := [str(r.rank), r.name, Calendar.format_time(r.time)] if Layout.compact \
-			else [str(r.rank), r.name, r.club, Calendar.format_time(r.time)]
+	var who: String = r.name + ("  (you)" if r.is_player else "")
+	var texts := [str(r.rank), who, Calendar.format_time(r.time)] if Layout.compact \
+			else [str(r.rank), who, r.club, Calendar.format_time(r.time)]
 	var columns := _ranking_columns()
 	for i in columns.size():
 		var l := UIKit.label(texts[i], "" if r.is_player else "MutedLabel")
@@ -1063,7 +1081,9 @@ func _ranking_row(r: Dictionary) -> Control:
 	# Highlight the player's own row.
 	var tint := PanelContainer.new()
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(Palette.ACCENT, 0.12)
+	style.bg_color = Color(Palette.ACCENT, 0.28)   # (clearly visible in the list: playtest fix 9)
+	style.border_width_left = 4
+	style.border_color = Palette.ACCENT
 	style.set_corner_radius_all(Palette.RADIUS)
 	style.expand_margin_left = 8     # the tint reaches past the text so columns stay aligned
 	style.expand_margin_right = 8

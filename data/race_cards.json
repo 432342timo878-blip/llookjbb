@@ -35,7 +35,7 @@
    "text": "You're {pos}. When do you go?",
    "options": [
     {"id": "now", "label": "Kick now", "detail": "A long sprint for home. Strong finishers love this."},
-    {"id": "wait", "label": "Wait for the home straight", "detail": "Kick with 100 m to go. Needs a fast finish and a clear path."}
+    {"id": "wait", "label": "Wait, I'll call it", "detail": "Hold your reserve. Nothing starts the kick for you: press Kick now when you want to go, at any distance (inside the last 100 m too)."}
    ]
   },
   "box": {
@@ -129,11 +129,22 @@
  },
  "coach": {
   "label": "COACH",
+  "dir": {
+   "break": {"lead": "push", "shoulder": "", "back": "ease"},
+   "bell": {"push": "push", "hold": "", "ease": "ease"},
+   "fall": {"chase": "push", "steady": "ease"},
+   "kick": {"now": "push", "wait": "ease"},
+   "box": {"wait": "ease", "ease": "ease", "push": "push"},
+   "move": {"go": "push", "wait": "ease", "counter": "push"},
+   "straight": {"wide": "", "inside": ""},
+   "dropped": {"dig": "push", "own": "ease"},
+   "slow": {"lead": "push", "stay": "ease"}
+  },
   "shouts": {
    "break": {"lead": "Go to the front!", "shoulder": "Stay on their shoulder!", "back": "Stay at the back, be patient!"},
    "bell": {"push": "Push now, you've got it!", "hold": "Relax! Hold it!", "ease": "Easy now, save it!"},
    "fall": {"chase": "Up! Get after them!", "steady": "Up, stay calm, finish it!"},
-   "kick": {"now": "Go now, go!", "wait": "Wait! Wait for the straight!"},
+   "kick": {"now": "Go now, go!", "wait": "Wait! Wait for it!"},
    "box": {"wait": "Be patient, a gap will come!", "ease": "Ease, step out!", "push": "Go through, go!"},
    "move": {"go": "Go with {name}!", "wait": "Let {name} go, stay patient!", "counter": "Go past {name}, now!"},
    "straight": {"wide": "Go wide, go round!", "inside": "Stay inside, wait for the gap!"},

@@ -54,6 +54,7 @@
    "via_place": "You're through to the {round} on place (Q).", "via_time": "You're through to the {round} on time (q): one of the fastest of the rest.",
    "via_other": "You're through to the {round}!"},
   "texts": {
+   "mark_legend": "PB = personal best · SB = best of this year (for you and the others)",
    "round_head": "PLACES",
    "sections_rule": "Section {section} of {sections}. Places and medals go by time across all sections; the fastest runners are in the last section.",
    "sections_need": "A medal will probably need about {medal}, the top 8 about {top8} (season bests and the sections already run).",
@@ -87,6 +88,8 @@
   "start_cost": 1.5,
   "_drain": "Reserve used per second above cs: (speed - cs) x (speed / the runner's even speed)^drain_power (R2). 0 = plain linear (R1). Even pace costs the same either way; above it the reserve goes faster, below it slower.",
   "drain_power": 5.0,
+  "_form_sd": "Race-day form (ability points, sd): (base + (20 - consistency) / 20 x per_inconsistency) x scale. scale 0.75 since the playtest fix of 2026-10-10 (a 14-year-old with consistency 5.5 swung about 4 s from race to race, with 15+ s jumps; now about 3 s). Everyone's form uses it, rivals too.",
+  "form_sd": {"base": 0.25, "per_inconsistency": 0.6, "scale": 0.75},
   "reserve_share": {"base": 0.18, "per_anaerobic": 0.006, "min": 0.13, "max": 0.23},
   "recover": 0.25,
   "accel": {"start": 4.0, "start_until": 30.0, "up": 1.2, "down": 1.5},
@@ -157,6 +160,12 @@
  },
  "controls": {
   "_note": "The player's controls in a watched race (GDD 4.3.1 'Player controls', step R3). Card texts and the coach's shouts: data/race_cards.json.",
+  "kick_plans": {
+   "_note": "The kick plan of a Quick result (playtest fix 2, 2026-10-10): metres to go at which the athlete kicks; 0 = their natural point. Watched races have no plan: the player presses Kick now.",
+   "title": "KICK PLAN (QUICK RESULT)",
+   "hint": "Quick result only: where your athlete starts the kick. A kick earlier than your body suits dies before the line. When you watch the race, you press Kick now yourself.",
+   "options": [[0, "Natural: where your body suits"], [300, "300 m to go (a long kick)"], [250, "250 m to go"], [200, "200 m to go"], [150, "150 m to go"], [100, "100 m to go (the home straight)"], [60, "60 m to go (a late kick)"]]
+  },
   "cards": {
    "_note": "Event-driven pause cards. The real limit is that a card needs a real moment and comes at least min_gap_s race seconds after the last one (a race of ~2 minutes holds about 5-8); `max` is only a safety valve against pause fatigue (user 2026-10-08: a race that demands more should get more). At most `max` per race. `always` cards (break, bell, 200 m to go) are asked once each and keep their place in the budget; the others only while shown + always-cards-still-to-come < max, at least min_gap_s race seconds after the last card (no_gap kinds ignore that), at most max_per_race times, and (only_below) while fewer than N cards were shown, so the low-priority ones leave room for the important ones. priority = most important first when two want the same moment. bell_at (metres run; the 200 m card comes when the player reaches their own kick point instead of the kick starting by itself), straight_from + straight_gap: the home straight card needs a runner within that many metres ahead. box_after_s: a box must last that long before it is a card; box_move_m: a rival's move or kick from this far behind to this far ahead of the player counts as 'a move goes'. dropped: the gap to the runner ahead (m) and how long (s) before 'losing contact' is asked, not in the last min_to_go metres. slow: leader slower than pace_max x the field's even speed, between from and to metres run, player in the first max_place places and within group_m of the leader.",
    "max": 10, "min_gap_s": 8.0, "no_gap": ["fall"],
@@ -207,7 +216,9 @@
   },
   "coach": {
    "_note": "The coach by the track (a stand-in until R4 gives him a spot): outdoors he stands spot_outdoor metres round the lap and sees the player within view_m along the track; indoors he sees the whole track. He shouts the sensible answer with chance accuracy, otherwise another one. Shouts: data/race_cards.json.",
-   "spot_outdoor": 200.0, "view_m": 110.0, "accuracy": 0.8
+   "spot_outdoor": 200.0, "view_m": 110.0, "accuracy": 0.8,
+   "_conflict": "No opposite advice soon after one another (playtest fix 4, 2026-10-10): every shout and line has a direction, push or ease (data/race_cards.json coach.dir for the card shouts, race_commentary.json rules.coach_dir and the coach's own `dirs` for his lines). A shout opposite to the coach's last one within conflict_s seconds is not said, unless the race changed in between: the gap to the leader by changed_gap_m metres or the player's place by changed_places.",
+   "conflict_s": 20.0, "changed_gap_m": 8.0, "changed_places": 2
   }
  },
  "shapes": {

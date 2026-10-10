@@ -14,6 +14,7 @@ const FEELING_COLORS := [Palette.RISK_LOW, Palette.TEXT, Palette.SORE_2, Palette
 var _rd: RaceDay
 var _race: Race
 var _plan := "pack"
+var _kick_plan := 0.0      # a Quick result: metres to go at which the athlete kicks (0 = natural), races.json controls.kick_plans
 var _speed := 4.0
 var _acc := 0.0
 var _running := false
@@ -357,6 +358,19 @@ func _show_pre() -> void:
 		card.selected = p[0] == _plan
 		card.button.pressed.connect(func(): _plan = p[0])
 		side.add_child(card)
+	# The kick plan of a Quick result (playtest fix 2): where the athlete starts the kick when you don't watch.
+	var kp: Dictionary = Data.races.controls.kick_plans
+	side.add_child(UIKit.label(kp.title, "CaptionLabel"))
+	var kick_pick := OptionButton.new()
+	kick_pick.custom_minimum_size.y = 44
+	kick_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for i in kp.options.size():
+		kick_pick.add_item(str(kp.options[i][1]), i)
+		if float(kp.options[i][0]) == _kick_plan:
+			kick_pick.select(i)
+	kick_pick.item_selected.connect(func(i): _kick_plan = float(kp.options[i][0]))
+	side.add_child(kick_pick)
+	side.add_child(UIKit.wrapped(kp.hint, "MutedLabel"))
 	var buttons := UIKit.hbox(8)
 	var quick := UIKit.button("Quick result", false, 160)
 	quick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -484,7 +498,9 @@ func _round_short(t: Dictionary) -> String:
 
 func _start(interactive: bool) -> void:
 	_comm = null   # (a quick race has no broadcast; the Race story still tells it)
+	_rd.kick_plan = _kick_plan
 	_race = _rd.start_round(interactive, _plan)
+	_race.manual_kick = interactive   # watched: waiting means you press Kick now (no kick starts by itself)
 	if not interactive:
 		_race.run()
 		_show_result()
@@ -739,9 +755,14 @@ func _update_slow_note() -> void:
 		_slow_note.visible = true
 		_slow_note.text = "PAUSED" if Layout.compact else "PAUSED · SPACE TO RESUME"
 		return
-	_slow_note.visible = _slow_left > 0.0 and _speed > 1.0 and not _race.finished
+	var p := _race.player
+	var waiting: bool = p != null and p.kick_hold and not p.kicking and not p.done
+	_slow_note.visible = (_slow_left > 0.0 and _speed > 1.0 and not _race.finished) or (waiting and not _race.finished)
 	var head := "SLOWED TO 1x" if not Layout.compact else "SLOWED"   # (a phone has less room beside the Feeling word)
-	_slow_note.text = head + " · " + _slow_reason.to_upper() if _slow_reason != "" else head
+	if _slow_left > 0.0 and _speed > 1.0:
+		_slow_note.text = head + " · " + _slow_reason.to_upper() if _slow_reason != "" else head
+	else:
+		_slow_note.text = "YOUR CALL: KICK NOW" if Layout.compact else "YOUR CALL: PRESS KICK NOW"   # waiting for the kick (nothing starts it for you)
 
 
 ## The lines said since the last frame go to the box (PC) or the ticker (phone); a key moment also to the banner (PC).
@@ -873,11 +894,11 @@ func _show_result(fresh := true) -> void:
 	_drop_decision()
 	if fresh:
 		var res := _race.results()
-		var old_pb: float = Game.athlete.personal_bests.get(Game.athlete.main_event, 0.0)
 		var kind: String = _rd.rounds[_rd.round_index]   # race / sections / heat / semi / final
 		var group := _rd.player_heat
 		var pre_rank := _rd.pre_race_rank()   # (before the round is over: the seeding picture, decision 47)
 		_rd.finish_round()
+		res = _rd.last_rows   # (the same rows, with the PB / SB marks of everyone)
 		var mine: Dictionary = {}
 		for r in res:
 			if r.is_player:
@@ -891,16 +912,13 @@ func _show_result(fresh := true) -> void:
 					at = i + 1
 			headline = _text("sections_headline", {"place": Race._ordinal(at), "field": _rd.overall.size(),
 					"time": Calendar.format_time(mine.time), "section_place": Race._ordinal(place), "section": group + 1})
-		var best_so_far := old_pb
-		for r in _rd.player_results.slice(0, -1):
-			if r.get("status", "") == "" and (best_so_far == 0.0 or r.time < best_so_far):
-				best_so_far = r.time
 		match mine.status:
 			"dnf": headline = "Did not finish"
 			"dq": headline = "Disqualified (obstruction)"
 			_:
-				if best_so_far == 0.0 or mine.time < best_so_far:
-					headline += "  ·  Personal best!"
+				match str(mine.get("mark", "")):   # (the same marks as in every list: RaceDay._mark_rows)
+					"PB": headline += "  ·  Personal best!"
+					"SB": headline += "  ·  Season best!"
 		# After heats / semis: every group's result with the marks of a real result list (Q = through on place, q = on
 		# time), the player's first. After sections: everyone by time across the sections (the official result), then
 		# your section. Otherwise just this race.
@@ -932,8 +950,10 @@ func _show_result(fresh := true) -> void:
 			for i in _rd.overall.size():
 				if _rd.overall[i].is_player:
 					overall_place = i + 1
+		var own_run: Dictionary = _rd.player_results[-1] if not _rd.player_results.is_empty() else {}
 		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete, "kind": kind,
-				"overall_place": overall_place, "pre_rank": pre_rank})
+				"overall_place": overall_place, "pre_rank": pre_rank, "mark": str(own_run.get("mark", "")),
+				"time": float(own_run.get("time", 0.0)), "ref": float(own_run.get("ref", 0.0))})
 		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks, "story": story,
 				"via": marks.get(mine.name, ""), "next": _rd.rounds[_rd.round_index] if not _rd.is_done() else "",
 				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": kind in ["heat", "semi"]}
@@ -943,6 +963,12 @@ func _show_result(fresh := true) -> void:
 	var marks_text: Dictionary = Data.races.rounds.marks
 	if not _result.marks.is_empty():
 		col.add_child(UIKit.wrapped(marks_text.legend))
+	var any_mark := false
+	for list in _result.lists:
+		for r in list.res:
+			any_mark = any_mark or str(r.get("mark", "")) != ""
+	if any_mark:
+		col.add_child(UIKit.wrapped(_text("mark_legend")))
 
 	var tables := UIKit.vbox(10)
 	tables.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1006,7 +1032,9 @@ func _results_grid(res: Array, marks: Dictionary, notes := {}) -> GridContainer:
 		var r: Dictionary = res[i]
 		var no_time: bool = r.get("status", "") != ""
 		var note: String = notes.get(r.name, "")
-		var cells := ["–" if no_time else str(i + 1), r.name, Race.time_text(r), note if note != "" else marks.get(r.name, "")]
+		# The last column: the Q / q mark of heats, then PB / SB (a real result list's marks), or the section note.
+		var tail := " ".join([str(marks.get(r.name, "")), str(r.get("mark", ""))].filter(func(m): return m != ""))
+		var cells := ["–" if no_time else str(i + 1), r.name, Race.time_text(r), note if note != "" else tail]
 		if not Layout.compact:
 			cells.insert(2, r.club)
 		for c in cells.size():
@@ -1016,10 +1044,10 @@ func _results_grid(res: Array, marks: Dictionary, notes := {}) -> GridContainer:
 			if c == 1:   # the name column takes the room
 				l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				l.clip_text = true
-			if r.is_player:
+			if last and cells[c] != "" and note == "":
+				l.add_theme_color_override("font_color", Palette.RISK_LOW)   # (marks are green, also on your own row)
+			elif r.is_player:
 				l.add_theme_color_override("font_color", Palette.ACCENT)
-			elif last and cells[c] != "" and note == "":
-				l.add_theme_color_override("font_color", Palette.RISK_LOW)
 			grid.add_child(l)
 	return grid
 

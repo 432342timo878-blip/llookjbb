@@ -75,8 +75,8 @@ func _run() -> void:
 	hub._refresh_week_ui()
 
 	# The hub: each tab, and the Training tab's three pages.
-	for v in [["overview", "overview"], ["calendar", "calendar"], ["rankings", "rankings"], ["report", "report"],
-			["training", "training_season"]]:
+	for v in [["overview", "overview"], ["progress", "progress"], ["calendar", "calendar"], ["rankings", "rankings"],
+			["report", "report"], ["training", "training_season"]]:
 		hub._show(v[0])
 		await _frames(3)
 		await _press_help(hub, "hub " + v[0], v[1], true)

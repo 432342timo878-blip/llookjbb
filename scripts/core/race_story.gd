@@ -39,7 +39,8 @@ static func build(race: Race, ctx := {}) -> Dictionary:
 		out.splits.append({"label": cfg.marks[str(m)], "you": _mark_text(p, m), "winner": _mark_text(other, m)})
 	out.splits.append({"label": cfg.marks["800"], "you": _finish_text(p), "winner": _finish_text(other)})
 	out.moments = _moments(race, ctx.get("commentary", null), cfg)
-	var case_id := verdict_case(race, place, {"kind": kind, "overall": overall, "pre_rank": int(ctx.get("pre_rank", -1))})
+	var case_id := verdict_case(race, place, {"kind": kind, "overall": overall, "pre_rank": int(ctx.get("pre_rank", -1)),
+			"mark": str(ctx.get("mark", "")), "time": float(ctx.get("time", 0.0)), "ref": float(ctx.get("ref", 0.0))})
 	var coach_id: String = str(ctx.get("coach_id", race.coach_id))
 	if coach_id == "":
 		coach_id = Coaches.id_of(ctx.get("athlete", null))
@@ -66,8 +67,9 @@ static func _finish_text(r: Race.Runner) -> String:
 	return Calendar.format_time(snappedf(r.t, 0.01))
 
 
-## The case the coach talks about: the first that fits (dnf, dq, fell, won / won_part, kick_died, boxed, faded / too_fast,
-## good_kick, podium, better, as_expected, below).
+## The case the coach talks about: the first that fits (dnf, dq, fell, won / won_part, pb, kick_died / kick_died_late, boxed,
+## faded / too_fast, good_kick, podium, better, sb, as_expected, below). `opts` also: mark ("PB" / "SB" / ""), time (the run's
+## time) and ref (their season best, else PB, going in; 0 = none) for the rule of fix 5: see the comments below.
 ## `place` = the place in this race (a section or heat for those rounds). `opts` (decisions 43, 47): kind (race / sections /
 ## heat / semi / final), overall (sections: the overall place, 0 = unknown), pre_rank (the rank by seeding before the race
 ## among the same field, 0 = no mark, -1 = not given: then the day's ability is compared, for the tools). In sections the
@@ -93,17 +95,28 @@ static func verdict_case(race: Race, place: int, opts := {}) -> String:
 		return "won"
 	if grouped and place == 1:
 		return "won_part"
+	# The athlete's own level counts, not only the place (playtest fix 5, 2026-10-10): a personal best against an earlier mark
+	# beats every negative case below; a season best can never be "below"; a time near their own best is "as expected".
+	var rules: Dictionary = Data.race_commentary.story
+	var mark := str(opts.get("mark", ""))
+	var ref := float(opts.get("ref", 0.0))
+	var run_time := float(opts.get("time", 0.0))
+	if mark == "PB" and ref > 0.0:
+		return "pb"
+	var vs_ref := (run_time / ref - 1.0) * 100.0 if ref > 0.0 and run_time > 0.0 else INF   # % slower (+) or faster (-) than their own best
 	var kick_died := false
+	var kick_late := false
 	var boxed_long := false
 	for ev in race.events:
 		if not bool(ev.get("player", false)):
 			continue
 		if ev.type == "kick_dying":
 			kick_died = true
+			kick_late = float(ev.get("began", 999.0)) <= float(rules.late_kick_to_go)   # (the kick began in the home straight: not "too early")
 		elif ev.type == "escape" and (float(ev.get("seconds", 0.0)) >= 2.0 or float(ev.get("lost", 0.0)) >= 3.0):
 			boxed_long = true
 	if kick_died:
-		return "kick_died"
+		return "kick_died_late" if kick_late else "kick_died"
 	if boxed_long:
 		return "boxed"
 	var pos200: int = int(p.marks[200].pos) if p.marks.has(200) else place
@@ -129,12 +142,20 @@ static func verdict_case(race: Race, place: int, opts := {}) -> String:
 			if r != p and r.ability > p.ability:
 				stronger += 1
 		diff = (stronger + 1) - place
-	var band := int(Data.race_commentary.story.expected_band)
+	var band := int(rules.expected_band)
+	var case_id := "as_expected"
 	if diff > band:
-		return "better"
-	if diff < -band:
-		return "below"
-	return "as_expected"
+		case_id = "better"
+	elif diff < -band:
+		case_id = "below"
+	# The time against their own best: "below" needs a time clearly slower too, and a time clearly faster is "better".
+	if case_id == "below" and vs_ref < float(rules.below_pct):
+		case_id = "as_expected"
+	if case_id != "better" and vs_ref <= -float(rules.better_pct):
+		case_id = "better"
+	if mark == "SB" and case_id in ["as_expected", "below"]:
+		return "sb"
+	return case_id
 
 
 ## Four to six key moments, in the order they happened: the events with a `story` line in the data, weighted (the player's
