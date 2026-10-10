@@ -77,10 +77,43 @@ recovery rate, injury proneness, maturation timing, ambition.
 1. Identity: gender, first/last name (random Finnish name option), hometown, club (hometown clubs listed first). `data/clubs.json` holds 122 real clubs, sourced from SUL's Tähtiseurat list and Finnish Wikipedia's athletics-club category. The original 11 were confirmed by the user, and Vammalan seudun Voima was added at the user's request. Every club's town is also selectable as a hometown.
 2. Main event (all events shown; only 800 m playable in M1).
 3. Background questions (`data/background_questions.json`): previous sport, who got you into athletics, family background, where you train (saved as `training_base`, e.g. indoor hall vs outdoor-only track, for the training system), physical development (sets maturation: early/average/late), handling pressure, school level. Each answer adjusts visible and hidden attributes. The user asked for a wide range of answers, including weak starting points. Example: "Never really exercised" gives low physical stats but very high trainability.
-4. 12 attribute points, max +3 per attribute.
+4. Attribute points: a pool from the answers (6–16), max +3 per attribute (see "Built (points pool)" below).
 5. Summary → career starts on 2 Nov 2026 (start of the Finnish training year), athlete born Jan–Oct 2012 (age 14).
 
-Starting levels: physical 4–7, technical 3–6, mental 5–9 before background effects; potential 13–18 (hidden).
+Starting levels: physical 3.75–6.75 (4–7 before the points pool), technical 3–6, mental 5–9 before background
+effects; potential 13–18 (hidden).
+
+**Built (points pool), 2026-10-10.** The user's playtest found the fixed 12 points arbitrary and a hidden trap: 12
+points on the four key 800 m attributes gave a typical boy ~2:26, the same 12 on mental attributes ~2:37 (the user's
+own choice: last in 12 of 18 races that season), while the whole story and the random rolls moved the time only
+±5 s; some stories were better in every way and hidden talent bonuses were nearly free. Decisions (user, option B
+"experience vs growth"):
+- **Pool = 6 + experience**, 6–16 (medium freedom), max +3 per attribute, the same for boys and girls. Every answer
+  has an `experience` value (0–3: years of organised training behind it; previous sport 0–3, family 0–2, where you
+  train 0–3, who got you into athletics 0–1, pressure 0–1, development / school 0).
+- **Experience costs growth (user: a strong start costs trainability):** trainability moves by (5 − experience) × 0.7
+  (beginner +3.5, fully trained −3.5), and every physical attribute by (experience − 5) × 0.12 (years of training show
+  in the body). A beginner starts weaker and grows faster; whether the trade is fair over 3–5 years is measured in step 7.
+- **No free answers:** every answer's visible effects are a profile (strengths paid by weaknesses, net ≈ +1.5, a few
+  weak-start answers below zero); trainability bonuses moved into experience; hidden talent hints trimmed to ±0.5–1
+  (max 20 even for the best story). Rules and numbers in `data/background_questions.json` (`pool`, `estimate`).
+- **What the screens show (user: estimate + breakdown):** the Attributes step lists where the pool comes from
+  ("Everyone 6 · Athletics school +3 · …"), a live **coach's guess** of the 800 m time with where it sits among the
+  rivals of the same age (percentile of the rival pool at the start: five bands of text), up to three **dots** per
+  attribute for how much it counts for the 800 m time (races.json `ability_weights`; the tap text says it too),
+  **Let the coach spread them** (`AthleteFactory.coach_spread`: highest 800 m weight first, +3 each) and **Clear**. A
+  changed story resets the spent points. The summary shows the guess, a sentence on what the experience means for
+  growth, and *where it came from*: your story / your training years / your points (and unspent points).
+- **Where athletes start (user: Claude's pick, the middle of the rival pool):** `tools/start_spread.gd` (500 random
+  athletes + three fixed stories, 200 rolls each): with the coach's spread the median is at the 51st percentile of
+  the rival pool (boys 2:29.8, girls 2:44.7; before: 61st, 2:26.7 / 2:41.9), a beginner story (pool 6) at the 21st
+  (2:40.8), an average one (pool 12) at the 55th (2:28.6), a fully trained one (pool 16) at the 72nd (2:23.4).
+  Points spent on mental attributes leave a player around the 23rd percentile, as before: the dots and the guess
+  now say so.
+- `AthleteFactory`: `create` (before the pool is spent), `experience / pool_for / pool_parts / cap / experience_shift /
+  background_effects / coach_spread / spend / weight_tier / experience_note / estimate`. Old saves are untouched (the
+  pool only exists in the wizard). The balance tools' random athletes still don't spend any points: step 7 must spend
+  them with `coach_spread`.
 
 ### 4.2 Training & progression (first version built)
 

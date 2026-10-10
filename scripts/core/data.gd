@@ -7,6 +7,8 @@ var attributes: Array = []             # data/attributes.json
 var clubs: Array = []                  # data/clubs.json
 var hometowns: Array = []              # data/hometowns.json
 var background_questions: Array = []   # data/background_questions.json
+var background_pool: Dictionary = {}    # its "pool": the points pool rules (GDD 4.1.1)
+var background_estimate: Dictionary = {}   # its "estimate": the coach's guess texts
 var names: Dictionary = {}             # data/names_fi.json
 var training: Dictionary = {}          # data/training.json: sessions, season rules, coach plan
 var competitions: Dictionary = {}      # data/competitions.json: meets, standards, race training effect
@@ -31,7 +33,10 @@ func _ready() -> void:
 		if not club.city in hometowns:
 			hometowns.append(club.city)
 	hometowns.sort()
-	background_questions = _load("res://data/background_questions.json").get("questions", [])
+	var background: Dictionary = _load("res://data/background_questions.json")
+	background_questions = background.get("questions", [])
+	background_pool = background.get("pool", {})
+	background_estimate = background.get("estimate", {})
 	names = _load("res://data/names_fi.json")
 	training = _load("res://data/training.json")
 	competitions = _load("res://data/competitions.json")
@@ -60,6 +65,10 @@ func get_session(id: String) -> Dictionary:
 
 func get_injury(id: String) -> Dictionary:
 	return _find(injuries, id)
+
+
+func get_attribute(id: String) -> Dictionary:
+	return _find(attributes, id)
 
 
 ## Attribute definitions of one category ("physical", "technical", "mental", "hidden").

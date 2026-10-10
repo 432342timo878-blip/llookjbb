@@ -831,6 +831,25 @@ func _help_views(main: Node, game, tag: String) -> void:
 	await _frames(6)
 	await _shot("%s_help_new_career" % tag)
 	_check_overflow(wizard, "%s help_new_career" % tag)
+	_close_help_overlays(main)
+	await _frames(3)
+	# The points pool (GDD 4.1.1 "Built (points pool)"): the Attributes step with the coach's spread, then the summary.
+	for q in main.get_node("/root/Data").background_questions:
+		wizard._choices.answers[q.id] = 0
+	wizard._choices.first_name = "Aino"
+	wizard._choices.last_name = "Virtanen"
+	wizard._step = 3
+	wizard._show_step()
+	await _frames(4)
+	wizard._points = load("res://scripts/core/athlete_factory.gd").coach_spread(wizard._base, wizard._pool())
+	wizard._show_step()
+	await _frames(6)
+	await _shot("%s_wizard_points" % tag)
+	_check_overflow(wizard, "%s wizard_points" % tag)
+	wizard._on_next()
+	await _frames(6)
+	await _shot("%s_wizard_summary" % tag)
+	_check_overflow(wizard, "%s wizard_summary" % tag)
 	router.go("career_hub")
 	await _frames(6)
 

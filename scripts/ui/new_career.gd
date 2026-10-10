@@ -13,6 +13,7 @@ var _choices := {
 	"hometown": "Helsinki", "club_id": "", "main_event": "800m", "answers": {},
 }
 var _points := {}           # attribute id -> points added in the Attributes step
+var _points_answers := {}   # the answers the points were spent with (a changed story resets them)
 var _seed := randi()        # fixed per wizard so the base athlete doesn't re-roll
 var _base: Athlete          # athlete before points are added
 
@@ -293,14 +294,65 @@ func _build_background() -> void:
 
 func _build_attributes() -> void:
 	_base = _create_base_athlete()
-	_content.add_child(UIKit.label("Fine-tune your attributes", "HeadingLabel"))
+	if _points_answers != _choices.answers:   # the story changed since the points were spent: the pool may differ
+		_points = {}
+		_points_answers = _choices.answers.duplicate()
+	var texts: Dictionary = Data.background_estimate
+	_content.add_child(UIKit.label("Spend your points", "HeadingLabel"))
 	_content.add_child(UIKit.wrapped(
-			"Spend %d points to shape your athlete (max +%d per attribute). Attributes are on a 1–20 scale; a 20 is world class. Tap an attribute to see what it does."
-			% [AthleteFactory.POINT_POOL, AthleteFactory.MAX_POINTS_PER_ATTRIBUTE]))
+			"Your story gives you %d points (max +%d per attribute). Attributes are on a 1–20 scale; a 20 is world class. Tap an attribute to see what it does."
+			% [_pool(), AthleteFactory.cap()]))
+
+	# Where the pool comes from + what experience means.
+	var pool_box := UIKit.vbox(6)
+	pool_box.add_child(UIKit.label("YOUR POINTS", "CaptionLabel"))
+	var parts := []
+	for p in AthleteFactory.pool_parts(_choices.answers):
+		parts.append("%s %d" % [p[0], p[1]] if parts.is_empty() else "%s +%d" % [p[0], p[1]])
+	var sum: String = " · ".join(parts) + " = %d" % _pool() if parts.size() > 1 else parts[0] + " (nothing in your story adds more)"
+	pool_box.add_child(UIKit.wrapped(sum, ""))
+	pool_box.add_child(UIKit.wrapped(str(texts.get("pool_text", ""))))
+	_content.add_child(UIKit.panel(pool_box, 16))
+
+	# The coach's guess, updated with every point.
+	var guess_box := UIKit.vbox(4)
+	var guess_line := UIKit.wrapped("", "SubheadingLabel")
+	var guess_band := UIKit.wrapped("")
+	guess_box.add_child(guess_line)
+	guess_box.add_child(guess_band)
+	_content.add_child(UIKit.panel(guess_box, 16))
+
+	var buttons := UIKit.hbox(12)
+	var coach := UIKit.button("Let the coach spread them", false, 0 if Layout.compact else 260)
+	var clear := UIKit.button("Clear", false, 0 if Layout.compact else 140)
+	for b in [coach, clear]:
+		b.custom_minimum_size.y = 44
+		if Layout.compact:
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		buttons.add_child(b)
+	_content.add_child(buttons)
+	_content.add_child(UIKit.wrapped(str(texts.get("weight_legend", ""))))
+
 	var columns := UIKit.flex(16)
 	var refresh := []   # callables that update the value labels
 	var update_left := func():
-		_status_label.text = "Points left: %d" % _points_left()
+		_status_label.text = "Points left: %d of %d" % [_points_left(), _pool()]
+		var est := AthleteFactory.estimate(_build_athlete())
+		guess_line.text = est.line
+		guess_band.text = est.band
+	var redraw := func():
+		for f in refresh:
+			f.call()
+		update_left.call()
+	coach.pressed.connect(func():
+		_points = AthleteFactory.coach_spread(_base, _pool())
+		redraw.call())
+	clear.pressed.connect(func():
+		_points = {}
+		redraw.call())
+	# PC: two columns (physical | technical + mental), since three rows of +/- buttons don't fit the page width.
+	var right := UIKit.vbox(16)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for category in ATTRIBUTE_CATEGORIES:
 		var col := UIKit.vbox(2 if Layout.compact else 6)
 		col.add_child(UIKit.label(category.to_upper(), "CaptionLabel"))
@@ -309,7 +361,14 @@ func _build_attributes() -> void:
 		var p := UIKit.panel(col, 16)
 		p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		p.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		columns.add_child(p)
+		if Layout.compact or category == "physical":
+			columns.add_child(p)
+		else:
+			right.add_child(p)
+	if not Layout.compact:
+		columns.add_child(right)
+	else:
+		right.free()
 	_content.add_child(columns)
 	update_left.call()
 
@@ -320,6 +379,8 @@ func _point_row(attr: Dictionary, refresh: Array, update_left: Callable) -> Cont
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_label)
+	var tier := AthleteFactory.weight_tier(attr.id)
+	row.add_child(_weight_dots(tier[0]))
 	var bonus := UIKit.label("", "MutedLabel")
 	bonus.custom_minimum_size.x = 26
 	row.add_child(bonus)
@@ -337,18 +398,31 @@ func _point_row(attr: Dictionary, refresh: Array, update_left: Callable) -> Cont
 		value.add_theme_color_override("font_color", UIKit.attr_color(total))
 		bonus.text = "+%d" % added if added > 0 else ""
 		minus.disabled = added == 0
-		plus.disabled = added >= AthleteFactory.MAX_POINTS_PER_ATTRIBUTE or _points_left() == 0 \
+		plus.disabled = added >= AthleteFactory.cap() or _points_left() <= 0 \
 				or _base.get_attr(attr.id) + added >= Athlete.MAX_VALUE
 	refresh.append(update)
 	var change := func(delta: int):
 		_points[attr.id] = _points.get(attr.id, 0) + delta
+		if _points[attr.id] <= 0:
+			_points.erase(attr.id)
 		for f in refresh:
 			f.call()
 		update_left.call()
 	minus.pressed.connect(change.bind(-1))
 	plus.pressed.connect(change.bind(1))
 	update.call()
-	return UIKit.tap_to_explain(row, attr.description)   # tap the row to read what the attribute does
+	# Tap the row to read what the attribute does and how much it counts for the 800 m.
+	return UIKit.tap_to_explain(row, "%s %s" % [attr.description, tier[1]])
+
+
+## Up to three dots: how much the attribute counts for the 800 m time (empty dots for the rest).
+func _weight_dots(n: int) -> Control:
+	var box := UIKit.hbox(3)
+	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for i in 3:
+		box.add_child(UIKit.dot(Palette.ACCENT if i < n else Palette.SURFACE_3, 7.0))
+	return box
 
 
 ## +/- button: 44x44 so it is easy to hit with a thumb.
@@ -363,7 +437,11 @@ func _points_left() -> int:
 	var used := 0
 	for id in _points:
 		used += _points[id]
-	return AthleteFactory.POINT_POOL - used
+	return _pool() - used
+
+
+func _pool() -> int:
+	return AthleteFactory.pool_for(_choices.answers)
 
 
 # --- Step 5: summary ------------------------------------------------------------------
@@ -389,6 +467,28 @@ func _build_summary() -> void:
 		grid.add_child(UIKit.label(f[1]))
 	_content.add_child(UIKit.panel(grid))
 
+	# The coach's guess and where the attributes came from (the story vs the points).
+	var est := AthleteFactory.estimate(a)
+	var guess := UIKit.vbox(4)
+	guess.add_child(UIKit.wrapped(est.line, "SubheadingLabel"))
+	guess.add_child(UIKit.wrapped(est.band))
+	var note := AthleteFactory.experience_note(_choices.answers)
+	if note != "":
+		guess.add_child(UIKit.wrapped(note))
+	_content.add_child(UIKit.panel(guess, 16))
+	var origin := UIKit.vbox(6)
+	origin.add_child(UIKit.label("WHERE IT CAME FROM", "CaptionLabel"))
+	if _points_left() > 0:
+		var unspent := UIKit.wrapped("%d of your points are not spent: go Back to spend them." % _points_left(), "")
+		unspent.add_theme_color_override("font_color", Palette.ACCENT)
+		origin.add_child(unspent)
+	origin.add_child(UIKit.wrapped("Your story: " + _changes_text(AthleteFactory.background_effects(_choices.answers)), ""))
+	var shift := AthleteFactory.experience_shift(_choices.answers)
+	if absf(shift) >= 0.05:
+		origin.add_child(UIKit.wrapped("Your training years: every physical attribute %s%.1f" % ["+" if shift > 0 else "−", absf(shift)], ""))
+	origin.add_child(UIKit.wrapped("Your points: " + _changes_text(_points), ""))
+	_content.add_child(UIKit.panel(origin, 16))
+
 	var columns := UIKit.flex(16)
 	for category in ATTRIBUTE_CATEGORIES:
 		var col := UIKit.vbox(2)
@@ -402,6 +502,20 @@ func _build_summary() -> void:
 	_content.add_child(columns)
 
 
+## "Speed endurance +3, Aerobic capacity +1.5, Speed −1" (biggest first), or "none".
+func _changes_text(changes: Dictionary) -> String:
+	var ids := changes.keys().filter(func(id): return absf(float(changes[id])) >= 0.05)
+	if ids.is_empty():
+		return "none"
+	ids.sort_custom(func(x, y): return float(changes[x]) > float(changes[y]))
+	var out := []
+	for id in ids:
+		var v := float(changes[id])
+		var num := ("%d" % roundi(absf(v))) if is_equal_approx(v, roundf(v)) else ("%.1f" % absf(v))
+		out.append("%s %s%s" % [UIKit.attr_name(id), "+" if v > 0 else "−", num])
+	return ", ".join(out)
+
+
 # --- Athlete building -------------------------------------------------------------------
 
 func _create_base_athlete() -> Athlete:
@@ -412,8 +526,7 @@ func _create_base_athlete() -> Athlete:
 
 func _build_athlete() -> Athlete:
 	var a := _create_base_athlete()
-	for id in _points:
-		a.set_attr(id, a.get_attr(id) + _points[id])
+	AthleteFactory.spend(a, _points)
 	return a
 
 

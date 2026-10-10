@@ -137,12 +137,13 @@
   },
   "new_career": {
    "title": "New career",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Who you are", "text": "Your name, gender, hometown and club. You start as a 14-year-old in November 2026."},
     {"heading": "Main event", "text": "The event you train for and race. The 800 m is playable now; more events come later."},
-    {"heading": "Background", "text": "Your answers shape your starting abilities: your old sport, your family, where you train, how you grow and how you handle nerves all leave their mark. Where you train also decides whether you have an indoor track in winter."},
-    {"heading": "Attribute points", "text": "Spend 12 points on top of your background, at most +3 on any one ability. Some things about your talent stay hidden and show themselves over the years."}
+    {"heading": "Background", "text": "Your answers shape your starting abilities: every answer has strengths and weaknesses. Where you train also decides whether you have an indoor track in winter."},
+    {"heading": "Your points", "text": "Everyone gets 6 points; every bit of organised training in your story adds more, up to 16. At most +3 on any one ability. More training means a stronger start but slower growth; beginners improve faster."},
+    {"heading": "What counts for the 800 m", "text": "The dots show how much an ability counts for your 800 m time. The coach's guess updates as you spend. Not sure? Let the coach spread them. Some things about your talent stay hidden and show over the years."}
    ]
   },
   "health_event": {

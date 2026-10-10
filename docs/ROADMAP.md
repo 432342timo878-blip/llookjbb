@@ -233,23 +233,45 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       round's size. (3) One "run all checks" script: the quick checks in both layouts, reads stderr for SCRIPT ERROR,
       one honest PASS / FAIL list. (4) A Dev menu in debug builds for the user: watch a test race (indoor / outdoor,
       sections / heats), jump the career forward. Help entries for anything new. *(Sonnet, high)*
-- [ ] **Season playtest by the user:** play one whole season (Nov–Oct) in the real game, PC or phone, notes only (no
-      code); the notes feed the next sessions and step 7.
-- [ ] **Character creation: points pool from the answers** (moved here from the ideas backlog, 2026-10-10: it changes
-      the starting athlete, so it comes before step 7 measures careers). Design + build; `training_balance.gd` before /
-      after. *(Opus for the design, then Sonnet)*
+- [x] **Season playtest by the user (done 2026-10-10):** one whole season played; the notes, sorted, and what the save
+      showed are in `docs/PLAYTESTS.md`. Headline: "very bored, wouldn't return after one season"; last in 12 of 18
+      races; the rivals grew faster than the player.
+- [x] **Character creation: points pool from the answers (built 2026-10-10, GDD 4.1.1 "Built (points pool)"):** pool =
+      6 + the experience behind the answers (6–16), max +3, experience costs trainability; every answer re-priced (no
+      free answers); the coach's guess of the 800 m time, dots for what counts for the 800 m, "Let the coach spread
+      them", the summary's "where it came from". New `tools/start_spread.gd`. *(Opus)*
+- [ ] **Quick fixes from the season playtest (Claude's placement 2026-10-10: before step 7, because the race-time swings
+      and the missing attribute history would spoil step 7's measurements, and the coach / PB fixes touch every race
+      the user plays):** (1) the race-time swings (2:49.80 → 2:28.57 in two weeks, 2:25.71 → 2:45.00 in 17 days): find
+      the cause (quick-sim answers? racing sore or injured? form?) and fix it; (2) the kick: "Wait for the home
+      straight" must not start the kick by itself at 100 m to go, and **Kick now** must work at any distance (user:
+      "I want to decide when I kick"); (3) the coach's "kicked too far out" after a kick at ~100 m; (4) no opposite coach
+      shouts right after each other ("drifting, wake up!" / "your own pace", "move it" / "back off"); (5) verdicts and
+      the Race story count a PB / SB and the time against the athlete's own level, not only the place (a 2 s PB
+      called "not good enough"); (6) PB / SB marks in every result list (yours and the rivals'); (7) a monthly record of
+      the attributes and the best time (in the save; step 7 and the Statistics tab use it); (8) the Report tab: a short
+      summary first, the day-by-day details folded away; (9) the Rankings tab: highlight the player, explain it, help
+      entry. *(Sonnet, high; Opus for (1) if the cause is not obvious)*
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
       plateau). Tune the progression ceiling, maturation and rival growth; also check whether rivals need the health
       model and plan-based training. Also seniors' race-day consistency (GDD 4.3.1 decision 12: the senior final
       finish target). From the audit (`docs/AUDIT.md`): the share of days with a health problem (~6 % vs ~25 % real),
-      championship field sizes (every Nuorten SM field is 41) against real entry lists. *(Opus)*
+      championship field sizes (every Nuorten SM field is 41) against real entry lists. From the points pool and the
+      playtest (2026-10-10): the tools' athletes must spend the pool (`AthleteFactory.coach_spread`), as real players
+      do; check that the experience trade is fair (a beginner, pool 6, catches a trained athlete, pool 16, by about
+      16–17, and neither always wins); in the user's season the rivals' middle grew ~1.9 ability, the player ~1.2
+      (potential 13.2), so the player fell from the bottom quarter to the bottom tenth. *(Opus)*
 
 Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans). Agreed
 2026-10-10: Coaching and School are designed together (both compete for the athlete's time), after step 7:
 - [ ] Coaching (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
-      over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10)
+      over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10).
+      From the season playtest (user, 2026-10-10: "small choices; it needs to be more interactive with the coaches and
+      everyone around me", and school, coach talk and friends all wanted): the coach explains the plan and why, talks
+      about the week, sets season goals with times ("what makes the coach happy"), and the days get small choices
+      with the people around the athlete. The days feeling empty is the playtest's biggest complaint.
 - [ ] School (grades, exams vs meets, Finnish school calendar)
 
 After Coaching and School (agreed order 2026-10-10): athlete reputation, the Statistics tab, the pre- and post-race
@@ -367,7 +389,12 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
   the Credits screen) found and approved by the user file by file (downloads need the user's OK); mobile: keep files small
   (OGG, mono for effects) and respect the phone's silent mode. *(Sonnet for the plumbing, the user for the taste, assets
   need a research session first)*
-- **Character creation: a points pool from the answers (user, 2026-10-10; moved into M2 before step 7, check-in 2026-10-10):** the 12 free points feel arbitrary. Idea:
+- **Race controls: run the whole race yourself (user, season playtest 2026-10-10):** "ditch the selection cards and go
+  with a system where I just control the whole race (via buttons, slider, or something) based on what I see and what
+  the coach says to me". The action bar (Push / Hold / Ease / Kick now / Move out) already does part of it; the cards
+  would become optional or rarer. Touches GDD D2 / D26 (decisions at suitable points, no dexterity): needs its own
+  design session with the user. The quick fix before step 7 only frees the kick. *(Opus)*
+- ~~**Character creation: a points pool from the answers**~~ — built 2026-10-10 (GDD 4.1.1 "Built (points pool)"). The original idea (user, 2026-10-10; moved into M2 before step 7, check-in 2026-10-10): the 12 free points feel arbitrary. Idea:
   the background answers decide how many points the athlete gets to allocate (a runner from a sporty family with years
   of training starts with a bigger pool than a beginner; maybe the pool also follows the maturation answer), the base
   ranges stay or shrink, and the player spreads the pool as they like (still a cap per attribute). Needs a design
