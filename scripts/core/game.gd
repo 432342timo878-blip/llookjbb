@@ -347,7 +347,7 @@ func _end_week(ctx: Dictionary) -> void:
 		last_report.plan.return_weeks = plan.return_weeks
 	ctx.report = last_report
 	_hook("on_week_end", ctx)
-	Rivals.train_week(rivals, athlete.gender, _week.monday)
+	Rivals.train_week(rivals, athlete.gender, _week.monday, int(athlete.birth_date.year))
 	_week = null
 	open_report = true
 

@@ -1,7 +1,8 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.8 — 2026-10-09 (realism audit, `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; earlier: race realism
-R1–R5, M2 steps 3–6). Living document: updated after each design discussion.
+Version 0.9 — 2026-10-10 (step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
+`docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; race realism R1–R5, M2 steps 3–6). Living document: updated after
+each design discussion.
 
 ## 1. Vision
 
@@ -94,6 +95,7 @@ own choice: last in 12 of 18 races that season), while the whole story and the r
 - **Experience costs growth (user: a strong start costs trainability):** trainability moves by (5 − experience) × 0.7
   (beginner +3.5, fully trained −3.5), and every physical attribute by (experience − 5) × 0.12 (years of training show
   in the body). A beginner starts weaker and grows faster; whether the trade is fair over 3–5 years is measured in step 7.
+  (Measured in step 7: it wasn't, the beginner was still behind at 21; novice gains added, now level at 17: 4.2 "Multi-year check".)
 - **No free answers:** every answer's visible effects are a profile (strengths paid by weaknesses, net ≈ +1.5, a few
   weak-start answers below zero); trainability bonuses moved into experience; hidden talent hints trimmed to ±0.5–1
   (max 20 even for the best story). Rules and numbers in `data/background_questions.json` (`pool`, `estimate`).
@@ -138,6 +140,105 @@ the **club coach gives a starter plan** that the player can edit; the **plan rep
   2 easy runs a week → little progress; 12 sessions a week → tired (~58) and only somewhat better in the trained areas.
   Overtraining becomes risky with injuries: new targets in 4.6.
 
+**Multi-year check (ROADMAP step 7, 2026-10-10).** Do careers make sense over 7 seasons (ages 14–21)?
+
+*Tools (new):* `tools/career_check.gd -- <n per kind> [kinds] [seasons] [first] [rows] [norace] [data.path=value …]`: athletes of six
+kinds (fixed stories as in `start_spread.gd`: beginner pool 6, average 12, trained 16, early / late developer = the average story with
+that answer, random) play 7 seasons through the real game loop (health and form on, Balanced, the pool spent with `coach_spread`,
+the coach-recommended meets entered, every race run in quick mode with the pack plan; ~2 min per athlete, `norace` ~35 s). Prints per
+kind and age: ability, PB / SB, rival percentile and SB rank, key attributes from `Game.progress`, races (wins, last places, place /
+field), health per week; the rivals' ability and SB quantiles; national field sizes, finish gaps, race-day spread; and **pairs**
+(athlete *i* of every kind has the same rolls, so beginner vs trained differ only by the story). `tools/rival_curves.gd -- <pools>
+[male|female|both] [overrides]`: the rival pool alone over 7 years against the real bands below (~1 s a pool).
+
+*Real Finnish levels used* (Tilastopaja results 2026, read in the browser; times of a birth year's n-th best estimated from them):
+Nuorten SM 14–15 (Mikkeli) winners P14 2:05.6, P15 2:05.2, T14 2:16.1, T15 2:15.4, 8th P15 2:14.0, T15 2:22.3; 16–17 (Hyvinkää) M16
+2:01.9 / 8th 2:09.5, M17 1:55.8 / 8th 2:04.2, N16 2:14.3, N17 2:16.4; 19–22 (Pori) M19 1:53.6, M22 1:53.9, N19 2:16.8, N22 2:12.9;
+Kalevan kisat (Jyväskylä) men's final 1:50.88–1:53.59 (2nd an athlete of 20, 4th of 21, 7th of 18), slowest heat runner 1:58.5;
+women 2:01.6 … final 8th 2:15.2. Finland's 2025 top 20 (all ages): men 1st 1:47.09, 10th 1:51.12, 20th 1:53.12 (an 18- and a
+17-year-old under 1:51); women 2:01.13 / 2:08.84 / 2:11.75 (a 15-year-old 20th). Yearly improvement of the top 100 Norwegian
+juniors per age (Tønnessen et al. 2015, PLoS ONE 10:e0129014): boys 14→15 5.2 s, 15→16 3.2, 16→17 2.3, 17→18 1.5; girls 2.2 /
+1.6 / 1.5 / 0.6 s. The bands (1st / 8th / 20th of a birth year): boys 15: 2:00–2:06 / 2:09–2:15 / 2:16–2:23, 17: 1:51–1:57 /
+2:02–2:07 / 2:07–2:13, 19: 1:49–1:54 / 1:58–2:03 / 2:02–2:08, 21: 1:47–1:52 / 1:56–2:00 / 2:01–2:07; girls 15: 2:11–2:16 / 2:20–2:25
+/ 2:26–2:34, 17: 2:09–2:15 / 2:18–2:24 / 2:24–2:32, 19: 2:07–2:13 / 2:16–2:22 / 2:22–2:29, 21: 2:05–2:11 / 2:14–2:20 / 2:20–2:27 (in
+`rival_curves.gd`).
+
+*Measured before (48 athletes × 7 seasons, 2 200 races):*
+- **Rivals far too fast and never stopping** (no age curve, girls like boys, growth above the ceiling): boys' 1st / 8th / 20th 1:58.9
+  / 2:04.7 / 2:08.9 at 15, 1:48.0 / 1:53.2 / 1:56.9 at 17, 1:43.2 / 1:47.1 / 1:51.1 at 21 (the best of a Finnish birth year at
+  world-record level); girls 2:12.1 / 2:18.8 / 2:23.3 at 15, 1:56.5 / 2:01.3 / 2:05.0 at 21. The cause of the playtest's "last in 12
+  of 18": every kind of player was last in about half of their races from 16 on.
+- **The player too fast late:** +3–4 s a year at 18–21 (ability +0.8 → +0.5 a year), girls never levelling off; puberty growth for
+  life (late developers 3× the early ones' every year).
+- **Experience trade unfair:** a beginner (pool 6) 2.5 ability behind a trained athlete (pool 16) at 15, still 1.1 behind at 21, never
+  ahead in any pair.
+- **Fields:** 41 at every 14–15 championship, ~25 at the others; real 2026: P14 15–21, P15 14–16, T14 19–29, T15 21–36, 16–17 7–20
+  outdoors and 26 indoors (17 class), 19 class 13–22, 22 class 10–14.
+- **Health:** per week (as Mann et al. 2021 count it) a substantial problem 10–14 % (real 11 %), time lost 1–4 % (real 4 %): ✓. "Any
+  problem" 40–70 % vs 24 % only because "a bit sore" counts (the audit's 6 % of days compared days injured with weekly "any").
+- **Race-day spread** of healthy races 2.0–2.5 % at every age (real elite ~1.0 %, the better half 0.8 %: Hopkins 2005, Sportscience
+  9; younger and slower runners more: Hopkins & Hewson 2001, MSSE 33).
+- **Calendar bug:** meets only up to Oct 2029 (`Calendar.SEASONS_AHEAD` 2): a fourth season had no races; from 20 only 2 races a year.
+
+*Decided (user, 2026-10-10; all of Claude's options taken, plus the puberty window):*
+1. **Rivals: an age curve and a stop.** Weekly gain = `weekly_rate` 0.055 × trainability × headroom (0 at the ceiling, was a floor of
+   0.05) × random 0.4–1.6 × `growth_by_age` (boys 0.55 at 14.5 → 0.45 / 0.38 / 0.3 / 0.25 / 0.2 → 0.15 at 21; girls 0.5 → 0.3 / 0.22 /
+   0.17 / 0.13 → 0.1); ceilings capped at `ceiling_max` 17.5 (older saves' rivals capped when they train); the rivals' speed grows with
+   the same share. `Rivals.train_week(pool, gender, monday, birth_year)`, `Rivals.growth_by_age`; numbers in `races.json` `rivals`.
+2. **The player's growth with age** (`data/training.json` `progression`, `Training.age_rate / puberty_share / age_years`):
+   trained physical gains × `age_rate` (boys 1.0 to 16, 0.8 at 17, 0.62 at 18, 0.5 at 19, 0.43 at 20, 0.38 from 21; girls 1.0 to
+   15, 0.72 / 0.55 / 0.45 / 0.38 / 0.33 at 16–20); **puberty window**: the natural growth of strength, power, speed and aerobic capacity
+   is full until a year after the growth-spurt peak (the health model's peak: boys 14, girls 12, ±1.2 by maturation) and fades to
+   nothing three years later (replaces the life-long ×0.5 / 1 / 1.5 by maturation). `Training._apply_progression(a, stimulus, monday)`.
+3. **Novice gains** (the experience trade): an athlete with under 5 years of training behind the story gets up to +140 % of every
+   physical and technical gain (`bonus` 1.4 × (5 − experience) / 5), fading over the first 208 weeks. `Athlete.experience` (set by
+   `AthleteFactory.create`; −1 in older saves = none) and `Athlete.weeks_trained` (counted every week). Tried 0.8 / 104 (closed half the
+   gap, then stuck 1.1 behind), 1.1 / 208, 1.0 / 260, 1.4 / 156, 1.7 / 208 (the beginner ahead in every pair from 16).
+4. **Real championship fields:** `competitions.json` `field` = [{ages, male, female}] from the 2026 entries (sources in its note);
+   `RaceDay.entry_range`, `Rivals.pick_field(..., entries)`: the best of the age group enter, each skipping it with 15 %, and 12 % of
+   the field are weaker runners using their one event without the standard (`races.json` `fields.championship`).
+5. **Seniors more consistent (decision 12):** the race-day form spread × `engine.form_sd.by_age` (1.0 to 16, 0.8 at 18, 0.55 from 21);
+   `Race.age` (set by `RaceDay` from the player's age: one birth year), `Race.form_age_share`.
+6. **Calendar:** meets for 20 seasons ahead, a season `Calendar.season_offset` = the whole weeks nearest to the calendar years (52 a
+   year, 53 when needed; seasons 1–2 as before); the open club meets (Joulukisat, Hippoksen and Kuortaneen hallikisat, Kevätkisat,
+   Iltakisat, Syyskisat) ages 9–99 (real club meets have men's and women's classes).
+7. **Rival injuries:** `health.json` `rivals.weekly_chance` 0.006 → 0.01 (about 4 % of rivals out at a time, the real time-loss share).
+8. Not changed: the health model (it matches per week), rivals without a full health model or plans (150 × the player's simulation
+   would make Play week take seconds; the age curve gives the plateau), the starting rival pool (its depth at 15–16 stays 1–4 s fast).
+
+*After (the same tools; random athletes of other seeds, so compare the shapes):*
+
+| | Before | After | Real |
+|---|---|---|---|
+| Boys' cohort 1st / 8th / 20th at 15 | 1:58.9 / 2:04.7 / 2:08.9 | 2:00.3 / 2:07.5 / 2:12.3 | 2:00–2:06 / 2:09–2:15 / 2:16–2:23 |
+| … at 17 | 1:48.0 / 1:53.2 / 1:56.9 | 1:54.5 / 2:00.7 / 2:05.3 | 1:51–1:57 / 2:02–2:07 / 2:07–2:13 |
+| … at 19 | 1:44.3 / 1:49.1 / 1:52.7 | 1:52.1 / 1:57.6 / 2:01.3 | 1:49–1:54 / 1:58–2:03 / 2:02–2:08 |
+| … at 21 | 1:43.2 / 1:47.1 / 1:51.1 | 1:50.6 / 1:55.5 / 1:59.1 | 1:47–1:52 / 1:56–2:00 / 2:01–2:07 |
+| Girls' cohort at 15 | 2:12.1 / 2:18.8 / 2:23.3 | 2:15.5 / 2:23.8 / 2:28.5 | 2:11–2:16 / 2:20–2:25 / 2:26–2:34 |
+| … at 21 | 1:56.5 / 2:01.3 / 2:05.0 | 2:09.4 / 2:15.7 / 2:19.6 | 2:05–2:11 / 2:14–2:20 / 2:20–2:27 |
+| Average-story boy, ability gain a year 15 → 21 | +1.14 / 1.07 / 0.87 / 0.79 / 0.68 / 0.60 / 0.53 | +1.16 / 1.03 / 0.70 / 0.54 / 0.41 / 0.35 / 0.30 | ~1.5 s a year at 17–18 (Tønnessen) |
+| Average-story girl | +1.04 / 0.95 / 0.84 / 0.77 / 0.66 / 0.59 / 0.51 | +0.99 / 0.74 / 0.52 / 0.40 / 0.32 / 0.27 / 0.25 | ~0.6 s a year at 17–18 |
+| Random athletes, rival percentile at 15 / 17 / 19 / 21 (boys) | 24 / 18 / 28 / 43 | 45 / 58 / 65 / 67 | |
+| Random athletes, last place in races at 16 / 17 / 18 | 44 of 96 / 48 of 94 / 31 of 60 | 9 of 95 / 7 of 95 / 2 of 57 | |
+| Beginner − trained (pairs) at 15 / 16 / 17 / 21 | −2.52 / −2.24 / −2.03 / −1.13 (ahead 0 of 8) | −1.03 / −0.19 / +0.11 / +0.11 (ahead 6 of 8 from 17) | catch up at 16–17, not always |
+| National fields 14–15 / 16–17 / 18–19 / 20–21 | 41 / 23–27 / 25 / 26 | 20–22 / 15–25 / 15–18 / 10–11 | see above |
+| Races a year at 20–21 | 2 | 4 | |
+| Senior final gaps 1→2 / 4 / last (`race_shape` rows 5 and 7, age 25) | 0.8 / 2.2 / 5.9 s; 0.6 / 1.7 / 4.6 s | 0.6 / 2.0 / 5.0 s; 0.5 / 1.4 / 4.1 s | Kalevan kisat 2026 0.06 / 1.1 / 4.1 s |
+| Healthy race-day spread at 19–21 | 2.0–2.5 % | 1.9–2.2 % | elite ~1.0 % |
+
+- A talented player (potential ~17.5) now runs ~2:05 at 17 (the real M17 final), ~2:03 at 19 and ~1:59 at 21 (near the Kalevan kisat
+  entry level); most rivals level off at 2:05–2:15 (boys), as most real juniors do. The player's hidden potential (13–18) is above the
+  rivals' typical ceiling (13 ± 2.5), so a player who trains every day on the coach's plan usually ends in the top third of the birth
+  year: a career game about a serious athlete.
+- `training_balance.gd -- 0`: fingerprints changed by exactly +0.180430390 in every row (attributes only; fatigue identical) = the
+  puberty window for the test athlete (an early developer), the approved change; the age slowdown and the novice bonus don't touch it
+  (a boy of 14.5–15.5 with 8 years of experience). New fingerprints: coach 204.145691989 / 14.102831594 / 1226.006524079.
+- `season_check.gd -- 50` (ages 14–17) ALL PASSED: ability +1.27 / +1.01 / +0.73 a season (6f: +1.17 / +1.14 / +1.06), injuries
+  0.64 / 1.00 / 0.78. Step 6d's one-year numbers move a little (girls slow down after 15, low-experience stories gain more).
+- **Open:** the healthy race-day spread at 19–21 is still ~2 %: the form part is now ~0.8 % for seniors; the rest is the race shape
+  (tactical vs fast races, wide club fields), an engine question for a later race session. Seniors (M4) need senior meets (Motonet GP,
+  Kalevan kisat), real athletes and older rivals; the rival pool is one birth year, so a 20–22 class field stands in for three years.
+
 ### 4.3 800 m race simulation (first version built)
 
 Decisions (user, 2026-10-05): opponents should be real athletes where possible, otherwise generated. **Claude's
@@ -160,10 +261,11 @@ on aggregate result standards only, with no individual names or results. Real at
   halfway (push / hold / ease), covering a rival's move, kick timing (200 m or 100 m to go), home straight (go wide /
   wait for the inside). In quick mode the athlete decides by plan and race tactics.
 - **Rivals:** a pool of 150 fictional runners (same birth year and gender, Finnish names, real clubs). They train every
-  week like the player (toward their own ceiling), keep PBs and fill the fields: local 5–8, district 8–12,
-  international youth 9–14. At the national championships, everyone with the standard enters plus ~12 % without it,
-  run in timed sections as real Finnish championships are (since 2026-10-09; heats only at heats meets, from the
-  World Athletics table: 4.3.1 "Built (meet formats)").
+  week like the player (toward their own ceiling, slower every year from 15 and girls earlier: step 7), keep PBs and fill
+  the fields: local 5–8, district 8–12, international youth 9–14. At the national championships the field has the real
+  2026 entry numbers of the age class (step 7: the best enter, a few without the standard; before: everyone with the
+  standard plus ~12 % without it, always 41), run in timed sections as real Finnish championships are (since 2026-10-09;
+  heats only at heats meets, from the World Athletics table: 4.3.1 "Built (meet formats)").
 - **Results:** stored on the athlete (results list, PB). They show on the Overview and in the weekly report.
 - **Tuning:** `tools/race_balance.gd` (median times hit the anchors within ~1 s).
 - **Race realism (designed 2026-10-07):** pack racing, rival moves and personalities, falls, the action bar, coach
@@ -238,7 +340,9 @@ change of place late is a fade, never a fight.
 12. **The senior final finish target waits for step 7:** the engine turns each runner's ability *on the day* into
     finish gaps almost one to one, and race-day form (±0.6 ability ≈ ±1.8 s for a senior, elite seniors really vary
     ~1 %) spreads the senior test field wider than a real national final. Seniors' race-day consistency is designed
-    with the multi-year check.
+    with the multi-year check. **Done in step 7 (2026-10-10):** the form spread narrows with age (×1.0 to 16, 0.8 at 18,
+    0.55 from 21; `engine.form_sd.by_age`, `Race.age`); the senior finals' gaps 0.8 / 2.2 / 5.9 s → 0.6 / 2.0 / 5.0 s
+    (consistent field 0.5 / 1.4 / 4.1 s vs Kalevan kisat 2026 0.06 / 1.1 / 4.1 s). 4.2 "Multi-year check".
 13. **Energy: going faster than your own even pace costs extra** (R2): the reserve drains by (speed − cs) ×
     (speed / own even speed)³; even pace costs as before, a too-fast start or a long sprint costs more, a slow
     tactical lap saves more. With the old straight-line drain *when* a runner spent the reserve hardly mattered

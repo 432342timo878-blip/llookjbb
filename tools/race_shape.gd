@@ -55,11 +55,11 @@ func _run() -> void:
 		["youth championship final", "male", false, 9.0, 0.5, true, "final"],
 		["youth indoor", "male", true, 7.0, 0.8, true, "district"],
 		["girls even field", "female", false, 7.0, 0.8, true, "district"],
-		["senior national final", "male", false, 15.0, 0.4, true, "final"],
+		["senior national final", "male", false, 15.0, 0.4, true, "final", 9.0, 25.0],
 		# Equal ability and consistency 20: what is left is the race shape, the places, drafting and kick timing.
 		["identical runners", "male", false, 9.0, 0.0, false, "final"],
-		# (8th value: the field's mean consistency, default 9 like the rival pool)
-		["senior final, consistent field", "male", false, 15.0, 0.25, true, "final", 13.0],
+		# (8th value: the field's mean consistency, default 9 like the rival pool; 9th: the runners' age, Race.age, step 7)
+		["senior final, consistent field", "male", false, 15.0, 0.25, true, "final", 13.0, 25.0],
 	]
 	print("%-32s | %-18s | %-17s | %4s | %-9s | %5s | %-11s | %-11s | %-22s | %5s | %s" % ["row", "1st-last 200/400/600",
 			"1st-4th", "pack", "lead wins", "swaps", "r 400/600", "winner laps", "median gaps 2nd/4th/last", "<0.2s", "time/table"])
@@ -103,6 +103,8 @@ func _row(row: Array, n: int) -> void:
 							else (20.0 if row[4] == 0.0 else 10.0),
 					"composure": 10.0, "competitiveness": clampf(rng.randfn(9.0, 3.0), 1.0, 20.0) if row[5] else 10.0})
 		var race = RaceScript.new()
+		if row.size() > 8:
+			race.age = row[8]
 		race.setup(entrants, row[1], false, 20.0, rng, row[2], row[6])
 		var marks := [200.0, 400.0, 600.0]
 		var orders := {}

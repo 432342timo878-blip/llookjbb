@@ -33,7 +33,7 @@ func _run() -> void:
 	var rivals = load("res://scripts/core/rivals.gd")
 	var monday: Dictionary = game.week_monday()
 	for w in 40:
-		rivals.train_week(game.rivals, game.athlete.gender, monday)
+		rivals.train_week(game.rivals, game.athlete.gender, monday, int(game.athlete.birth_date.year))
 		monday = game.add_days(monday, 7)
 	var marked: int = game.rivals.filter(func(r): return float(r.pb) > 0.0).size()
 	print("rivals with a PB after 40 weeks: %d of %d" % [marked, game.rivals.size()])
@@ -246,7 +246,8 @@ func _check_heats(key: String) -> void:
 func _check_semis() -> void:
 	RD.format_override = "heats"
 	print("-- semi-finals (forced heats, a field of 25 or more)")
-	var meet: Dictionary = Cal.get_meet("sm_14_15@2027")
+	var meet: Dictionary = Cal.get_meet("sm_14_15@2027").duplicate(true)
+	meet.erase("field")   # (the real entry numbers, step 7, keep a boys' field under 25: the old everyone-with-the-standard field)
 	var found := false
 	for i in 40:
 		var rd = RD.new(meet, game.athlete, game.rivals)

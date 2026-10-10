@@ -15,12 +15,19 @@
   "local":         {"size": [5, 8],   "pool_range": [0.0, 0.8]},
   "district":      {"size": [8, 12],  "pool_range": [0.1, 0.9]},
   "international": {"size": [9, 14],  "pool_range": [0.35, 1.0]},
-  "national":      {"size": [18, 32], "pool_range": [0.45, 1.0]}
+  "national":      {"size": [18, 32], "pool_range": [0.45, 1.0]},
+  "championship":  {"_note": "Championships with real entry numbers (competitions.json 'field', step 7): the best of the age group enter, each skipping it with chance `skip` (other events, school, a bad day), and a share `tail` of the field are weaker runners using their one event without the standard.", "skip": 0.15, "tail": 0.12}
  },
  "rivals": {
   "_note": "Fictional rivals of the player's age and gender (real youth athletes are minors, so they're not used). Ability at career start ~ N(mean, sd).",
   "count": 150, "ability_mean": 7.2, "ability_sd": 2.0, "ability_min": 3.0, "ability_max": 13.5,
-  "ceiling_mean": 13.0, "ceiling_sd": 2.5,
+  "ceiling_mean": 13.0, "ceiling_sd": 2.5, "ceiling_max": 17.5,
+  "_growth": "Step 7 (GDD 4.2 'Multi-year check'): weekly gain = weekly_rate x trainability x headroom to the ceiling (none above it) x random 0.4-1.6 x growth_by_age ([age in years, share], interpolated, by gender: girls level off earlier). Tuned with tools/rival_curves.gd so a birth year's 1st / 8th / 20th best fall in the real Finnish bands (Tilastopaja 2026 championships, GDD 4.2).",
+  "weekly_rate": 0.055,
+  "growth_by_age": {
+   "male": [[14.5, 0.55], [15.5, 0.45], [16.5, 0.38], [17.5, 0.3], [18.5, 0.25], [19.5, 0.2], [21.0, 0.15]],
+   "female": [[14.5, 0.5], [15.5, 0.3], [16.5, 0.22], [17.5, 0.17], [18.5, 0.13], [21.0, 0.1]]
+  },
   "race_chance_by_month": [0.08, 0.10, 0.10, 0.12, 0.25, 0.30, 0.25, 0.30, 0.25, 0.10, 0.06, 0.06]
  },
  "rounds": {
@@ -88,8 +95,8 @@
   "start_cost": 1.5,
   "_drain": "Reserve used per second above cs: (speed - cs) x (speed / the runner's even speed)^drain_power (R2). 0 = plain linear (R1). Even pace costs the same either way; above it the reserve goes faster, below it slower.",
   "drain_power": 5.0,
-  "_form_sd": "Race-day form (ability points, sd): (base + (20 - consistency) / 20 x per_inconsistency) x scale. scale 0.75 since the playtest fix of 2026-10-10 (a 14-year-old with consistency 5.5 swung about 4 s from race to race, with 15+ s jumps; now about 3 s). Everyone's form uses it, rivals too.",
-  "form_sd": {"base": 0.25, "per_inconsistency": 0.6, "scale": 0.75},
+  "_form_sd": "Race-day form (ability points, sd): (base + (20 - consistency) / 20 x per_inconsistency) x scale. scale 0.75 since the playtest fix of 2026-10-10 (a 14-year-old with consistency 5.5 swung about 4 s from race to race, with 15+ s jumps; now about 3 s). Everyone's form uses it, rivals too. by_age (step 7, GDD 4.3.1 decision 12): x this share at the runners' age in years ([age, share], interpolated; Race.age, 0 = not known = 1.0): the full spread up to 16, narrowing towards seniors (real elite runners vary about 1 % from race to race, the better half 0.8 %: Hopkins 2005, Sportscience 9; younger runners more: Hopkins & Hewson 2001, MSSE 33).",
+  "form_sd": {"base": 0.25, "per_inconsistency": 0.6, "scale": 0.75, "by_age": [[16.0, 1.0], [18.0, 0.8], [21.0, 0.55]]},
   "reserve_share": {"base": 0.18, "per_anaerobic": 0.006, "min": 0.13, "max": 0.23},
   "recover": 0.25,
   "accel": {"start": 4.0, "start_until": 30.0, "up": 1.2, "down": 1.5},

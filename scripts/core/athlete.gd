@@ -20,6 +20,8 @@ var weight_kg := 0.0
 var maturation := "average"     # "early" | "average" | "late"
 var school_level := "medium"    # "high" | "medium" | "low"
 var training_base := "outdoor_track"   # where they train; ids from background_questions.json
+var experience := -1            # years of organised training behind the creation answers (AthleteFactory); -1 = not known (older saves)
+var weeks_trained := 0          # weeks of progression since the career started (novice gains fade with it, Training.novice_bonus)
 
 var attributes := {}            # attribute id -> float, visible and hidden
 var personal_bests := {}        # event id -> mark (seconds or metres)
@@ -55,7 +57,7 @@ func to_dict() -> Dictionary:
 		"birth_date": birth_date, "hometown": hometown, "club_id": club_id,
 		"main_event": main_event, "coach_id": coach_id, "height_cm": height_cm, "weight_kg": weight_kg,
 		"maturation": maturation, "school_level": school_level, "training_base": training_base,
-		"attributes": attributes, "personal_bests": personal_bests,
+		"experience": experience, "weeks_trained": weeks_trained, "attributes": attributes, "personal_bests": personal_bests,
 		"fatigue": fatigue, "recent_change": recent_change, "results": results,
 	}
 
@@ -76,4 +78,6 @@ static func from_dict(d: Dictionary) -> Athlete:
 		a.set(key, d[key])
 	if not a.birth_date.is_empty():
 		a.birth_date = Game.int_date(a.birth_date)
+	a.experience = int(a.experience)       # (JSON makes numbers floats)
+	a.weeks_trained = int(a.weeks_trained)
 	return a

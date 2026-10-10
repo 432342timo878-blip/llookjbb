@@ -259,7 +259,16 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       record + its Progress page; (8) the Report tab folded; (9) the Rankings tab. New `tools/playtest_fix_check.gd`,
       `tools/race_spread.gd`, `tools/race_season_times.gd`. Left for later (from the same playtest): the whole-race controls
       idea and the coach's/people interaction (Coaching + School).
-- [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
+- [x] **7. Multi-year progression check (done 2026-10-10, GDD 4.2 "Multi-year check"):** new `tools/career_check.gd`
+      (7 seasons, six kinds of athlete, every race run, pairs on the same rolls) and `tools/rival_curves.gd`; compared with
+      Tilastopaja 2026 championships, Finland's 2025 lists and Tønnessen et al. 2015. Found: rivals 5–14 s too fast and never
+      stopping (the cause of "last in 12 of 18"), the player too fast after 17 and girls never levelling off, the experience
+      trade unfair (beginner still behind at 21), fields of 41, no meets after Oct 2029. Built (user's choices): the rivals'
+      age curve + stop at the ceiling, the player's age slowdown + puberty window, novice gains (beginner level at 17),
+      real championship fields, seniors' narrower race-day form (decision 12), meets for 20 seasons + club meets for adults,
+      rival injuries ~4 %. Health per week matches Mann 2021 (no change). Open: the race-to-race spread at 19–21 (~2 %, race
+      shapes), senior meets and older rivals (M4). Original task:
+      extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
       plateau). Tune the progression ceiling, maturation and rival growth; also check whether rivals need the health

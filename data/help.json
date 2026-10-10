@@ -3,7 +3,7 @@
  "screens": {
   "overview": {
    "title": "Overview",
-   "version": 2,
+   "version": 3,
    "sections": [
     {"heading": "Playing the days", "text": "Next day plays one day. Play week plays on to Sunday night, but it stops early when something needs you: a race, a new injury or a warning sign. The game saves itself after every day."},
     {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
@@ -12,7 +12,7 @@
     {"heading": "Race form", "text": "How you would race if the race were today. It is not about fitness: it is about being sharp and fresh on the day.", "see": ["form"]},
     {"heading": "Warning signs", "text": "Body areas that feel sore after training, worst first. Tap one to see why it is sore and what helps. \"A bit sore\" is the early warning.", "see": ["soreness"]},
     {"heading": "Injury and illness", "text": "What you have now, what you are allowed to do, and when you are expected back. Tap it for a plain explanation.", "see": ["injuries"]},
-    {"heading": "Attributes", "text": "Your abilities on a scale of 1 to 20. Training changes them once a week, on Sunday night, and growing up helps too. Abilities you don't train fade slowly. Arrows show what has been rising or falling lately; tap an attribute to see what it does."},
+    {"heading": "Attributes", "text": "Your abilities on a scale of 1 to 20. Training changes them on Sunday nights; growing up helps for a few years around your growth spurt. As for real runners, the yearly gains get smaller from about 16 (girls 15). Untrained abilities fade slowly. Arrows show recent rises and falls; tap one to see what it does."},
     {"heading": "Progress by month", "text": "The button under your body facts opens the Progress page: a record of your attributes and best time at the end of every month, so you can see how fast you are really improving."},
     {"heading": "Saving", "text": "Besides the automatic save, the Save button makes an extra copy you can load later from the main menu. On a computer, Ctrl+S does the same."}
    ]
@@ -60,22 +60,22 @@
   },
   "calendar": {
    "title": "Calendar",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Entering a meet", "text": "Tap Enter to race a meet. On race day the race replaces that day's training. Tap Entered ✓ again to withdraw."},
     {"heading": "★ and ◆", "text": "★ means your coach suggests the meet. ◆ marks one of your season's target meets; Make target turns a meet into one (at most three a season).", "see": ["targets"]},
-    {"heading": "Qualifying times", "text": "Championships have a qualifying time for your age class. The meet says whether you have it. You may still enter one event without it."},
-    {"heading": "The seasons", "text": "Indoor meets run from December to March, outdoor meets from May to September. \"Estimated\" dates are believable guesses for small meets whose real dates aren't out yet. Senior meets are shown, but you follow them from home for now."}
+    {"heading": "Qualifying times", "text": "Championships have a qualifying time for your age class. The meet says whether you have it. You may still enter one event without it. The best runners of your age class usually enter, so a championship field is about as big as the real one, often 10 to 30."},
+    {"heading": "The seasons", "text": "Indoor meets run from December to March, outdoor meets from May to September. \"Estimated\" dates are believable guesses for meets whose real dates aren't out yet. Club meets have adult classes too. Senior meets are shown, but you follow them from home for now."}
    ]
   },
   "rankings": {
    "title": "Rankings",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "What this list is", "text": "Everyone's best 800 m time of the calendar year in your age class: you and your rivals, ranked fastest first. It fills up as the season goes on, because rivals only appear once they have raced this year."},
     {"heading": "You", "text": "The YOU box at the top gives your place, your season best and the gap to the runner just ahead. Your row in the list is highlighted and marked (you)."},
     {"heading": "Season bests", "text": "Indoor and outdoor times count together, as in real result lists. The top 25 are shown, and you always are."},
-    {"heading": "Your rivals", "text": "Your rivals train and race on their own, so the list fills up as the season goes on. They get injured too and miss races now and then."}
+    {"heading": "Your rivals", "text": "Your rivals train and race on their own, so the list fills up as the season goes on. Like real runners they improve fast at 14 and 15, then more slowly every year, and most of them level off. They get injured too and miss races now and then."}
    ]
   },
   "report": {
@@ -151,12 +151,12 @@
   },
   "new_career": {
    "title": "New career",
-   "version": 2,
+   "version": 3,
    "sections": [
     {"heading": "Who you are", "text": "Your name, gender, hometown and club. You start as a 14-year-old in November 2026."},
     {"heading": "Main event", "text": "The event you train for and race. The 800 m is playable now; more events come later."},
     {"heading": "Background", "text": "Your answers shape your starting abilities: every answer has strengths and weaknesses. Where you train also decides whether you have an indoor track in winter."},
-    {"heading": "Your points", "text": "Everyone gets 6 points; every bit of organised training in your story adds more, up to 16. At most +3 on any one ability. More training means a stronger start but slower growth; beginners improve faster."},
+    {"heading": "Your points", "text": "Everyone gets 6 points; every bit of organised training in your story adds more, up to 16. At most +3 on any one ability. More training means a stronger start but slower growth: a beginner improves much faster in the first two years and often catches up by 16 or 17."},
     {"heading": "What counts for the 800 m", "text": "The dots show how much an ability counts for your 800 m time. The coach's guess updates as you spend. Not sure? Let the coach spread them. Some things about your talent stay hidden and show over the years."}
    ]
   },

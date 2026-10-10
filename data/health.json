@@ -124,7 +124,7 @@
 
  "proneness_hint": {"_note": "After this many injuries (not illnesses) within this many days, the game hints that the athlete picks up knocks easily.", "injuries": 3, "days": 365},
 
- "rivals": {"_note": "Each week a fit rival has this chance to get injured and miss training and races for a number of weeks drawn inside `weeks`.", "weekly_chance": 0.006, "weeks": [2, 6]},
+ "rivals": {"_note": "Each week a fit rival has this chance to get injured and miss training and races for a number of weeks drawn inside `weeks`. 0.01 (was 0.006 until step 7) keeps about 4 % of rivals out at any time, the real time-loss share of adolescent distance runners (Mann et al. 2021: 4 % of weeks).", "weekly_chance": 0.01, "weeks": [2, 6]},
 
  "restrictions": {
   "_note": "What an injury phase allows. bans = session tags (data/training.json) that can't be done; allow_only = only these sessions; intensity = the most the day may be. A banned session is swapped for the first of its 'instead' sessions that is allowed, otherwise dropped.",

@@ -5,6 +5,15 @@
   "track_access_bases": ["indoor_hall", "sports_class"],
   "off_track_effect": 0.7
  },
+ "progression": {
+  "_note": "Multi-year progression (ROADMAP step 7, GDD 4.2 'Multi-year check'). age_rate: share of a trained physical gain an athlete still gets at this age in years ([age, share], interpolated; 1.0 before the first age, the last share after the last age): real juniors' yearly 800 m improvement shrinks from about 16 (boys) / 15 (girls) (Tonnessen et al. 2015, PLoS ONE: top-100 Norwegian boys 5.2 / 3.2 / 2.3 / 1.5 s a year from 14-15 to 17-18, girls 2.2 / 1.6 / 1.5 / 0.6 s). puberty: the natural growth of strength, power, speed and aerobic capacity is full until full_years_after_peak after the growth-spurt peak (data/health.json strain.growth: boys 14, girls 12, shifted by maturation) and fades to nothing at ends_years_after_peak. novice: an athlete with less than below_experience years of training behind them (AthleteFactory experience) gets up to bonus more of every physical and technical gain, fading over the first fade_weeks weeks (novice gains; a beginner catches a trained athlete at about 16-17).",
+  "age_rate": {
+   "male": [[16.0, 1.0], [17.0, 0.8], [18.0, 0.62], [19.0, 0.5], [20.0, 0.43], [21.0, 0.38]],
+   "female": [[15.0, 1.0], [16.0, 0.72], [17.0, 0.55], [18.0, 0.45], [19.0, 0.38], [20.0, 0.33]]
+  },
+  "puberty": {"full_years_after_peak": 1.0, "ends_years_after_peak": 4.0},
+  "novice": {"bonus": 1.4, "below_experience": 5, "fade_weeks": 208}
+ },
  "sessions": [
   {
    "id": "easy_run", "name": "Easy run", "load": 8,

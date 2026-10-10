@@ -15,9 +15,9 @@ const SATURATION := 5.0
 const MIN_DOSE := 0.5
 ## Weekly loss for a physical attribute that wasn't trained at all.
 const DETRAINING := 0.004
-## Growth from puberty alone, per week, scaled by maturation (late developers still have most to come).
+## Growth from puberty alone, per week, while the growth spurt lasts (puberty_share: late developers still have most of it
+## to come, early ones are past it sooner).
 const NATURAL_GROWTH := {"strength": 0.010, "power": 0.008, "speed": 0.006, "acceleration": 0.006, "aerobic_capacity": 0.004}
-const MATURATION_GROWTH := {"early": 0.5, "average": 1.0, "late": 1.5}
 ## Fatigue fades by a share each day (see daily_keep); a rest day clears this much more of it.
 const REST_DAY_EXTRA := 0.10
 ## Above this fatigue, sessions lose effect (down to FATIGUED_MIN_EFFECT at 100).
@@ -108,10 +108,15 @@ static func expected_fatigue(a: Athlete, plan: Variant, monday: Dictionary) -> D
 	return {"avg": r.fatigue_avg, "peak": r.fatigue_peak}
 
 
-## Turns the week's stimulus into attribute changes. Returns attribute id -> {before, after}.
-static func _apply_progression(a: Athlete, stimulus: Dictionary) -> Dictionary:
+## Turns the week's stimulus into attribute changes (the week starting on `monday`). Returns attribute id ->
+## {before, after}. Step 7 (GDD 4.2 "Multi-year check"): trained physical gains shrink with age (age_rate), a beginner
+## responds more in their first years (novice_bonus, physical and technical), and puberty growth follows the growth
+## spurt (puberty_share) instead of going on for life.
+static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Dictionary) -> Dictionary:
 	var trainability := 0.6 + a.get_attr("trainability") / 20.0 * 0.8
-	var maturation: float = MATURATION_GROWTH.get(a.maturation, 1.0)
+	var growth := puberty_share(a, monday)
+	var novice := 1.0 + novice_bonus(a)
+	var by_age := age_rate(a, monday)
 	var changes := {}
 	for category in TRAINED_CATEGORIES:
 		for attr in Data.attributes_in(category):
@@ -121,15 +126,60 @@ static func _apply_progression(a: Athlete, stimulus: Dictionary) -> Dictionary:
 			var gain := 0.0
 			if s > MIN_DOSE:
 				gain = WEEKLY_RATE * (1.0 - exp(-(s - MIN_DOSE) / SATURATION)) * trainability * _headroom(a, before)
+				if category == "physical":
+					gain *= by_age * novice
+				elif category == "technical":
+					gain *= novice
 			elif category == "physical":
 				gain -= DETRAINING
-			gain += NATURAL_GROWTH.get(id, 0.0) * maturation
+			gain += NATURAL_GROWTH.get(id, 0.0) * growth
 			a.set_attr(id, before + gain)
 			var delta := a.get_attr(id) - before
 			a.recent_change[id] = a.recent_change.get(id, 0.0) * 0.75 + delta
 			if delta != 0.0:
 				changes[id] = {"before": before, "after": a.get_attr(id)}
+	a.weeks_trained += 1
 	return changes
+
+
+## How much of a trained physical gain an athlete of this age still gets: 1.0 young, less from about 16 (boys) /
+## 15 (girls), as real juniors' yearly improvement shrinks (data/training.json progression.age_rate, by age in years).
+static func age_rate(a: Athlete, monday: Dictionary) -> float:
+	var table: Array = Data.training.progression.age_rate.get(a.gender, [])
+	var age := age_years(a, monday)
+	if table.is_empty() or age <= float(table[0][0]):
+		return 1.0 if table.is_empty() else float(table[0][1])
+	for i in range(1, table.size()):
+		if age <= float(table[i][0]):
+			return lerpf(float(table[i - 1][1]), float(table[i][1]), (age - float(table[i - 1][0])) / (float(table[i][0]) - float(table[i - 1][0])))
+	return float(table.back()[1])
+
+
+## Puberty growth this week (share of NATURAL_GROWTH): full up to a year after the growth-spurt peak (the health model's
+## peak age by gender and maturation, data/health.json strain.growth), then fading to nothing (progression.puberty).
+static func puberty_share(a: Athlete, monday: Dictionary) -> float:
+	var p: Dictionary = Data.training.progression.puberty
+	var g: Dictionary = Data.health.strain.growth
+	var after := age_years(a, monday) - (float(g.peak_age[a.gender]) + float(g.maturation_shift.get(a.maturation, 0.0)))
+	var full := float(p.full_years_after_peak)
+	var end := float(p.ends_years_after_peak)
+	return clampf((end - after) / (end - full), 0.0, 1.0)
+
+
+## A beginner's extra response to training (novice gains): `bonus` for an athlete with no training behind them, less with
+## more experience (none from `below_experience` years), fading out over their first `fade_weeks` (progression.novice).
+static func novice_bonus(a: Athlete) -> float:
+	var n: Dictionary = Data.training.progression.novice
+	if a.experience < 0:
+		return 0.0
+	var below := float(n.below_experience)
+	var share := clampf((below - a.experience) / below, 0.0, 1.0)
+	return float(n.bonus) * share * clampf(1.0 - a.weeks_trained / float(n.fade_weeks), 0.0, 1.0)
+
+
+## Age in years (with the fraction) on `date`.
+static func age_years(a: Athlete, date: Dictionary) -> float:
+	return Calendar.days_between(a.birth_date, date) / 365.25
 
 
 ## 1.0 far below the athlete's (hidden) ceiling, shrinking towards it.

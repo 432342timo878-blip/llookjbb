@@ -22,7 +22,7 @@ static func generate(a: Athlete, rng: RandomNumberGenerator) -> Array:
 			"first_name": first, "last_name": last,
 			"club_id": Data.clubs.pick_random().id,
 			"ability": ability,
-			"ceiling": maxf(ability + 1.0, rng.randfn(cfg.ceiling_mean, cfg.ceiling_sd)),
+			"ceiling": minf(maxf(ability + 1.0, rng.randfn(cfg.ceiling_mean, cfg.ceiling_sd)), float(cfg.ceiling_max)),
 			"trainability": rng.randf_range(0.6, 1.4),
 			"speed": clampf(ability + rng.randfn(0.0, 2.0), 1.0, 20.0),
 			"anaerobic": rng.randfn(0.0, 2.0),
@@ -68,24 +68,41 @@ static func personality_from(anaerobic: float, u: float) -> String:
 	return weights.keys().back()
 
 
-## One week of training for every rival (similar growth model to the player's: slows near the ceiling).
+## One week of training for every rival (similar growth model to the player's: slows near the ceiling and stops at
+## it, and slows with age: data/races.json rivals growth_by_age, step 7). `birth_year` is the cohort's (the player's).
 ## They also race elsewhere: each week a rival may run an 800 m of their own (more often in summer),
 ## which feeds their season best for the rankings. Injured rivals (out_weeks > 0, set by HealthSystem)
 ## neither train nor race.
-static func train_week(pool: Array, gender: String, monday: Dictionary) -> void:
-	var chances: Array = Data.races.rivals.race_chance_by_month
+static func train_week(pool: Array, gender: String, monday: Dictionary, birth_year: int) -> void:
+	var cfg: Dictionary = Data.races.rivals
+	var chances: Array = cfg.race_chance_by_month
 	var chance := float(chances[int(monday.month) - 1])
+	var by_age := growth_by_age(gender, monday, birth_year)
 	for r in pool:
 		if is_out(r):
 			continue
-		var headroom := clampf((float(r.ceiling) - float(r.ability)) / 5.0, 0.05, 1.0)
-		r.ability = float(r.ability) + 0.055 * float(r.trainability) * headroom * randf_range(0.4, 1.6)
-		r.speed = float(r.speed) + 0.03 * randf()
+		var ceiling := minf(float(r.ceiling), float(cfg.ceiling_max))   # (older saves' ceilings had no cap)
+		var headroom := clampf((ceiling - float(r.ability)) / 5.0, 0.0, 1.0)
+		r.ability = float(r.ability) + float(cfg.weekly_rate) * float(r.trainability) * headroom * randf_range(0.4, 1.6) * by_age
+		r.speed = minf(float(r.speed) + 0.03 * randf() * by_age, Athlete.MAX_VALUE)
 		if randf() < chance:
 			# Even-effort time plus a usually-slower bad-day factor; consistent runners vary less.
 			var spread := 0.02 - float(r.consistency) * 0.0007
 			var factor := maxf(1.0 + randfn(0.008, spread), 0.99)
 			record_time(r, RacePerformance.time_for(float(r.ability), gender) * factor, monday)
+
+
+## The rivals' weekly growth share at the cohort's age on `monday` (born mid-`birth_year` on average): 1.0 = the
+## youngest rate, interpolated in data/races.json rivals growth_by_age ([age, share] by gender).
+static func growth_by_age(gender: String, monday: Dictionary, birth_year: int) -> float:
+	var table: Array = Data.races.rivals.growth_by_age[gender]
+	var age := float(monday.year) + (float(monday.month) - 1.0) / 12.0 + float(monday.day) / 365.0 - (float(birth_year) + 0.5)
+	if age <= float(table[0][0]):
+		return float(table[0][1])
+	for i in range(1, table.size()):
+		if age <= float(table[i][0]):
+			return lerpf(float(table[i - 1][1]), float(table[i][1]), (age - float(table[i - 1][0])) / (float(table[i][0]) - float(table[i - 1][0])))
+	return float(table.back()[1])
 
 
 ## Updates a rival's PB and season best (SB counts only for the season it was run in).
@@ -98,11 +115,26 @@ static func record_time(r: Dictionary, time: float, date: Dictionary) -> void:
 		r.sb_season = season
 
 
-## Opponents for a race at a meet of this level.
-static func pick_field(pool: Array, level: String, rng: RandomNumberGenerator, standard_ability := 0.0) -> Array:
+## Opponents for a race at a meet of this level. `entries` = [min, max] runners of a championship with real entry
+## numbers (competitions.json "field", step 7): then the best of the age group enter (each may skip it) plus a few
+## weaker ones using their one event without the standard (races.json fields.championship).
+static func pick_field(pool: Array, level: String, rng: RandomNumberGenerator, standard_ability := 0.0, entries := []) -> Array:
 	var cfg: Dictionary = Data.races.fields.get(level, Data.races.fields.local)
 	var sorted := pool.filter(func(r): return not is_out(r))   # injured rivals don't race
 	sorted.sort_custom(func(x, y): return x.ability < y.ability)
+	if entries.size() == 2:
+		var ch: Dictionary = Data.races.fields.championship
+		var size := mini(rng.randi_range(int(entries[0]), int(entries[1])) - 1, sorted.size())   # (the player is one of them)
+		var tail := roundi(size * float(ch.tail))
+		var field := []
+		var rest := []
+		for k in range(sorted.size() - 1, -1, -1):   # best first
+			if field.size() < size - tail and rng.randf() >= float(ch.skip):
+				field.append(sorted[k])
+			else:
+				rest.append(sorted[k])
+		rest.shuffle()
+		return field + rest.slice(0, size - field.size())
 	var lo := int(float(cfg.pool_range[0]) * sorted.size())
 	var hi := int(float(cfg.pool_range[1]) * sorted.size())
 	var candidates := sorted.slice(lo, hi)

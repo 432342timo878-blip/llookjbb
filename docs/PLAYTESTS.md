@@ -12,6 +12,14 @@ coach shouts, PB / SB in the verdicts and in every result list, the monthly reco
 first, days folded), the Rankings tab (YOU box, highlighted row, a line on what it is). Not fixed here: the notes marked
 step 7, Coaching, School, rival profiles and the race-controls idea (see the table below).
 
+**Step 7 (the multi-year check, 2026-10-10; GDD 4.2 "Multi-year check"):** "last in almost every race" had its cause in the
+rivals: they grew about twice as fast as real juniors and never stopped (the best of a birth year at 1:43 by 21), so every kind
+of player was last in about half the races from 16 on. Now the rivals follow real Finnish levels (a birth year's 1st / 8th /
+20th best within about 1–2 s of the 2026 championships), and random players were last in 7 of 95 races at 17 instead of 48 of
+94. "One warning all season, no injuries": per week the game has a substantial health problem 10–14 % of the time, as real
+adolescent runners (11 %, Mann 2021), so no change; one player's season can be lucky. "How fast should attributes grow": young
+athletes grow fastest, from about 16 (girls 15) the yearly gains shrink, and a beginner catches a trained athlete at about 17.
+
 **Setup (user):** new career, the coach's plan, nothing changed in training, every race entered (targets Nuorten
 SM-hallit, Tampere Junior Indoor Games, Nuorten SM), the Balanced plan, 12 points on determination, race tactics,
 pain tolerance and professionalism; races watched and quick-simmed. Background: early developer ("Taller and
@@ -41,9 +49,9 @@ stronger"), "Nowhere yet" to train.
 | Coach unhappy after a 2 s PB, "not good enough" after a 4 s PB | feels wrong | quick fixes |
 | Never see a PB / SB in results | missing | quick fixes |
 | Huge time swings between races (from the save) | bug? | quick fixes |
-| One warning all season, no injuries | feels wrong | step 7 |
-| Can't tell how fast attributes should grow, or whether training works; training runs "in the background" | missing feedback | step 7 + monthly record (quick fixes) + Statistics |
-| Last in almost every race | feels wrong | points pool (done) + step 7 |
+| One warning all season, no injuries | feels wrong | step 7: the health model matches real runners per week (no change) |
+| Can't tell how fast attributes should grow, or whether training works; training runs "in the background" | missing feedback | step 7 (growth by age, done) + monthly record (quick fixes) + Statistics |
+| Last in almost every race | feels wrong | points pool (done) + step 7 (rivals' growth fixed, done) |
 | "How should I know my potential / what times / what makes the coach happy?" | missing | points pool (the coach's guess, done) + Coaching |
 | Don't know why I train what I train, wouldn't know what to change | missing | Coaching |
 | Day by day is redundant, the days feel empty | feels wrong | Coaching + School |

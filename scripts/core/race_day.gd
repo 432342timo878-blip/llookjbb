@@ -62,7 +62,7 @@ func _init(m: Dictionary, a: Athlete, pool: Array) -> void:
 		if limits.has(cls):
 			standard_ability = RacePerformance.ability_for_time(float(limits[cls]), a.gender)
 	var entrants := []
-	for r in Rivals.pick_field(pool, meet.level, _rng, standard_ability):
+	for r in Rivals.pick_field(pool, meet.level, _rng, standard_ability, entry_range(meet, a)):
 		entrants.append(_rival_entrant(r))
 	entrants.append(_player_entrant())
 	for e in entrants:
@@ -88,6 +88,16 @@ func _init(m: Dictionary, a: Athlete, pool: Array) -> void:
 	if format == "single":
 		rounds = ["race"]
 		final_entrants = entrants
+
+
+## A championship's real number of runners for the athlete's age class and gender (competitions.json "field":
+## [{ages, male, female}], from the 2026 entries; step 7), or [] (the meet level's usual field).
+static func entry_range(m: Dictionary, a: Athlete) -> Array:
+	var age: int = int(m.date.year) - int(a.birth_date.year)
+	for f in m.get("field", []):
+		if age >= int(f.ages[0]) and age <= int(f.ages[1]):
+			return f.get(a.gender, [])
+	return []
 
 
 ## "Heat 2 of 3", "Semi-final 1 of 2", "Section 2 of 3", "Final", or "Race" for a single race.
@@ -126,6 +136,7 @@ func start_round(interactive: bool, plan: String) -> Race:
 	var entrants := current_entrants()
 	current = Race.new()
 	current.interactive = interactive
+	current.age = Training.age_years(athlete, meet.date)   # (one birth year: the player's age is everyone's)
 	current.setup(entrants, _gender, is_big_meet(), fatigue, _rng, _indoor, shape_mix())
 	current.auto_places = _auto_places()
 	current.coach_id = Coaches.id_of(athlete)   # (his wording on the cards; R4)
@@ -205,6 +216,7 @@ func _run_groups_until(upto: int) -> void:
 
 func _run_group(g: int) -> void:
 	var other := Race.new()
+	other.age = Training.age_years(athlete, meet.date)   # (one birth year: the player's age is everyone's)
 	other.setup(heats[g], _gender, is_big_meet(), 0.0, _rng, _indoor, _mix_for(g))
 	other.auto_places = _auto_places()
 	other.run()

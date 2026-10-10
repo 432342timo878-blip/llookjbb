@@ -1,8 +1,9 @@
 class_name Calendar
 ## Competition calendar: builds dated meets from data/competitions.json, and answers who can enter what.
-## The data describes the first season; later seasons repeat it 52 weeks later (same weekday) as estimates.
+## The data describes the first season; later seasons repeat it whole weeks later (same weekday) as estimates: 52 weeks
+## a year, and 53 when the dates have drifted half a week early (season_offset), so they stay at their time of year.
 
-const SEASONS_AHEAD := 2   # how many repeated seasons to generate after the first
+const SEASONS_AHEAD := 20   # how many repeated seasons to generate after the first (was 2 until step 7: no meets after Oct 2029)
 
 
 ## All meets between two dates (inclusive), sorted by date. Each meet is a Dictionary with the data fields plus
@@ -164,6 +165,12 @@ static func format_time(seconds: float) -> String:
 static var _meets_cache: Array = []
 
 
+## Days from the data's season to the same meet `season` seasons later: the whole number of weeks nearest to that many
+## calendar years (364 days for 1 and 2 seasons, as before; 1099 = 157 weeks for 3).
+static func season_offset(season: int) -> int:
+	return 7 * roundi(365.2425 * season / 7.0)
+
+
 static func _all_meets() -> Array:
 	if not _meets_cache.is_empty():
 		return _meets_cache
@@ -171,7 +178,7 @@ static func _all_meets() -> Array:
 	for season in SEASONS_AHEAD + 1:
 		for c in Data.competitions.competitions:
 			var m: Dictionary = c.duplicate(true)
-			m.date = Game.add_days(parse_date(c.date), 364 * season)
+			m.date = Game.add_days(parse_date(c.date), season_offset(season))
 			m.key = "%s@%d" % [c.id, m.date.year]
 			if season > 0:
 				m.estimated = true

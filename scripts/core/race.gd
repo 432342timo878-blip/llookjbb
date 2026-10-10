@@ -39,6 +39,7 @@ var player: Runner
 var time := 0.0
 var finished := false
 var interactive := false          # detailed mode: pause at decision points
+var age := 0.0                    # the runners' age in years (one birth year; set by RaceDay before setup): older runners' race-day form varies less (races.json engine.form_sd.by_age, step 7); 0 = not known, the full spread
 var manual_kick := false          # the watched race on the race screen: "wait" means the player kicks by pressing Kick now (set by the screen; tools and quick mode keep "wait" = kick at 100 m)
 var kick_plan := 0.0              # quick result: the metres to go at which the athlete kicks (0 = their own natural point; set_kick_plan)
 var pending: Dictionary = {}      # decision waiting for the player
@@ -190,6 +191,19 @@ class Runner:
 	var oi := 0                   # place in the last standings() (0 = first)
 
 
+## The share of the race-day form spread at this age (races.json engine.form_sd.by_age, [age, share] interpolated;
+## 1.0 when the age is not known): GDD 4.3.1 decision 12, step 7. Real elite runners vary about 1 % from race to race,
+## youngsters more (Hopkins 2005; Hopkins & Hewson 2001).
+static func form_age_share(years: float) -> float:
+	var table: Array = Data.races.engine.form_sd.get("by_age", [])
+	if years <= 0.0 or table.is_empty() or years <= float(table[0][0]):
+		return 1.0 if years <= 0.0 or table.is_empty() else float(table[0][1])
+	for i in range(1, table.size()):
+		if years <= float(table[i][0]):
+			return lerpf(float(table[i - 1][1]), float(table[i][1]), (years - float(table[i - 1][0])) / (float(table[i][0]) - float(table[i - 1][0])))
+	return float(table.back()[1])
+
+
 ## `entrants`: Dictionaries with name, club, ability, speed, anaerobic, tactics, consistency, composure
 ## (+ is_player, rival, personality, competitiveness / determination, and for dev tools `script`: a scripted
 ## race, see _apply_script). `big_meet` makes composure matter. `player_fatigue` 0–100. `mix` = the race-shape
@@ -240,9 +254,9 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 		i += 1
 		r.speed = e.speed
 		r.tactics = e.tactics
-		# Race-day form: consistency narrows the spread, composure matters at big meets.
+		# Race-day form: consistency narrows the spread, so do the years (seniors), composure matters at big meets.
 		var fsd: Dictionary = e_cfg.form_sd
-		var form := rng.randfn(0.0, (float(fsd.base) + (20.0 - float(e.consistency)) / 20.0 * float(fsd.per_inconsistency)) * float(fsd.scale))
+		var form := rng.randfn(0.0, (float(fsd.base) + (20.0 - float(e.consistency)) / 20.0 * float(fsd.per_inconsistency)) * float(fsd.scale) * form_age_share(age))
 		if big_meet:
 			form += (float(e.composure) - 10.0) * 0.04
 		if r.is_player:

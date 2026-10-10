@@ -129,7 +129,7 @@ func end_week() -> Dictionary:
 	if _sessions == 0:
 		_notes.append("A full week off. Good for recovery, but fitness slowly fades.")
 
-	var changes_done := Training._apply_progression(a, _stimulus)
+	var changes_done := Training._apply_progression(a, _stimulus, monday)
 	return {
 		"monday": monday, "sessions": _sessions, "load": _load,
 		"fatigue_start": _fatigue_start, "fatigue_end": a.fatigue, "fatigue_peak": _fatigue_peak,

@@ -48,6 +48,7 @@ static func create(choices: Dictionary, rng: RandomNumberGenerator) -> Athlete:
 		for attr in Data.attributes_in("physical"):
 			a.set_attr(attr.id, a.get_attr(attr.id) + shift)
 		a.set_attr("trainability", a.get_attr("trainability") - extra * float(p.get("trainability_per_experience", 0.0)))
+		a.experience = experience(choices.answers)   # (a beginner's novice gains, Training.novice_bonus)
 
 	_roll_body(a, rng)
 	return a
