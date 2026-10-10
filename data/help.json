@@ -108,7 +108,7 @@
   },
   "race_running": {
    "title": "The race",
-   "version": 9,
+   "version": 10,
    "sections": [
     {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. Outdoors the race runs in lanes until the first bend is over, indoors until the second, then everyone cuts in. In a section or heat, the line under the clock says about what time you need."},
     {"heading": "Pause", "text": "The pause button next to 1x, 2x and 4x (on a PC also the Space bar) stops the race, so you can look at the track and the positions. The action bar still works: your command is given at once and the race acts on it when you run on. Tap it again to go on."},
@@ -121,6 +121,7 @@
     {"heading": "Decisions", "text": "The race pauses when something really happens: after the break, at the bell, a rival's move, being boxed in, losing contact, a slow pace, your own kick, the home straight, after a fall. If your coach can see you, the coach shouts what to do. The advice is usually right, not always."},
     {"heading": "The card", "text": "A decision card sits beside the track (on a phone, in a sheet below it), so you can see what is happening while you choose. The race waits until you answer, and the action bar is dimmed meanwhile."},
     {"heading": "Commentary", "text": "A stadium announcer calls small meets; at championships a commentator and an expert explain what you may miss: moves that get away, kicks that die, boxes, heat runners easing off. Key moments flash over the top of the track. The newest line is also under the track (a phone: the ticker; tap it for the whole log, the race waits)."},
+    {"heading": "Voice", "text": "The Voice button reads the key moments and your coach aloud with your device's own speech voice. It works best with an English voice installed (on Windows: Settings, Time and language, Speech, Add voices). Off, low, mid and high set the volume. It is silent at 4x, and it stops when you pause."},
     {"heading": "Your coach", "text": "Your coach sits in the stands: outdoors by the 200 m start (the diamond), indoors at the hall rail. He speaks only about what he can see: your splits as you pass him, the cards, your kick. Each coach has a personality: calm, hard, warm or tactical. About ten seconds after a choice you hear how it is working out."}
    ]
   },

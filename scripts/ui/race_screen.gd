@@ -47,6 +47,7 @@ var _slow_left := 0.0          # race seconds more at 1x (a move, box, contact o
 var _slow_reason := ""         # what it was ("Savolainen kicks"), shown in the note
 var _paused := false           # the pause button / Space (GDD 4.3.1 decision 27): the race waits, the bar still works
 var _pause_button: Button
+var _voice_button: Button          # cycles the voice off / low / mid / high (VoiceOver)
 var _pause_icon: Control       # the two bars (or the triangle when paused), drawn so no font is needed
 var _track_area: Control       # the track: a decision card never covers it (decision 26)
 var _side_scroll: ScrollContainer   # PC: the right column (card + clock + positions + commentary)
@@ -105,6 +106,10 @@ func _build_shell() -> void:
 	_body = Control.new()
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(_body)
+
+
+func _exit_tree() -> void:
+	VoiceOver.stop()
 
 
 func _on_layout_changed(_compact: bool) -> void:
@@ -226,6 +231,7 @@ func _can_pause() -> bool:
 
 func _on_pause_toggled(on: bool) -> void:
 	_paused = on
+	VoiceOver.pause(on)
 	_pause_icon.queue_redraw()
 	_update_slow_note()
 
@@ -640,6 +646,17 @@ func _show_running() -> void:
 	_pause_button.add_child(_pause_icon)
 	_pause_button.toggled.connect(_on_pause_toggled)
 	_header_right.add_child(_pause_button)
+	# The voice (a first prototype, English text to speech of the device): key moments and the coach read aloud. The
+	# button cycles off / low / mid / high and is only there when the device can speak.
+	if VoiceOver.supported():
+		_voice_button = Button.new()
+		_voice_button.name = "VoiceButton"
+		_voice_button.custom_minimum_size = Vector2(96, 44)
+		_voice_button.focus_mode = Control.FOCUS_NONE
+		_voice_button.text = VoiceOver.NAMES[VoiceOver.level()]
+		_voice_button.pressed.connect(func():
+			_voice_button.text = VoiceOver.NAMES[VoiceOver.cycle()])
+		_header_right.add_child(_voice_button)
 
 	_race.decision_needed.connect(_show_decision)
 	_make_banner(track_area)
@@ -753,6 +770,7 @@ func _drain_commentary() -> void:
 			_ticker.show_line(line)
 		if _strip != null:
 			_strip.show_line(line)
+		VoiceOver.speak(line, 1.0 if _slow_left > 0.0 else _speed)
 		if line.has("banner") and not _compact_run:
 			_show_banner(str(line.banner))
 
@@ -870,6 +888,7 @@ var _result := {}   # what the result stage shows (kept so a layout change can r
 
 func _show_result(fresh := true) -> void:
 	_stage = "result"
+	VoiceOver.stop()
 	_drop_decision()
 	if fresh:
 		var res := _race.results()
