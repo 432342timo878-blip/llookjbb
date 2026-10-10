@@ -325,6 +325,22 @@ change of place late is a fade, never a fight.
 42. (Answer, no change) Push / Hold / Ease are dimmed once you kick: the bar sets the pace *until* the kick, and the kick runs
     the rest of the race on its own (R3, "Kicking!" on the button). Open idea: a short note on the bar while it is dimmed.
 
+**Decisions (user, 2026-10-10, the check-in: `docs/AUDIT.md` "Check-in (2026-10-10)"; built in the fix session):**
+43. **A section or heat place is not a medal.** In sections the places and medals go by time across all sections, so the
+    commentary, the coach and the Race story speak of the overall place; a section or heat winner "wins the section /
+    heat", and "podium" / "medal" lines need a real medal (overall top 3, or a final / single race).
+44. **Verdicts in hindsight.** The line 10 s after a card says how it looks "so far" and stays neutral on moves (going
+    with a mover looks good at once and costs at the finish); the real verdict on each choice comes in the Race story
+    after the finish.
+45. **Talk between the calls only on lap 1** (1–2 short facts); introductions, the season, the next meet and history wait
+    for the race ceremony / studios (backlog).
+46. **The crew knows the favourites' styles** at streamed and TV meets (crews work from prepared notes); the style tag in
+    the player's own field list still needs two races (decision 3).
+47. **Nuorten SM (national level) has one commentator, no expert** (no crewed youth stream found); international youth
+    meets keep commentator + expert, senior championships TV. Also: coach lines fit a minor (no "sweetheart" / "love");
+    "better / as expected / below" from the pre-race ranking, not the day's hidden form. The coach's advice by
+    personality (instead of the 80 % dice) is designed with Coaching.
+
 **Engine: pack racing.** The race is decided by who has energy left late, not by who ran their own pace.
 - **Race shape**, rolled before the start (data, `races.json` `shapes`): *fast from the gun* (lap 1 ≈ 3–5 % faster than
   the field's even pace), *honest* (≈ 1–2 % faster: the normal positive split), *tactical* (≈ 8–12 % slower, then a

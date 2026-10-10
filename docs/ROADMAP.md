@@ -220,6 +220,24 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
         final), the time needed shown before and during the race, the indoor break line after two bends (WA 2025),
         season bests by calendar year. New `tools/race_rounds.gd`; `watch_race.gd -- sections|heats`. All R5 rows
         identical outdoors. *(Opus)*
+- [x] **Check-in 2026-10-10** (realism audit of R4 + project review, `docs/AUDIT.md` "Check-in (2026-10-10)"): order of
+      work agreed with the user below; next check-in after step 7.
+- [ ] **Fix session (after the check-in):** (1) R4 realism fixes: section / heat places never called a podium or medal
+      ("wins the heat / section"; Race story and coach use the overall place in sections); the 10 s verdict says "so
+      far" and the real verdict on a choice comes in the Race story after the finish; talk between the calls only 1–2
+      short facts on lap 1; the crew knows the favourites' styles at streamed / TV meets (the player's own tag still
+      after two races); Nuorten SM (national level) gets one commentator, no expert; coach words fit a minor (no
+      "sweetheart" / "love"); "ranked x of y" over the whole field; "his club"; the two trailing commas in
+      `race_commentary.json`; "better / as expected / below" from the pre-race ranking. (2) The two open chips:
+      `help_check` "day editor ?" (fails only in the PC layout, i.e. windowed) and the heat Q / q marks vs the next
+      round's size. (3) One "run all checks" script: the quick checks in both layouts, reads stderr for SCRIPT ERROR,
+      one honest PASS / FAIL list. (4) A Dev menu in debug builds for the user: watch a test race (indoor / outdoor,
+      sections / heats), jump the career forward. Help entries for anything new. *(Sonnet, high)*
+- [ ] **Season playtest by the user:** play one whole season (Nov–Oct) in the real game, PC or phone, notes only (no
+      code); the notes feed the next sessions and step 7.
+- [ ] **Character creation: points pool from the answers** (moved here from the ideas backlog, 2026-10-10: it changes
+      the starting athlete, so it comes before step 7 measures careers). Design + build; `training_balance.gd` before /
+      after. *(Opus for the design, then Sonnet)*
 - [ ] **7. Multi-year progression check:** extend the balance tools to 5–8 seasons (ages 14–21) through the game
       loop with health on, and compare the player's and the rivals' curves with real Finnish standards (e.g. a
       talented athlete reaches SM-level youth finals at 15–17 and Kalevan kisat standard around 19–21; most rivals
@@ -228,9 +246,14 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       finish target). From the audit (`docs/AUDIT.md`): the share of days with a health problem (~6 % vs ~25 % real),
       championship field sizes (every Nuorten SM field is 41) against real entry lists. *(Opus)*
 
-Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans):
-- [ ] Coaching (hire, veto)
+Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans). Agreed
+2026-10-10: Coaching and School are designed together (both compete for the athlete's time), after step 7:
+- [ ] Coaching (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
+      over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10)
 - [ ] School (grades, exams vs meets, Finnish school calendar)
+
+After Coaching and School (agreed order 2026-10-10): athlete reputation, the Statistics tab, the pre- and post-race
+studios (with the race ceremony), audio. Details in the ideas backlog.
 
 ## Ideas backlog (from the user, 2026-10-06; placement is Claude's proposal, not yet designed)
 - ~~**Ctrl+S to save**~~ — done in M2 step 4 (same as the Save button, "Saved ✓", desktop only).
@@ -248,7 +271,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   properly licensed photo exists (e.g. Wikimedia Commons CC BY-SA, needs the Credits screen), a real photo.
   Youth stay fictional (minors). The player's own avatar can come with stage 1 too.
 
-- **Club (seura) and hometown pages (user, 2026-10-07):** see your own club's information, and the same for every club: general
+- **Club (seura) and hometown pages (user, 2026-10-07; parked until after M2, check-in 2026-10-10):** see your own club's information, and the same for every club: general
   info, all its athletes. Likewise your hometown and every hometown: info and all its athletes. Needs clubs / hometowns to
   have athletes (rival cohort per club and town) and the rival profile screen above. Needs a design session first. *(Opus, then Sonnet)*
 - **More meets in the calendar (user, 2026-10-07):** add all the national and international meets that can be found, on top of
@@ -263,7 +286,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   Best started right after step 6e (season UI) so the big screens exist; the entries for the existing tabs can be written earlier. *(Opus for the text outline, then Sonnet)*
   **Done:** 13 screen entries + 9 topics, `HelpButton` / `HelpPanel` / `HelpOverlay`, `tools/help_check.gd`; 6f added `season_offer`,
   `return_block` and the topic `easing_back_in` (now 15 screens + 10 topics).
-- **Track visuals (user, 2026-10-07):** the user is starting to dislike how the track looks in the main menu and in the races (the
+- **Track visuals (user, 2026-10-07; parked → M3, check-in 2026-10-10):** the user is starting to dislike how the track looks in the main menu and in the races (the
   drawn stadium / hall track). Worth a look later: get reference images of real tracks first (CLAUDE.md: realism, no guessing), then
   redraw. Could go together with M3 (stadium view). *(Opus for the look, then Sonnet)*
 - **Season best (SB) in the race field (user, 2026-10-07; done in R4, 2026-10-09):** the pre-race "THE FIELD" list on the race screen (`race_screen.gd`
@@ -289,7 +312,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   the cool-down helps recovery (soreness / fatigue) and shows up in the race-day report. Plugs into the day engine
   (`on_day_start` / race day), the health model (injury risk when cold, warm-up as prevention) and Form (GDD 4.8). Needs a design
   session first. *(Opus, then Sonnet)*
-- **Pacemakers (jänis) in senior races (user, 2026-10-08):** at senior level (M4+, Kalevan kisat and international meets, Diamond
+- **Pacemakers (jänis) in senior races (user, 2026-10-08; parked → M4, check-in 2026-10-10):** at senior level (M4+, Kalevan kisat and international meets, Diamond
   League style) some races have a pacemaker who sets a fast first lap(s) and drops out (usually at 400–600 m), changing the race
   shape (the leader runs the target split instead of the field's even pace; the shape mix gets a "paced" shape, GDD 4.3.1).
   The player could be offered the hare's pace, and rivals' personalities react to it. Also fits "pace lights". Designed with
@@ -299,18 +322,19 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   licence terms checked) athlete and track photos, ideally Finnish athletics, with the credits added to the README there and
   to the in-game Credits screen (still missing). No photos of identifiable minors (youth meets) unless the licence and
   privacy allow it; keep `mipmaps/generate=true`. Research + asset task; downloads need the user's OK per file. *(Sonnet)*
-- **Training screen with training PBs (user, 2026-10-09):** a dedicated screen for training results and detailed training
+- **Training screen with training PBs (user, 2026-10-09; check-in 2026-10-10: designed as part of the Statistics tab,
+  not a screen of its own):** a dedicated screen for training results and detailed training
   info: gym PBs (squat, deadlift, jumps, medicine-ball throws...), long / easy run PBs (distance, pace, time), interval PBs
   (e.g. 6 x 400 m average, best 200 m / 300 m / 600 m rep), tempo and test sessions, with history and PB marks, per
   season. The numbers come from the athlete's attributes, the session and the day's form / fatigue (so they rise as
   the athlete improves), stored per session type; the Stats tab (above) can link to it. Needs a design session
   first: which results per session in `data/training.json`, how they follow the attributes. *(Opus, then Sonnet)*
-- **Venue-specific stadiums (user, 2026-10-09):** a meet in a small Finnish town looks like it is run at Olympiastadion,
+- **Venue-specific stadiums (user, 2026-10-09; parked → M3, check-in 2026-10-10):** a meet in a small Finnish town looks like it is run at Olympiastadion,
   because there is one stadium model. Give venues their own look and size (small town track with a little grandstand,
   a big arena, an indoor hall, Helsinki's Olympiastadion...) from data per venue (`data/competitions.json` venues: stands,
   capacity, colours, lighting, lanes). Get reference photos / specs of the real venues first (CLAUDE.md: realism, no
   guessing); goes with "Track visuals" below and M3. *(Opus for the look, then Sonnet)*
-- **Other events in the stadium during your race (user, 2026-10-09, "if at all possible"):** field events running in the
+- **Other events in the stadium during your race (user, 2026-10-09, "if at all possible"; parked → M3, check-in 2026-10-10):** field events running in the
   infield at the same time (jumps, throws, with athletes warming up and attempts happening), so the stadium is alive.
   Fits M3 "simultaneous events"; needs the meet's programme (next item) and the venue models above.
 - **Race ceremony: introductions and the start (user, 2026-10-09):** before the start the athletes are introduced (name,
@@ -343,7 +367,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   the Credits screen) found and approved by the user file by file (downloads need the user's OK); mobile: keep files small
   (OGG, mono for effects) and respect the phone's silent mode. *(Sonnet for the plumbing, the user for the taste, assets
   need a research session first)*
-- **Character creation: a points pool from the answers (user, 2026-10-10):** the 12 free points feel arbitrary. Idea:
+- **Character creation: a points pool from the answers (user, 2026-10-10; moved into M2 before step 7, check-in 2026-10-10):** the 12 free points feel arbitrary. Idea:
   the background answers decide how many points the athlete gets to allocate (a runner from a sporty family with years
   of training starts with a bigger pool than a beginner; maybe the pool also follows the maturation answer), the base
   ranges stay or shrink, and the player spreads the pool as they like (still a cap per attribute). Needs a design
@@ -361,8 +385,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   (GDD 1–2) and the roadmap, what is still missing, what is fragile or slow (tools, checks, code), Claude's honest
   feedback and opinions, and an open dialogue about priorities. Claude's proposed rhythm: after each larger step (next:
   after R4, after step 7, at the end of M2), or whenever the user asks. Output: a dated section in `docs/AUDIT.md`
-  + roadmap changes the user agrees to. *(Opus)*
-- **Zoom in on the race (user, 2026-10-09):** on the race screen the dots sometimes look far away. Let the player zoom
+  + roadmap changes the user agrees to. *(Opus)* First one done 2026-10-10 (`docs/AUDIT.md`); next after step 7.
+- **Zoom in on the race (user, 2026-10-09; parked → M3, check-in 2026-10-10):** on the race screen the dots sometimes look far away. Let the player zoom
   in on the field (e.g. a camera that follows the pack or the player, zoom buttons / pinch on a phone, 44 px, no
   hover), keeping the whole-track view as an option. Mind `race_perf` (the stadium is drawn once; the dots view is
   redrawn every frame) and the decision card that must never cover the track (decision 26). Could go with R4 or M3.
@@ -388,8 +412,11 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 
 ## M3 — Stadium view
 - [ ] 2D stadium during meets: track, crowd, simultaneous events
+- Parked here from the ideas backlog (check-in 2026-10-10): track visuals, venue-specific stadiums, other events in
+  the stadium during your race, zoom in on the race.
 
 ## M4+ — Breadth
 - [ ] Other running events (400m–10000m, steeple), then hurdles & sprints, jumps, throws, combined events
-- [ ] International circuit, championships, qualification standards
+- [ ] International circuit, championships, qualification standards (with pacemakers in senior races, parked here
+      from the ideas backlog at the check-in 2026-10-10)
 - [ ] Full world simulation, sponsors, media, rivals, nutrition, equipment, doping…
