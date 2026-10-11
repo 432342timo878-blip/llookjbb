@@ -312,6 +312,13 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
       everyone around me", and school, coach talk and friends all wanted): the coach explains the plan and why, talks
       about the week, sets season goals with times ("what makes the coach happy"), and the days get small choices
       with the people around the athlete. The days feeling empty is the playtest's biggest complaint.
+      User wishes (2026-10-11, after the talent session): (a) **ask the coach's opinion** when fine-tuning the plan (the coach
+      comments on your own edits, better or worse depending on the coach); (b) **many coaches / coaching teams to choose from,
+      each with their own attributes like Football Manager staff** (e.g. endurance and speed knowledge, youth development,
+      periodization, race reading, motivation, injury prevention, communication; personality; availability, cost, reputation,
+      location), with realistic limits on who a 14-year-old in a small town can get (club coach first, more choice with age,
+      results, an urheilulukio or a move). Claude's view: yes, it fits D18 and gives the plan choice the weight the talent
+      session found missing (the plans differ by only 1–2 s at 21).
 - [ ] School (grades, exams vs meets, Finnish school calendar)
 
 After Coaching and School (agreed order 2026-10-10): athlete reputation, the Statistics tab, the pre- and post-race

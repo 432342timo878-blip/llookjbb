@@ -328,7 +328,25 @@ and the average story with potential 17.5, 2 boys + 2 girls each, so ±1–2 s):
   Coaching should make the choices around the plan matter more (the coach's layer); (2) from 23 a career has only ~2 races a
   year (club meets; no senior calendar), so SBs at 23–25 are slow and noisy: the "more meets" session; (3) dropouts (rival profiles);
   (4) the talent is 22nd–32nd of the birth year at 15 (2:16–2:18) and climbs from there: real future seniors were often not the
-  youth leaders (Kearney & Hayes 2018), but a player told "top talent" may expect more at 15.
+  youth leaders (Kearney & Hayes 2018), but a player told "top talent" may expect more at 15; (5) a top talent (17.5) on Balanced
+  peaks at about 1:52 at 25, short of the 1:47–1:50 target: the late rate is right (21 → 25 +2.8 %, Haugen 2018 ~3.4 %), the level at
+  21 is ~2 s low; the agreed roles give the last few percent to Coaching (a better coach and plan choices: finalist vs medallist).
+- **World level (user, 2026-10-11: "do whatever you deem best"; Claude's decision):** the player's potential stops at 18, which is
+  1:45.3 / 2:00.0 with every attribute at the potential (about the Finnish record), so the world top (1:43–1:45 / 1:56–1:59) is out of
+  reach, and the game has no senior international meets or world rankings yet. Target for M4 (with real senior athletes and
+  international meets, D20): the rarest talents (potential 19–20, about 1 player in a few hundred) can reach world level at 24–27.
+  Not built now: without world-class rivals and meets, a 1:43 runner would only win Finnish races by seconds.
+- **Beginner stories after the talent session (user's question, 2026-10-11):** the novice bonus tuned in step 7 (1.4) was too strong
+  with the new growth: a beginner top talent ran 1:53.4 at 17 on Ambitious (the birth year's best rival ~1:56) and stayed ahead of the
+  trained story for life. Retuned below ("Beginner bonus retuned").
+- **Beginner bonus retuned (user: "do whatever you deem best", 2026-10-11):** `progression.novice.bonus` 1.4 → 0.8, tried 1.4 / 0.8 /
+  0.4 / 0 (`career_check -- 6 beginner,average,trained 11 0 norace … novice.bonus=x`, pairs on the same rolls): with 0.8 the beginner
+  is level with the trained story at 17 (ahead in 3 of 6 pairs), slightly ahead at 18–21 (4–5 of 6) and level at 25 (2 of 6), as
+  agreed in step 7 (1.4: ahead in 6 of 6 from 16 to 25; 0.4: behind in every pair). The average story stays ~0.4 behind the trained
+  one at 25 in every pair: the trained story's "a parent competed in athletics" hints +0.5 hidden potential (by design). Top talents
+  with the potential fixed at 17.5 (no hint), boys on Balanced: beginner 2:03.8 / trained 2:04.2 at 17, 1:52.5 / 1:54.3 at 21 (norace
+  table times). Proofs: `training_balance -- 0` identical (206.798298350 …, the test athlete has no novice bonus); `season_check -- 50`
+  ALL PASSED, ability +1.63 / +1.65 / +1.43, injuries 0.60 / 0.76 / 0.78.
 
 ### 4.3 800 m race simulation (first version built)
 
