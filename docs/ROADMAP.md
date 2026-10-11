@@ -413,6 +413,50 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
   itself in a watched race, Kick now works at any distance; plus a **kick plan** for Quick result, the first piece of "a
   tactic my AI self follows": the user asked for it, and more of it (an effort plan, a reaction to moves) belongs in this
   design session). *(Opus)*
+- **Never stale: no "same three options again" (user, 2026-10-11):** "I'm most afraid that the game will get stale
+  quickly (here's 3 options to choose from, repeating cards off and on track)… look into training minigames or
+  something else; be the idea factory." **Conflict to settle first:** GDD D1 / D2 say no minigames and no dexterity
+  input; the user asks to look at them again. Claude's ideas (not designed, 2026-10-11):
+  (1) **Storylets instead of a card pool:** every event, card and talk has conditions (age, history, rivals, school,
+  injuries, results) and consequences, and is used once or with a long cooldown; chains and milestones ("your first
+  SM", "beating the rival who always beat you", "back after the stress fracture") instead of random draws;
+  (2) **lines built from the athlete's own history** (the coach remembers your last answer and how it went, rivals have
+  memories of you), so the same situation never reads the same;
+  (3) **standing orders** for the repetitive: the player sets a rule once ("cover moves from runners weaker than me",
+  "easy day when sore") and is only asked when something is new;
+  (4) **key sessions played through** (decisions, no dexterity, the race engine reused): an 800 m interval session or a
+  time trial where you choose each rep's pace from the coach's splits and your Feeling word, and pay for overcooking it;
+  (5) **tests that reveal progress:** 30 m sprint, Cooper / 2000 m test, a lab test (VO2max, lactate) a few times a year,
+  turning hidden growth into numbers the player sees (also answers "can't tell whether training works");
+  (6) **arcs a season has:** national youth team selection (Sweden match, EYOF), a training camp (Kuortane, abroad,
+  altitude), a new coach, a training group with teammates, a rival moving clubs, a school exam week;
+  (7) **variety in the races themselves:** weather, venues, the 1500 m / 400 m / relays / cross-country (D6);
+  (8) a **"never twice" rule checked by a tool** (as `commentary_check` does for the commentary).
+  Placement: the Coaching + School design session (it designs the days), then each piece in its own build step. *(Opus)*
+- **More attributes, mental training (user, 2026-10-11):** "Are we sure we don't need more athlete attributes? Mental,
+  physical? Maybe the mental side could use more training options. Keep them realistic (what athletes train in real
+  life)." Today: 10 physical, 2 technical, 7 mental, 6 hidden; the mental ones grow only from races (consistency never
+  grows). Claude's first thoughts (to research): real mental-skills training for runners = goal setting, imagery /
+  visualisation, self-talk, breathing / relaxation, pre-race routines, attention focus, race-simulation sessions and
+  video / race analysis with the coach; candidates = **confidence** and **motivation** as moods that change week to week
+  (not fixed attributes), maybe **focus**, and the sessions that make composure, consistency and race tactics grow.
+  Physical: probably enough (check: anaerobic capacity vs speed endurance, core / hip stability, body composition with
+  nutrition D9). Needs research with sources and a design: each new attribute must matter in the race or training model,
+  or it is only a number. Placement: designed with Coaching + School (sessions and time), built after. *(Opus)*
+- **An ongoing chat with the coach (user, 2026-10-11):** "something like a conversation we're having here; interactive,
+  not repetitive". Possible ways: (a) **an AI coach**: the game sends the coach's personality, the athlete's state (plan,
+  soreness, results, goals, school) and the chat to Claude over the internet (Godot's HTTPRequest; GDScript has no
+  official SDK, so raw HTTP), and the coach answers in free text; game actions (change a day, set a goal, change the plan)
+  come back as structured tool calls that the game checks and shows as Accept / Veto, so the AI can never break the
+  rules. Needs an Anthropic API key (separate from the Claude subscription) and internet; costs per message (rough, with
+  ~6 000 tokens of context and a 200-token answer: Haiku 5.5 about 0.07 cents, Sonnet 5.5 about 1.4 cents or ~0.3 cents
+  with caching, Opus 5.5 about 3 cents or ~0.6 cents with caching; a season of a few hundred messages = cents to a few
+  euros); a personal project (D12) can do it, but the game must still work offline (written lines as the fallback),
+  and the key must not end up in a public repo. (b) **written dialogue** with topics and tone choices (FM-style), lines
+  built from the game state: predictable and free, but it repeats in the end. (c) **hybrid**: the game decides what is
+  talked about and what can happen, the AI only words it and answers free questions. Claude's view: (c) first as a small
+  prototype, so the user can feel it before the design commits. Placement: the Coaching + School design session decides
+  whether and how; a prototype session after it. *(Opus)*
 - ~~**Character creation: a points pool from the answers**~~ — built 2026-10-10 (GDD 4.1.1 "Built (points pool)"). The original idea (user, 2026-10-10; moved into M2 before step 7, check-in 2026-10-10): the 12 free points feel arbitrary. Idea:
   the background answers decide how many points the athlete gets to allocate (a runner from a sporty family with years
   of training starts with a bigger pool than a beginner; maybe the pool also follows the maturation answer), the base
