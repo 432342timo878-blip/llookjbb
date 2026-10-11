@@ -28,7 +28,8 @@ var _rng := RandomNumberGenerator.new()
 
 const CONDITIONS := ["age", "month", "weekday", "day_type", "weeks_in_career", "phase", "race_today", "race_tomorrow",
 		"race_in_days", "raced_days_ago", "pb_days_ago", "injured", "ill", "sore", "today_tags", "tomorrow_tags",
-		"tomorrow_rest", "flags", "flag_days", "counters", "seen", "not_seen", "answered", "trust", "relation", "chance"]
+		"tomorrow_rest", "flags", "flag_days", "counters", "seen", "not_seen", "answered", "trust", "relation", "chance",
+		"fatigue", "race_outcome"]
 const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "teammate", "club", "meet", "race_days", "pb",
 		"weekday", "tomorrow"]
 
@@ -63,9 +64,12 @@ func _run() -> void:
 	MS.include_test = true
 	_rules()
 	_seasons(careers, seasons)
+	MS.talks_enabled = true   # (the coach's Sunday talk always stops Play week: only the parts below play with it)
 	_save_load()
 	_neutral()
 	MS.include_test = false
+	_talks()
+	MS.talks_enabled = false
 	MS.enabled = true
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
@@ -110,7 +114,13 @@ func _data_checks() -> void:
 			if t is Dictionary:
 				problems.append_array(_when_problems(sid + " variant", t.get("when", {})))
 		var replies: Array = s.get("replies", [])
-		if replies.size() < 2 or replies.size() > 4:
+		var topic := str(s.get("topic", ""))
+		if not topic in ["", "week", "race", "ack"]:
+			problems.append("%s: unknown topic '%s'" % [sid, topic])
+		if topic == "ack":   # (a talk without a topic: the single reply "Thanks, coach")
+			if replies.size() != 1:
+				problems.append("%s: the talk's plain storylet has exactly 1 reply" % sid)
+		elif replies.size() < 2 or replies.size() > 4:
 			problems.append("%s: %d replies (2-4)" % [sid, replies.size()])
 		var rids := {}
 		var rules := 0
@@ -138,7 +148,7 @@ func _data_checks() -> void:
 		if not ids.has(n):
 			problems.append("a chain points to the unknown storylet '%s'" % n)
 	for s in all:
-		if bool(s.get("chain_only", false)) and not nexts.has(s.id):
+		if bool(s.get("chain_only", false)) and not nexts.has(s.id) and str(s.get("topic", "")) == "":
 			problems.append("%s: chain_only but no reply leads to it" % s.id)
 	for p in problems:
 		print("    " + p)
@@ -295,8 +305,8 @@ func _rules() -> void:
 	MS.include_test = false
 	game.start_career(_athlete(1), "repeat")
 	_play(28)
-	_ok("no real moments yet and the test ones not asked for: nothing happens (normal careers today)",
-			_ms().fired.is_empty() and game.events.is_empty() and _ms().to_dict().is_empty())
+	_ok("no scheduled moments yet (only the coach's talk topics exist) and the test ones not asked for: nothing happens",
+			_ms().fired.is_empty() and game.events.is_empty() and _ms().threads.values().all(func(t): return t.is_empty()))
 	MS.include_test = true
 
 	# A quiet career for the rules (the scheduler's week target 0; chains still come).
@@ -376,6 +386,15 @@ func _rules() -> void:
 	ms.answer(m4.id, "yes")
 	_ok("a reply with relation +2 raises the sender's relationship (%d -> %d)" % [rel4, ms.people[m4.from].relation],
 			ms.people[m4.from].relation == rel4 + 2.0)
+	var first4: String = ms.people[m4.from].first_name
+	_ok("the result card says it in words (%s): ▲ somewhat; the unanswered moment: ▼ a little" % str(ms.moment(m4.id).changes),
+			ms.moment(m4.id).changes == ["%s ▲ somewhat" % first4]
+			and ms.moment(m2.id).changes == ["%s ▼ a little" % str(sender.first_name)])
+	var coach_first: String = str(ms.people_for("coach")[0].first_name)
+	_ok("the coach's trust in words: 'Trust in %s ▲ a little' (%s)" % [coach_first, str(ms.moment(follow[0].id).changes)],
+			ms.moment(follow[0].id).changes == ["Trust in %s ▲ a little" % coach_first])
+	_ok("the player's own lines and the game's lines are never 'new'; a reply's result from the sender is read at once",
+			ms.thread("coach").filter(func(x): return x.from == "you" or x.from == "system").all(func(x): return x.read))
 
 	# The two settings.
 	var m5 := _force("test_coach_injury")
@@ -747,3 +766,205 @@ func _neutral() -> void:
 	_ok("the moments really came (%d)" % on.moments, on.moments > 100 and off.moments == 0)
 	_ok("every attribute and the fatigue bit for bit the same with the moments on", JSON.stringify(off.attributes) == JSON.stringify(on.attributes) and off.fatigue == on.fatigue)
 	_ok("training_balance's coach-row fingerprint (206.798298350): %.9f" % on.sum, "%.9f" % on.sum == "206.798298350")
+
+
+# --- 6. The coach's talk, the race message, the day's why (session C3) ---------------------------------------------
+
+## Plays weeks until a race day (stop events answered, the Sunday talks too). Returns game.RACE or "" when none came.
+func _weeks_until_race(max_weeks: int) -> String:
+	for i in max_weeks * 3:
+		var r: String = game.advance_week()
+		if r == game.RACE:
+			return r
+		if r == game.STOP:
+			_answer_stops()
+	return ""
+
+
+func _talks() -> void:
+	print("\n== 6. The Sunday talk, the message after a race, the coach's why (session C3)")
+	H.model_enabled = false
+	C.neutral_club = false
+	SS.offers_enabled = false
+	MS.enabled = true
+	var CT = load("res://scripts/core/coach_talk.gd")
+	var cal = load("res://scripts/core/calendar.gd")
+
+	# The talk always stops Play week on Sunday evening.
+	game.start_career(_athlete(7))
+	var ms = _ms()
+	var r: String = game.advance_week()
+	var e: Dictionary = game.pending_event()
+	var m: Dictionary = ms.moment(str(e.get("moment", "")))
+	_ok("Play week stops on the first Sunday evening for the coach's talk (%s)" % e.get("title", ""),
+			r == game.STOP and e.get("kind", "") == "moment" and bool(m.get("talk", false)) and m.stop
+			and cal.weekday(e.date) == 6 and str(e.title).ends_with("Week talk"))
+	var paragraphs: int = str(m.get("text", "")).split("\n\n").size()
+	_ok("it has the open, the review, the preview (and focus + close from normal detail): %d paragraphs, no placeholder left" % paragraphs,
+			paragraphs >= 3 and not "{" in str(m.get("text", "")))
+	# (A second topic may have been posted after it in the same evening: then that one is the newest.)
+	_ok("it is in the coach thread, unread, waiting for an answer, and the Today card would show a moment waiting",
+			ms.thread("coach").any(func(x): return x.moment == m.id and not x.read) and ms.unread("coach") >= 1
+			and ms.pending().any(func(p): return p.id == m.id) and ms.newest_open().kind == "moment")
+	var sunday: int = MS.day_no(e.date)
+	var marks: Dictionary = ms.marks_between(sunday - 6, sunday)
+	_ok("the week strip's people mark: Sunday has a message, unread", marks.has(sunday) and int(marks[sunday].unread) >= 1)
+	_ok("a talk without a topic has the single reply \"Thanks, coach\"; with one, the topic's replies",
+			(m.storylet == MS.ACK and m.replies.size() == 1) or (m.storylet != MS.ACK and m.replies.size() >= 2))
+	game.answer_event(e.id, str(e.choices[0].id))
+	_ok("answering it: the moment is answered, your line is in the thread, no stop left",
+			ms.moment(m.id).answer == str(e.choices[0].id) and ms.thread("coach").any(func(x): return x.from == "you" and x.moment == m.id)
+			and game.pending_event().is_empty())
+	ms.mark_read("coach")
+	_ok("opening the thread marks it read", ms.unread("coach") == 0)
+
+	# Twelve weeks: one talk stop every Sunday, nothing stuck, the topics fit, the global dice untouched.
+	var talks := 1
+	var with_topic := 0
+	var second_topics := 0
+	var stuck := false
+	var races_run := 0
+	for w in 12:
+		var rr: String = game.advance_week()
+		var guard := 0
+		var talk_stops := 0
+		while guard < 20:
+			guard += 1
+			if rr == game.RACE:
+				_run_race()
+				races_run += 1
+				rr = game.advance_week() if game.pending_event().is_empty() else game.STOP
+				continue
+			if rr != game.STOP:
+				break
+			var ev: Dictionary = game.pending_event()
+			var was_talk: bool = str(ev.get("kind", "")) == "moment" and bool(ms.moment(str(ev.moment)).get("talk", false))
+			if was_talk:
+				talk_stops += 1
+				if ms.moment(str(ev.moment)).storylet != MS.ACK:
+					with_topic += 1
+			game.answer_event(ev.id, str(ev.choices[0].id) if not ev.choices.is_empty() else "ok")
+			if was_talk:
+				break   # (the talk is the last thing of the week: Sunday evening)
+			rr = game.advance_week()
+		talks += talk_stops
+		if talk_stops != 1:
+			stuck = true
+	var bad_topics := []
+	for f in ms.fired:
+		if bool(f.get("talk", false)):
+			continue
+		var topic := str(ms.storylet(f.storylet).get("topic", ""))
+		if topic == "week":
+			second_topics += 1
+		if not topic in ["", "week", "race"]:
+			bad_topics.append(f.storylet)
+	_ok("13 Sundays, 13 talks, each exactly one stop (%d, %d races on the way), nothing stuck" % [talks, races_run], talks == 13 and not stuck)
+	_ok("only the right kinds of moment were posted (%s)" % ", ".join(bad_topics), bad_topics.is_empty())
+	print("    talks with a topic %d of 12, second topics posted %d" % [with_topic, second_topics])
+	_ok("some talks have a topic, some do not", with_topic > 0 and with_topic < 12)
+
+	# The coach's detail and voice: communication short / normal / full, the four personalities.
+	var lengths := {}
+	var voices := ["calm", "drill", "warm", "tactician"]
+	var texts := {}
+	game.start_career(_athlete(8))
+	ms = _ms()
+	_play(6, false)   # Mon..Sat; today is Sunday morning
+	var ctx := _ctx()
+	var cs = game.get_system("coach")
+	var coach: Dictionary = ms.people_for("coach")[0]
+	var good := true
+	seed(4242)
+	var y1 := randi()
+	seed(4242)
+	for v in voices:
+		cs.head().voice = v
+		for comm in [5, 10, 16]:
+			cs.head().attributes.communication = comm
+			var text: String = CT.week_talk(ctx, ms._fill(ctx, coach), _rng)
+			if text == "" or "{" in text:
+				good = false
+				print("    bad text: ", text)
+			lengths[comm] = text.length() + int(lengths.get(comm, 0))
+			texts[v + str(comm)] = text
+	var y2 := randi()
+	_ok("building talks does not touch the global dice (the rivals use them)", y1 == y2)
+	_ok("the talk is filled in for all four voices and three detail levels (no placeholder, never empty)", good)
+	_ok("more communication, more words: short %d < normal %d < full %d characters" % [lengths[5], lengths[10], lengths[16]],
+			lengths[5] < lengths[10] and lengths[10] < lengths[16])
+	_ok("the voices differ", texts["calm10"] != texts["drill10"] and texts["warm10"] != texts["tactician10"])
+	_ok("short = open, review, preview only; normal and full add the focus and the closing word",
+			texts["calm5"].split("\n\n").size() == 3 and texts["calm10"].split("\n\n").size() == 5 and texts["calm16"].split("\n\n").size() == 5)
+
+	# The day's why.
+	var why_ok := true
+	for v in voices:
+		cs.head().voice = v
+		for comm in [5, 10, 16]:
+			cs.head().attributes.communication = comm
+			for sid in [["easy_run"], ["intervals_800", "drills"], ["strength"], []]:
+				for lvl in ["easy", "normal", "hard"]:
+					var w: String = CT.day_why(sid, lvl)
+					if w == "" or "{" in w:
+						why_ok = false
+	_ok("the coach's why for every kind of day, voice and detail (rest days too): filled in, never empty", why_ok)
+	cs.head().voice = "drill"
+	cs.head().attributes.communication = 10
+	_ok("the key session's reason in his words", CT.day_why(["intervals_800"], "hard").begins_with(str(data.coach_talk.session_why.intervals_800.why))
+			and CT.day_why([], "normal") == str(data.coach_talk.voices.drill.day.rest))
+	cs.head().attributes.communication = 4
+	_ok("with little communication: the short form and 'Do it.'", CT.day_why(["intervals_800"], "hard") == "800 m intervals. Do it.")
+
+	# The message after a race: every outcome, voice and detail.
+	var race_ok := true
+	for v in voices:
+		cs.head().voice = v
+		for comm in [5, 10, 16]:
+			cs.head().attributes.communication = comm
+			for note in [
+					{"meet": "Kisat", "result": {"place": 1, "field": 8, "time": 130.5, "pb": true, "round": "Race"}, "story": {"case": "pb", "line": "A new best."}},
+					{"meet": "Kisat", "result": {"place": 3, "field": 8, "time": 133.0, "pb": false, "round": "Race"}, "story": {}},
+					{"meet": "Kisat", "result": {"place": 8, "field": 8, "time": 140.0, "pb": false, "round": "Race"}, "story": {"case": "below", "line": "Not your best."}},
+					{"meet": "Kisat", "result": {"place": 0, "field": 8, "time": 0.0, "pb": false, "status": "dnf", "round": "Race"}, "story": {}}]:
+				var text: String = CT.race_message(note, ms._fill(ctx, coach), _rng)
+				if text == "" or "{" in text or not "Kisat" in text:
+					race_ok = false
+					print("    bad race text: ", text)
+	_ok("the race message is filled in for every outcome, voice and detail, and names the meet", race_ok)
+	_ok("outcomes: the case wins, else DNF = hurt, PB, the better half = good, else bad",
+			CT.race_outcome({"result": {"place": 5, "field": 8, "pb": false}, "story": {"case": "won"}}) == "good"
+			and CT.race_outcome({"result": {"place": 1, "field": 8, "status": "dq"}, "story": {"case": "won"}}) == "hurt"
+			and CT.race_outcome({"result": {"place": 2, "field": 8, "pb": true}}) == "pb"
+			and CT.race_outcome({"result": {"place": 4, "field": 8, "pb": false}}) == "good"
+			and CT.race_outcome({"result": {"place": 5, "field": 8, "pb": false}}) == "bad"
+			and CT.race_outcome({}) == "")
+
+	# The evening after a real race: a message from the coach, not a stop.
+	C.neutral_club = false
+	game.start_career(_athlete(9))
+	ms = _ms()
+	for meet in cal.meets_between(game.date, game.add_days(game.date, 200)):
+		if cal.coach_recommends(game.athlete, meet, game.date):
+			game.enter(meet.key)
+	if _weeks_until_race(40) == game.RACE:
+		var meet_name: String = str(game.race_day.meet.name)
+		var race_date: Dictionary = game.date.duplicate()
+		_run_race()
+		var note_msgs := []
+		for x in ms.thread("coach"):
+			if x.moment == "" and x.from != "you" and x.from != "system" and cal.date_key(x.date) == cal.date_key(race_date):
+				note_msgs.append(x)
+		_ok("the evening after the race: a message from the coach with the meet and the result (%s)" % (note_msgs[0].text.replace("\n", " ") if not note_msgs.is_empty() else "none"),
+				not note_msgs.is_empty() and meet_name in note_msgs[0].text and not "{" in note_msgs[0].text)
+		_ok("it is not a stop (Play week goes on; a Sunday race may bring the week talk too)",
+				game.pending_event().is_empty() or bool(ms.moment(str(game.pending_event().get("moment", ""))).get("talk", false)))
+	else:
+		_ok("a race came within 40 weeks", false)
+
+	# Switched off for the tools: no talk, Play week runs to Sunday night.
+	MS.talks_enabled = false
+	game.start_career(_athlete(10), "repeat")
+	_ok("with the talks switched off (the tools): Play week reaches Sunday night without a stop", game.advance_week() == game.WEEK_DONE)
+	MS.talks_enabled = true
+	H.model_enabled = true

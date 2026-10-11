@@ -23,6 +23,7 @@ var periodization: Dictionary = {}     # data/periodization.json: phases, week r
 var form: Dictionary = {}              # data/form.json: race-day form (sharpness, freshness, words)
 var help: Dictionary = {}              # data/help.json: the in-game help texts (screens and topics)
 var moments: Dictionary = {}           # data/moments.json: rules and texts of the moments and message threads (GDD 4.9.5)
+var coach_talk: Dictionary = {}        # data/coach_talk.json: the head coach's week talk, race message and day "why" lines (GDD 4.9.2)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -55,6 +56,7 @@ func _ready() -> void:
 	form = _load("res://data/form.json")
 	help = _load("res://data/help.json")
 	moments = _load("res://data/moments.json")
+	coach_talk = _load("res://data/coach_talk.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()

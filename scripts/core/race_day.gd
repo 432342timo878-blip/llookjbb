@@ -32,8 +32,9 @@ var overall: Array = []           # after sections: everyone by time across the 
 var player_results: Array = []    # [{round, place, field, time, status}] (status "dnf" / "dq": no time, time 0)
 var all_results: Array = []       # every race run here (for rival PBs)
 var incidents: Array = []         # the player's falls and spike wounds today: [{kind: fall / spiked, round}] (health model)
+var story := {}                   # the coach's Race-story line of the last round the race screen showed: {case, line} (for his evening message, session C3)
 var current: Race
-var kick_plan := 0.0              # a quick result: the metres to go at which the athlete kicks (0 = their natural point), set on the race screen
+var kick_plan := 0.0             # a quick result: the metres to go at which the athlete kicks (0 = their natural point), set on the race screen
 var slowdown := 0.0               # share slower because of a niggle or illness (HealthSystem.race_slowdown)
 var form := 0.0                   # share faster (+) or slower (-) from race-day form (FormSystem.race_form)
 

@@ -1,0 +1,258 @@
+{
+	"_note": "What the head coach says in his own words (GDD 4.9.2, session C3; read by CoachTalk, scripts/core/coach_talk.gd). Three uses: (1) the Sunday-evening WEEK TALK (last week in a few lines from the day log, this week explained from the season plan: phase, why the key sessions, one thing to focus on; it always stops Play week, user 2026-10-11), (2) the MESSAGE after a race (the facts, the coach's Race-story line in his own words from coaches.json, a closing line), (3) the coach's WHY line in the day editor. His COMMUNICATION attribute sets the detail (detail.short_max / full_min: short = 'Do it.', normal, full = he explains why); his personality (coaches.json voice: calm / drill / warm / tactician) sets the voice. Placeholders in a text are filled by the code: {name} (the athlete's first name), {coach_first}, {done}, {planned}, {n}, {meet}, {result}, {phase}, {week}, {weeks}, {weekday}, {session}, {why}, {short}, {areas}, {area}, {injury}, {days}. Topics (the 0-2 questions with replies) are storylets in data/storylets/week_talk.json. Texts only here, never in scripts.",
+	"version": 1,
+	"detail": {"short_max": 7, "full_min": 14},
+	"talk": {
+		"title": "{from} · Week talk",
+		"topics_chance": [0.3, 0.5, 0.2],
+		"race_topic_chance": 0.5,
+		"facts": {
+			"sessions_all": "You did all {planned} planned sessions.",
+			"sessions_most": "You did {done} of the {planned} planned sessions.",
+			"sessions_few": "You did only {done} of the {planned} planned sessions.",
+			"sessions_extra": "You did {done} sessions, more than the {planned} planned.",
+			"sessions_none": "You did no training this week.",
+			"sessions_free": "You did {done} sessions.",
+			"feel": {
+				"fresh": "Your legs felt light all week.",
+				"normal": "Your legs felt fine.",
+				"tired": "Your legs felt heavy by the end of the week.",
+				"exhausted": "You were running on empty for much of the week."
+			},
+			"sore": "You were sore at some point: {areas}.",
+			"injury": "You are dealing with {injury}.",
+			"race": "{meet}: {result}."
+		},
+		"preview": {
+			"phase": "This week: {phase}, week {week} of {weeks}.",
+			"phase_repeat": "This week is your own repeating week.",
+			"kinds": {
+				"lighter": "It is a lighter week on purpose.",
+				"taper": "It is a taper week: less work, so you are fresh for {meet}.",
+				"return": "You are easing back in after the break."
+			},
+			"key": "{weekday}: {session}.",
+			"key_why": "{weekday}: {session}. {why}",
+			"no_key": "No hard sessions this week.",
+			"race": "{meet} is on {weekday}.",
+			"race_far": "Your next race, {meet}, is in {days} days."
+		},
+		"focus": {
+			"injured": "Follow the limits of your {injury}. Rest is the training now.",
+			"sore": "Listen to your {area}. Tell me if it gets worse.",
+			"race_week": "Save your legs for {meet}. Sleep and eat well.",
+			"taper": "Trust the taper. Feeling restless is normal.",
+			"lighter": "Let the harder weeks sink in. Sleep is part of the training.",
+			"tired": "Rest properly. Tired legs learn nothing.",
+			"phase": {
+				"general_base": "Keep the easy runs easy. Don't turn them into races.",
+				"indoor_specific": "Run the intervals evenly. The last rep should not be much slower than the first.",
+				"spring_base": "Build steadily. This is where the summer is made.",
+				"pre_competition": "Sharpen the speed, but stay fresh enough to enjoy it.",
+				"race_season": "Recover well between races. Sleep, food, easy days.",
+				"transition": "Switch off a little. Run for fun this week.",
+				"autumn_general": "Start gently. There is a whole year ahead."
+			},
+			"default": "Show up, do the work, and tell me how it feels."
+		}
+	},
+	"race": {
+		"facts": "{meet}: {result}.",
+		"outcomes": {
+			"pb": ["pb"],
+			"good": ["sb", "won", "won_part", "podium", "better", "good_kick", "as_expected"],
+			"bad": ["below", "boxed", "too_fast", "faded", "kick_died", "kick_died_late"],
+			"hurt": ["dnf", "dq", "fell"]
+		},
+		"generic": {
+			"pb": "A personal best.",
+			"good": "A solid race.",
+			"bad": "It was not your best.",
+			"hurt": "That was a rough one."
+		}
+	},
+	"phase_why": {
+		"general_base": "This phase builds the engine. The training is easy on purpose: it makes everything later possible.",
+		"indoor_specific": "The indoor target is close, so we add race-pace work and sharpen up.",
+		"spring_base": "Back to building before the outdoor season: tempo, hills and strength.",
+		"pre_competition": "Racing is near. Speed work now makes the first outdoor races sharp.",
+		"race_season": "Racing season. We keep the speed, race, and recover well in between.",
+		"transition": "Easy weeks to rest the body and the mind after the summer.",
+		"autumn_general": "A gentle start to the new training year."
+	},
+	"session_why": {
+		"easy_run": {"short": "Easy running.", "why": "Easy running builds your aerobic base without tiring you. Keep it relaxed."},
+		"long_run": {"short": "Long run.", "why": "A long run teaches your body to keep going. Keep the pace easy."},
+		"fartlek": {"short": "Fartlek.", "why": "Fartlek mixes fast and slow running. It builds speed and stamina without a strict watch."},
+		"tempo_run": {"short": "Tempo run.", "why": "A tempo run at steady hard effort raises the pace you can hold."},
+		"intervals_800": {"short": "800 m intervals.", "why": "Intervals at race pace teach your body the 800 m. Keep the reps even."},
+		"speed_strides": {"short": "Strides.", "why": "Short fast strides keep your legs quick without tiring you."},
+		"hill_sprints": {"short": "Hill sprints.", "why": "Hill sprints build power and speed. Short and hard, with full rests."},
+		"start_practice": {"short": "Starts.", "why": "Start practice makes the first 100 metres automatic."},
+		"club_session": {"short": "Club session.", "why": "The group session pushes you with others. Run with them, not ahead of them."},
+		"strength": {"short": "Strength.", "why": "Strength and core work makes you robust and your stride stronger."},
+		"drills": {"short": "Drills.", "why": "Running drills fix your technique. Slow, precise, no rushing."},
+		"mobility": {"short": "Mobility.", "why": "Mobility keeps you supple and helps you recover."},
+		"xc_skiing": {"short": "Skiing.", "why": "Skiing builds your engine with little pounding on the legs."},
+		"aqua_jog": {"short": "Aqua jogging.", "why": "Running in water keeps the fitness while the legs rest."},
+		"stationary_bike": {"short": "Bike.", "why": "The bike keeps the engine going without pounding the legs."},
+		"swimming": {"short": "Swimming.", "why": "Swimming is a gentle full-body session that helps you recover."},
+		"gym_core": {"short": "Core and upper body.", "why": "Core and upper-body work keeps you strong while the legs rest."}
+	},
+	"day": {
+		"title": "COACH",
+		"race": "Race day. Warm up properly, run your own race.",
+		"unknown": "Do the session as planned."
+	},
+	"profile": {
+		"exact_weeks": 8,
+		"range_pad": 2,
+		"kinds": {"club": "Club coach", "parent": "Parent", "remote": "Remote coach", "academy": "Academy coach", "personal": "Personal coach"},
+		"together": "Together {weeks} weeks",
+		"range_note": "You have worked with him for {weeks} weeks, so these are estimates. After {need} weeks you know him well.",
+		"exact_note": "After {weeks} weeks together you know him well.",
+		"group_head": "HIS TRAINING GROUP",
+		"group_line": "age {age} · {event} · {role}",
+		"attributes_head": "WHAT HE IS GOOD AT",
+		"character_head": "CHARACTER",
+		"facts_head": "ABOUT HIM",
+		"explain": {
+			"style": "How he leads. A supportive coach asks and encourages; a controlling one tells you what to do. Neither is wrong, but some athletes need the one more than the other.",
+			"demands": "Which of the coach's three season plans he leans towards: Steady plays it safe, Ambitious wants more.",
+			"fit": "How your temperament and his character go together. It shows after four weeks. You click, it is fine, or there is some friction. It moves how much you trust him.",
+			"trust": "How much you trust each other. It grows when you listen to him and do well, and falls when you ignore him. A strong bond makes him explain more."
+		},
+		"labels": {"club": "Club", "town": "Town", "qualification": "Qualification", "focus": "Event focus", "age": "Age",
+				"together": "Together", "style": "Style", "demands": "Leans to", "fit": "Fit with you", "trust": "Trust"}
+	},
+	"voices": {
+		"calm": {
+			"open": ["Sunday evening, {name}. Let's look at the week together.", "Sit down a moment, {name}. The week is done."],
+			"open_short": ["Sunday, {name}. A short one."],
+			"comment": {
+				"injured": "The injury comes first. Nothing else matters until it is better.",
+				"exhausted": "You were running on empty. That is not strength, it is a warning.",
+				"tired": "Your legs were heavy. That is normal, but watch it.",
+				"fresh": "You are fresh. Good. We can ask a little more.",
+				"kept": "You kept the rhythm all week. That is how it grows.",
+				"missed": "A few sessions went missing. It happens. We keep the rhythm.",
+				"none": "A week without training. The body rests, but we start again soon.",
+				"sore": "Some soreness. Not a problem yet, but listen to it.",
+				"race_pb": "A personal best. Calm running, and it paid.",
+				"race_good": "A good race. I was glad to see how relaxed you were.",
+				"race_bad": "The race was below you. We look at it without hurry.",
+				"race_hurt": "After a race like that, rest comes first."
+			},
+			"focus_intro": ["One thing this week:"],
+			"close": ["Sleep well, {name}.", "See you at training."],
+			"day": {
+				"easy": "Easy means easy. Breathe and relax.",
+				"hard": "Today asks for effort. Stay relaxed inside it.",
+				"rest": "Rest day. Recovery is part of the work.",
+				"short_end": "Relax."
+			},
+			"race": {
+				"pb": "Walk it out, and rest tomorrow.",
+				"good": "Good running. Eat, drink, and sleep well tonight.",
+				"bad": "Don't worry about it tonight. Sleep, eat, and we look at it together.",
+				"hurt": "Rest first. We will talk when you have recovered."
+			}
+		},
+		"drill": {
+			"open": ["Sunday, {name}. Week review.", "Right, {name}. Week's done. Straight to it."],
+			"open_short": ["Sunday. Listen."],
+			"comment": {
+				"injured": "You're hurt, so you do exactly what the limits say. No heroics.",
+				"exhausted": "You're empty. That's what too much looks like. Back off.",
+				"tired": "Heavy legs. Good, that means you worked.",
+				"fresh": "You're fresh. No excuses, then. We push.",
+				"kept": "Every session done. That's the standard.",
+				"missed": "Sessions missing. That's not the standard.",
+				"none": "A whole week off. That's a problem.",
+				"sore": "You're sore. Tell me before it becomes an injury.",
+				"race_pb": "Personal best. Good. Don't get comfortable.",
+				"race_good": "A decent race. We want more.",
+				"race_bad": "That race was below you. I expect more.",
+				"race_hurt": "You went down. Get up, rest, then we go again."
+			},
+			"focus_intro": ["The one thing:"],
+			"close": ["Be on time.", "Don't skip the warm-up."],
+			"day": {
+				"easy": "Easy means easy. Don't turn it into a race.",
+				"hard": "Hard day. Give it everything.",
+				"rest": "Rest day. Rest properly. That's an order.",
+				"short_end": "Do it."
+			},
+			"race": {
+				"pb": "Rest tomorrow. Monday we work.",
+				"good": "Fine. Eat and sleep. Monday we work.",
+				"bad": "Not good enough. We fix it in training.",
+				"hurt": "Get checked if it hurts. Don't be stupid about it."
+			}
+		},
+		"warm": {
+			"open": ["Hi {name}, come sit. Let's talk about the week.", "Sunday evening, {name}. How are you doing?"],
+			"open_short": ["Hi {name}. A quick word."],
+			"comment": {
+				"injured": "I'm sorry about the injury. We take it slowly and you will be back.",
+				"exhausted": "You were so tired. You don't have to be a hero, you know.",
+				"tired": "Your legs were heavy, I could see it. Be kind to yourself.",
+				"fresh": "You look fresh and happy. I like that.",
+				"kept": "You did every session! I'm proud of you.",
+				"missed": "A few sessions missed, and that's all right. Life happens.",
+				"none": "A week off. Rest is allowed, you know.",
+				"sore": "A little soreness. Tell me if it grows, all right?",
+				"race_pb": "A personal best! I'm so proud of you!",
+				"race_good": "A lovely race. You should be happy.",
+				"race_bad": "It wasn't your day, and that's all right. We go again.",
+				"race_hurt": "Oh, that was a rough one. Rest and be kind to yourself."
+			},
+			"focus_intro": ["What matters this week:"],
+			"close": ["I'm proud of you. See you on Monday!", "Take care of yourself, {name}."],
+			"day": {
+				"easy": "An easy day is a good day. Enjoy it.",
+				"hard": "A tough one today, but you can do it.",
+				"rest": "A rest day! Do something nice.",
+				"short_end": "You can do it."
+			},
+			"race": {
+				"pb": "Celebrate a little tonight. You deserve it.",
+				"good": "You ran so nicely. Rest up and enjoy it.",
+				"bad": "Don't be hard on yourself. One race is only one race.",
+				"hurt": "Take care of yourself first. Everything else can wait."
+			}
+		},
+		"tactician": {
+			"open": ["Sunday, {name}. Let's go through the numbers.", "Week review, {name}. Facts first."],
+			"open_short": ["Sunday. Summary."],
+			"comment": {
+				"injured": "The injury changes the plan. We adapt; that is what plans are for.",
+				"exhausted": "Your fatigue was too high. The data says back off.",
+				"tired": "Fatigue was high late in the week. Expected after this load.",
+				"fresh": "Your fatigue was low. We have room for more.",
+				"kept": "Full compliance with the plan. Good data.",
+				"missed": "Sessions missed, so less stimulus than planned. We adjust.",
+				"none": "No training, no stimulus. We restart it.",
+				"sore": "There was soreness. Watch the trend, not one day.",
+				"race_pb": "A personal best. The splits will show where it came from.",
+				"race_good": "A good result for your level. The race was read well.",
+				"race_bad": "Worse than the numbers predicted. The race wasn't read right. We look at it.",
+				"race_hurt": "A race with a fall or an injury tells us little. Recover first."
+			},
+			"focus_intro": ["The key point:"],
+			"close": ["Ask if you want the details.", "Any questions, ask."],
+			"day": {
+				"easy": "Easy keeps your recovery on track.",
+				"hard": "A quality session. The pace matters more than the volume.",
+				"rest": "Rest day. Adaptation happens in the rest.",
+				"short_end": "Stick to the pace."
+			},
+			"race": {
+				"pb": "Good data for the next plan. Recover tomorrow.",
+				"good": "Solid. I'll look at the splits and tell you what I see.",
+				"bad": "We will find the mistake. Not tonight; rest first.",
+				"hurt": "No conclusions from this one. Recover, then we continue."
+			}
+		}
+	}
+}

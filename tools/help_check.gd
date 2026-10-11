@@ -74,9 +74,23 @@ func _run() -> void:
 	game.advance_day()
 	hub._refresh_week_ui()
 
+	# A moment that stops the week (the coach's Sunday talk) is a message with its own "?" (session C3).
+	var ms = game.get_system("moments")
+	var talk_ctx := {"date": game.date.duplicate(), "day": 6, "day_type": "weekday", "week": game.current_week()}
+	ms._post_week_talk(talk_ctx, ms.day_no(game.date))
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(4)
+	_check(game.pending_event().get("kind", "") == "moment", "the coach's week talk is a stop event of kind moment")
+	await _press_help(hub._event_overlay, "moment panel", "moment", false)
+	_check(_overlay_on_top(hub), "the moment's help sheet is above the stop-event layer")
+	_close_overlays(hub)
+	game.answer_event(game.pending_event().id, str(game.pending_event().choices[0].id))
+	hub._show_pending_event()
+
 	# The hub: each tab, and the Training tab's three pages.
 	for v in [["overview", "overview"], ["progress", "progress"], ["calendar", "calendar"], ["rankings", "rankings"],
-			["report", "report"], ["training", "training_season"]]:
+			["report", "report"], ["people", "people"], ["training", "training_season"]]:
 		hub._show(v[0])
 		await _frames(3)
 		await _press_help(hub, "hub " + v[0], v[1], true)

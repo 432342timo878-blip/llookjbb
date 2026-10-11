@@ -9,9 +9,9 @@
 			"once": true, "important": true, "weight": 5,
 			"text": ["[Test] Welcome to the group, {name}! I'm {coach_first}. Any questions before we really get going?"],
 			"replies": [
-				{"id": "thanks", "label": "Thanks, see you at training", "hint": "", "effects": {"trust": 2}, "result": "{coach_first}: \"Good. Bring spikes on Thursday.\""},
+				{"id": "thanks", "label": "Thanks, see you at training", "hint": "{coach_first} is pleased", "effects": {"trust": 2}, "result": "{coach_first}: \"Good. Bring spikes on Thursday.\""},
 				{"id": "why", "label": "Why do we train like this?", "hint": "{coach_first} likes questions", "effects": {"trust": 3, "flag": "asked_why"}, "result": "{coach_first} explains the season in three sentences."},
-				{"id": "nothing", "label": "Nah", "hint": "", "effects": {"trust": -1}, "result": "{coach_first}: \"Okay then.\""}
+				{"id": "nothing", "label": "Nah", "hint": "{coach_first} shrugs", "effects": {"trust": -1}, "result": "{coach_first}: \"Okay then.\""}
 			]
 		},
 		{
@@ -25,9 +25,9 @@
 				{"text": "[Test] Asking again since you said you were tired: better now?", "when": {"flag_days": {"told_tired": [0, 20]}}}
 			],
 			"replies": [
-				{"id": "good", "label": "Feeling good", "hint": "", "effects": {"trust": 1}, "result": "{coach_first} sends a thumbs up."},
+				{"id": "good", "label": "Feeling good", "hint": "{coach_first} is glad", "effects": {"trust": 1}, "result": "{coach_first} sends a thumbs up."},
 				{"id": "tired", "label": "A bit heavy", "hint": "{coach_first} will remember", "effects": {"flag": "told_tired", "count": {"tired_reports": 1}}, "result": "{coach_first}: \"Noted. Sleep well tonight.\"", "next": {"id": "test_coach_followup", "days": [2, 3]}},
-				{"id": "joke", "label": "Legs? What legs?", "hint": "", "effects": {"relation": 1}, "result": "{coach_first}: \"Ha. See you tomorrow.\""}
+				{"id": "joke", "label": "Legs? What legs?", "hint": "{coach_first} smiles", "effects": {"relation": 1}, "result": "{coach_first}: \"Ha. See you tomorrow.\""}
 			]
 		},
 		{
@@ -37,8 +37,8 @@
 			"when": {"flags": ["told_tired"]},
 			"text": ["[Test] Following up: still heavy legs, {name}?"],
 			"replies": [
-				{"id": "better", "label": "Much better", "hint": "", "effects": {"trust": 1, "unflag": "told_tired"}, "result": "{coach_first}: \"Great.\""},
-				{"id": "still", "label": "Still heavy", "hint": "", "effects": {"trust": 1, "motivation": -1}, "result": "{coach_first}: \"Then Friday is easy. I'll sort it.\""}
+				{"id": "better", "label": "Much better", "hint": "{coach_first} is glad", "effects": {"trust": 1, "unflag": "told_tired"}, "result": "{coach_first}: \"Great.\""},
+				{"id": "still", "label": "Still heavy", "hint": "{coach_first} will ease Friday", "effects": {"trust": 1, "motivation": -1}, "result": "{coach_first}: \"Then Friday is easy. I'll sort it.\""}
 			]
 		},
 		{
@@ -48,8 +48,8 @@
 			"cooldown_days": 6, "expires_days": 1, "weight": 4,
 			"text": ["[Test] {meet} tomorrow. How are you feeling?", "[Test] Race day tomorrow, {name}. Ready?"],
 			"replies": [
-				{"id": "ready", "label": "Ready", "hint": "", "effects": {"trust": 1}, "result": "{coach_first}: \"Good. Warm up properly.\""},
-				{"id": "nervous", "label": "Nervous", "hint": "", "effects": {"count": {"nervous_before_race": 1}, "confidence": -1}, "result": "{coach_first}: \"Nerves mean you care. Breathe.\""}
+				{"id": "ready", "label": "Ready", "hint": "{coach_first} is glad", "effects": {"trust": 1}, "result": "{coach_first}: \"Good. Warm up properly.\""},
+				{"id": "nervous", "label": "Nervous", "hint": "{coach_first} will help you prepare", "effects": {"count": {"nervous_before_race": 1}, "confidence": -1}, "result": "{coach_first}: \"Nerves mean you care. Breathe.\""}
 			]
 		},
 		{
@@ -59,8 +59,8 @@
 			"cooldown_days": 3, "weight": 6,
 			"text": ["[Test] A new PB, {pb}! How does it feel?"],
 			"replies": [
-				{"id": "great", "label": "Amazing!", "hint": "", "effects": {"trust": 2, "confidence": 1}, "result": "{coach_first}: \"Enjoy it tonight.\""},
-				{"id": "more", "label": "I can go faster", "hint": "", "effects": {"trust": 2, "flag": "hungry"}, "result": "{coach_first}: \"I like that.\""}
+				{"id": "great", "label": "Amazing!", "hint": "{coach_first} is pleased", "effects": {"trust": 2, "confidence": 1}, "result": "{coach_first}: \"Enjoy it tonight.\""},
+				{"id": "more", "label": "I can go faster", "hint": "{coach_first} likes ambition", "effects": {"trust": 2, "flag": "hungry"}, "result": "{coach_first}: \"I like that.\""}
 			]
 		},
 		{
@@ -70,7 +70,7 @@
 			"cooldown_days": 21, "important": true, "weight": 5,
 			"text": ["[Test] I saw the news about the injury. How do you want to handle it?"],
 			"replies": [
-				{"id": "follow", "label": "I'll follow the limits", "hint": "", "effects": {"trust": 2}, "result": "{coach_first}: \"Smart. We'll come back stronger.\""},
+				{"id": "follow", "label": "I'll follow the limits", "hint": "{coach_first} is pleased", "effects": {"trust": 2}, "result": "{coach_first}: \"Smart. We'll come back stronger.\""},
 				{"id": "push", "label": "Can I train through it?", "hint": "{coach_first} won't like it", "effects": {"trust": -2}, "result": "{coach_first}: \"No. Not this time.\""}
 			]
 		},
@@ -81,7 +81,7 @@
 			"cooldown_days": 10, "weight": 2,
 			"text": ["[Test] You looked a bit stiff today. Anything sore?"],
 			"replies": [
-				{"id": "yes", "label": "Yes, a little", "hint": "", "effects": {"trust": 1}, "result": "{coach_first}: \"Thanks for telling me.\""},
+				{"id": "yes", "label": "Yes, a little", "hint": "{coach_first} is glad you said", "effects": {"trust": 1}, "result": "{coach_first}: \"Thanks for telling me.\""},
 				{"id": "no", "label": "I'm fine", "hint": "", "effects": {}, "result": "{coach_first}: \"Okay. Tell me if it changes.\""}
 			]
 		},
@@ -93,7 +93,7 @@
 			"text": ["[Test] Morning! Cold out there: dress in layers today."],
 			"replies": [
 				{"id": "ok", "label": "Will do", "hint": "", "effects": {}, "result": ""},
-				{"id": "hat", "label": "Already wearing two hats", "hint": "", "effects": {"relation": 1}, "result": "{coach_first}: \"Ha!\""}
+				{"id": "hat", "label": "Already wearing two hats", "hint": "{coach_first} laughs", "effects": {"relation": 1}, "result": "{coach_first}: \"Ha!\""}
 			]
 		},
 		{
@@ -114,8 +114,8 @@
 			"when": {"answered": {"test_group_party": "go"}},
 			"text": ["[Test] {from}: how were the intervals after last night? :D"],
 			"replies": [
-				{"id": "fine", "label": "Fine, actually", "hint": "", "effects": {"relation": 1}, "result": ""},
-				{"id": "awful", "label": "Never again", "hint": "", "effects": {"flag": "party_regret"}, "result": "{from}: \"Ha, said everyone ever.\""}
+				{"id": "fine", "label": "Fine, actually", "hint": "{from} is glad", "effects": {"relation": 1}, "result": ""},
+				{"id": "awful", "label": "Never again", "hint": "{from} will tease you", "effects": {"flag": "party_regret"}, "result": "{from}: \"Ha, said everyone ever.\""}
 			]
 		},
 		{
@@ -125,9 +125,9 @@
 			"cooldown_days": 6, "weight": 2,
 			"text": ["[Test] {from}: anyone up for something on Saturday?", "[Test] {from}: Saturday plans, people?"],
 			"replies": [
-				{"id": "yes", "label": "Count me in", "hint": "", "effects": {"relation": 2}, "result": "{from}: \"Nice!\""},
+				{"id": "yes", "label": "Count me in", "hint": "{from} will be glad", "effects": {"relation": 2}, "result": "{from}: \"Nice!\""},
 				{"id": "rest", "label": "Resting up", "hint": "", "effects": {}, "result": ""},
-				{"id": "maybe", "label": "Maybe", "hint": "", "effects": {"relation": -1}, "result": "{from}: \"That's a no then.\""}
+				{"id": "maybe", "label": "Maybe", "hint": "{from} may feel let down", "effects": {"relation": -1}, "result": "{from}: \"That's a no then.\""}
 			]
 		},
 		{
@@ -148,7 +148,7 @@
 			"cooldown_days": 10,
 			"text": ["[Test] {from}: jog together before the session this morning?"],
 			"replies": [
-				{"id": "yes", "label": "Sure", "hint": "", "effects": {"relation": 2}, "result": "You meet at the track gate."},
+				{"id": "yes", "label": "Sure", "hint": "{from} will be glad", "effects": {"relation": 2}, "result": "You meet at the track gate."},
 				{"id": "no", "label": "I'll sleep a bit longer", "hint": "", "effects": {"sleep": 1}, "result": ""}
 			]
 		},
@@ -159,7 +159,7 @@
 			"cooldown_days": 5,
 			"text": ["[Test] {from}: did you see {teammate} at the end of the session? haha", "[Test] {from}: who's bringing snacks next time?"],
 			"replies": [
-				{"id": "laugh", "label": "Haha", "hint": "", "effects": {"relation": 1}, "result": ""},
+				{"id": "laugh", "label": "Haha", "hint": "{from} laughs too", "effects": {"relation": 1}, "result": ""},
 				{"id": "ignore", "label": "Not now", "hint": "", "effects": {}, "result": ""}
 			]
 		},
@@ -167,11 +167,11 @@
 			"id": "test_coach_after_race",
 			"thread": "coach", "from": "coach", "slot": "evening",
 			"when": {"raced_days_ago": [0, 1], "pb_days_ago": [2, null]},
-			"cooldown_days": 4, "weight": 4,
+			"cooldown_days": 4, "weight": 25,
 			"text": ["[Test] Thinking about your race: what did you learn?"],
 			"replies": [
-				{"id": "pace", "label": "I started too fast", "hint": "", "effects": {"trust": 1, "count": {"lessons": 1}}, "result": "{coach_first}: \"We'll work on that.\""},
-				{"id": "kick", "label": "My kick came too late", "hint": "", "effects": {"trust": 1, "count": {"lessons": 1}}, "result": "{coach_first}: \"Yes. Next time go at 200.\""},
+				{"id": "pace", "label": "I started too fast", "hint": "{coach_first} likes honesty", "effects": {"trust": 1, "count": {"lessons": 1}}, "result": "{coach_first}: \"We'll work on that.\""},
+				{"id": "kick", "label": "My kick came too late", "hint": "{coach_first} likes honesty", "effects": {"trust": 1, "count": {"lessons": 1}}, "result": "{coach_first}: \"Yes. Next time go at 200.\""},
 				{"id": "dunno", "label": "Not sure", "hint": "", "effects": {}, "result": "{coach_first}: \"Let's look at it on Monday.\""}
 			]
 		}

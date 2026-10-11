@@ -115,6 +115,9 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	if buttons.get_child_count() > 0:
 		sessions.add_child(buttons)
 	add_child(UIKit.panel(sessions, 14))
+	var why := _coach_says(CoachTalk.day_why(ids, str(info.intensity)))   # his reason for the day (GDD 4.9.2)
+	if why != null:
+		add_child(why)
 
 	add_child(UIKit.panel(_intensity_box(info), 14))
 
@@ -338,6 +341,9 @@ func _build_race(info: Dictionary) -> void:
 			+ "You can't change a race day, but you can scratch from the race."))
 	# The coach's Veto (GDD 4.7) would sit next to this scratch button once coaching exists.
 	box.add_child(HealthUI.scratch_control(meet, _after_change))
+	var says := _coach_says(str(Data.coach_talk.day.race))
+	if says != null:
+		add_child(says)
 	var warning := HealthUI.race_card(HealthUI.race_outlook(day), info.today)
 	if warning != null:
 		add_child(warning)
@@ -411,6 +417,18 @@ func _intensity_cap() -> String:
 
 
 # --- Helpers -----------------------------------------------------------------------------------------
+
+## The head coach's line about the day, in a panel with his name (null when there is no coach record).
+func _coach_says(text: String) -> Control:
+	var cs := Game.get_system("coach") as CoachSystem
+	var head: Dictionary = cs.head() if cs else {}
+	if head.is_empty() or text == "":
+		return null
+	var box := UIKit.vbox(4)
+	box.add_child(UIKit.label("%s SAYS" % str(head.name).split(" ")[0].to_upper(), "CaptionLabel"))
+	box.add_child(UIKit.wrapped(text, ""))
+	return UIKit.alert_panel(box, PeopleUI.color_of(str(head.name)), 12)
+
 
 func _names_or_rest(ids: Array) -> String:
 	return "Rest day" if ids.is_empty() else " + ".join(DayInfo.session_names(ids))

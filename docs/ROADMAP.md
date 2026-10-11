@@ -333,9 +333,11 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         Important only / Every moment", unanswered = "you didn't answer", standing orders from repeated choices; a handful of test
         storylets; new `tools/storylet_check.gd`. *(Opus, high)*
         Check: `storylet_check` (no repeats inside a cooldown, rate, nothing stuck), `day_engine_check`, save/load bit for bit.
-  - [ ] **C3. People tab + coach thread + Sunday week talk + the coach's "why" lines** (UI; PC + phone, 6 bottom tabs; help entries).
+  - [x] **C3. People tab + coach thread + Sunday week talk + the coach's "why" lines** *(done 2026-10-11, GDD 4.9 "Built (step
+        C3)"; user: the Sunday talk always stops Play week, the People tab in the tab itself on PC, an unanswered topic costs the
+        normal −1 trust)* (UI; PC + phone, 6 bottom tabs; help entries).
         Also (user 2026-10-11, GDD 4.9.5 "Consequences shown"): a hint under every reply and a result card after answering (what
-        changed, in words with ▲ / ▼, no numbers), in the moment panel and the thread; fill in the hints of the test moments.
+        changed, in words with ▲ / ▼, no numbers), in the moment panel and the thread; the hints of the test moments filled in.
         *(Sonnet, high)*
         Check: tour + `layout_check` (5 sizes, no OVERFLOW / SQUEEZED), `help_check` both layouts.
   - [ ] **C4. Coach proposals + Veto + "Ask me first" + Ask the coach** (the verdict model: the truth from the training / health /

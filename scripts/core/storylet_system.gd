@@ -13,16 +13,26 @@ extends GameSystem
 ## rule; with a rule the moment is answered by it and only the result line shows.
 ## Its own dice (seed and state saved), so a loaded game goes on exactly as without saving, and nothing here touches
 ## training, health or the global dice: with the moments on, the training balance is the same to the digit.
-## The UI (People tab, Today card) comes in C3; until then a stop moment is shown by the hub's generic event panel and the
-## rest wait in the threads (thread / pending / answer are for the UI).
+## The UI (session C3): the People tab shows the threads and lets the player answer (thread / unread / mark_read / pending /
+## answer), the Today card shows the newest unread moment, the hub shows a stop moment as a message.
+## Session C3 also adds two things the coach says that are NOT moments of the 3-5 a week (they sit outside the rate):
+## the Sunday-evening WEEK TALK (always a stop: the talk with 0-2 topics, user 2026-10-11) and a MESSAGE on the evening
+## after a race (not a stop). Both come from CoachTalk (data/coach_talk.json); the topics are storylets with a `topic` field
+## (data/storylets/week_talk.json). A talk's first topic is part of its stop moment (its replies are the talk's replies, a talk
+## without a topic has the single reply "Thanks, coach"), a second topic is a normal moment that waits in the thread.
 
 ## Off switch for the tools (like HealthSystem.model_enabled): no moments at all.
 static var enabled := true
+## The Sunday talk and the post-race message. OFF unless the app shell switches them on (main.gd): the talk always stops Play
+## week, so every tool that plays weeks with `while advance_day() != WEEK_DONE` would never get past Sunday evening. The tools
+## that test the talk (storylet_check, the UI checks) switch it on themselves.
+static var talks_enabled := false
 ## Tools: use the test moments (storylet files with "test": true). A normal career uses them only when the Dev menu's
 ## Test moments switch is on for it (test_content, debug builds only).
 static var include_test := false
 
 const NONE := "_none"   # the answer of a moment that passed unanswered
+const ACK := "talk_ack"  # the storylet of a week talk without a topic (data/storylets/week_talk.json)
 
 var rng := RandomNumberGenerator.new()
 var stop_setting := ""       # "important" / "all"; "" = the default of data/moments.json
@@ -123,6 +133,11 @@ func on_day_end(ctx: Dictionary) -> void:
 	_sync_people()
 	_week_check(today, int(ctx.day))
 	_slot("evening", ctx, today)
+	if talks_enabled:
+		if not ctx.get("race_note", {}).is_empty():
+			_post_race_note(ctx, today)
+		if int(ctx.day) == 6 and ctx.get("week") != null:
+			_post_week_talk(ctx, today)
 	_prune(today)
 
 
@@ -187,7 +202,7 @@ func _pick(ctx: Dictionary, today: int, slots: Array) -> Dictionary:
 	var cands := []
 	var total := 0.0
 	for s in content():
-		if bool(s.get("chain_only", false)) or not _slot_of(s) in slots:
+		if bool(s.get("chain_only", false)) or str(s.get("topic", "")) != "" or not _slot_of(s) in slots:
 			continue
 		if not _stop_allowed(s):
 			continue
@@ -305,7 +320,10 @@ func _fire_due_chain(slot: String, ctx: Dictionary, today: int) -> bool:
 
 ## Posts storylet `s` from person `p`: a message in the thread and a moment waiting for an answer (a stop event when
 ## the setting says so). With a standing order for its group it is answered by the rule at once.
-func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop := false) -> Dictionary:
+## `opts` (session C3): prefix (a text that goes before the storylet's own: the week talk), talk (this is the week talk:
+## a stop whatever the setting, titled "Week talk"), counted (false = outside the week's rate and stop count: talks and
+## topics).
+func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop := false, opts := {}) -> Dictionary:
 	var variants := _valid_variants(s, ctx, p)
 	var last_variant := int(seen.get(s.id, {}).get("variant", -1))
 	if variants.size() > 1:
@@ -315,10 +333,15 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 	var replies := []
 	for rep in _valid_replies(s, ctx, p):
 		replies.append({"id": str(rep.id), "label": str(rep.label).format(fill), "hint": str(rep.get("hint", "")).format(fill)})
+	var body := _variant_text(s.text[vi]).format(fill)
+	var prefix := str(opts.get("prefix", ""))
+	var text := body if prefix == "" else (prefix if body == "" else prefix + "\n\n" + body)
+	var talk := bool(opts.get("talk", false))
+	var counted := bool(opts.get("counted", true))
 	var m := {"id": "m%d" % _next, "kind": "moment", "storylet": str(s.id), "date": ctx.date.duplicate(), "day": today,
-			"thread": str(s.thread), "from": str(p.id), "text": _variant_text(s.text[vi]).format(fill), "variant": vi,
+			"thread": str(s.thread), "from": str(p.id), "text": text, "variant": vi,
 			"replies": replies, "fill": fill, "expires": today + int(s.get("expires_days", Data.moments.expires_days)),
-			"stop": false, "event": "", "answer": "", "answered_day": -1, "auto": false}
+			"stop": false, "event": "", "answer": "", "answered_day": -1, "auto": false, "talk": talk}
 	_next += 1
 	var sn: Dictionary = seen.get(s.id, {"count": 0, "first": today})
 	sn.count = int(sn.count) + 1
@@ -336,15 +359,17 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 		fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": false, "auto": true, "from": p.id})
 		_resolve(m, str(standing[group].reply))
 		return m
-	week.fired_day = today
-	week.count = int(week.count) + 1
+	if counted:
+		week.fired_day = today
+		week.count = int(week.count) + 1
 	var important := bool(s.get("important", false)) and not nonstop
-	if stop_mode() == "all" or important:
-		if stop_mode() == "important":
+	if talk or stop_mode() == "all" or important:
+		if not talk and stop_mode() == "important":
 			stop_tokens -= 1.0
-		week.stops = int(week.stops) + 1
+		if counted:
+			week.stops = int(week.stops) + 1
 		_post_event(m, p)
-	fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": m.stop, "auto": false, "from": p.id})
+	fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": m.stop, "auto": false, "from": p.id, "talk": talk})
 	return m
 
 
@@ -354,7 +379,8 @@ func _post_event(m: Dictionary, p: Dictionary) -> void:
 		choices.append({"id": rep.id, "label": rep.label, "detail": rep.hint})
 	var title := thread_name(m.thread)   # (a rule offer has no sender)
 	if not p.is_empty():
-		title = str(Data.moments.event_title).format({"from": person_name(p), "thread": title})
+		var pattern := str(Data.coach_talk.talk.title) if bool(m.get("talk", false)) else str(Data.moments.event_title)
+		title = pattern.format({"from": person_name(p), "thread": title})
 	var e := Game.post_event(id, title, m.text, choices, true)
 	e.kind = "moment"
 	e.moment = m.id
@@ -380,6 +406,10 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 	var today := day_no(Game.date)
 	m.answer = reply_id
 	m.answered_day = today
+	if reply_id != NONE:   # (the player read it, in the stop panel or in the thread: nothing "new" about it any more)
+		for x in threads.get(str(m.thread), []):
+			if str(x.moment) == str(m.id):
+				x.read = true
 	if m.event != "":   # (answered in the thread: the event panel needn't ask any more)
 		for e in Game.events:
 			if e.id == m.event and e.answer == "":
@@ -392,9 +422,11 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 	var fill: Dictionary = m.fill
 	var cause := "moment:" + str(m.storylet)
 	var next = null
+	m.changes = []
 	if reply_id == NONE:
 		var na: Dictionary = s.get("no_answer", Data.moments.no_answer)
 		_apply(na.get("effects", {}), p, cause)
+		m.changes = _changes_of(na.get("effects", {}), p, false)
 		_message(m.thread, "system", str(na.get("result", Data.moments.no_answer.result)).format(fill), m.id, Game.date)
 		next = na.get("next", null)
 	else:
@@ -408,9 +440,13 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 		else:
 			_message(m.thread, "you", label, m.id, Game.date)
 		_apply(rep.get("effects", {}), p, cause)
+		m.changes = _changes_of(rep.get("effects", {}), p, bool(rep.get("remember", false)))
 		var result := str(rep.get("result", "")).format(fill)
 		if result != "":
-			_message(m.thread, "system", result, m.id, Game.date)
+			# (a reply with "result_from": "sender" is the sender's own answer, a bubble from them; else a line of the game)
+			var speaker := str(p.id) if str(rep.get("result_from", "")) == "sender" and not p.is_empty() else "system"
+			_message(m.thread, speaker, result, m.id, Game.date)
+			threads[m.thread].back().read = true   # (it answers the player's own reply: nothing "new" about it)
 		next = rep.get("next", null)
 	if seen.has(m.storylet):
 		seen[m.storylet].reply = reply_id
@@ -466,6 +502,37 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 					push_warning("Moment effect '%s' is unknown (%s)" % [key, cause])
 
 
+## What an answer changed, in words for the result card (data/moments.json `changes`): ["Trust in Heikki ▲ a little", ...].
+## Only what really changes: the coach's trust (his `trust` and `relation` effects), another person's relationship, and a
+## "remember" note when the reply says so. Prepared effects (moods, sleep, grades, budget) are listed once they exist.
+func _changes_of(effects: Dictionary, p: Dictionary, remember: bool) -> Array:
+	var cfg: Dictionary = Data.moments.changes
+	var out := []
+	if p.is_empty():
+		return out
+	var who := str(p.first_name)
+	var trust := float(effects.get("trust", 0.0))
+	var rel := 0.0
+	if p.get("role", "") == "coach":
+		trust += float(effects.get("relation", 0.0))
+	else:
+		rel = float(effects.get("relation", 0.0))
+	if trust != 0.0:
+		out.append(_change_line(str(cfg.trust).format({"who": who}), trust))
+	if rel != 0.0:
+		out.append(_change_line(str(cfg.relation).format({"who": who}), rel))
+	if remember:
+		out.append(str(cfg.remember).format({"who": who}))
+	return out
+
+
+func _change_line(label: String, delta: float) -> String:
+	var cfg: Dictionary = Data.moments.changes
+	var limits: Array = cfg.size_limits
+	var size := 0 if absf(delta) <= float(limits[0]) else (1 if absf(delta) <= float(limits[1]) else 2)
+	return "%s %s %s" % [label, cfg.up if delta > 0.0 else cfg.down, cfg.sizes[size]]
+
+
 func _add_trust(delta: float, cause: String) -> void:
 	var cs := Game.get_system("coach") as CoachSystem
 	if cs:
@@ -487,6 +554,77 @@ func _prune(today: int) -> void:
 		var list: Array = threads[t]
 		if list.size() > most:
 			threads[t] = list.slice(list.size() - most)
+
+
+# --- The Sunday talk and the message after a race (session C3) -------------------------------------------------
+
+## Sunday evening: the coach's week talk. A stop whatever the setting (user 2026-10-11: it always stops Play week). The text is
+## CoachTalk.week_talk; its first topic (0-2 topics are drawn, data/coach_talk.json talk.topics_chance) is part of the same
+## moment, a second topic is a normal moment that waits in the thread. Outside the 3-5 moments a week.
+func _post_week_talk(ctx: Dictionary, today: int) -> void:
+	var coach := people_for("coach")
+	if coach.is_empty():
+		return
+	var p: Dictionary = coach[0]
+	var chances: Array = Data.coach_talk.talk.topics_chance
+	var x := rng.randf()
+	var n := 0
+	for c in chances:
+		x -= float(c)
+		if x < 0.0:
+			break
+		n += 1
+	var topics := _pick_topics("week", ctx, today, p, mini(n, 2))
+	var s: Dictionary = topics[0] if not topics.is_empty() else storylet(ACK)
+	if s.is_empty():
+		return
+	var text := CoachTalk.week_talk(ctx, _fill(ctx, p), rng)
+	_post(s, p, ctx, today, false, {"prefix": text, "talk": true, "counted": false})
+	if topics.size() > 1:
+		_post(topics[1], p, ctx, today, true, {"counted": false})
+
+
+## The evening after a race: a message from the coach (not a stop): the result, his Race-story line, a closing word; with a
+## chance one follow-up topic that fits how it went (a normal moment, answered in the thread).
+func _post_race_note(ctx: Dictionary, today: int) -> void:
+	var coach := people_for("coach")
+	if coach.is_empty():
+		return
+	var p: Dictionary = coach[0]
+	var note: Dictionary = ctx.race_note
+	if CoachTalk.race_outcome(note) == "":
+		return
+	_message("coach", p.id, CoachTalk.race_message(note, _fill(ctx, p), rng), "", ctx.date)
+	if rng.randf() < float(Data.coach_talk.talk.race_topic_chance):
+		var topics := _pick_topics("race", ctx, today, p, 1)
+		if not topics.is_empty():
+			_post(topics[0], p, ctx, today, true, {"counted": false})
+
+
+## Up to `n` topic storylets (field `topic` = kind) that fit now, drawn by weight.
+func _pick_topics(kind: String, ctx: Dictionary, today: int, p: Dictionary, n: int) -> Array:
+	var pool := []
+	for s in content():
+		if str(s.get("topic", "")) != kind or not _eligible(s, ctx, today):
+			continue
+		if _valid_replies(s, ctx, p).size() < 2 or _valid_variants(s, ctx, p).is_empty():
+			continue
+		pool.append(s)
+	var out := []
+	while out.size() < n and not pool.is_empty():
+		var total := 0.0
+		for s in pool:
+			total += float(s.get("weight", 1.0))
+		var x := rng.randf() * total
+		var chosen: Dictionary = pool.back()
+		for s in pool:
+			x -= float(s.get("weight", 1.0))
+			if x < 0.0:
+				chosen = s
+				break
+		out.append(chosen)
+		pool.erase(chosen)
+	return out
 
 
 # --- Standing orders ----------------------------------------------------------------------------------------------
@@ -619,6 +757,8 @@ func check_when(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
 				ok = cs != null and cs.trust_level() in v
 			"relation":
 				ok = p.is_empty() or _in_range(relation_of(p), v)
+			"fatigue": ok = _in_range(Game.athlete.fatigue, v)
+			"race_outcome": ok = CoachTalk.race_outcome(ctx.get("race_note", {})) in v
 			"chance":
 				ok = rng.randf() < float(v)
 			_:
@@ -782,7 +922,7 @@ func _message(thread: String, from: String, text: String, moment_id: String, dat
 	if not threads.has(thread):
 		threads[thread] = []
 	threads[thread].append({"id": "x%d" % _next, "date": date.duplicate(), "day": day_no(date), "from": from, "text": text,
-			"moment": moment_id, "read": from == "you"})
+			"moment": moment_id, "read": from == "you" or from == "system"})   # (the player's own lines and the game's lines are never "new")
 	_next += 1
 
 
@@ -805,6 +945,59 @@ func moment(moment_id: String) -> Dictionary:
 		if m.id == moment_id:
 			return m
 	return {}
+
+
+# For the People tab, the Today card and the week strip (session C3) ----------------------------------------
+
+## The thread ids in the order of data/moments.json (coach, family, friends, group, school).
+static func thread_ids() -> Array:
+	return Data.moments.threads.keys()
+
+
+## Unread messages in all threads.
+func unread_total() -> int:
+	var n := 0
+	for t in threads:
+		n += unread(t)
+	return n
+
+
+## The last message of a thread, or {}.
+func last_message(thread_id: String) -> Dictionary:
+	var list := thread(thread_id)
+	return list.back() if not list.is_empty() else {}
+
+
+## What the Today card shows: the newest moment still waiting for an answer, else the newest unread message of a person.
+## {kind "moment" | "message", thread, from (person id), text, date, moment (id or "")} or {}.
+func newest_open() -> Dictionary:
+	var open := pending()
+	if not open.is_empty():
+		var m: Dictionary = open.back()
+		return {"kind": "moment", "thread": m.thread, "from": m.from, "text": m.text, "date": m.date, "moment": m.id}
+	var best := {}
+	for t in threads:
+		for x in threads[t]:
+			if bool(x.read) or x.from == "you" or x.from == "system":
+				continue
+			if best.is_empty() or int(x.day) >= int(best.day):
+				best = {"kind": "message", "thread": t, "from": x.from, "text": x.text, "date": x.date, "moment": x.moment, "day": int(x.day)}
+	return best
+
+
+## Per day number: {count (messages from people that day), unread} for the days first..last (the week strip's people mark).
+func marks_between(first_day: int, last_day: int) -> Dictionary:
+	var out := {}
+	for t in threads:
+		for x in threads[t]:
+			if x.from == "you" or x.from == "system" or int(x.day) < first_day or int(x.day) > last_day:
+				continue
+			var d: Dictionary = out.get(int(x.day), {"count": 0, "unread": 0})
+			d.count += 1
+			if not bool(x.read):
+				d.unread += 1
+			out[int(x.day)] = d
+	return out
 
 
 ## Moments still waiting for an answer, oldest first.

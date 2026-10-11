@@ -6,6 +6,7 @@ extends PanelContainer
 ## what helps) next to the active injuries and illnesses (phase, what's allowed, expected return).
 
 signal pressed
+signal message_pressed(thread_id: String)   # the newest unread message / moment waiting for an answer was tapped (session C3)
 
 const FEEL := {"Fresh": "Your legs feel light.", "Normal": "You feel fine.",
 		"Tired": "Your legs feel heavy.", "Exhausted": "You're running on empty."}
@@ -29,6 +30,9 @@ func refresh() -> void:
 		_rows.remove_child(c)
 		c.queue_free()
 	var info := DayInfo.of(Game.current_week(), Calendar.weekday(Game.date))
+	var message := _message_row()
+	if message != null:
+		_rows.add_child(message)
 	var columns := UIKit.flex(24 if not Layout.compact else 14)
 	columns.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	columns.add_child(_today(info))
@@ -52,6 +56,41 @@ func refresh() -> void:
 	if health != null:
 		_rows.add_child(HSeparator.new())
 		_rows.add_child(health)
+
+
+## The newest moment that waits for an answer, else the newest unread message (GDD 4.9.7): who, the first words, tap = its
+## thread in the People tab. Null when there is nothing new.
+func _message_row() -> Control:
+	var ms := PeopleUI.system()
+	if ms == null:
+		return null
+	var open := ms.newest_open()
+	if open.is_empty():
+		return null
+	var person: Dictionary = ms.people.get(str(open.from), {})
+	var first := str(person.get("first_name", PeopleUI.name_of(ms, str(open.from))))
+	var key := "today_moment" if str(open.kind) == "moment" else "today_message"
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UIKit.alert_style(Palette.ACCENT, 10))
+	var row := UIKit.hbox(10)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(PeopleUI.avatar(PeopleUI.name_of(ms, str(open.from))))
+	var col := UIKit.vbox(2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var head := UIKit.label(PeopleUI.ui(key).format({"from": first.to_upper()}), "CaptionLabel")
+	head.add_theme_color_override("font_color", Palette.ACCENT)
+	col.add_child(head)
+	col.add_child(UIKit.wrapped(PeopleUI.preview(str(open.text), 120), ""))
+	row.add_child(col)
+	card.add_child(row)
+	var button := Button.new()
+	button.theme_type_variation = "CardOverlay"
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(func(): message_pressed.emit(str(open.thread)))
+	card.add_child(button)
+	card.custom_minimum_size.y = 56
+	return card
 
 
 ## Opens the soreness row of an area (for screenshots and the layout check).

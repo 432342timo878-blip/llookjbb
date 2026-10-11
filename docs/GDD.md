@@ -2894,6 +2894,76 @@ the test file's, so the week targets will be met more often). **When real conten
 either switch the moments off (`StoryletSystem.enabled = false`) or answer stop events by date** (a loop `while advance_day() !=
 WEEK_DONE` never ends on a stop, and a stop on Sunday evening returns STOP instead of WEEK_DONE).
 
+#### Built (step C3, 2026-10-11): the People tab, the coach thread, the Sunday talk, the coach's why
+
+**Decisions with the user this session (asked, the GDD left them open):**
+1. **The Sunday week talk always stops Play week** (user chose "Always stops" over the recommended "never by default" and "only
+   with a topic"). It is a stop whatever "Play week stops for" says; the setting only governs ordinary moments. Consequence for
+   the tools: a stop on Sunday evening returns STOP, so `StoryletSystem.talks_enabled` (static, **default off**) is switched on
+   only by the app shell (`main.gd`) and by the checks that test the talk; every tool that plays weeks without the shell keeps
+   running to Sunday night as before.
+2. **The People tab on PC is the tab itself** (user, recommended): the list of people on the left and the open thread (or the
+   coach's profile) beside it; the day editor and the help keep the right-hand side panel. Phone: the list first, a thread or the
+   profile as a page of its own with a back button.
+3. **An unanswered week-talk topic costs the normal −1 trust** (user chose it over "nothing"): the first topic is part of the
+   talk's stop, so it is always answered; a second topic waits in the thread (6 days) and passes as "You didn't answer." (the
+   sender's relationship −1; the coach's is his trust).
+
+**Claude's defaults (not asked; say if you want them changed):** a thread shows what waits for an answer on top and the exchanges
+newest first, each exchange in the order it was written (his question, your answer, his reply), so nothing needs scrolling down
+to be found; a thread is read when opened and a moment is read when answered (also in the stop panel); the people mark on the
+week strip is a small drawn speech bubble (filled = an unread message that day, outline = read); the empty threads say who comes
+later (texts in `data/moments.json`); the coach's attributes on his profile are a ±2 range until 8 weeks together, then exact;
+the week topics have no standing-order groups yet (rules come with the real content, P1).
+
+**What was built:**
+- **Data:** `data/coach_talk.json` (new; every word the coach says: the talk's facts and preview lines, `phase_why` and
+  `session_why` (a short and a full reason for each of the 17 sessions), the day's why, the race message, the profile texts, and
+  for each of the four voices calm / drill / warm / tactician the opening, his comment on the one thing that mattered most,
+  the focus intro, the closing word and his lines about a race); `data/storylets/week_talk.json` (new, real content: 9 week
+  topics, 4 race topics, the plain `talk_ack` "Thanks, coach"; the field `topic` keeps them out of the 3–5 moments a week);
+  `data/moments.json` gains `ui` (every UI text of the People tab), `changes` (the result card), and an `empty` text per thread.
+  `data/help.json`: new entries `people` and `moment`; `overview` v5, `training_season` v4, `training_repeat` v3, `day_editor` v3.
+- **`CoachTalk`** (`scripts/core/coach_talk.gd`, reading only, the dice come from the caller): `week_talk(ctx, fill, rng)` = the
+  open, last week (sessions done of planned, how the legs felt, soreness, injury, the race, his comment on the most important of
+  them), this week (the phase and week of it, the key sessions with the reason, the taper / lighter / easing-back line, the
+  coming race) and one thing to focus on, then a closing word. **Communication sets the detail** (≤ 7 short: open, review,
+  preview only; 8–13 normal; ≥ 14 full: also the phase's reason and a second key session), **personality the voice**. `race_message`
+  (the facts, his Race-story line from `coaches.json` in his own words, a closing line by how it went: pb / good / bad / hurt),
+  `race_outcome`, `day_why` (the key session's reason by detail and voice, his intensity line, a rest-day line).
+- **`StoryletSystem`** (session C3 additions): `talks_enabled`; `_post_week_talk` on Sunday evening (0 / 1 / 2 topics by
+  `talk.topics_chance` 30 / 50 / 20 %; the first topic is part of the talk's own stop moment, so its replies are the talk's
+  replies, a talk without a topic has "Thanks, coach"; a second topic is a normal moment that waits in the thread); `_post_race_note`
+  on the evening after a race (a message, not a stop; with a 50 % chance one follow-up topic that fits how it went); the
+  conditions `fatigue` and `race_outcome`; reply fields `remember` and `result_from` (a reply from the sender is a bubble from
+  them); the **result card** data: every answered moment keeps `changes` ("Trust in Heikki ▲ a little", "Inka ▼ a little",
+  "Heikki will remember this": words only, thresholds in `moments.json changes`); the UI API `thread_ids / unread_total /
+  last_message / newest_open / marks_between`; messages of the player and of the game are never "new". `Game` keeps the race
+  just finished for the coach (`_race_note` in the day context), `RaceDay.story` is set by the race screen (the Race-story case
+  and line).
+- **UI:** a **sixth hub tab People** (PC: 110 px tabs, phone: six bottom tabs at 14 px, ~75 px each; a dot on the tab while
+  something is unread or waits for an answer); `PeopleView` (list, threads, the profile; PC two columns, phone pages), `PeopleUI`
+  (the shared message bubble with a round initial, the reply buttons: 44 px with an accent edge and the cost hint under each,
+  the exchange, the result card), `CoachProfile` (name, character words, fit and trust, his attributes, his group),
+  `MomentEventPanel` (the hub's stop panel for a moment, drawn as a message with its own "?", then the result card with
+  Continue when the answer changed something or got a reply), `StandingOrders` (the Training tab's bottom: Play week stops for
+  Important only / Every moment and the saved rules with Remove), `ChatMark` (the week strip's people mark). The Today card shows
+  the newest moment waiting for an answer, else the newest unread message (tap = its thread); the day editor has a **"<Name>
+  says"** panel with his reason for the day (and a line on a race day).
+- **Checks:** `tools/storylet_check.gd` part 6 (the talk stops exactly once on each of 13 Sundays, the topics fit, communication
+  short < normal < full, the four voices, the why, the race message for every outcome, a real race's evening message, the result
+  card words, the global dice untouched, talks off = Play week reaches Sunday night); `help_check` presses the People tab's "?" and
+  the moment panel's "?"; the tour and `layout_check` have the new views at all five sizes.
+
+**Measured:** `storylet_check` ALL CHECKS PASSED (the old parts unchanged: rate 3.52 a week, 1.00 people stops a week, neutral
+year = 206.798298350); `training_balance -- 0` fingerprints identical (206.798298350 / 14.102831594 / 1226.006524079 for the coach
+row in every part); `layout_check` at 1280×720, 720×1280, 390×844, 1000×900, 844×390: no OVERFLOW / SQUEEZED / WRONG;
+`help_check` 593 checks on the phone layout.
+
+**Not in C3:** coach proposals, the Veto, "Ask me first" and Ask the coach (C4); season goals (C5); moods (M1); family, friends and
+school people and the real moments (P1: the threads are there, empty, and say so); the coach market and scouting ranges (C6).
+The week topics' `proposal` effects ("a lighter week") are recorded, nothing acts on them until C4.
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)

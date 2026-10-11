@@ -74,7 +74,7 @@ func _run() -> void:
 		await _frames(8)
 		var tag := "%dx%d" % [size.x, size.y]
 		print("size ", tag, " compact=", main.get_node("/root/Router") != null and Layout.compact, " logical=", root.content_scale_size)
-		for view in ["overview", "progress", "training", "calendar", "rankings", "report"]:
+		for view in ["overview", "progress", "training", "calendar", "rankings", "report", "people"]:
 			hub._show(view)
 			await _frames(4)
 			await _shot("%s_%s" % [tag, view])
@@ -118,6 +118,8 @@ func _run() -> void:
 		await _season_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _coach_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
+		await _people_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
@@ -796,6 +798,86 @@ func _coach_views(main: Node, game, tag: String) -> void:
 	await _frames(4)
 
 
+# --- The people (M2 part 2, session C3) at this window size ----------------------------------------------------
+
+## The coach's week talk as a stop message, the Today card's message row, the People tab (list, the coach's thread with a
+## message waiting and an evening message, the profile, the training group, an empty thread), the Training tab's standing
+## orders with a saved rule. Everything is put back afterwards.
+func _people_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var ms = game.get_system("moments")
+	var coach: Dictionary = ms.people_for("coach")[0]
+	var ctx := {"date": game.date.duplicate(), "day": 6, "day_type": "weekday", "week": game.current_week()}
+	var today: int = MS.day_no(game.date)
+	# The talk (a stop).
+	ms._post_week_talk(ctx, today)
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_moment_stop" % tag)
+	_check_overflow(hub, "%s moment_stop" % tag)
+	var e: Dictionary = game.pending_event()
+	hub._on_event_answer(e.id, str(e.choices[-1].id))
+	hub._end_result_card()
+	await _frames(3)
+	# A question that stops the week, answered: the result card (what changed, in words) over the page.
+	ctx.day = 0
+	ms._post(ms.storylet("wt_tired"), coach, ctx, today, false, {"talk": true, "counted": false})
+	hub._show_pending_event()
+	await _frames(6)
+	e = game.pending_event()
+	hub._on_event_answer(e.id, "lighter")
+	await _frames(6)
+	await _shot("%s_result_card" % tag)
+	_check_overflow(hub, "%s result_card" % tag)
+	hub._end_result_card()
+	await _frames(3)
+	# A moment waiting (not a stop) and the message after a race.
+	ms._post(ms.storylet("wt_fresh"), coach, ctx, today, true, {"counted": false})
+	ctx.race_note = {"meet": "Kalevan kisat", "key": "x", "story": {"case": "pb", "line": "A new best. That is the work paying off."},
+			"result": {"place": 2, "field": 8, "time": 128.4, "pb": true, "round": "Final", "meet_key": "x"}}
+	ms._post_race_note(ctx, today)
+	hub._refresh_week_ui()
+	hub._show("overview")
+	await _frames(6)
+	await _shot("%s_today_message" % tag)
+	_check_overflow(hub, "%s today_message" % tag)
+	for page in ["", "coach", "profile", "group", "family"]:
+		hub._people_page = page
+		hub._show("people")
+		await _frames(6)
+		await _shot("%s_people_%s" % [tag, page if page != "" else "list"])
+		_check_overflow(hub, "%s people_%s" % [tag, page])
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s people_%s_end" % [tag, page])
+	# The People tab beside the day editor (PC: the side panel takes room: pages instead of two columns).
+	hub._people_page = "coach"
+	hub._show("people")
+	hub._open_day(1)
+	await _frames(8)
+	await _shot("%s_people_side_open" % tag)
+	_check_overflow(hub, "%s people_side_open" % tag)
+	hub._close_day()
+	await _frames(6)
+	ms.standing["weekday_party"] = {"reply": "no", "label": "No thanks", "rule": "Always say no to weekday parties before a hard session", "since": 0}
+	hub._phase_open = ""
+	hub._show("training")
+	await _frames(6)
+	hub._scroll.scroll_vertical = 100000
+	await _frames(4)
+	await _shot("%s_standing_orders" % tag)
+	_check_overflow(hub, "%s standing_orders" % tag)
+	ms.standing.erase("weekday_party")
+	hub._people_page = ""
+	for m in ms.pending():
+		ms.answer(m.id, str(m.replies[0].id))
+	ms.mark_read("coach")
+	hub._show("overview")
+	await _frames(3)
+
+
 func _find_script(node: Node, script):
 	if node == null:
 		return null
@@ -815,7 +897,7 @@ func _find_script(node: Node, script):
 func _help_views(main: Node, game, tag: String) -> void:
 	var router = main.get_node("/root/Router")
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
-	for view in ["overview", "progress", "training", "calendar", "rankings", "report"]:
+	for view in ["overview", "progress", "training", "calendar", "rankings", "report", "people"]:
 		hub._show(view)
 		await _frames(3)
 		hub._toggle_help()

@@ -43,6 +43,7 @@ var dev_test := false
 
 var _week: WeekSim
 var _playing_week := false   # the current day is being played by advance_week (it goes on after a race)
+var _race_note := {}         # the race just finished, for the coach's evening message (cleared when the day ends)
 var _next_event := 1
 
 
@@ -272,6 +273,7 @@ func advance_week() -> String:
 func finish_race() -> String:
 	_record(race_day)
 	_week.race_done(race_day.summary(), race_day.incidents)
+	_race_note = _make_race_note(race_day)
 	race_day = null
 	var result := _end_day()
 	if result == DAY_DONE and _playing_week:
@@ -314,6 +316,7 @@ func _end_day() -> String:
 	ctx.record = _week.played[-1]
 	_hook("on_health", ctx)
 	_hook("on_day_end", ctx)
+	_race_note = {}
 	var rec: Dictionary = ctx.record
 	var entry := {"date": date.duplicate(), "day_type": ctx.day_type, "sessions": rec.sessions,
 			"intensity": rec.intensity, "race": rec.race, "load": rec.load, "fatigue": rec.fatigue, "events": []}
@@ -361,7 +364,22 @@ func _end_week(ctx: Dictionary) -> void:
 
 func _day_context() -> Dictionary:
 	return {"date": date.duplicate(), "day": Calendar.weekday(date), "day_type": Calendar.day_type(date),
-			"week": _week}
+			"week": _week, "race_note": _race_note}
+
+
+## What the coach needs for his message on the evening after the player's race (StoryletSystem, session C3): the meet, the
+## athlete's result entry of its last round and the Race-story line the race screen made ({} for a race with no result).
+func _make_race_note(rd: RaceDay) -> Dictionary:
+	if rd.player_results.is_empty():
+		return {}
+	var res := {}
+	for i in range(athlete.results.size() - 1, -1, -1):
+		if str(athlete.results[i].meet_key) == str(rd.meet.key):
+			res = athlete.results[i]
+			break
+	if res.is_empty():
+		return {}
+	return {"meet": str(rd.meet.name), "key": str(rd.meet.key), "result": res, "story": rd.story.duplicate()}
 
 
 func _hook(method: String, ctx: Dictionary) -> void:

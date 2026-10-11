@@ -4,6 +4,7 @@ extends HBoxContainer
 ## Each cell shows the date, one marker per session (colour = intensity: blue Easy, grey Normal, red Hard),
 ## a RACE badge on race days, a dot when the day was changed, and for played days a fatigue dot (dimmed).
 ## Health: a round "!" on days you were sore and a "+" on days an injury or illness limited (see _health_marks).
+## People: a small speech bubble (ChatMark) on days a person wrote to you, filled while a message of that day is unread.
 ## Today has an accent border; `selected` (the day open in the day editor) a bright one.
 ## Tapping a cell emits `day_pressed`. On a phone the cells are ~62 px wide and show the day letter, the
 ## day of the month and the markers; on PC they also show the session names.
@@ -12,6 +13,8 @@ signal day_pressed(day: int)
 
 var selected := -1   # the day open in the day editor, -1 = none
 var monday := {}     # the Monday of the week shown (the hub closes the editor when it changes)
+
+var _people := {}    # day number -> {count, unread}: the messages people wrote that day (StoryletSystem.marks_between)
 
 
 func _init() -> void:
@@ -30,6 +33,11 @@ func refresh() -> void:
 		c.queue_free()
 	var w := Game.current_week()
 	monday = w.monday
+	_people = {}
+	var ms := PeopleUI.system()
+	if ms != null:
+		var first := StoryletSystem.day_no(monday)
+		_people = ms.marks_between(first, first + 6)
 	for d in 7:
 		add_child(_cell(DayInfo.of(w, d)))
 
@@ -142,7 +150,8 @@ func _cell(info: Dictionary) -> Control:
 ## a "+" on a day an injury or illness limited (the colour = how serious). Null on a healthy day.
 func _health_marks(info: Dictionary) -> Control:
 	var injured: bool = info.limited or not info.health.is_empty()
-	if int(info.sore) == 0 and not injured:
+	var talk: Dictionary = _people.get(StoryletSystem.day_no(info.date), {})
+	if int(info.sore) == 0 and not injured and talk.is_empty():
 		return null
 	var row := UIKit.hbox(3)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -150,6 +159,8 @@ func _health_marks(info: Dictionary) -> Control:
 		row.add_child(UIKit.badge("!", HealthUI.level_color(int(info.sore)), 16))
 	if injured:
 		row.add_child(UIKit.badge("+", HealthUI.tier_color(info.tier if info.tier != "" else "injury"), 16))
+	if not talk.is_empty():
+		row.add_child(ChatMark.new(int(talk.unread) > 0))   # (people mark, session C3)
 	return row
 
 

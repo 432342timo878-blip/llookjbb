@@ -954,6 +954,7 @@ func _show_result(fresh := true) -> void:
 		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete, "kind": kind,
 				"overall_place": overall_place, "pre_rank": pre_rank, "mark": str(own_run.get("mark", "")),
 				"time": float(own_run.get("time", 0.0)), "ref": float(own_run.get("ref", 0.0))})
+		_rd.story = {"case": str(story.get("case", "")), "line": str(story.get("coach", ""))}   # (the coach's evening message)
 		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks, "story": story,
 				"via": marks.get(mine.name, ""), "next": _rd.rounds[_rd.round_index] if not _rd.is_done() else "",
 				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": kind in ["heat", "semi"]}

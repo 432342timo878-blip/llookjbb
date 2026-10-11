@@ -140,8 +140,12 @@ func _run() -> void:
 	await _frames(3)
 	# Play weeks until the first race day stops the week.
 	var router = main.get_node("/root/Router")
-	while game.advance_week() != game.RACE:
-		pass
+	var weeks_played := 0
+	while game.advance_week() != game.RACE and weeks_played < 80:
+		weeks_played += 1
+		while not game.pending_event().is_empty():   # (the coach's Sunday talk stops every week: answer it)
+			var stop: Dictionary = game.pending_event()
+			game.answer_event(stop.id, str(stop.choices[0].id) if not stop.choices.is_empty() else "ok")
 	# The race day on the strip and in the day editor (read-only, with the meet).
 	hub._refresh_week_ui()
 	hub._show("overview")
@@ -269,6 +273,8 @@ func _run() -> void:
 	await _season_tour(main)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _health_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _people_tour(main, hub)
 	saves.delete(slot)
 	quit()
 
@@ -790,6 +796,136 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 		print("health tour: sore warning the night before a race names the race: ", game.pending_event().get("meet", "none") == upcoming.key)
 		await _shot("27_health_sore_before_race")
 	load("res://scripts/core/health_system.gd").model_enabled = false
+
+
+# --- The people (M2 part 2, session C3): the coach's Sunday talk as a message, the Today card's message row, the People ---
+# --- tab (list, threads, the coach profile, empty threads), the week strip's people mark, the day editor's "Coach says", ---
+# --- the Training tab's standing orders. Played from the career as it is: to its next Sunday evening, then seeded. ----
+
+func _people_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var data = main.get_node("/root/Data")
+	var hub: Control = hub_in
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var CT = load("res://scripts/core/coach_talk.gd")
+	load("res://scripts/core/health_system.gd").model_enabled = false
+	hub._show("overview")
+	# 1. Play on to Sunday evening: the week talk stops Play week.
+	var guard := 0
+	while guard < 40:
+		guard += 1
+		var r: String = game.advance_day()
+		if r == game.RACE:
+			var rd = game.race_day
+			while not rd.is_done():
+				rd.start_round(false, "pack").run()
+				rd.finish_round()
+			game.finish_race()
+		var e: Dictionary = game.pending_event()
+		if not e.is_empty() and str(e.get("kind", "")) == "moment":
+			break
+		while not game.pending_event().is_empty():
+			game.answer_event(game.pending_event().id, "keep" if game.pending_event().get("kind", "") == "sore" else "ok")
+	var talk: Dictionary = game.pending_event()
+	print("people tour: the week talk stopped Play week: ", talk.get("title", "none"))
+	hub = main.get_node("ScreenHost").get_child(-1)
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("40_week_talk_message")
+	await _scroll_event_to_end(hub)
+	await _shot("40b_week_talk_replies")
+	var help_btn = _find_script(hub._event_overlay, load("res://scripts/ui/help_button.gd"))
+	if help_btn:
+		help_btn.pressed.emit()
+		await _frames(4)
+		await _shot("40c_help_moment")
+		_close_help_overlays(hub)
+	if not talk.is_empty():
+		hub._on_event_answer(talk.id, str(talk.choices[0].id))
+		hub._end_result_card()
+	await _frames(4)
+
+	# 2. A question that stops the week, answered: the result card (what changed, in words) over the page.
+	var ms = game.get_system("moments")
+	var coach: Dictionary = ms.people_for("coach")[0]
+	var ctx := {"date": game.date.duplicate(), "day": 0, "day_type": "weekday", "week": game.current_week()}
+	ms._post(ms.storylet("wt_tired"), coach, ctx, MS.day_no(game.date), false, {"talk": true, "counted": false})
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("40e_question_stop")
+	var q: Dictionary = game.pending_event()
+	hub._on_event_answer(q.id, "lighter")
+	await _frames(6)
+	await _shot("40f_result_card")
+	hub._end_result_card()
+	await _frames(3)
+
+	# 3. A second moment waits in the thread; a race message from the coach is there too.
+	ms._post(ms.storylet("wt_fresh"), coach, ctx, MS.day_no(game.date), true, {"counted": false})
+	var fake_note := {"meet": "Kalevan kisat", "key": "x", "story": {"case": "pb", "line": "A new best. That is the work paying off."},
+			"result": {"place": 2, "field": 8, "time": 128.4, "pb": true, "round": "Final", "meet_key": "x"}}
+	ctx.race_note = fake_note
+	ms._post_race_note(ctx, MS.day_no(game.date))
+	hub._refresh_week_ui()
+	hub._show("overview")
+	await _frames(6)
+	await _shot("41_today_message_row")
+
+	# 3. The People tab: PC = the list and the coach thread, phone = the list.
+	hub._people_page = ""
+	hub._show("people")
+	await _frames(6)
+	await _shot("42_people_tab")
+	hub._open_help("people", true)
+	await _frames(4)
+	await _shot("42a_help_people")
+	hub._close_help()
+	_close_help_overlays(hub)
+	hub._people_page = "coach"
+	hub._show("people")
+	await _frames(6)
+	await _shot("42b_people_coach_thread")
+	var view = _find_script(hub, load("res://scripts/ui/people_view.gd"))
+	var waiting: Array = ms.pending()
+	if view and not waiting.is_empty():
+		view._answer(str(waiting[0].id), str(waiting[0].replies[0].id))
+		await _frames(6)
+		await _shot("42c_people_thread_answered")
+	hub._people_page = "profile"
+	hub._show("people")
+	await _frames(6)
+	await _shot("43_coach_profile")
+	hub._scroll.scroll_vertical = 100000
+	await _frames(4)
+	await _shot("43b_coach_profile_bottom")
+	hub._people_page = "group"
+	hub._show("people")
+	await _frames(6)
+	await _shot("44_people_group")
+	hub._people_page = "family"
+	hub._show("people")
+	await _frames(6)
+	await _shot("44b_people_empty_thread")
+
+	# 4. The Training tab's standing orders (a saved rule).
+	ms.standing["weekday_party"] = {"reply": "no", "label": "No thanks", "rule": "Always say no to weekday parties before a hard session", "since": 0}
+	hub._phase_open = ""
+	hub._show("training")
+	await _frames(6)
+	hub._scroll.scroll_vertical = 100000
+	await _frames(4)
+	await _shot("45_standing_orders")
+	ms.standing.erase("weekday_party")
+
+	# 5. The day editor says why.
+	hub._show("overview")
+	hub._open_day(load("res://scripts/core/calendar.gd").weekday(game.date))
+	await _frames(6)
+	await _shot("46_day_editor_coach_says")
+	hub._close_day()
+	hub._show("overview")
 
 
 ## Back to a healthy body: no strain, no injuries, no leftover warnings.

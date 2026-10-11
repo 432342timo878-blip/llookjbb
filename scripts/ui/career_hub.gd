@@ -1,16 +1,17 @@
 extends Control
 ## Career home screen: athlete header with today's date, Next day (plays one day) and Play week (plays to
 ## Sunday night or until something needs the player), the week strip (Mon–Sun of this week; tap a day to
-## open the day editor), and tabs (Overview / Training / Calendar / Rankings / Report). Wide layout on PC
+## open the day editor), and tabs (Overview / Training / Calendar / Rankings / Report / People). Wide layout on PC
 ## (tabs on top, the day editor as a side panel); on a phone the content is stacked, the tabs sit in a bar
 ## at the bottom, within thumb reach, and the day editor is a bottom sheet. Stop events show as a
-## full-screen dimmed decision panel.
+## full-screen dimmed decision panel (a moment, e.g. the coach's Sunday talk, as a message).
 
 ## id, tab text, short tab text (phone)
 const VIEWS := [["overview", "Overview", "Overview"], ["training", "Training", "Training"],
-		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Report", "Report"]]
+		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Report", "Report"],
+		["people", "People", "People"]]
 const SIDE_PANEL_WIDTH := 480.0       # the day editor's side panel on PC (a bit less on a short, wide window)
-const TAB_BAR_WIDTH := 690.0          # what the five tabs need next to the side panel
+const TAB_BAR_WIDTH := 690.0          # what the six tabs need next to the side panel (110 px each)
 const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
 		"September", "October", "November", "December"]
 
@@ -34,6 +35,9 @@ var _sheet_scroll: ScrollContainer
 var _today_card: TodayCard      # on Overview only
 var _overview_columns := 0      # columns the wide Overview was built with (0 = not built yet)
 var _phase_open := ""           # Training tab: the season phase open in the PhaseEditor ("" = the season view)
+var _people_page := ""          # People tab: "" = the list (PC: the coach thread), a thread id, or "profile"
+var _people_dot: Control        # the mark on the People tab: something unread or waiting for an answer
+var _result_event := {}         # a moment just answered whose result card (what changed) is showing over the page
 var _strip_caption: Label       # above the week strip: the season plan's phase and week (empty in repeat mode)
 # Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
 # (Close goes back to the day); phone: a HelpOverlay sheet. `_help_stack` is what is open ([] = closed), kept across
@@ -133,22 +137,30 @@ func _build_shell() -> void:
 	_scroll.add_child(_content)
 
 	_tabs.clear()
+	_people_dot = null
 	var group := ButtonGroup.new()
-	var bar := UIKit.hbox(4)
+	var bar := UIKit.hbox(2 if Layout.compact else 4)
 	for v in VIEWS:
 		var b := Button.new()
 		b.text = v[2] if Layout.compact else v[1]
 		b.toggle_mode = true
 		b.button_group = group
 		b.theme_type_variation = "BottomTabButton" if Layout.compact else "TabButton"
-		b.custom_minimum_size = Vector2(0 if Layout.compact else 130, 48 if Layout.compact else 44)
+		b.custom_minimum_size = Vector2(0 if Layout.compact else 110, 48 if Layout.compact else 44)
 		if Layout.compact:
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.add_theme_font_size_override("font_size", 14)   # (six tabs share the phone's width)
 		b.pressed.connect(func():
 			_phase_open = ""   # a tab button opens the tab at its top level (the season view, not a phase)
+			_people_page = ""
 			_show(v[0]))
 		bar.add_child(b)
 		_tabs[v[0]] = b
+		if v[0] == "people":   # a dot while something is unread or waits for an answer
+			_people_dot = UIKit.dot(Palette.ACCENT, 10)
+			_people_dot.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			_people_dot.position = Vector2(-14, 4)
+			b.add_child(_people_dot)
 	if Layout.compact:
 		column.add_child(_scroll)
 		column.add_child(HSeparator.new())
@@ -272,6 +284,9 @@ func _refresh_header() -> void:
 	var caption := SeasonUI.week_caption()
 	_strip_caption.text = caption.to_upper()
 	_strip_caption.visible = caption != ""
+	if is_instance_valid(_people_dot):   # the People tab's dot: something new, or waiting for your answer
+		var ms := PeopleUI.system()
+		_people_dot.visible = ms != null and (ms.unread_total() > 0 or not ms.pending().is_empty())
 
 
 ## After days were played or an event was answered: header, week strip and the open day.
@@ -337,8 +352,8 @@ func _apply_editor_visibility() -> void:
 	if _view == "overview" and _overview_columns != 0 and not Layout.compact \
 			and _overview_columns != _wanted_overview_columns():
 		_relayout_overview()
-	# The Training pages were built for the other width (side panel opened or closed): build them again.
-	if _view == "training" and not Layout.compact and _content.get_child_count() > 0 \
+	# The Training pages and the People tab were built for the other width (side panel opened or closed): build them again.
+	if (_view == "training" or _view == "people") and not Layout.compact and _content.get_child_count() > 0 \
 			and _side_is_open() != _built_side_open:
 		_rebuild_view()
 
@@ -462,7 +477,8 @@ func _fit_sheet() -> void:
 ## Its choices are 44 px buttons; an event without choices just has OK.
 func _show_pending_event() -> void:
 	var e := Game.pending_event()
-	if e.is_empty():
+	var showing_result := not _result_event.is_empty()   # (the card of the moment just answered comes first, session C3)
+	if e.is_empty() and not showing_result:
 		if _event_overlay:
 			_event_overlay.visible = false
 		return
@@ -487,13 +503,19 @@ func _show_pending_event() -> void:
 	var widest := SeasonEventPanel.max_width(e) if SeasonEventPanel.handles(e) else 480.0
 	var width := minf(widest, Layout.logical_width - 32.0 - 36.0 - 12.0)
 	var box: Control
-	if HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels (with a "?")
+	if showing_result:   # what the answer changed (GDD 4.9.5 "Consequences shown"): the reply, ▲ / ▼ lines, Continue
+		box = MomentEventPanel.result(_result_event, width, _end_result_card,
+				func(): HelpOverlay.open(self, MomentEventPanel.HELP))
+	elif HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels (with a "?")
 		box = HealthEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, HealthEventPanel.HELP))
 	elif SeasonEventPanel.handles(e):   # the coach's offer of the three plans, easing back in
 		var panel := SeasonEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, SeasonEventPanel.help_id(e)))
 		box = panel
+	elif MomentEventPanel.handles(e):   # a moment (the coach's Sunday talk ...) as a message
+		box = MomentEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice),
+				func(): HelpOverlay.open(self, MomentEventPanel.HELP))
 	else:
 		box = UIKit.vbox(10)
 		box.custom_minimum_size.x = width
@@ -531,10 +553,22 @@ func _fit_event_card(scroll: ScrollContainer, box: Control) -> void:
 	scroll.custom_minimum_size.y = minf(box.get_combined_minimum_size().y, size.y - 32.0 - 36.0)
 
 
+## Continue on the result card: on to the next stop event, or back to the page.
+func _end_result_card() -> void:
+	_result_event = {}
+	_show_pending_event()
+
+
 func _on_event_answer(event_id: String, choice: String) -> void:
+	var answered := {}
+	for ev in Game.events:
+		if ev.id == event_id:
+			answered = ev
 	Game.answer_event(event_id, choice)
 	_refresh_week_ui()
 	_show(_view)
+	if MomentEventPanel.has_result(answered):   # a moment's answer that changed something or got a reply: show it
+		_result_event = answered
 	_show_pending_event()
 
 
@@ -553,6 +587,7 @@ func _show(view: String) -> void:
 		"calendar": _build_calendar()
 		"rankings": _build_rankings()
 		"report": _content.add_child(ReportView.new())
+		"people": _build_people()
 		"progress":
 			var page := ProgressView.new()
 			page.back_pressed.connect(func(): _show("overview"))
@@ -638,6 +673,7 @@ func _raise_overlays() -> void:
 func _build_profile(a: Athlete) -> void:
 	_today_card = TodayCard.new()
 	_today_card.pressed.connect(func(): _open_day(Calendar.weekday(Game.date)))
+	_today_card.message_pressed.connect(_open_people)
 	_content.add_child(_today_card)
 
 	var columns: Container   # wide: a grid of 4 (2 when the width is short, e.g. with the side panel open)
@@ -702,9 +738,35 @@ func _build_profile(a: Athlete) -> void:
 
 # --- Training plan ----------------------------------------------------------------------
 
-## The Training tab: the switch Season plan / One repeating week (GDD 4.8 UI), then the season (SeasonView, or the
-## PhaseEditor of the phase that was tapped) or the repeating week's editor.
+## The People tab (GDD 4.9.7, session C3): the threads, the open thread, the coach's profile.
+func _build_people() -> void:
+	var view := PeopleView.new(_people_page)
+	view.page_changed.connect(func(p: String):
+		_people_page = p
+		_scroll.scroll_vertical = 0)
+	view.changed.connect(func():
+		_refresh_week_ui()
+		_show_pending_event())
+	_content.add_child(view)
+
+
+## Opens the People tab at a thread (the Today card's message row).
+func _open_people(thread_id: String) -> void:
+	_people_page = thread_id
+	_show("people")
+
+
+## The Training tab: the page of the plan, then (not on the phase editor) the standing orders: what Play week stops for and
+## the rules saved from repeated answers (GDD 4.9.2, session C3).
 func _build_training() -> void:
+	_build_training_page()
+	if _phase_open == "":
+		_content.add_child(StandingOrders.build())
+
+
+## The Training tab's plan page: the switch Season plan / One repeating week (GDD 4.8 UI), then the season (SeasonView, or the
+## PhaseEditor of the phase that was tapped) or the repeating week's editor.
+func _build_training_page() -> void:
 	if Game.season.mode != SeasonPlan.PHASES:
 		_phase_open = ""
 	if _phase_open == "":   # the phase editor is a page of its own, with "◀ Season plan" instead

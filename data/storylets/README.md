@@ -20,6 +20,7 @@ them, never a normal career. Rules, rates and shared texts are in `data/moments.
 | `important` | the reply changes something: Play week stops for it with the setting *Important only* (it then needs a stop token, `moments.json rate`) |
 | `expires_days` | days it waits for an answer (default `moments.json expires_days`); then "you didn't answer" |
 | `chain_only` | comes only as a chain follow-up (a reply's `next`) |
+| `topic` | `week` / `race` / `ack` (session C3): a topic of the coach's Sunday talk or of his message after a race (`week_talk.json`), never picked by the scheduler; `ack` is the talk without a topic (one reply, "Thanks, coach") |
 | `standing` | a group name for a recurring choice: the same reply twice in a row offers a rule (the reply needs a `rule` text) |
 | `text` | the text variants: strings, or `{"text": ..., "when": {...}}`; never the same variant twice in a row |
 | `replies` | 2–4 replies (below) |
@@ -31,6 +32,11 @@ them, never a normal career. Rules, rates and shared texts are in `data/moments.
 ("tired tomorrow", "{from} will remember"), `result` the line shown after, `rule` the standing-order text ("Always say no
 to weekday parties before a hard session"), `next` a chain follow-up `{"id": storylet, "days": [min, max]}`, `when` makes the
 reply appear only when its conditions hold (at least two replies must remain).
+
+`remember` (true) makes the result card say "{from} will remember this"; `result_from` ("sender") makes the `result` line a message
+from the sender instead of a line of the game. After an answer the **result card** (session C3) lists what really changed, in
+words with ▲ / ▼ and no numbers: the coach's trust or the sender's relationship (`moments.json changes`); the prepared effects
+appear there when their systems exist.
 
 **Effects** (`moments.json effects`): `trust` (the head coach's trust, `CoachSystem.add_trust`), `relation` (the sender's
 relationship; for the coach it is his trust), `flag` (a name or a list: remembered with the date and a counter), `unflag`,
@@ -46,7 +52,8 @@ relationship; for the coach it is his trust), `flag` (a name or a list: remember
 matches] · `tomorrow_rest` true / false · `flags` ["name", "!name"] · `flag_days` {"name": [min, max]} (days since it was
 last set) · `counters` {"name": [min, max]} · `seen` / `not_seen` [storylet ids] · `answered` {"storylet": "reply" or
 ["reply", ...]} (its last answer; "_none" = not answered) · `trust` ["new", "good", "strong", "strained"] · `relation`
-[min, max] (with the sender) · `chance` 0–1.
+[min, max] (with the sender) · `fatigue` [min, max] (the athlete's fatigue now, 0–100) · `race_outcome` ["pb", "good", "bad",
+"hurt"] (how the race that just finished went: the evening after a race only, see CoachTalk.race_outcome) · `chance` 0–1.
 
 ## Placeholders
 
