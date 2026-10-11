@@ -74,9 +74,9 @@ func _build() -> void:
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(body)
 	column.add_child(scroll)
+	body.add_child(_moments_panel())
 	body.add_child(_race_panel())
 	body.add_child(_jump_panel())
-	body.add_child(_moments_panel())
 
 
 # --- Watch a test race ---------------------------------------------------------------------------------------
@@ -136,7 +136,7 @@ func _jump_panel() -> Control:
 				% ["TEST CAREER: " if Game.dev_test else "", Game.athlete.full_name(), Calendar.format_day(Game.date)]
 				+ "is saved once at the end. It stops early at a race day or when something needs your answer."))
 	else:
-		col.add_child(UIKit.wrapped("No career is open. Start one or choose Continue in the main menu first."))
+		_no_career(col)
 	var flow := HFlowContainer.new()
 	flow.add_theme_constant_override("h_separation", 8)
 	flow.add_theme_constant_override("v_separation", 8)
@@ -184,7 +184,7 @@ func _moments_panel() -> Control:
 	if Game.athlete != null:
 		ms = Game.get_system("moments") as StoryletSystem
 	if ms == null:
-		col.add_child(UIKit.wrapped("No career is open. Start one or choose Continue in the main menu first."))
+		_no_career(col)
 	else:
 		col.add_child(UIKit.wrapped("Placeholder messages from your coach and training group, to try the moments engine before "
 				+ "the real ones exist. Moments that stop Play week show as a panel in the career hub; the others wait in "
@@ -195,6 +195,13 @@ func _moments_panel() -> Control:
 		var stops: Dictionary = Data.moments.settings.stops
 		col.add_child(_choice_row("Play week stops for", [[stops.important.name, "important"], [stops.all.name, "all"]],
 				ms.stop_mode(), func(v): ms.set_stop_mode(v); _save_career()))
+		col.add_child(UIKit.wrapped("Career: %s%s, today %s. Test moments are %s." % ["TEST CAREER (never saved) " if Game.dev_test else "",
+				Game.athlete.full_name(), Calendar.format_day(Game.date), "ON" if ms.test_content else "off"]))
+		var go := UIKit.button("Go to the career", true, 220)
+		go.custom_minimum_size.y = 48
+		go.size_flags_horizontal = Control.SIZE_FILL if Layout.compact else Control.SIZE_SHRINK_BEGIN
+		go.pressed.connect(Router.go.bind("career_hub"))
+		col.add_child(go)
 		var lines := []
 		for t in Data.moments.threads:
 			for x in ms.thread(t):
@@ -208,6 +215,25 @@ func _moments_panel() -> Control:
 	var p := UIKit.panel(col, 16)
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return p
+
+
+## No career is loaded yet (the game has just started: the main menu's Continue loads one): say so and offer to open
+## the latest save here.
+func _no_career(col: Control) -> void:
+	var saves := SaveGame.list()
+	if saves.is_empty():
+		col.add_child(UIKit.wrapped("No career is open and there are no saves. Start a new career first."))
+		return
+	col.add_child(UIKit.wrapped("No career is open yet (the main menu's Continue opens one). Open your latest save here:"))
+	var b := UIKit.button("Open my latest save", true, 220)
+	b.custom_minimum_size.y = 48
+	b.size_flags_horizontal = Control.SIZE_FILL if Layout.compact else Control.SIZE_SHRINK_BEGIN
+	col.add_child(b)
+	col.add_child(UIKit.label(str(saves[0].summary), "MutedLabel"))
+	var slot: String = saves[0].slot
+	b.pressed.connect(func():
+		if SaveGame.load_slot(slot):
+			_build())
 
 
 func _save_career() -> void:

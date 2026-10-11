@@ -197,7 +197,7 @@
     {"heading": "Watch a test race", "text": "Pick indoor or outdoor, sections or heats, and a meet level, then Start test race. A separate test career is played to such a race and the race opens. Your own saves are never touched and the test career is never saved."},
     {"heading": "The level", "text": "The meet's level decides who commentates: a stadium announcer at local and district meets, one commentator at a national championship, a commentator and an expert at international youth meets and on TV."},
     {"heading": "Jump the career forward", "text": "Plays the career you have open to the next race day or to a date. The days are played for real and the game is saved once at the end. The jump stops early at a race or when something needs your answer."},
-    {"heading": "Test moments", "text": "Placeholder messages from your coach and training group, to try the moments before the real ones exist. Switch them on for the open career; important ones stop Play week as a panel, the rest wait and are listed here. Play week stops for: Important only or Every moment."},
+    {"heading": "Test moments", "text": "Placeholder messages from your coach and training group. Open a career (Open my latest save), switch them On, then Go to the career and play. Important ones stop Play week as a panel; the rest wait and are listed here. Every moment makes all of them stop."},
     {"heading": "Back to your own career", "text": "After a test race, press Main menu and then Continue or Load. A test career shows TEST CAREER at the top and cannot be saved."}
    ]
   }
