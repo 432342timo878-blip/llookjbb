@@ -2816,6 +2816,78 @@ the group are stored but read by nothing; the prepared hooks are wired in C4 / M
 point, 0.015 for race advice) are first guesses for the balance session (target 4.9.7: a top coach who fits ~1–1.5 % of the 800 m time
 by 21).
 
+#### Built (step C2, 2026-10-11): messages + the storylet engine, headless
+
+**Decisions with the user this session:**
+1. **Test moments only in the tools and the Dev menu** (user: recommended option). C2 has a handful of placeholder storylets
+   (`data/storylets/test.json`, `"test": true`); a normal career gets none until real content exists (P1; C3 may write the
+   Sunday talk and the race-evening message as real content). The check tools set `StoryletSystem.include_test`; the Dev menu has
+   a *Test moments* switch per career (saved with it, debug builds only) and the "Play week stops for" setting.
+2. **How long a moment waits** (user: recommended): each storylet can set `expires_days`; without it 2 days. A moment can be
+   answered on its day and the `expires_days` days after it; the next morning it passes as "you didn't answer".
+3. **Standing orders** (user: recommended, as 4.9.5 says): the same reply to a recurring choice twice in a row offers a rule; after
+   "Not now" it is offered again only after two more identical answers in a row; an offer left unanswered comes back after the next
+   identical answer.
+
+**What was built:**
+- **Data:** `data/moments.json` (rules and shared texts: `rate`, `expires_days`, `chain_wait_days`, `keep_messages`, the two
+  settings, the five threads coach / family / friends / group / school, the event title, `day_names`, `no_answer` = "You didn't
+  answer." with relationship −1, the standing-order texts, `relation` 0–100 from 50, `effects.known` / `effects.prepared`);
+  `data/storylets/*.json` (every file read, sorted; the format is in `data/storylets/README.md`): `id, thread, from (coach /
+  teammate / teammate:<role>), slot (morning / evening / any), when, weight, cooldown_days (14), once, important, expires_days,
+  chain_only, standing, text (variants, each optionally with its own when), replies (2–4: id, label, hint = the cost hint on the
+  button, effects, result, rule, next = a chain follow-up after [min, max] days, when), no_answer`. **Conditions:** age, month,
+  weekday, day type, weeks in the career, season phase, race today / tomorrow / in N days, days since the last race / PB, injured /
+  ill / sore, today's / tomorrow's session tags, rest tomorrow, flags (and "!flag"), days since a flag, counters, seen / not seen,
+  an earlier answer, the coach's trust level, the relationship with the sender, a chance. **Placeholders:** name, full name, from,
+  coach, coach's first name, another teammate, club, next meet, days to it, PB, weekday, tomorrow. **Effects now:** trust
+  (`CoachSystem.add_trust`, cause `moment:<id>`), relationship (the coach's is his trust), flags with the date and a count,
+  unflag, counters; **prepared** (recorded by the format, changing nothing yet): confidence, motivation, stress, sleep, life load,
+  grades, budget, proposal (M1, S1, C6, C4 wire them).
+- **`StoryletSystem`** (`scripts/core/storylet_system.gd`, GameSystem id `moments`, after Coach in `Game.systems`):
+  - *People and threads:* the head coach (C1's record) and his training group (C1's teammates) are the cast now; family, friends
+    and school are empty threads (P1). People who leave stay inactive so old messages keep their names. A thread is a list of
+    messages `{id, date, day, from (person / you / system), text, moment, read}` (the last 80 kept); `thread / unread / mark_read /
+    pending / answer / moment / standing_orders / clear_rule / stop_mode / set_stop_mode` are there for C3's People tab.
+  - *The scheduler:* morning (before the day is played: a stop then waits before training, like the coach's offer) and evening
+    (after training or the race). Each Monday the week gets a target of 3–5 moments; each day gets one with chance (moments still to
+    come) / (days left); at most 1 a day and 6 a week; a chain follow-up due today comes first. A weighted pick among the storylets
+    that fit: conditions hold, off cooldown (`once` = never again), its last moment answered, a sender who is free (the same person
+    at most once in 2 days) and at least two replies and a text whose conditions hold. Never the same text variant twice in a row.
+  - *Stops:* "Play week stops for: **Important only**" (default, saved with the career) stops only for `important` moments, each
+    using a stop token (one a week, at most two saved), none while another stop event waits; a chain follow-up that can't get a
+    token waits and, on its last day, comes without stopping. "**Every moment**" stops for every moment. A stop is a normal stop
+    event (`kind` moment) the hub's generic panel shows (title "Sender · Thread", the replies as buttons, the hint under each); any
+    other answer (tools answer "ok") counts as no answer. A moment answered in the thread answers its event too.
+  - *Standing orders:* storylets with the same `standing` group are one recurring choice; the rule offer is a small system
+    moment in the thread ("You've answered … 2 times in a row. Make it a rule: …?" → Make it a rule / Not now); with a rule the
+    moment answers itself, shows only "Your rule: …" and the result, and uses neither the day's slot nor the week's rate.
+  - *Memory:* `seen` per storylet (count, first and last day, last answer, last variant), `flags` (day, count), `counters`.
+  - Its own dice (seed and state saved), so a loaded game goes on exactly as without saving; nothing touches training, health or the
+    global dice. Switches: `StoryletSystem.enabled` (off = no moments) and `include_test`. Save version unchanged (4): the moments
+    state is one more system state; older saves load with none.
+- **Dev menu:** a *Test moments* panel (the switch, the setting, the latest 10 messages); help entry `dev_menu` version 2.
+- **Tools:** new `tools/storylet_check.gd` (in `run_all_checks`); `json_check` also reads `data/storylets/`; `training_balance`
+  part 2d (the rows with the test moments on).
+
+**Measured:** `storylet_check` (8 careers × 2 seasons, health on, races run, ALL CHECKS PASSED, ~2 min): with Important only 3.47–3.48
+moments a week in two runs (the rivals' dice differ between runs; sd 0.9; 2: 12 %, 3: 40–42 %, 4: 32 %, 5: 13–14 %), people
+stops 1.00 a week (most in a week 2: the test content has a
+frequent important moment, so the token cap is what holds it), with Every moment 3.87 a week, all stops; never more than 6 in a week
+or 1 in a day; no repeat inside a cooldown; never the same text twice in a row; nothing stuck; all 15 test storylets fired; the
+rules one by one (conditions, effects, the chain on its day, "you didn't answer" on the morning after the last day, both settings,
+the standing-order cycle, the global dice untouched); save / load bit for bit with moments waiting and a chain queued; a save
+without the moments state loads. Neutral: a year of the coach week with every moment a stop (182 moments, answered at random) =
+the moments off, bit for bit (attribute sum 206.798298350). `training_balance -- 0`: 206.798298350 / 14.102831594 /
+1226.006524079 for the coach row in parts 1, 2, 2b, 2c and 2d (every row at Important only, the coach row also at Every moment).
+`day_engine_check` passes.
+
+**Not in C2:** no People tab, no Today-card moment, no people mark on the strip (C3); moods, sleep, school, budget and coach
+proposals are prepared effects only; the rate's real feel needs real content (P1: with ~150 storylets the supply is far bigger than
+the test file's, so the week targets will be met more often). **When real content arrives (P1), every tool that plays days must
+either switch the moments off (`StoryletSystem.enabled = false`) or answer stop events by date** (a loop `while advance_day() !=
+WEEK_DONE` never ends on a stop, and a stop on Sunday evening returns STOP instead of WEEK_DONE).
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)

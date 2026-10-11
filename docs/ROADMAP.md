@@ -326,7 +326,9 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         saves get their club coach). New `tools/coach_check.gd`. *(Opus, high)*
         Check: fingerprints identical; `coach_check` (a coach of 10s = no change; a coach of 16s changes only what his attributes say;
         save/load bit for bit; old saves load); `run_all_checks.bat`.
-  - [ ] **C2. Messages + storylet engine (headless):** threads per person; the storylet format (conditions, variants, replies with
+  - [x] **C2. Messages + storylet engine (headless)** *(done 2026-10-11, GDD 4.9 "Built (step C2)"; user: test moments only in
+        the tools + Dev menu, a moment waits its own `expires_days` (default 2), a rule offered after the same answer twice in a row)*:
+        threads per person; the storylet format (conditions, variants, replies with
         effects and cost hints, memory flags, chains, cooldowns, once), the scheduler and the rate rules, "Play week stops for:
         Important only / Every moment", unanswered = "you didn't answer", standing orders from repeated choices; a handful of test
         storylets; new `tools/storylet_check.gd`. *(Opus, high)*

@@ -1,0 +1,57 @@
+{
+	"_note": "Rules and texts of the moments (storylets) and message threads (GDD 4.9.5, session C2; StoryletSystem). The moments themselves are in data/storylets/*.json (format in data/storylets/README.md). rate: the week's target number of moments is drawn each Monday from per_week (a moment that waits for an answer counts; one answered by a standing order does not); a day gets one with chance (moments still to come this week) / (days left this week); max_per_day and max_per_week are hard limits (chains included); stops_per_week stop tokens are added each Monday (at most stop_tokens_max): with the setting 'Important only' an important moment needs one to be posted (a chain follow-up that runs out of time is posted without stopping); person_gap_days = the same person writes at most once in that many days; start_after_days = quiet days at the start of a career. expires_days = how long a moment waits for an answer when the moment doesn't say (the last day it can be answered = the day it came + this); then it passes as 'you didn't answer' (no_answer). chain_wait_days = how long a chain follow-up may wait past its day for its conditions. standing: the same reply to a recurring choice (storylets with the same 'standing' group) `repeat` times in a row offers a rule; after 'Not now' it is offered again only after `again_after` more identical answers in a row. relation: each person's relationship 0-100 (the head coach's is his trust, CoachSystem). effects.known = what replies can change now; effects.prepared = accepted and recorded for the systems that come later (moods M1, school S1, family budget C6, coach proposals C4), changing nothing yet.",
+	"version": 1,
+	"rate": {
+		"per_week": [3, 5],
+		"max_per_day": 1,
+		"max_per_week": 6,
+		"stops_per_week": 1.0,
+		"stop_tokens_max": 2.0,
+		"person_gap_days": 2,
+		"start_after_days": 2
+	},
+	"expires_days": 2,
+	"chain_wait_days": 7,
+	"keep_messages": 80,
+	"keep_moments_days": 28,
+	"settings": {
+		"default": "important",
+		"stops": {
+			"important": {"name": "Important only", "text": "Play week stops only for moments where your answer changes something. The rest wait in your messages."},
+			"all": {"name": "Every moment", "text": "Play week stops for every moment, so you never miss one."}
+		}
+	},
+	"threads": {
+		"coach": {"name": "Coach"},
+		"family": {"name": "Family"},
+		"friends": {"name": "Friends"},
+		"group": {"name": "Training group"},
+		"school": {"name": "School"}
+	},
+	"event_title": "{from} · {thread}",
+	"day_names": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+	"no_answer": {
+		"result": "You didn't answer.",
+		"effects": {"relation": -1}
+	},
+	"standing": {
+		"repeat": 2,
+		"again_after": 2,
+		"offer_text": "You've answered \"{reply}\" {times} times in a row. Make it a rule: {rule}?",
+		"yes": "Make it a rule",
+		"yes_hint": "Only the result shows from now on. You can remove rules later.",
+		"no": "Not now",
+		"no_hint": "",
+		"made": "Rule saved: {rule}",
+		"applied": "Your rule: \"{label}\""
+	},
+	"relation": {
+		"start": 50,
+		"min": 0,
+		"max": 100
+	},
+	"effects": {
+		"known": ["trust", "relation", "flag", "unflag", "count"],
+		"prepared": ["confidence", "motivation", "stress", "sleep", "life_load", "grades", "budget", "proposal"]
+	}
+}

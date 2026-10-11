@@ -1,5 +1,5 @@
 extends SceneTree
-## Dev tool: parses every data/*.json and prints the line of the first error in a file that does not parse.
+## Dev tool: parses every data/*.json (and data/storylets/*.json) and prints the line of the first error in a file that does not parse.
 ## Godot's parser accepts a trailing comma ("a", ]) and a BOM, standard JSON (an editor, another tool) does not, so the text
 ## is also scanned for those two (fix session 2026-10-10).
 ## Run: godot --headless --path . -s res://tools/json_check.gd
@@ -9,8 +9,12 @@ func _initialize() -> void:
 	var bad := 0
 	var comma := RegEx.new()
 	comma.compile(",\\s*[}\\]]")
-	var dir := DirAccess.open("res://data")
-	for f in dir.get_files():
+	var files := []
+	for folder in ["res://data/", "res://data/storylets/"]:   # (the moments have their own folder, session C2)
+		for f in DirAccess.get_files_at(folder):
+			files.append(folder + f)
+	for path in files:
+		var f: String = path.trim_prefix("res://data/")
 		if not f.ends_with(".json"):
 			continue
 		var bytes := FileAccess.get_file_as_bytes("res://data/" + f)

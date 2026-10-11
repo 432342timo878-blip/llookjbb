@@ -5,6 +5,8 @@ extends Control
 ##   - Watch a test race: a separate test career, played to an indoor / outdoor race run in sections or heats, at a chosen
 ##     meet level (who commentates follows it); the race screen opens and the race is yours.
 ##   - Jump the career forward: plays the career you have open to the next race day or to a date.
+##   - Test moments (session C2): the test storylets for the open career, the "Play week stops for" setting, the latest
+##     messages (StoryletSystem; the People tab comes in C3).
 ## Built in code, wide or phone layout (rebuilt on Router.layout_changed).
 
 const HELP := "dev_menu"
@@ -74,6 +76,7 @@ func _build() -> void:
 	column.add_child(scroll)
 	body.add_child(_race_panel())
 	body.add_child(_jump_panel())
+	body.add_child(_moments_panel())
 
 
 # --- Watch a test race ---------------------------------------------------------------------------------------
@@ -168,6 +171,48 @@ func _jump(until: Dictionary) -> void:
 		Router.go("race")
 	else:
 		Router.go("career_hub")
+
+
+# --- Test moments (session C2) -------------------------------------------------------------------------------------
+
+## The test moments (data/storylets/test.json) for the open career, the "Play week stops for" setting and the latest
+## messages (the People tab that shows them comes in C3).
+func _moments_panel() -> Control:
+	var col := UIKit.vbox(10)
+	col.add_child(UIKit.label("TEST MOMENTS", "CaptionLabel"))
+	var ms: StoryletSystem = null
+	if Game.athlete != null:
+		ms = Game.get_system("moments") as StoryletSystem
+	if ms == null:
+		col.add_child(UIKit.wrapped("No career is open. Start one or choose Continue in the main menu first."))
+	else:
+		col.add_child(UIKit.wrapped("Placeholder messages from your coach and training group, to try the moments engine before "
+				+ "the real ones exist. Moments that stop Play week show as a panel in the career hub; the others wait in "
+				+ "your messages (no screen for them yet: the latest are listed below) and pass as \"you didn't answer\" after "
+				+ "about two days. The switch is saved with this career."))
+		col.add_child(_choice_row("Test moments in this career", [["Off", "off"], ["On", "on"]],
+				"on" if ms.test_content else "off", func(v): ms.test_content = v == "on"; _save_career(); _build()))
+		var stops: Dictionary = Data.moments.settings.stops
+		col.add_child(_choice_row("Play week stops for", [[stops.important.name, "important"], [stops.all.name, "all"]],
+				ms.stop_mode(), func(v): ms.set_stop_mode(v); _save_career()))
+		var lines := []
+		for t in Data.moments.threads:
+			for x in ms.thread(t):
+				lines.append(x)
+		lines.sort_custom(func(x, y): return int(x.day) > int(y.day) or (int(x.day) == int(y.day) and str(x.id).naturalnocasecmp_to(str(y.id)) > 0))
+		if lines.is_empty():
+			col.add_child(UIKit.label("No messages yet.", "MutedLabel"))
+		for x in lines.slice(0, 10):
+			var who := "You" if x.from == "you" else ("" if x.from == "system" else StoryletSystem.person_name(ms.people.get(x.from, {})))
+			col.add_child(UIKit.wrapped("%s · %s%s" % [Calendar.format_day(x.date), (who + ": ") if who != "" else "", x.text]))
+	var p := UIKit.panel(col, 16)
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return p
+
+
+func _save_career() -> void:
+	if Game.autosave:
+		SaveGame.save(SaveGame.AUTOSAVE)
 
 
 # --- Small pieces ------------------------------------------------------------------------------------------------

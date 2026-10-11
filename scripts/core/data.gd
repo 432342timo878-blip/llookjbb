@@ -22,6 +22,9 @@ var injuries: Array = []               # data/injuries.json: the injury and illn
 var periodization: Dictionary = {}     # data/periodization.json: phases, week rules, the coach's season plans
 var form: Dictionary = {}              # data/form.json: race-day form (sharpness, freshness, words)
 var help: Dictionary = {}              # data/help.json: the in-game help texts (screens and topics)
+var moments: Dictionary = {}           # data/moments.json: rules and texts of the moments and message threads (GDD 4.9.5)
+## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
+var storylets: Array = []
 
 
 func _ready() -> void:
@@ -51,6 +54,22 @@ func _ready() -> void:
 	periodization = _load("res://data/periodization.json")
 	form = _load("res://data/form.json")
 	help = _load("res://data/help.json")
+	moments = _load("res://data/moments.json")
+	storylets = []
+	var files := Array(DirAccess.get_files_at("res://data/storylets"))
+	files.sort()
+	for f in files:
+		if not f.ends_with(".json"):
+			continue
+		var d := _load("res://data/storylets/" + f)
+		for s in d.get("storylets", []):
+			s.file = f
+			s.test = bool(d.get("test", false))
+			storylets.append(s)
+
+
+func get_storylet(id: String) -> Dictionary:
+	return _find(storylets, id)
 
 
 func get_event(id: String) -> Dictionary:

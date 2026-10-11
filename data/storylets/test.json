@@ -1,0 +1,179 @@
+{
+	"_note": "TEST MOMENTS (session C2): placeholders that exercise every part of the engine (conditions, variants, replies with effects and cost hints, flags, counters, chains, cooldowns, once, standing orders, morning and evening, important stops). Not real content: the real moments come in P1. Only the check tools and the Dev menu's Test moments switch use this file.",
+	"test": true,
+	"storylets": [
+		{
+			"id": "test_coach_welcome",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"weeks_in_career": [0, 2]},
+			"once": true, "important": true, "weight": 5,
+			"text": ["[Test] Welcome to the group, {name}! I'm {coach_first}. Any questions before we really get going?"],
+			"replies": [
+				{"id": "thanks", "label": "Thanks, see you at training", "hint": "", "effects": {"trust": 2}, "result": "{coach_first}: \"Good. Bring spikes on Thursday.\""},
+				{"id": "why", "label": "Why do we train like this?", "hint": "{coach_first} likes questions", "effects": {"trust": 3, "flag": "asked_why"}, "result": "{coach_first} explains the season in three sentences."},
+				{"id": "nothing", "label": "Nah", "hint": "", "effects": {"trust": -1}, "result": "{coach_first}: \"Okay then.\""}
+			]
+		},
+		{
+			"id": "test_coach_checkin",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"weekday": [1, 2, 3]},
+			"cooldown_days": 9,
+			"text": [
+				"[Test] Hi {name}, how did the legs feel today?",
+				"[Test] {name}, quick one: how's the body after this week?",
+				{"text": "[Test] Asking again since you said you were tired: better now?", "when": {"flag_days": {"told_tired": [0, 20]}}}
+			],
+			"replies": [
+				{"id": "good", "label": "Feeling good", "hint": "", "effects": {"trust": 1}, "result": "{coach_first} sends a thumbs up."},
+				{"id": "tired", "label": "A bit heavy", "hint": "{coach_first} will remember", "effects": {"flag": "told_tired", "count": {"tired_reports": 1}}, "result": "{coach_first}: \"Noted. Sleep well tonight.\"", "next": {"id": "test_coach_followup", "days": [2, 3]}},
+				{"id": "joke", "label": "Legs? What legs?", "hint": "", "effects": {"relation": 1}, "result": "{coach_first}: \"Ha. See you tomorrow.\""}
+			]
+		},
+		{
+			"id": "test_coach_followup",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"chain_only": true, "cooldown_days": 1,
+			"when": {"flags": ["told_tired"]},
+			"text": ["[Test] Following up: still heavy legs, {name}?"],
+			"replies": [
+				{"id": "better", "label": "Much better", "hint": "", "effects": {"trust": 1, "unflag": "told_tired"}, "result": "{coach_first}: \"Great.\""},
+				{"id": "still", "label": "Still heavy", "hint": "", "effects": {"trust": 1, "motivation": -1}, "result": "{coach_first}: \"Then Friday is easy. I'll sort it.\""}
+			]
+		},
+		{
+			"id": "test_coach_race_tomorrow",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"race_tomorrow": true},
+			"cooldown_days": 6, "expires_days": 1, "weight": 4,
+			"text": ["[Test] {meet} tomorrow. How are you feeling?", "[Test] Race day tomorrow, {name}. Ready?"],
+			"replies": [
+				{"id": "ready", "label": "Ready", "hint": "", "effects": {"trust": 1}, "result": "{coach_first}: \"Good. Warm up properly.\""},
+				{"id": "nervous", "label": "Nervous", "hint": "", "effects": {"count": {"nervous_before_race": 1}, "confidence": -1}, "result": "{coach_first}: \"Nerves mean you care. Breathe.\""}
+			]
+		},
+		{
+			"id": "test_coach_after_pb",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"pb_days_ago": [0, 1]},
+			"cooldown_days": 3, "weight": 6,
+			"text": ["[Test] A new PB, {pb}! How does it feel?"],
+			"replies": [
+				{"id": "great", "label": "Amazing!", "hint": "", "effects": {"trust": 2, "confidence": 1}, "result": "{coach_first}: \"Enjoy it tonight.\""},
+				{"id": "more", "label": "I can go faster", "hint": "", "effects": {"trust": 2, "flag": "hungry"}, "result": "{coach_first}: \"I like that.\""}
+			]
+		},
+		{
+			"id": "test_coach_injury",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"injured": true},
+			"cooldown_days": 21, "important": true, "weight": 5,
+			"text": ["[Test] I saw the news about the injury. How do you want to handle it?"],
+			"replies": [
+				{"id": "follow", "label": "I'll follow the limits", "hint": "", "effects": {"trust": 2}, "result": "{coach_first}: \"Smart. We'll come back stronger.\""},
+				{"id": "push", "label": "Can I train through it?", "hint": "{coach_first} won't like it", "effects": {"trust": -2}, "result": "{coach_first}: \"No. Not this time.\""}
+			]
+		},
+		{
+			"id": "test_coach_sore",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"sore": true, "injured": false},
+			"cooldown_days": 10, "weight": 2,
+			"text": ["[Test] You looked a bit stiff today. Anything sore?"],
+			"replies": [
+				{"id": "yes", "label": "Yes, a little", "hint": "", "effects": {"trust": 1}, "result": "{coach_first}: \"Thanks for telling me.\""},
+				{"id": "no", "label": "I'm fine", "hint": "", "effects": {}, "result": "{coach_first}: \"Okay. Tell me if it changes.\""}
+			]
+		},
+		{
+			"id": "test_coach_winter",
+			"thread": "coach", "from": "coach", "slot": "morning",
+			"when": {"month": [12, 1, 2], "weekday": [0], "age": [14, 16]},
+			"cooldown_days": 28,
+			"text": ["[Test] Morning! Cold out there: dress in layers today."],
+			"replies": [
+				{"id": "ok", "label": "Will do", "hint": "", "effects": {}, "result": ""},
+				{"id": "hat", "label": "Already wearing two hats", "hint": "", "effects": {"relation": 1}, "result": "{coach_first}: \"Ha!\""}
+			]
+		},
+		{
+			"id": "test_group_party",
+			"thread": "group", "from": "teammate:joker", "slot": "evening",
+			"when": {"weekday": [0, 1, 2, 3], "tomorrow_tags": ["hard"]},
+			"cooldown_days": 7, "standing": "weekday_party",
+			"text": ["[Test] {from}: we're going to {teammate}'s tonight, coming?", "[Test] {from}: movie night at mine, you in?"],
+			"replies": [
+				{"id": "go", "label": "I'm in", "hint": "tired tomorrow", "effects": {"relation": 2, "sleep": -1}, "result": "Fun evening. Late night.", "rule": "Always go when the group heads out on a weekday evening", "next": {"id": "test_group_party_after", "days": [1, 1]}},
+				{"id": "no", "label": "Hard session tomorrow", "hint": "{from} will remember", "effects": {"relation": -1}, "result": "{from}: \"Boring! Next time then.\"", "rule": "Always say no to weekday parties before a hard session"}
+			]
+		},
+		{
+			"id": "test_group_party_after",
+			"thread": "group", "from": "teammate", "slot": "evening",
+			"chain_only": true, "cooldown_days": 1,
+			"when": {"answered": {"test_group_party": "go"}},
+			"text": ["[Test] {from}: how were the intervals after last night? :D"],
+			"replies": [
+				{"id": "fine", "label": "Fine, actually", "hint": "", "effects": {"relation": 1}, "result": ""},
+				{"id": "awful", "label": "Never again", "hint": "", "effects": {"flag": "party_regret"}, "result": "{from}: \"Ha, said everyone ever.\""}
+			]
+		},
+		{
+			"id": "test_group_weekend",
+			"thread": "group", "from": "teammate", "slot": "evening",
+			"when": {"weekday": [4]},
+			"cooldown_days": 6, "weight": 2,
+			"text": ["[Test] {from}: anyone up for something on Saturday?", "[Test] {from}: Saturday plans, people?"],
+			"replies": [
+				{"id": "yes", "label": "Count me in", "hint": "", "effects": {"relation": 2}, "result": "{from}: \"Nice!\""},
+				{"id": "rest", "label": "Resting up", "hint": "", "effects": {}, "result": ""},
+				{"id": "maybe", "label": "Maybe", "hint": "", "effects": {"relation": -1}, "result": "{from}: \"That's a no then.\""}
+			]
+		},
+		{
+			"id": "test_group_clash",
+			"thread": "group", "from": "teammate", "slot": "evening",
+			"when": {"race_tomorrow": false},
+			"cooldown_days": 3, "important": true, "weight": 3,
+			"text": ["[Test] {from}: the group moved the long run to Sunday morning. Can you switch?", "[Test] {from}: we're doing the hill session together on {tomorrow} instead. Coming?"],
+			"replies": [
+				{"id": "switch", "label": "I'll switch", "hint": "your plan stays the same (test)", "effects": {"relation": 2}, "result": "{from}: \"Great, see you there.\""},
+				{"id": "keep", "label": "I'll stick to my plan", "hint": "{from} will remember", "effects": {"relation": -1}, "result": "{from}: \"Fair enough.\""}
+			]
+		},
+		{
+			"id": "test_group_morning_jog",
+			"thread": "group", "from": "teammate", "slot": "morning",
+			"when": {"day_type": "weekend", "race_today": false},
+			"cooldown_days": 10,
+			"text": ["[Test] {from}: jog together before the session this morning?"],
+			"replies": [
+				{"id": "yes", "label": "Sure", "hint": "", "effects": {"relation": 2}, "result": "You meet at the track gate."},
+				{"id": "no", "label": "I'll sleep a bit longer", "hint": "", "effects": {"sleep": 1}, "result": ""}
+			]
+		},
+		{
+			"id": "test_group_banter",
+			"thread": "group", "from": "teammate:talker", "slot": "evening",
+			"when": {"today_tags": ["run"]},
+			"cooldown_days": 5,
+			"text": ["[Test] {from}: did you see {teammate} at the end of the session? haha", "[Test] {from}: who's bringing snacks next time?"],
+			"replies": [
+				{"id": "laugh", "label": "Haha", "hint": "", "effects": {"relation": 1}, "result": ""},
+				{"id": "ignore", "label": "Not now", "hint": "", "effects": {}, "result": ""}
+			]
+		},
+		{
+			"id": "test_coach_after_race",
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"raced_days_ago": [0, 1], "pb_days_ago": [2, null]},
+			"cooldown_days": 4, "weight": 4,
+			"text": ["[Test] Thinking about your race: what did you learn?"],
+			"replies": [
+				{"id": "pace", "label": "I started too fast", "hint": "", "effects": {"trust": 1, "count": {"lessons": 1}}, "result": "{coach_first}: \"We'll work on that.\""},
+				{"id": "kick", "label": "My kick came too late", "hint": "", "effects": {"trust": 1, "count": {"lessons": 1}}, "result": "{coach_first}: \"Yes. Next time go at 200.\""},
+				{"id": "dunno", "label": "Not sure", "hint": "", "effects": {}, "result": "{coach_first}: \"Let's look at it on Monday.\""}
+			]
+		}
+	]
+}

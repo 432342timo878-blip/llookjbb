@@ -89,7 +89,8 @@ func _leave_test() -> void:
 
 
 func _make_systems() -> Array:
-	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new()]
+	# (Moments after Health and Coach: an evening moment sees the day's injury news and the coach's record.)
+	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), StoryletSystem.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list

@@ -53,7 +53,8 @@ $checks = @(
 	@{ name = "race_rounds"; args = "--headless -s res://tools/race_rounds.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "commentary_check"; args = "--headless -s res://tools/commentary_check.gd -- 24 0"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "playtest_fix_check"; args = "--headless -s res://tools/playtest_fix_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
-	@{ name = "coach_check"; args = "--headless -s res://tools/coach_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 }
+	@{ name = "coach_check"; args = "--headless -s res://tools/coach_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
+	@{ name = "storylet_check"; args = "--headless -s res://tools/storylet_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 }
 )
 if ($Only -ne "") {
 	$parts = $Only.Split(",") | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ -ne "" }
