@@ -306,7 +306,72 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
 
 Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans). Agreed
 2026-10-10: Coaching and School are designed together (both compete for the athlete's time), after step 7:
-- [ ] Coaching (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
+- [x] **Coaching + School design (done 2026-10-11, GDD 4.9):** option C "The people around you" (user's choice over A "the coach's
+      office" and B "life planner", with B's fitting parts taken in): FM-style coaches with 11 attributes, character, ranges and
+      scouting, real coaches where possible + fictional ones, a parent / remote coach, training groups, the family budget; the coach
+      thread (People tab), the Sunday week talk, Ask the coach, proposals + Veto ("Ask me first"), season goals with real standards
+      (SM, TF-juniorit / TF-nuoret), race advice by personality, trust (a coach can end it after warnings); school with real subjects,
+      study effort + free time, life load, the Finnish calendar, exams, the grade-9 application with real scoring, urheilulukio,
+      matriculation exams; moods confidence / motivation / stress; mental attributes that grow; a weekly mental plan; the cast and
+      storylets with memory and the never-stale rules; minigames (decisions only): Rep by rep, Test days, Race rehearsal, Camp week,
+      Video review, Warm-up routine, Gym day later. Build in the sessions below, in order; **each ends with its checks, the proof that
+      the neutral setting gives identical `training_balance -- 0` fingerprints, a help entry for anything new, a commit and "Push
+      origin".** *(The originals of the two items follow the list.)*
+  - [ ] **C1. Coach model (headless):** coach data format (attributes, character words, facts, `source` for real coaches), the
+        club-coach generator (each career's club coach averages 10: weak somewhere, good somewhere; the four personalities of
+        `coaches.json` kept), `CoachSystem` (GameSystem id `coach`, off switch for the tools), effect hooks all neutral at 10 (training
+        effect by attribute group, race-advice accuracy replacing `controls.coach.accuracy`, youth development / load management hooks
+        prepared), trust and fit (temperament from the "pressure" answer); `Athlete.coach_id` → the coach record; save version 4 (older
+        saves get their club coach). New `tools/coach_check.gd`. *(Opus, high)*
+        Check: fingerprints identical; `coach_check` (a coach of 10s = no change; a coach of 16s changes only what his attributes say;
+        save/load bit for bit; old saves load); `run_all_checks.bat`.
+  - [ ] **C2. Messages + storylet engine (headless):** threads per person; the storylet format (conditions, variants, replies with
+        effects and cost hints, memory flags, chains, cooldowns, once), the scheduler and the rate rules, "Play week stops for:
+        Important only / Every moment", unanswered = "you didn't answer", standing orders from repeated choices; a handful of test
+        storylets; new `tools/storylet_check.gd`. *(Opus, high)*
+        Check: `storylet_check` (no repeats inside a cooldown, rate, nothing stuck), `day_engine_check`, save/load bit for bit.
+  - [ ] **C3. People tab + coach thread + Sunday week talk + the coach's "why" lines** (UI; PC + phone, 6 bottom tabs; help entries).
+        *(Sonnet, high)*
+        Check: tour + `layout_check` (5 sizes, no OVERFLOW / SQUEEZED), `help_check` both layouts.
+  - [ ] **C4. Coach proposals + Veto + "Ask me first" + Ask the coach** (the verdict model: the truth from the training / health /
+        form models, then the coach's view through his attributes). *(Opus, high)*
+        Check: a tool that compares the coach's verdicts with the truth by attribute level (a 20 nearly always right, a 5 often wrong);
+        proposals only on unplayed non-race days; Veto restores the plan; fingerprints identical with the club coach.
+  - [ ] **C5. Season goals with times + race advice by personality:** standards in data (SM, TF-juniorit / TF-nuoret 2025 tables,
+        Kalevan kisat), the goals in the autumn offer, Overview + Progress, race advice accuracy = race reading and bias = personality,
+        the pre-race suggested plan. *(Sonnet, high)*
+        Check: `commentary_check`, `race_check` (quick mode unchanged with the club coach), `season_check`, tour.
+  - [ ] **M1. Mind:** `MindSystem` (confidence / motivation / stress, causes, effects, off switch), mental attributes that grow
+        (consistency from races, composure from big meets), competitiveness and ambition, the weekly mental plan and the cue word.
+        *(Opus, high)*
+        Check: fingerprints identical with the moods in the middle; a tool prints the mood weeks of a season by plan and policy.
+  - [ ] **D1. Research + data (may run beside the others):** real coaches (Finnish + international, public sources only, neutral
+        voice), urheilulukiot with athletics and their cut-offs, hometown sizes and regions, `data/school.json` calendar (2026–27 real,
+        later years by rule, `estimated`). *(Sonnet, high)*
+        Check: `json_check`; every real coach has a `source`.
+  - [ ] **C6. Coach market:** availability (town size, remote, parent, coaches choose, spots), scouting ranges and how they narrow,
+        the profile page, Find a coach, changing coach (moments), the family budget. *(Opus, high)*
+        Check: a 14-year-old in a small town sees 1–3 coaches, in a centre town more; ranges narrow as designed; tour + layout check.
+  - [ ] **S1. School model (headless):** `SchoolSystem`, real subjects with aptitudes, grades, study effort / free time, focus
+        subjects, life load (neutral at Normal / Normal), tests and exam weeks, report cards, stress feed. *(Opus, high)*
+        Check: fingerprints identical at Normal / Normal in a normal week; grade drift per setting as in GDD 4.9.7.
+  - [ ] **S2. School UI + decisions:** School page, report card, the settings, exam vs meet, camps vs school, strip shading, Calendar
+        bands, the day as blocks in the day editor. *(Sonnet, high)*
+        Check: tour + layout check, help entries.
+  - [ ] **S3. Grade-9 application + urheilulukio + matriculation exams:** the application chain with real scoring and cut-offs,
+        urheilulukio (morning slots, academy services, TF-nuoret), moving, lukio periods, the matriculation exams. *(Opus, high)*
+        Check: a tool runs the application for many athletes by school answer and talent (targets in GDD 4.9.7).
+  - [ ] **P1. The cast + first moments (ages 14–15):** family, friends, training group, teachers, rivals; Finnish life events;
+        ~100–150 storylets. *(Opus, high)*
+        Check: `storylet_check` (rate, repeats, coverage per age).
+  - [ ] **P2. Moments part 2 (ages 16–17, school chains, milestones), standing-order rules.** *(Opus, high)*
+  - [ ] **G1. Test days + Rep by rep** (one shared played-session screen, Auto, training PBs). *(Opus, high)*
+  - [ ] **G2. Race rehearsal + Video review.** *(Sonnet, high)*
+  - [ ] **G3. Camp week + Warm-up routine.** *(Sonnet, high)*
+  - [ ] **B1. Balance session:** every target of GDD 4.9.7 over many seasons (`career_check`, `season_check`, `storylet_check`).
+        *(Opus, high)*
+  - Then the user's playtest and the **check-in at the end of M2** *(Opus)*. Gym day comes with the specialists (later).
+- [x] Coaching (original item; designed above) (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
       over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10).
       From the season playtest (user, 2026-10-10: "small choices; it needs to be more interactive with the coaches and
       everyone around me", and school, coach talk and friends all wanted): the coach explains the plan and why, talks
@@ -319,7 +384,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
       location), with realistic limits on who a 14-year-old in a small town can get (club coach first, more choice with age,
       results, an urheilulukio or a move). Claude's view: yes, it fits D18 and gives the plan choice the weight the talent
       session found missing (the plans differ by only 1–2 s at 21).
-- [ ] School (grades, exams vs meets, Finnish school calendar)
+- [x] School (grades, exams vs meets, Finnish school calendar; original item, designed above in GDD 4.9.3)
 
 After Coaching and School (agreed order 2026-10-10): athlete reputation, the Statistics tab, the pre- and post-race
 studios (with the race ceremony), audio. Details in the ideas backlog. Check-in 2026-10-11: the talent balance session
@@ -332,7 +397,7 @@ independent research + data, so it may run beside the design).
 - **Choose your birth date:** birth date is already an input to `AthleteFactory`. Day + month inside the starting
   birth year is safe (same age class); other years change the start age, eligible meets and the rival cohort, so
   that waits until more age classes exist (M4+). Small character-creation task after step 5. *(Sonnet)*
-- **Choice of coaches / coaching groups / coaches per sub-area** (e.g. speed, endurance, strength, mental, physio):
+- **Choice of coaches / coaching groups / coaches per sub-area** (**designed 2026-10-11, GDD 4.9.1**; specialists built later) (e.g. speed, endurance, strength, mental, physio):
   belongs to M2 part 2 "Coaching". Needs a design session first (Opus); it plugs into the step-1 hooks (`by = "coach"`,
   Accept / Veto in the day editor, coach events, and `on_week_start` from step 3 for a coach's weekly changes); a
   physio could read the health model (`HealthSystem.soreness_info`, `plan_risk`). Design it together with School, since both compete for the athlete's time.
@@ -382,7 +447,7 @@ independent research + data, so it may run beside the design).
   that moved since the last race), the fitness / fatigue and form level, the coach's comments, health notes (fall, spike
   wound, niggles), rivals met, PB / SB / rankings effect. Details later; the data comes from `Race.events`, `RaceDay`, the
   form and health systems. *(Opus for the design, then Sonnet)*
-- **Warm-up and cool-down around a race (user, 2026-10-08), Finnish alkulämmittely / loppulämmittely:** a part before and
+- **Warm-up and cool-down around a race (user, 2026-10-08; designed 2026-10-11 as the "Warm-up routine", GDD 4.9.6, session G3), Finnish alkulämmittely / loppulämmittely:** a part before and
   after the race, part of the race day: the player chooses (or the coach plans) the warm-up (length, intensity, drills,
   strides), which sets race-day readiness (a poor warm-up costs a little at the start; an over-long one costs reserve), and
   the cool-down helps recovery (soreness / fatigue) and shows up in the race-day report. Plugs into the day engine
@@ -451,7 +516,9 @@ independent research + data, so it may run beside the design).
   itself in a watched race, Kick now works at any distance; plus a **kick plan** for Quick result, the first piece of "a
   tactic my AI self follows": the user asked for it, and more of it (an effort plan, a reaction to moves) belongs in this
   design session). *(Opus)*
-- **Never stale: no "same three options again" (user, 2026-10-11):** "I'm most afraid that the game will get stale
+- **Never stale: no "same three options again" (user, 2026-10-11; designed 2026-10-11: storylets, memory, standing orders and the
+  check tool in GDD 4.9.5, the played sessions in 4.9.6; still open: rivals' dropouts and life events with the rival profiles, variety
+  in the races themselves (weather, other events)):** "I'm most afraid that the game will get stale
   quickly (here's 3 options to choose from, repeating cards off and on track)… look into training minigames or
   something else; be the idea factory." **Conflict to settle first:** GDD D1 / D2 say no minigames and no dexterity
   input; the user asks to look at them again. Claude's ideas (not designed, 2026-10-11):
@@ -477,7 +544,8 @@ independent research + data, so it may run beside the design).
   ideas for the user to judge. Rival churn is split: late bloomers and plateaus in the talent balance session,
   dropouts and rivals' life events here and with the rival profiles (the pool's top 20 at 17 stays top 20 at 21 77 %
   of the time; real ~20–30 %, `docs/AUDIT.md`).
-- **More attributes, mental training (user, 2026-10-11):** "Are we sure we don't need more athlete attributes? Mental,
+- **More attributes, mental training (user, 2026-10-11; designed 2026-10-11, GDD 4.9.4: three moods, growing consistency and
+  composure, jobs for competitiveness and ambition, a weekly mental plan; no new physical attributes):** "Are we sure we don't need more athlete attributes? Mental,
   physical? Maybe the mental side could use more training options. Keep them realistic (what athletes train in real
   life)." Today: 10 physical, 2 technical, 7 mental, 6 hidden; the mental ones grow only from races (consistency never
   grows). Claude's first thoughts (to research): real mental-skills training for runners = goal setting, imagery /
@@ -487,7 +555,7 @@ independent research + data, so it may run beside the design).
   Physical: probably enough (check: anaerobic capacity vs speed endurance, core / hip stability, body composition with
   nutrition D9). Needs research with sources and a design: each new attribute must matter in the race or training model,
   or it is only a number. Placement: designed with Coaching + School (sessions and time), built after. *(Opus)*
-- **An ongoing chat with the coach (user, 2026-10-11):** "something like a conversation we're having here; interactive,
+- **An ongoing chat with the coach (user, 2026-10-11; designed 2026-10-11 as the coach thread, GDD 4.9.2):** "something like a conversation we're having here; interactive,
   not repetitive". **Decided (user, 2026-10-11): no AI coach, no paid API.** What stays: (b) written dialogue built from
   the game state, made as varied as possible with the storylet ideas above ("Never stale"). The options that were
   weighed: (a) **an AI coach**: the game sends the coach's personality, the athlete's state (plan,

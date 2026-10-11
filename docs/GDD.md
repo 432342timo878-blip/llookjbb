@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.10 — 2026-10-11 (the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
+Version 0.11 — 2026-10-11 (the Coaching + School design: 4.9; the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
 `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; race realism R1–R5, M2 steps 3–6). Living document: updated after
 each design discussion.
 
@@ -17,7 +17,7 @@ and other events happening at the same time around your own event.
 
 | # | Topic | Decision |
 |---|---|---|
-| D1 | Genre & depth | Deep, realistic career sim in the style of Football Manager. No minigames. |
+| D1 | Genre & depth | Deep, realistic career sim in the style of Football Manager. No dexterity minigames; sessions played through with decisions are fine (check-in 2026-10-11; designed in 4.9.6). |
 | D2 | Competition gameplay | Decisions at suitable points during events, for all events. No dexterity/minigame input. |
 | D3 | Presentation | 2D. Pretty, modern, sleek UI. |
 | D4 | Platforms | PC and mobile → UI must be responsive and touch-friendly from day one. |
@@ -72,6 +72,9 @@ strength, power (explosiveness), mobility, durability (resistance to training lo
 
 **Hidden (never shown as numbers, only hinted via tests and coach reports):** talent ceiling (potential), trainability,
 recovery rate, injury proneness, maturation timing, ambition.
+
+**Moods (designed 2026-10-11, 4.9.4):** confidence, motivation and stress change week to week (words, not attributes);
+consistency and composure grow with racing experience and mental training; competitiveness and ambition get their jobs there.
 
 ### 4.1.1 Character creation (built)
 
@@ -1913,7 +1916,7 @@ function (found while editing: read stderr); each check could report that it fin
 ### 4.7 Daily events & hooks (M2 foundation, designed 2026-10-05)
 
 Decisions (user, 2026-10-05): **no Inbox tab yet**: events show on the Today card and in the Report's day log (revisit
-an FM-style Inbox when coaching arrives). The **Finnish school calendar comes with the school system**; for now days
+an FM-style Inbox when coaching arrives; 2026-10-11: the People tab's threads per person, 4.9.2 / 4.9.5). The **Finnish school calendar comes with the school system**; for now days
 are only weekday/weekend.
 
 - **System slots in the day loop:** every day runs *day start → training/race → health → day end*, plus *week end*.
@@ -2397,7 +2400,7 @@ speed & strides 4, fartlek 4, tempo run 3, hill sprints 3, start practice 2). Ra
 **Waits for Coaching (M2 part 2):** hiring coaches and specialists (focus plans such as speed vs endurance, plan quality
 that varies with the coach), a coach changing days week by week from the day log and soreness (`by = "coach"`, Accept
 / Veto, D18), targets suggested from form and results, a physio reading the health model, coach relationships and
-messages. Step 6's club coach only offers data templates, the ★ rule, targets and the return block.
+messages. Step 6's club coach only offers data templates, the ★ rule, targets and the return block. (Designed 2026-10-11: 4.9.)
 
 **Balance and verification** (`tools/training_balance.gd`):
 - **Off = identical:** with repeat mode, all intensities Normal and `Form.enabled = false`, parts 1–2 fingerprints must
@@ -2425,14 +2428,328 @@ messages. Step 6's club coach only offers data templates, the ★ rule, targets 
   boundary continuing bit for bit, and injuries and progress per season not drifting. Longer careers (5–8 seasons) stay
   in step 7.
 
+### 4.9 Coaching, school and the people around you (M2 part 2, designed 2026-10-11)
+
+**Why.** The season playtest (`docs/PLAYTESTS.md`): "very bored, wouldn't return after one season", "small choices", "it needs to
+be more interactive with the coaches and everyone around me"; the days feel empty; "what makes the coach happy?"; "don't know why
+I train what I train". The talent session (4.2 "Talent balance") left Coaching the last few percent: the plans differ by only 1–2 s at
+21 and a top talent peaks at ~1:52 on Balanced (target 1:47–1:50); the club coach must never be a trap. ROADMAP backlog: "Never
+stale", "More attributes, mental training", "An ongoing chat with the coach" (decided: written dialogue, no AI), the warm-up idea.
+
+**Overall design (user, 2026-10-11): option C, "The people around you"**, chosen over A ("the coach's office": deep coaching, school
+and people light, days still empty) and B ("life planner": morning / afternoon / evening blocks every day; deep but micromanagement,
+heavy on a phone, would redo the training balance). C = FM-depth coaching + days that get life through **moments** (storylets) from
+the people around the athlete + school as settings and real decision points + moods that tie them together. **From B (user: "fit
+in what fits"):** the day shown as blocks (read-only), two weekly life settings (study effort, free time) instead of daily blocks,
+sleep that comes from choices, and occasional "plan the weekend" moments when there is a real clash.
+
+**What existed and the hooks used:** the club coach was one of four personalities (`data/coaches.json`), alive only in races (shouts,
+lines, Race story); off the track only the three season plans with the ★, targets and the return block (4.8). Hooks: day changes
+`by = "coach"` (4.5 / 4.7), the day editor's marked Veto spots (training day and race day), the `GameSystem` slots (`on_day_start`,
+`on_health`, `on_day_end`, `on_week_start`, `on_week_end`, `on_answer`), stop events with choices, the day log, `ProgressLog`, the
+health model's `soreness_info / plan_risk / load_vs_normal`, Form, rivals' `met` and personality, the plans by age group. The
+background answer "How do you do at school?" stored `school` high / medium / low and nothing used it; competitiveness did nothing for
+the player (rivals only) and the hidden ambition nothing at all.
+
+**Rules for the whole part:**
+- **Neutral = identical.** The career's club coach averages 10, moods sit in the middle and Calm, school is Normal / Normal in a
+  normal school week, minigames off or on Auto with an average coach: `training_balance -- 0` must give the same fingerprints to the
+  digit. Every build session proves it. Each new system has an off switch for the tools (like `HealthSystem.model_enabled`).
+- **The player decides (memory: "the player decides, the game doesn't").** Moods change the quality of what is done, never what is
+  done; the coach proposes, the player accepts or vetoes; a Quick result follows a plan the player set.
+- **Every text is data** (`data/*.json`), every number too; help entries for every new screen.
+- **Real people (user: real coaches wherever possible, national and international, with fictional ones among them):** a real coach's
+  facts (club, town, athletes coached, qualifications) come only from public sources, with the source in the data; his attributes are
+  our estimates from those facts; he gets a neutral professional voice and **never** invented personal storylines or negative drama
+  (those are for fictional people only). Youth rivals and teammates stay fictional (minors).
+
+#### 4.9.1 Coaches
+
+**Roles.**
+- **Head coach** (one): makes the plans, gives the advice, stands in the stands at races, is the person in the coach thread. At
+  14 the club's group coach; a personal coach is normal from ~16.
+- **Comes with a place (not hired):** the urheilulukio / academy morning coach (16–19), the TF-juniorit / TF-nuoret camp coaches.
+- **Specialists (slots designed now, built later):** strength coach, physio, sports psychologist, nutritionist; through the academy,
+  the TF squads or paid.
+- **The training group comes with the coach** (as in Finland: "Hakala's group"): 3–10 fictional teammates with names, ages, levels
+  and personalities; they are people in the moments (4.9.5), and a stronger group pulls you a little in hard sessions.
+
+**Attributes (1–20, each one does something; user OK 2026-10-11):**
+
+| Attribute | Effect |
+|---|---|
+| Endurance knowledge | training effect of aerobic, threshold and economy work; quality of his endurance sessions and splits |
+| Speed & strength knowledge | the same for speed, speed endurance, power, strength |
+| Technique | running technique growth; drills done right |
+| Periodization | how well his season plan fits you: lighter weeks, the taper hitting Form on the day, the quality of his ★ pick |
+| Youth development | under 18: protects growing bodies (growth-spurt niggles), uses the novice years well; matters less for seniors |
+| Load management | how early and how right his day proposals catch soreness and load spikes (injuries) |
+| Race reading | accuracy of his race shouts (replaces the fixed `coach.accuracy`), the Race rehearsal clues, the Video review marks; your race tactics grow faster |
+| Mental coaching | mental training works better, composure grows faster, confidence returns faster after a bad race |
+| Motivating | how much he lifts motivation; how strongly his praise and criticism land |
+| Communication | how much and how clearly he explains (low: "Do it."; high: why); gets along with family and school |
+| Judging ability | accuracy of his estimates: time goals, "you can run X", the ranges he gives for your hidden potential; pairs with Test days |
+
+**Character (words, like FM's personality):** *personality* (calm / drill / warm / tactician from `coaches.json` plus 2–4 new ones:
+his voice and his race-advice bias), *style* supportive ↔ controlling (research: autonomy support raises enjoyment and lowers dropout,
+controlling coaching predicts disengagement), *demands* (which of Steady / Balanced / Ambitious he leans to).
+**Facts:** age, club, town, qualification (SUL levels / professional), reputation (local → international), event focus (middle
+distance / sprint / endurance), his group (size, level), availability (spots, minimum level), cost (€ / month), and the athlete's
+**trust** in him (4.9.2).
+**Fit:** the athlete's temperament from the existing "pressure" answer ("Overthink everything" suits calm, "Get fired up" suits drill,
+…) against his personality and style; after a few weeks a word: *You click / Fine / Friction*; it moves motivation.
+**Strength:** effects are measured against 10 (`(attribute − 10) × k`, numbers in data). **Every club coach that starts a career
+averages ~10** (weak somewhere, good somewhere), so the club coach is never a trap and today's balance stays exact. Target: a top coach
+who fits is worth ~1–1.5 % of the 800 m time by 21 (4.9.7).
+
+**Shown and scouted (FM style):** an unknown coach shows **each attribute as a range** ("8–13") guessed from his reputation; ranges
+narrow by asking around (a moment: a teammate or a parent knows him), visiting a session (costs a training day, plus travel if far),
+looking at his athletes' results and, best of all, working with him (exact after ~8 weeks). Profile page: attributes (ranges), the
+character words, his group, his athletes, cost, and what working with him would change ("you'd train with him only 2 days a week").
+
+**Who you can get, and when:**
+- **At 14:** your own club's coaches: a small-town club 1–2, a big-town club 3–6, one of SUL's five athletics-centre towns (capital
+  region, Tampere, Jyväskylä, Lahti-Pajulahti, Kuortane) more. Hometowns get a size and a region in the data.
+- **A parent as coach** (only with "A parent competed in athletics"; user: yes): strong fit and motivation, some family friction.
+- **A remote coach** (another town; user: yes): plan by message, monthly visits and the meets he comes to; weaker at what he must see
+  (technique, load management, race reading at meets he skips).
+- **More choice with:** age (16+), results (a TF-juniorit selection: camp coaches see you, offers start), urheilulukio (moving to a
+  centre town: its coaches + the academy coach), moving after school, later reputation.
+- **Coaches choose too:** limited spots and a minimum level ("not yet, run 2:05 first"); a coach may approach you after a breakthrough.
+- **Changing coach is a social event** (moments: the old coach's reaction, the club, the group), never silent.
+- **Cost before money exists (user: family budget):** cost in € / month; the family answer gives a simple monthly budget (club fees
+  always fit). Real money, grants and sponsors come with M4.
+
+#### 4.9.2 The coach in your week
+
+- **The coach thread (written dialogue, no AI):** a **People tab** with a thread per person; the coach writes, the player answers
+  with 2–4 reply buttons (agree / ask why / push back / joke, by situation), no free text. The Today card shows the newest unread
+  message; phone = full-screen thread, PC = the right panel; 44 px. Play week stops only when a reply changes something (a proposal,
+  a goal, a clash); the rest waits with an unread dot.
+- **Sunday evening, the week talk:** last week in 2–3 lines from the day log (sessions, soreness, races, tests), this week explained
+  (phase, why the key sessions, one thing to focus on), 0–2 topics with replies. Communication sets the detail, personality the
+  voice, judging ability how right the review is. **After a race:** the Race story line, a message that evening, a follow-up topic.
+- **Every session explains itself:** the day editor shows his why ("Tuesday: 800 m pace for Nuorten SM, keep the reps even"), from
+  the session, the phase and his voice.
+- **Ask the coach (user wish):** a button in the Training tab, the phase editor and the day editor. The game computes the **truth** of
+  the change (stimulus per key attribute, plan risk, Form at the next target) and the coach sees it **through his attributes**
+  (sessions: endurance / speed knowledge; risk: load management; placement: periodization): *Good idea / Fine / Pointless / Risky*
+  with a reason. A weak coach can be wrong both ways; demands colour it (a demanding coach dislikes Easy days even when right). The
+  advice is as good as the coach.
+- **Proposals and the veto (D18):** the coach changes days himself (`by = "coach"`) from the day log, soreness, fatigue, exam weeks and
+  Form ("sore yesterday: Thursday's intervals → easy run"; "Friday mobility before the target"); a coach mark in the strip, **Veto** in
+  the day editor's marked spot, his "scratch?" advice on race day. **Standing order** in the Training tab: *Let the coach adjust my
+  days:* **Ask me first (default, user)** / Always, tell me / Never (he notices). Load management decides how early and how right his
+  proposals are (a poor one rests you needlessly). He also proposes meets and targets ("Coach suggests" in the Calendar).
+- **Season goals with times ("what makes the coach happy"):** with the autumn plan offer, 2–3 goals: a time ("2:12 this summer"), a
+  meet / standard (the Nuorten SM final, the TF-juniorit 2:05.27, an SM standard), a process goal ("90 % of sessions", "no training
+  through warnings"). The player can reply "aim higher / lower". Real milestones from data: SM standards, SUL's TF-juniorit (14–16),
+  TF-nuoret (17–21) and Kalevan kisat standards. Judging ability = how realistic, demands = how ambitious. Overview + Progress page;
+  met goals raise trust and confidence, missed ones become a talk, never a punishment.
+- **Race advice by personality:** accuracy = race reading, bias = personality (drill leans go / push, calm wait / ease, warm the safe
+  answer, tactician the most accurate). Before a race his suggested plan (position, kick plan); following it is never automatic.
+- **Trust:** one hidden number shown as *New / Good / Strong / Strained*; moves with results vs his goals, fit, moments and how vetoes
+  are used (a veto with a reason is fine, constant silent vetoes aren't). Higher trust: he explains more, praise lifts more; strained:
+  shorter messages, lower motivation. **A coach can end it (user: yes, with warnings):** only after weeks of *Strained* and two clear
+  warning talks (a storylet chain); then the player picks a new coach.
+
+#### 4.9.3 School
+
+**Path** (born 2012): grade 8 (2026–27, age 14; a normal class or a **sports class** with the "A sports class at school" answer),
+grade 9 (2027–28; the joint application Feb–Mar 2028, results in June), then **urheilulukio** (3 or 4 years), **lukio** (3) or a
+**vocational school** (3, with or without an athlete programme), 2028–2031/32. After school (university, work, going pro, military
+service incl. the Defence Forces' sports school): a later design with money (M4).
+
+**The model:**
+- **Real subjects (user):** the report card lists the yläkoulu subjects (Finnish, Swedish, English, maths, biology, geography, physics,
+  chemistry, health education, religion / ethics, history, social studies, PE, music, art, crafts, home economics), each graded 4–10;
+  each has a hidden aptitude (from the school answer + a roll). Study effort is one setting, plus **1–2 focus subjects** per period;
+  tests per subject. The application average = the real academic-subject average (+ PE for urheilulukio). Lukio: the player picks the
+  matriculation subjects (Finnish + at least 4), sits them on their real exam days, real grades L–I.
+- **Starting grade level from the school answer:** "Top of the class" ~9.0, "Good grades through hard work" ~8.5 (costs more effort to
+  keep), "Doing fine" ~7.5, "Struggling a bit" ~6.8, "Couldn't care less" ~6.3 (averages; subjects spread around them).
+- **Two weekly life settings** (per school period, beside the training plan): **study effort** Light / Normal / Heavy (grades drift
+  down / hold / rise) and **free time** Little / Normal / Lots (motivation vs rest).
+- **Life load:** each school day adds load from the stage, exam weeks and the two settings; it shows as slower fatigue recovery, a
+  little more chance of colds, mildly more injury risk in exam weeks (Mann 2016: 3× injury restrictions in high academic-stress weeks,
+  US college football; Hamlin 2019: injuries and illness peak at exam periods, NZ university athletes 18–22; older than ours, so a mild
+  effect) and the moods (4.9.4: Stress is its visible face). **Normal / Normal in a normal school week = today's game.**
+- **Double days on school days (user: yes):** a second session on a school day costs extra life load; free on holidays and in the
+  urheilulukio's morning-practice slots (matches the plans' double days from 16).
+
+**Calendar (`data/school.json`):** real 2026–27 dates, later years by rule and marked `estimated`: term from ~12 Aug to the first
+Saturday of June; autumn break week 42 (12–16 Oct 2026); Christmas ~19 Dec – 7 Jan; Easter; **winter break week 8 / 9 / 10 by region**
+(south / middle / north, from the hometown); lukio 5–6 periods a year, each ending with an **exam week** (e.g. Helsinki: 7 school days);
+yläkoulu single tests and a few big ones; matriculation exams spring (mid-March – early April) and autumn (mid–late September; autumn
+2026: 14–28 Sep), usually over 2–3 sessions (4 in a 4-year urheilulukio). Week strip: holidays shaded, exam days marked; Calendar:
+school bands beside the meets.
+
+**Decisions (stop events or moments):** exam vs meet (race and risk the grade / study and scratch / race and study on the bus);
+camps vs school (the Pajulahti grade 7–9 camps and the TF camps are Mon–Fri in school weeks: absence costs grades unless you study
+ahead); report cards (Dec, June; the family reacts by its attitude); **the application chain** (autumn of grade 9: open days, up to 7
+wishes as in the real joint application; the urheilulukio score = grade average 4–10 + sport points 0–5 (PB vs standards, a TF-juniorit
+selection, the club's statement) + the school's own points 0–5 (motivation, test) against each school's cut-off in the data, e.g.
+Mäkelänrinne 2025: 16.09 of 20; the Olympic Committee: usually a grade average of at least 7–7.5): **a top talent with poor grades can
+miss urheilulukio**; moving (some urheilulukiot are far away; Kuortane has a dorm): new coaches, group and friends, goodbye moments.
+
+**Urheilulukio gives:** morning practice Tue / Wed / Fri (~8:00–9:30) with the academy coach (second sessions without the extra life
+load); academy services (a physio check = better load management, strength coaching: the first specialists, limited); **SUL's TF-nuoret
+centre activity** (every athlete taken into a sports school joins it with their coach: camps, tests, coaches who see you); flexibility
+(exams moved for meets and camps; 4 years instead of 3). The price: often a move and new people.
+
+#### 4.9.4 The mind
+
+**Three moods** (week to week, not attributes; words with an arrow; tap = the recent causes, like the soreness rows; the coach
+comments in the Sunday talk; a switch turns them off for the tools):
+- **Confidence** (*Low / Shaky / OK / Confident / Flying*): up with a PB / SB, beating a runner ranked above you, a good test, goals met,
+  praise (stronger with Motivating and trust); down with races well below your level, last places, injuries, a coach who only
+  criticises. Effect: a small race-day term at the extremes (about ±0.3 % of time, mostly at big meets) and how fast composure grows.
+- **Motivation** (*Flat / Low / OK / Keen / Fired up*): up with coach fit and a supportive style, free time, the training group, new
+  things (a camp, a new session, a new goal), the moments; down with stress, long layoffs, a strained coach and **monotony** (the same
+  week for months). Effect: training **quality**, session effect ~×0.92 (Flat) to ×1.05 (Fired up). It never skips a session or
+  decides anything; the day log just says "you dragged yourself through it".
+- **Stress** (*Calm / Busy / Stressed / Overwhelmed*; user: yes, a third mood): the visible face of the life load (school stage, exam
+  weeks, study effort, free time, late nights, clashes); drags motivation and sleep.
+The middle (OK / OK / Calm) = today's game.
+
+**Mental attributes that grow, as they really do:** consistency from **racing experience** (each race a little, varied ones more;
+Hopkins & Hewson 2001), pre-race routines, mental training; composure from **big-meet experience**, imagery and relaxation, the coach's
+mental coaching; race tactics from races (as now), Video review, the coach's race reading; determination from weeks of good motivation
+and finished hard sessions (as now); pain tolerance from hard sessions (as now); professionalism from choices (sleep in the moments, the
+free-time setting, routines) and the coach's example.
+
+**The two dead attributes get a job:** **competitiveness** = rising to the challenge (a little extra dig in the last 200 m when side by
+side with a rival you've met or one ranked just above you; hard group sessions give a bit more when the group is stronger);
+**ambition** (hidden, hinted "You dream big" / "You're content") = the athlete's own wishes in moments (a better coach, a bigger goal,
+the far-away urheilulukio); motivation rises more from big goals and falls more when held back.
+
+**Mental training (a weekly mental plan: none / 1 / 2 / 3 short sessions):** imagery (composure, race tactics; strongest the week
+before a target, pairs with Race rehearsal), relaxation and breathing (composure, a little sleep), self-talk with a **cue word** the
+player chooses (shown on the race cards: "Your word: *smooth*"), the pre-race routine (Warm-up routine), race video analysis (Video
+review), goal setting (once a season with the coach's goals). No body strain, a little life load; scaled by the coach's mental coaching
+(later a psychologist). Small on purpose: the 2023 meta-analysis found moderate effects that vanish in the strictest trials, the
+clearest one being lower anxiety; at best about +0.5 composure a year.
+
+#### 4.9.5 People and moments
+
+**The cast** (each a name, a role, a relationship and a memory): the coach (+ later the academy coach and specialists); **family** (one
+or two parents with the attitude of the family answer; a sibling with "An older sibling runs"; they set the family budget and care
+about grades); **friends** (a best friend from school, not an athlete, and 1–2 more); the **training group** (2–4 named teammates: the
+joker, the one who races every rep, the older one who's been to Nuorten SM, the newcomer; they change with the coach or a move);
+**school** (class teacher, the PE teacher, "who spotted you" if that was the answer, the study counsellor); **rivals** (met twice or
+more: a nod at the start, a message after you beat them, the "rival who always beats you" chain; youth rivals fictional).
+
+**Moments = storylets** (`data/storylets/*.json` by person): *when* (age, month, school stage, moods, recent events such as a PB this
+week, an injury, a test tomorrow, relationships, earlier answers, weekday), *text variants* with placeholders, *2–4 replies* each with
+its costs and gains (moods, relationship, sleep tonight, life load, grades, a coach proposal, the family budget, a remembered flag) and a
+**hint of the cost** on the button ("tired tomorrow", "Ville will remember"); **memory** (flags with dates, counters; the coach remembers
+your last answer and how it went); **chains and milestones** (first SM, first PB under 2:20, beating the rival who always beat you, back
+after a stress fracture, the TF-juniorit letter, report cards, the application, a teammate quitting or joining). **Real Finnish teenage
+life that clashes with training:** rippileiri (the confirmation-camp week at 15), the summer-cottage week, juhannus and vappu,
+wanhojen tanssit (2nd-year lukio, Feb), penkkarit and lakkiaiset, a summer job at 16–17, the driving licence.
+
+**Never-stale rules:** (1) most moments once, repeatable ones with long cooldowns, never the same text twice in a row; (2) conditions
+make each fit its situation; (3) **standing orders from repeats**: the same answer to a recurring choice twice → the game offers a rule
+("Always say no to weekday parties before a hard session"), then only the result line shows; (4) rate ~3–5 moments a week, at most ~1
+people stop a week on average (the coach's Sunday talk aside); (5) `tools/storylet_check.gd` plays many seasons and reports repeats,
+moments that never fire, the rate per week and the coverage per age; (6) first build ~150–250 moments with variants for ages 14–16.
+**Unanswered (user: a setting):** *Play week stops for:* **Important only (default)** / Every moment; a small moment left unanswered
+passes as "you didn't answer", a real outcome (friends notice a little).
+**Where:** the People tab (threads), the Today card (today's moment), a small people mark on the week strip.
+
+#### 4.9.6 Minigames: sessions played through (D1 / D2 kept: decisions, never dexterity)
+
+**Common rules (user, 2026-10-11):** optional, each with **Auto** = played as the coach would (quality follows his attributes; off or
+Auto with an average coach = today's game); playing yourself has a **small edge** (a good read up to ~+3–5 % session effect over Auto,
+a bad one loses); at most ~1 a week on average; each type can be switched off; phone-first.
+1. **Rep by rep:** key sessions (tagged in `training.json`: 800 m intervals, tempo, time trials), at most 1–2 a week, "Play it" on the
+   Today card / day editor. "6 × 400 m, 2 min rest. Coach's split: 68–70 s": before each rep pick one of 5 splits around his; see the
+   rep's time, the Feeling word (the race's energy model, recovering in the rests) and his comment; blowing up early ruins the last reps
+   and adds soreness. Gives the session's effect ×0.90–1.08, **training PBs** (for the Statistics tab), a little confidence; the coach
+   learns your level. His knowledge decides how good his splits are.
+2. **Test days:** 3–4 a year (club test days Nov, Jan, Apr, Aug), TF camp tests, from 16 at an academy a **lab test** (VO2max, lactate
+   threshold speed, running economy). Tests: 30 m flying (speed), standing 5-jump (power), 300 m (speed endurance), 2000 m (aerobic;
+   pace chosen lap by lap with the Feeling word; bad pacing under-shows fitness). Real numbers from the attributes (formulas in data)
+   with history and PB marks, against your past self and the squad norms; moves confidence; sharpens the coach's picture (and the range
+   he gives for your potential). Counts as a hard session.
+3. **Race rehearsal:** before a target (or any race the player picks): 3–5 clue cards from the coach about the expected field (from the
+   rivals' personalities and what you've seen of them); predict the shape (fast / even / tactical) and the key rival; build the plan
+   (position, kick plan, whom to cover), **which is also what a Quick result follows**. Right read: a small composure and confidence edge
+   and "you prepared for this" on that rival's cards; wrong: nothing lost. Race reading decides how true the clues are (a weak coach can
+   mislead).
+4. **Camp week:** holidays (autumn break, winter break, Easter, summer), the Pajulahti grade 7–9 camps (3 a year, Mon–Fri, €355 each in
+   2026–27), the TF camps, later abroad: a special week with its own plan (double days, facilities), small daily choices (an extra
+   session or rest, roommates, a 1-on-1 with a camp coach who might become yours) and a summary; more effect, a load-spike risk,
+   motivation up.
+5. **Video review:** after a race, its replay as dots with 3–4 key moments marked by the coach; pick what to work on ("first 200 too
+   fast", "boxed at the bell", "kick timing", "overstriding") = a 4-week focus with a small gain in race tactics or technique; race
+   reading decides how good his marks are.
+6. **Warm-up routine** (backlog "Warm-up and cool-down"): build the race-day routine once and tune it rarely (length, jogging, drills,
+   strides, timing against the call room ~90 min before); readiness for the start and the first 200 m; a stable routine grows
+   consistency; the cool-down helps recovery; cold days need a longer one.
+7. **Gym day (later, with the strength coach):** strength sessions set by set, the weight chosen by feel, lift PBs, ego-lifting risks a
+   strain.
+
+#### 4.9.7 Balance targets and UI
+
+**Targets** (the balance session at the end: `career_check`, `season_check`, `training_balance`, `storylet_check`):
+- Neutral = identical fingerprints (above); every build session proves it.
+- **Coach:** top-talent boy (17.5) on Balanced at 21: club coach ≈ today (~1:54); the best coach who fits (from 16) ~1–1.5 % faster; a
+  poor fit 0.5–1 % slower; peak at 25 with the best help and good choices ~1:49–1:50 (the talent session's 1:47–1:50). Load management
+  18 → ~20–25 % fewer injuries than the club coach, 5 → ~15 % more.
+- **Moods:** for a sensible player motivation OK or better in most weeks (Flat < 10 %); confidence follows results; Stressed or worse
+  mostly in exam weeks (lukio ~4–6 weeks a year).
+- **School:** Normal effort holds the grade average ±0.3 a year, Heavy +0.5, Light −0.5; an urheilulukio cut-off reachable from "Doing
+  fine" or better with Normal effort, "Struggling" needs a Heavy grade 9.
+- **People:** 3–5 moments a week, ≤ ~1 people stop a week, no repeat inside a cooldown.
+- **Minigames:** a well-played session ≤ ~+5 % effect over Auto.
+
+**UI:**
+- **A sixth hub tab, People:** threads (coach, family, friends, group, school), the coach profile, **Find a coach** (market + scouting),
+  the **School page** (report card, settings, application, exams). Phone: 6 bottom tabs (~65 px each; `layout_check`).
+- **Overview:** the three mood words (tap = causes), the coach's latest line, the season goals.
+- **Training tab:** the two life settings, the weekly mental plan, **Standing orders** (coach changes: Ask me first; Play week stops
+  for: Important only; the saved rules from repeated choices).
+- **Day editor:** the day as blocks (morning / school / training / evening, read-only), the coach's why, Ask the coach, Veto, Play it.
+- **Week strip:** coach mark, people mark, holiday shading, exam days. **Calendar:** school bands, camps, "Coach suggests".
+- The build order is in `docs/ROADMAP.md` (M2 part 2, sessions C1–B1).
+
+#### 4.9.8 Research (2026-10-11)
+
+- **School and urheilulukio:** morning practice Tue / Wed / Fri ~8:00–9:30 (Siilinjärvi academy 2026, Kotka, Espoo sports line
+  2026); coaching by federation-picked, academy, club and personal coaches; Mäkelänrinne (Helsinki) scoring grade average 4–10 + sport
+  points 0–5 + school points 0–5, cut-off 16.09 (2025); Olympic Committee guide: usually a grade average ≥ 7–7.5; the joint application
+  in Feb–Mar (Opintopolku).
+- **Yläkoulu:** Tuusula's sports programme (grade 7: 2 h club coaching a week; 8–9: + a 2 h "Growing into an athlete" course; total
+  movement ~20 h a week); SUL's grade 7–9 camps at Pajulahti 2026–27 (5–9 Oct, 7–11 Dec, 19–23 Apr; €355 each; apply by 31 Aug);
+  a JYU study on sports-class pupils' tiredness.
+- **School calendar 2026–27:** start 6–12 Aug, autumn break week 42, winter break week 8 / 9 / 10, end 5 Jun (Helsingin kielilukio:
+  5 periods, each ending with a 7-school-day exam week; Muurame and Kauhava: 6 periods); matriculation exams autumn 2026 14–28 Sep
+  (school info sheets; spring 2027 dates to read from ylioppilastutkinto.fi).
+- **SUL's Team Finland selection rules (from autumn 2025, read in full):** TF-juniorit ages 14–16 (800 m: boys 14–15 2:05.27, girls
+  2:20.37; at 16 1:57.68 / 2:15.94; the club can propose a "wild card"); TF-nuoret 17–21 (boys 1:54.44 / 1:52.27 / 1:50.64 / 1:49.06 /
+  1:47.87, girls 2:13.61 / 2:10.99 / 2:09.01 / 2:07.76 / 2:06.81); TF-haastajat (22+) 1:48.78 / 2:05.77; TF-huiput 1:45.49 / 2:01.16
+  (18–22: 1:46.30 / 2:02.50). "The selection always concerns the athlete's personal coach too." Every athlete taken into a 2nd-level
+  sports school joins the TF-nuoret activity of the athletics centres with their coach. Five SUL athletics centres: capital region,
+  Tampere, Jyväskylä, Lahti-Pajulahti, Kuortane. SUL's own coach qualification "level 3" is aimed at coaches of the late youth stage
+  and the elite.
+- **Exams and injuries:** Mann et al. 2016 (J Strength Cond Res; Division I football: > 3× injury restrictions in high academic-stress
+  weeks); Hamlin et al. 2019 (Front Physiol 10:34; NZ university athletes 18–22: injuries and illness highest at exam periods).
+- **Mind and motivation:** psychological interventions for performance, systematic review and meta-analysis 2023 (PubMed 37812334:
+  skills training g ≈ 0.8, imagery 0.75, not significant after removing non-randomised trials); the five-country youth football study
+  (7 769 players: autonomy support → needs → enjoyment → lower dropout intentions); controlling coaching → disaffection; Hopkins &
+  Hewson 2001 (consistency from competitive experience).
+- **Not verified:** a single SUL source on club vs personal coach roles (the staff by stage is general knowledge), the spring 2027
+  matriculation dates, the full list of urheilulukiot with athletics (research session D1).
+
 ### Other systems (to be designed)
 
-- Nutrition, sleep
-- Mental side, motivation, relationships
-- Coaching (step 6 prepares it: season plans, `by = "coach"` day changes, the coach event source; see 4.8 "Waits for Coaching")
-- Money, sponsors, equipment
+- Nutrition, sleep (sleep partly: it comes from choices in 4.9)
+- ~~Mental side, motivation, relationships~~ designed in 4.9 (moods, mental training, people)
+- ~~Coaching~~ designed in 4.9 (specialists built later)
+- Money, sponsors, equipment (the family budget in 4.9 is a stand-in)
 - Fame, media, rivals
-- School / work–life balance
+- ~~School~~ designed in 4.9; after school (university / work / going pro / military service): with money (M4)
 - Doping / anti-doping
 - World simulation (other athletes, records, rankings)
 
