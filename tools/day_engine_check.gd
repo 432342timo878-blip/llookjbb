@@ -28,6 +28,8 @@ func _run() -> void:
 	A = load("res://scripts/core/athlete.gd")
 	WP = load("res://scripts/core/week_plan.gd")
 	load("res://scripts/core/health_system.gd").model_enabled = false
+	# A club coach of 10s (session C1): the game must equal the weekly simulation, which has no coach.
+	load("res://scripts/core/coach_system.gd").neutral_club = true
 
 	_check_exact_numbers()
 	_check_same_as_weekly()
@@ -224,7 +226,8 @@ func _check_week_plan() -> void:
 			and _json(game.season.to_dict()) == before and game.season.repeat_week.intensity[1] == "hard")
 	_ok("the week in progress follows it", game.current_week().intensity(3) == "hard" and game.current_week().plan_intensity[1] == "hard")
 	var text := FileAccess.get_file_as_string(saves.DIR + "v3.json")
-	_ok("the file says version 3 and has no training_plan", text.contains("\"version\": 3") and text.contains("\"season\"")
+	_ok("the file says version %d (3 or later) and has no training_plan" % saves.VERSION,
+			saves.VERSION >= 3 and text.contains("\"version\": %d" % saves.VERSION) and text.contains("\"season\"")
 			and not text.contains("\"training_plan\""))
 	saves.delete("v3")
 

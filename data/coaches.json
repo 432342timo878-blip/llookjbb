@@ -1,9 +1,9 @@
 {
- "_note": "The coaches by the track (GDD 4.3.1, step R4; user 2026-10-09: 'coach personality is key, every coach cannot be the same'). Every coach is a personality with his own words. The club coach of a career is one of `pool`, picked from a hash of the athlete's name (Coaches.id_of), so the same career always has the same coach; a hired coach (the Coaching step, later) sets Athlete.coach_id. All names are made up. A coach speaks only about what he can see from his spot (outdoors in the stands by the 200 m start, indoors in the stands at the rail of the hall; races.json controls.coach). Placeholders: {name} a rival's surname, {split} the player's time at the mark, {pos} the player's place (3rd), {gap} metres to the leader, {to_go} metres to go, {m} metres. talk = how often he speaks unprompted (1 = the base chances in race_commentary.json coach), gap_s = race seconds between his lines at least. dirs = where his wording differs from the default direction of a line (race_commentary.json rules.coach_dir: push or ease; empty = neutral): no opposite advice soon after one another (races.json controls.coach). shouts = the words on the decision cards (card id -> answer id -> text); the default wording is race_cards.json coach.shouts. lines = what he calls during the race: split_* when the player passes his spot (front = leading, back = 12 m or more behind the leader, hard = the Feeling word says hurting or empty, ok = the rest), rival_kick / rival_move (a rival goes near the player), player_kick, boxed, fall, dropped, lead (the player takes the lead), good / bad (a verdict on a choice 10 s later), finish_win / finish_podium / finish_other (when the player crosses the line). finish_part = the finish of a heat or section place that is no medal (decision 43). finish_pb / finish_sb = a personal best / season best that is not a win (playtest fix, 2026-10-10: a PB is never 'not good enough'). story = his one line in the Race story, by case (RaceStory picks the first that fits: dnf, dq, fell, won, won_part (won a heat / section), pb, sb, kick_died, kick_died_late (the kick began in the home straight and still died: the pace before it was the problem), boxed, too_fast, faded, good_kick, podium, better, as_expected, below; sb stands in for as_expected / below when the time was a season best).",
+ "_note": "The coaches by the track (GDD 4.3.1, step R4; user 2026-10-09: 'coach personality is key, every coach cannot be the same'). Every coach is a personality with his own words. The club coach of a career is one of `pool`, picked from a hash of the athlete's name (Coaches.id_of), so the same career always has the same coach. Since session C1 (GDD 4.9.1) these four are the voices of the coach records (data/coaching.json, CoachSystem): Athlete.coach_id names the record, the record's `voice` names the personality here; the club coach of a career is the person of his voice (name, gender). All names are made up. A coach speaks only about what he can see from his spot (outdoors in the stands by the 200 m start, indoors in the stands at the rail of the hall; races.json controls.coach). Placeholders: {name} a rival's surname, {split} the player's time at the mark, {pos} the player's place (3rd), {gap} metres to the leader, {to_go} metres to go, {m} metres. talk = how often he speaks unprompted (1 = the base chances in race_commentary.json coach), gap_s = race seconds between his lines at least. dirs = where his wording differs from the default direction of a line (race_commentary.json rules.coach_dir: push or ease; empty = neutral): no opposite advice soon after one another (races.json controls.coach). shouts = the words on the decision cards (card id -> answer id -> text); the default wording is race_cards.json coach.shouts. lines = what he calls during the race: split_* when the player passes his spot (front = leading, back = 12 m or more behind the leader, hard = the Feeling word says hurting or empty, ok = the rest), rival_kick / rival_move (a rival goes near the player), player_kick, boxed, fall, dropped, lead (the player takes the lead), good / bad (a verdict on a choice 10 s later), finish_win / finish_podium / finish_other (when the player crosses the line). finish_part = the finish of a heat or section place that is no medal (decision 43). finish_pb / finish_sb = a personal best / season best that is not a win (playtest fix, 2026-10-10: a PB is never 'not good enough'). story = his one line in the Race story, by case (RaceStory picks the first that fits: dnf, dq, fell, won, won_part (won a heat / section), pb, sb, kick_died, kick_died_late (the kick began in the home straight and still died: the pace before it was the problem), boxed, too_fast, faded, good_kick, podium, better, as_expected, below; sb stands in for as_expected / below when the time was a season best).",
  "pool": ["calm", "drill", "warm", "tactician"],
  "coaches": {
   "calm": {
-   "name": "Marja Hakala", "title": "The calm technician",
+   "name": "Marja Hakala", "gender": "female", "title": "The calm technician",
    "blurb": "Quiet and exact. Few words, mostly about rhythm and relaxing. Never raises her voice.",
    "talk": 0.7, "gap_s": 9.0,
    "dirs": {"rival_kick": "ease", "rival_move": "ease", "boxed": "ease", "dropped": "ease"},
@@ -60,7 +60,7 @@
    }
   },
   "drill": {
-   "name": "Pekka Rautio", "title": "The hard driver",
+   "name": "Pekka Rautio", "gender": "male", "title": "The hard driver",
    "blurb": "Loud and demanding. Pushes hard, praises rarely, and says it straight when a choice was poor.",
    "talk": 1.3, "gap_s": 5.0,
    "shouts": {
@@ -116,7 +116,7 @@
    }
   },
   "warm": {
-   "name": "Anneli Saarinen", "title": "The warm mentor",
+   "name": "Anneli Saarinen", "gender": "female", "title": "The warm mentor",
    "blurb": "Encouraging and caring. Always on your side, quick to praise, gentle when things go wrong.",
    "talk": 1.0, "gap_s": 7.0,
    "dirs": {"rival_kick": "ease", "boxed": "ease"},
@@ -173,7 +173,7 @@
    }
   },
   "tactician": {
-   "name": "Heikki Laine", "title": "The race reader",
+   "name": "Heikki Laine", "gender": "male", "title": "The race reader",
    "blurb": "Reads the race like a chess game. Short, factual, names rivals and gaps, and explains the why.",
    "talk": 1.0, "gap_s": 6.0,
    "dirs": {"rival_kick": "ease", "rival_move": "", "boxed": "", "dropped": ""},

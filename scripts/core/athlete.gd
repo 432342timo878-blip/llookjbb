@@ -13,7 +13,8 @@ var birth_date := {}            # {"year", "month", "day"}
 var hometown := ""
 var club_id := ""
 var main_event := ""            # event id, e.g. "800m"
-var coach_id := ""              # the coach by the track (data/coaches.json); "" = the club coach, one per athlete (Coaches.id_of)
+var coach_id := ""              # the head coach: a coach record of CoachSystem (GDD 4.9.1); "" = not made yet (older saves)
+var temperament := ""           # from the creation answer "Before an important race..." (data/coaching.json temperaments); "" = not known
 
 var height_cm := 0.0
 var weight_kg := 0.0
@@ -55,7 +56,7 @@ func to_dict() -> Dictionary:
 	return {
 		"first_name": first_name, "last_name": last_name, "gender": gender,
 		"birth_date": birth_date, "hometown": hometown, "club_id": club_id,
-		"main_event": main_event, "coach_id": coach_id, "height_cm": height_cm, "weight_kg": weight_kg,
+		"main_event": main_event, "coach_id": coach_id, "temperament": temperament, "height_cm": height_cm, "weight_kg": weight_kg,
 		"maturation": maturation, "school_level": school_level, "training_base": training_base,
 		"experience": experience, "weeks_trained": weeks_trained, "attributes": attributes, "personal_bests": personal_bests,
 		"fatigue": fatigue, "recent_change": recent_change, "results": results,

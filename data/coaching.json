@@ -1,0 +1,123 @@
+{
+ "_note": "The coach model (GDD 4.9.1-4.9.2, built in session C1; read by CoachSystem, scripts/core/coach_system.gd). A coach is a record: {id, name, gender, voice (the personality in data/coaches.json whose words he uses at races), kind (club / parent / remote / academy / personal), real (true = a real coach: facts only from public sources, listed in source; attributes are our estimates from those facts; a neutral professional voice, never invented storylines), source, attributes (the 11 below, whole numbers 1-20), personality (= voice), style (-2 very controlling ... +2 very supportive, words in styles), demands (steady / balanced / ambitious: the season plan he leans to), facts {birth_year, club_id, town, qualification, reputation, event_focus, cost_month, open (takes every club member), spots, min_level}, group (the training group: fictional teammates {id, first_name, last_name, gender, birth_year, event, level, role})}. Effects are measured against `neutral` (10): (attribute - 10) x per_point, so a coach of 10s changes nothing (the M1 / step 7 balance stays exact). Every number here is a first guess for the balance session at the end of M2 part 2 (GDD 4.9.7).",
+ "neutral": 10,
+ "attributes": [
+  {"id": "endurance_knowledge", "name": "Endurance knowledge", "description": "How much your aerobic, threshold and economy work gives you; the quality of his endurance sessions and splits."},
+  {"id": "speed_strength_knowledge", "name": "Speed & strength knowledge", "description": "How much your speed, speed endurance, power and strength work gives you."},
+  {"id": "technique", "name": "Technique", "description": "How fast your running technique grows; drills done right."},
+  {"id": "periodization", "name": "Periodization", "description": "How well his season plan fits you: lighter weeks, the taper hitting your form on the day, the quality of his pick of plan."},
+  {"id": "youth_development", "name": "Youth development", "description": "Under 18: protects a growing body (growth-spurt niggles) and makes the most of your first training years."},
+  {"id": "load_management", "name": "Load management", "description": "How early and how rightly he spots soreness and load spikes, and changes your days for them."},
+  {"id": "race_reading", "name": "Race reading", "description": "How often his race shouts are right; his clues before a race and his marks on a race video."},
+  {"id": "mental_coaching", "name": "Mental coaching", "description": "Mental training works better, composure grows faster, confidence comes back faster after a bad race."},
+  {"id": "motivating", "name": "Motivating", "description": "How much he lifts your motivation; how strongly his praise and criticism land."},
+  {"id": "communication", "name": "Communication", "description": "How much and how clearly he explains why; how he gets along with your family and school."},
+  {"id": "judging_ability", "name": "Judging ability", "description": "How right his estimates are: time goals, what you can run, the range he gives for your potential."}
+ ],
+ "effects": {
+  "_note": "Built in C1: training (the week's trained gains per attribute group, Training._apply_progression) and race_advice (how often his shout on a race card is the sensible answer; at 10 exactly races.json controls.coach.accuracy). Prepared, not used yet (C4 / M1 / the balance session): youth_development, load_management, periodization, mental_coaching, motivating.",
+  "training": {
+   "per_point": 0.012,
+   "groups": {
+    "endurance_knowledge": ["aerobic_capacity", "lactate_threshold", "running_economy"],
+    "speed_strength_knowledge": ["speed", "acceleration", "speed_endurance", "strength", "power"],
+    "technique": ["running_technique", "starts", "mobility"]
+   }
+  },
+  "race_advice": {"attribute": "race_reading", "per_point": 0.015, "min": 0.55, "max": 0.97},
+  "youth_development": {"below_age": 18, "growth_niggles_per_point": -0.03, "novice_per_point": 0.02},
+  "load_management": {"spot_per_point": 0.05, "false_alarm_per_point": -0.03},
+  "periodization": {"taper_per_point": 0.03, "pick_per_point": 0.05},
+  "mental_coaching": {"composure_per_point": 0.04},
+  "motivating": {"lift_per_point": 0.04}
+ },
+ "styles": [
+  {"value": -2, "word": "Very controlling"},
+  {"value": -1, "word": "Controlling"},
+  {"value": 0, "word": "Balanced"},
+  {"value": 1, "word": "Supportive"},
+  {"value": 2, "word": "Very supportive"}
+ ],
+ "demands": {"steady": "Steady: plays it safe", "balanced": "Balanced", "ambitious": "Ambitious: wants more"},
+ "personalities": {
+  "_note": "For each voice in coaches.json: lean = points added before the coach's own spread (then centred, so they only say where he is strong and weak), style / demands = weights of the draw.",
+  "calm": {"lean": {"technique": 2, "communication": 1, "mental_coaching": 1, "load_management": 1, "motivating": -2, "race_reading": -1},
+   "style": {"-1": 1, "0": 2, "1": 3, "2": 1}, "demands": {"steady": 1, "balanced": 3, "ambitious": 1}},
+  "drill": {"lean": {"speed_strength_knowledge": 2, "endurance_knowledge": 1, "periodization": 1, "motivating": 1, "communication": -2, "load_management": -2, "youth_development": -1},
+   "style": {"-2": 2, "-1": 3, "0": 1}, "demands": {"balanced": 1, "ambitious": 3}},
+  "warm": {"lean": {"motivating": 3, "mental_coaching": 2, "youth_development": 2, "communication": 1, "periodization": -1, "race_reading": -2, "judging_ability": -2},
+   "style": {"0": 1, "1": 3, "2": 3}, "demands": {"steady": 3, "balanced": 2}},
+  "tactician": {"lean": {"race_reading": 3, "judging_ability": 2, "periodization": 1, "communication": 1, "motivating": -2, "youth_development": -1, "mental_coaching": -1},
+   "style": {"-1": 2, "0": 3, "1": 2}, "demands": {"steady": 1, "balanced": 3, "ambitious": 1}}
+ },
+ "club": {
+  "_note": "The club coach every career starts with (one of the four people of coaches.json, the one picked from the athlete's name as before). User 2026-10-11: club coaches really differ (a volunteer parent vs. an experienced club coach): his overall level (the average of his 11 attributes) is drawn around 10 between average_min and average_max; on top of it his personality's lean and his own spread (spread_sd) make him strong somewhere and weak somewhere. A typical (10) club coach plays exactly like the game before C1. The dice come from his own seed (the athlete's name and birth date), so a career always gets the same club coach. Town size and region (session D1) will move the average later (small clubs lower, the athletics centres higher).",
+  "average_mean": 10.0, "average_sd": 1.6, "average_min": 7.0, "average_max": 13.0,
+  "spread_sd": 2.0, "min": 3, "max": 18,
+  "age": [27, 66],
+  "kind": "club", "reputation": "local", "open": true,
+  "cost_month": [30, 60],
+  "qualifications": [
+   {"id": "level1", "name": "Coach level 1 (club coach course)", "from_average": 0.0},
+   {"id": "level2", "name": "Coach level 2", "from_average": 9.0},
+   {"id": "level3", "name": "Coach level 3 (late youth and elite)", "from_average": 11.0},
+   {"id": "vat", "name": "Coach vocational qualification (VAT)", "from_average": 12.0}
+  ],
+  "qualification_noise": 0.8,
+  "event_focus": {
+   "middle_distance": {"weight": 0.65, "name": "Middle distance", "lean": {}},
+   "endurance": {"weight": 0.2, "name": "Endurance (1500 m and up)", "lean": {"endurance_knowledge": 2, "speed_strength_knowledge": -1}},
+   "sprint": {"weight": 0.15, "name": "Sprint and 400 m", "lean": {"speed_strength_knowledge": 2, "endurance_knowledge": -2}}
+  },
+  "group": {
+   "_note": "The training group that comes with the coach (GDD 4.9.1): fictional teammates of about the athlete's age (youth athletes stay fictional). level = their running level on the attribute scale (the mean of the athlete's physical and technical attributes +- level_sd; role shifts). Used by the people moments (P1) and later the group pull in hard sessions.",
+   "size": [4, 9],
+   "birth_year_offset": [-2, 1],
+   "level_sd": 1.8,
+   "events": {"800m": 4, "1500m": 3, "400m": 2, "3000m": 1},
+   "roles": {
+    "joker": {"word": "The joker", "weight": 2, "level": 0.0, "age": 0},
+    "racer": {"word": "Races every rep", "weight": 2, "level": 0.5, "age": 0},
+    "veteran": {"word": "Has been to Nuorten SM", "weight": 1, "level": 2.5, "age": -2},
+    "newcomer": {"word": "New in the group", "weight": 1, "level": -2.0, "age": 1},
+    "quiet": {"word": "Quiet and steady", "weight": 2, "level": 0.0, "age": 0},
+    "leader": {"word": "Sets the pace", "weight": 1, "level": 1.5, "age": -1},
+    "talker": {"word": "Never stops talking", "weight": 2, "level": -0.5, "age": 0}
+   }
+  }
+ },
+ "temperaments": {
+  "_note": "The athlete's temperament, from the creation answer 'Before an important race, you usually...' (background_questions.json, the answer's `temperament`). Older saves have none: fit Fine with everyone.",
+  "eager": "Can't wait to get going",
+  "fiery": "Gets fired up",
+  "steady": "Nervous but manages it",
+  "overthinker": "Overthinks everything",
+  "relaxed": "Doesn't really care",
+  "new": "Has never raced"
+ },
+ "fit": {
+  "_note": "Fit = matrix[temperament][personality] (+1 click, -1 friction, missing 0) + style x style_weight (a supportive style helps everyone; a controlling one hurts all but the no_controlling_penalty temperaments). Score >= click -> 'You click', <= friction -> 'Friction', else 'Fine'. The word shows after reveal_weeks together. User OK 2026-10-11. It sets where trust drifts to (trust.target); motivation follows in session M1.",
+  "matrix": {
+   "eager": {"drill": 1},
+   "fiery": {"drill": 1, "calm": -1},
+   "steady": {"calm": 1, "warm": 1},
+   "overthinker": {"calm": 1, "tactician": 1, "drill": -1},
+   "relaxed": {"drill": 1, "calm": -1},
+   "new": {"warm": 1, "drill": -1}
+  },
+  "style_weight": 0.25,
+  "no_controlling_penalty": ["eager", "fiery"],
+  "click": 0.75, "friction": -0.75,
+  "reveal_weeks": 4,
+  "words": {"click": "You click", "fine": "Fine", "friction": "Friction", "unknown": "Too early to say"}
+ },
+ "trust": {
+  "_note": "One hidden number 0-100 per coach, shown as a word. New for the first new_weeks together; then Strong from strong, Strained below strained, else Good. Each Sunday it moves rate of the way towards target[fit]; results vs his goals (C5), moments (C2/P1) and vetoes (C4) add to it later (CoachSystem.add_trust). Fit alone never makes it Strained. In C1 nothing reads it.",
+  "start": 50.0, "new_weeks": 8, "rate": 0.05,
+  "target": {"click": 75.0, "fine": 60.0, "friction": 40.0},
+  "strong": 70.0, "strained": 30.0,
+  "keep_causes": 8,
+  "words": {"new": "New", "good": "Good", "strong": "Strong", "strained": "Strained"}
+ },
+ "real": []
+}

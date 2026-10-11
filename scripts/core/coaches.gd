@@ -1,14 +1,28 @@
 class_name Coaches
 extends RefCounted
-## The coaches by the track (GDD 4.3.1, step R4): each has a personality and his own words (data/coaches.json).
-## The club coach of a career is one of the pool, picked from a hash of the athlete's name; a hired coach (later) sets
-## Athlete.coach_id.
+## The coaches' voices (GDD 4.3.1, step R4): each personality has his own words (data/coaches.json). Since session C1
+## (GDD 4.9.1) a coach is a record of CoachSystem and Athlete.coach_id names it; the record's `voice` is the personality
+## used here. Tools may still set Athlete.coach_id to a voice id directly.
 
 
-## The id of the athlete's coach: their own coach_id, else the club coach made from their name.
+## The voice id (data/coaches.json) of the athlete's coach: a voice id set directly, else the voice of their coach
+## record, else the club coach's voice made from their name.
 static func id_of(a: Athlete) -> String:
 	if a == null:
 		return default_id()
+	if a.coach_id != "" and Data.coaches.coaches.has(a.coach_id):
+		return a.coach_id
+	var cs := Game.get_system("coach") as CoachSystem
+	if cs and cs.coaches.has(a.coach_id):
+		var voice := str(cs.coaches[a.coach_id].get("voice", ""))
+		if Data.coaches.coaches.has(voice):
+			return voice
+	return club_voice(a)
+
+
+## The voice of the athlete's club coach: a voice id set as their coach_id, else one of `pool` picked from a hash of
+## their name (as before C1, so older careers keep their coach).
+static func club_voice(a: Athlete) -> String:
 	if a.coach_id != "" and Data.coaches.coaches.has(a.coach_id):
 		return a.coach_id
 	var pool: Array = Data.coaches.pool

@@ -21,6 +21,8 @@ extends SceneTree
 ## story with the hidden potential set to 17.5 (top talent / average / low); the report adds the senior standards
 ## (Kalevan kisat 1:53.50 / 2:11.00, waiting list 1:55.50 / 2:15.00) reached by age, the best national place, the
 ## growth breakdown (stimulus, saturation, headroom, age rate, novice bonus per key attribute) and the rivals' rank churn.
+## Session C1: every career gets a club coach of 10s (the game before coaches); "coach=club" = the real club coaches
+## (each career's own, averages ~7-13). Coach numbers can be tried as what-ifs (coaching.effects.training.per_point=0.02).
 
 const START_YEAR := 2026
 const STANDARD := {"male": [113.5, 115.5], "female": [131.0, 135.0]}   # SUL 2025: Kalevan kisat direct / waiting list
@@ -88,10 +90,12 @@ func _run() -> void:
 	for arg in args:
 		if arg.begins_with("plan="):
 			plan = arg.split("=")[1]
+	# Session C1: careers get a club coach of 10s (= the game before coaches), unless "coach=club" asks for the real ones.
+	load("res://scripts/core/coach_system.gd").neutral_club = not "coach=club" in args
 	if plan == "best":
 		_make_best_plan()
 	for arg in args:   # what-ifs: training.progression.novice.bonus=1.1 (a data path = a number)
-		if arg.contains("=") and arg.contains(".") and not arg.begins_with("plan="):
+		if arg.contains("=") and arg.contains(".") and not arg.begins_with("plan=") and not arg.begins_with("coach="):
 			var path := arg.split("=")[0].split(".")
 			var d = data.get(path[0])
 			for k in range(1, path.size() - 1):

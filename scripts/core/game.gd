@@ -69,6 +69,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 	_next_event = 1
 	_week = null
 	systems = _make_systems()
+	(get_system("coach") as CoachSystem).ensure_head(athlete, date)   # the career's club coach (GDD 4.9.1)
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	rivals = Rivals.generate(athlete, rng)
@@ -88,7 +89,7 @@ func _leave_test() -> void:
 
 
 func _make_systems() -> Array:
-	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new()]
+	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list
@@ -160,6 +161,9 @@ func from_dict(d: Dictionary) -> void:
 	var states: Dictionary = d.get("systems", {})
 	for s in systems:
 		s.from_dict(states.get(s.id, {}))
+	# Saves from before version 4 (session C1) have no coach records: the athlete gets their club coach now (the same
+	# person and voice they had at races).
+	(get_system("coach") as CoachSystem).ensure_head(athlete, date)
 
 
 ## JSON turns every number into a float; dates must be ints again.
@@ -240,6 +244,8 @@ func current_week() -> WeekSim:
 		_week.day = Calendar.weekday(date)   # 0 unless an old save was made mid-week
 	_week.set_plan(season.week_for(_week.monday))
 	_week.races = Calendar.races_in_week(entries, _week.monday)
+	var coach := get_system("coach") as CoachSystem
+	_week.coach_effect = coach.training_effect() if coach else {}
 	if created:
 		for s in systems:
 			s.on_week_start(_week)

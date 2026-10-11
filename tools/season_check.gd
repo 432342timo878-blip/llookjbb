@@ -46,6 +46,7 @@ func _run() -> void:
 	RP = load("res://scripts/core/race_performance.gd")
 	saves = load("res://scripts/core/save_game.gd")
 	saves.DIR = "user://tool_saves/"
+	load("res://scripts/core/coach_system.gd").neutral_club = true   # (a club coach of 10s = the game before coaches, C1)
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false

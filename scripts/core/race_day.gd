@@ -140,6 +140,7 @@ func start_round(interactive: bool, plan: String) -> Race:
 	current.setup(entrants, _gender, is_big_meet(), fatigue, _rng, _indoor, shape_mix())
 	current.auto_places = _auto_places()
 	current.coach_id = Coaches.id_of(athlete)   # (his wording on the cards; R4)
+	current.coach_accuracy = CoachSystem.race_accuracy_for(athlete)   # (his race reading; C1)
 	current.set_player_plan(plan)
 	if not interactive:
 		current.set_kick_plan(kick_plan)   # (a quick result follows the player's kick plan)

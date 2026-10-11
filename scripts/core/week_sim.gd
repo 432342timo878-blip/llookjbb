@@ -21,6 +21,9 @@ var day_started := false        # the game has run its day-start step for `day` 
 var changes := {}
 ## What was actually done, one record per played day: {day, sessions, intensity, race, load, fatigue}
 var played := []
+## The coach's training effect for this week (CoachSystem.training_effect; {} = none). Set by Game.current_week()
+## every time it hands out the week, not saved.
+var coach_effect := {}
 
 var _month := 1
 var _stimulus := {}
@@ -129,7 +132,7 @@ func end_week() -> Dictionary:
 	if _sessions == 0:
 		_notes.append("A full week off. Good for recovery, but fitness slowly fades.")
 
-	var changes_done := Training._apply_progression(a, _stimulus, monday)
+	var changes_done := Training._apply_progression(a, _stimulus, monday, coach_effect)
 	return {
 		"monday": monday, "sessions": _sessions, "load": _load,
 		"fatigue_start": _fatigue_start, "fatigue_end": a.fatigue, "fatigue_peak": _fatigue_peak,

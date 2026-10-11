@@ -116,7 +116,9 @@ static func expected_fatigue(a: Athlete, plan: Variant, monday: Dictionary) -> D
 ## qualities respond to small amounts of quality work, the aerobic engine needs volume), headroom counts over
 ## progression.headroom_span points below the potential, and the age brake applies only near the ceiling
 ## (age_share: none while an attribute is at least age_brake_gap[1] below the potential, all of it from [0]).
-static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Dictionary) -> Dictionary:
+## `coach`: the coach's training effect (CoachSystem.training_effect: attribute id -> multiplier of the trained gain;
+## empty = none, as for a coach of 10s).
+static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Dictionary, coach := {}) -> Dictionary:
 	var trainability := 0.6 + a.get_attr("trainability") / 20.0 * 0.8
 	var growth := puberty_share(a, monday)
 	var novice := 1.0 + novice_bonus(a)
@@ -134,6 +136,8 @@ static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Diction
 					gain *= age_share(by_age, a.get_attr("potential") - before) * novice
 				elif category == "technical":
 					gain *= novice
+				if coach.has(id):
+					gain *= float(coach[id])
 			elif category == "physical":
 				gain -= DETRAINING
 			gain += NATURAL_GROWTH.get(id, 0.0) * growth

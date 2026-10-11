@@ -2498,8 +2498,11 @@ distance / sprint / endurance), his group (size, level), availability (spots, mi
 **trust** in him (4.9.2).
 **Fit:** the athlete's temperament from the existing "pressure" answer ("Overthink everything" suits calm, "Get fired up" suits drill,
 …) against his personality and style; after a few weeks a word: *You click / Fine / Friction*; it moves motivation.
-**Strength:** effects are measured against 10 (`(attribute − 10) × k`, numbers in data). **Every club coach that starts a career
-averages ~10** (weak somewhere, good somewhere), so the club coach is never a trap and today's balance stays exact. Target: a top coach
+**Strength:** effects are measured against 10 (`(attribute − 10) × k`, numbers in data). ~~**Every club coach that starts a career
+averages ~10** (weak somewhere, good somewhere), so the club coach is never a trap and today's balance stays exact.~~ **Changed in
+C1 (user, 2026-10-11: "why would they all average exactly 10? That doesn't sound very realistic"):** club coaches' overall level
+varies, averages ~7–13 around 10, plus strong and weak spots; a *typical* (10) club coach = today's game, and the neutral setting
+for the proofs is a coach of 10s (see "Built (step C1)" below). Target: a top coach
 who fits is worth ~1–1.5 % of the 800 m time by 21 (4.9.7).
 
 **Shown and scouted (FM style):** an unknown coach shows **each attribute as a range** ("8–13") guessed from his reputation; ranges
@@ -2741,6 +2744,77 @@ a bad one loses); at most ~1 a week on average; each type can be switched off; p
   Hewson 2001 (consistency from competitive experience).
 - **Not verified:** a single SUL source on club vs personal coach roles (the staff by stage is general knowledge), the spring 2027
   matriculation dates, the full list of urheilulukiot with athletics (research session D1).
+
+#### Built (step C1, 2026-10-11): the coach model, headless
+
+**Decisions with the user this session:**
+1. **Club coaches really differ** (user: "why would they all average exactly 10? That doesn't sound very realistic"; chose the wider
+   of three spreads): each club coach's overall level (the average of his 11 attributes) is drawn around 10 (sd 1.6, kept within
+   7–13), then his personality's lean and his own spread (sd 2.0) make him strong somewhere and weak somewhere. A typical (10)
+   club coach plays exactly like the game before C1; a weak one costs a little, a good one gives a little, and from 16 the player can
+   look for another coach (C6). Town size and region (D1) will move the average later (small clubs lower, the centres higher).
+   **The neutral setting of the rule "neutral = identical" is a coach of 10s**: the balance tools give every career one
+   (`CoachSystem.neutral_club`), and 4.9.7's "club coach ≈ today" now means a typical (10) club coach; the balance session measures
+   the real spread (`career_check ... coach=club`).
+2. **The four people stay** (Marja Hakala, Pekka Rautio, Anneli Saarinen, Heikki Laine, picked from the athlete's name as before):
+   they keep their names, race lines and Race-story lines and get a gender; each career's club coach is one of them with his own
+   generated attributes, facts and group. Existing careers keep exactly the coach they had at races. New names come with the market (C6).
+3. **The fit table** (user OK): Can't wait to get going: + drill. Fired up and angry: + drill, − calm. Nervous but manage it: + calm,
+   + warm. Overthink everything: + calm, + tactician, − drill. Don't really care: + drill, − calm. Never raced: + warm, − drill.
+   A supportive style helps a little (+0.25 a step), a controlling one hurts a little except for the two fiery answers. Older saves
+   (answer not stored) = Fine with everyone.
+
+**What was built:**
+- **Data:** `data/coaching.json` (new): the 11 attributes with names and descriptions, `effects`, the style words (−2 very controlling
+  … +2 very supportive), demands words, `personalities` (lean, style and demands weights per voice), `club` (the generator: average,
+  spread, age 27–66, qualifications Coach level 1 / 2 / 3 / VAT by level, event focus middle distance 65 % / endurance 20 % / sprint
+  15 % with its own lean, €30–60 a month, the training group), `temperaments`, `fit`, `trust`, `real` (real coaches, each with a
+  `source`: empty until D1). The record format is in the file's note: `{id, name, gender, voice, kind, real, source, attributes,
+  personality, style, demands, facts {birth_year, club_id, town, qualification, reputation, event_focus, cost_month, open, spots,
+  min_level}, group}`. `coaches.json`: a `gender` per person. `background_questions.json`: each "pressure" answer has a `temperament`
+  (eager / fiery / steady / overthinker / relaxed / new), saved as `Athlete.temperament`.
+- **`CoachSystem`** (`scripts/core/coach_system.gd`, GameSystem id `coach`, after Season in `Game.systems`): the career's coach
+  records and relations (weeks together, trust, causes), saved with the game. `ensure_head(athlete, date)` makes the club coach
+  (`make_club_coach`: his own dice from the athlete's name and birth date, so the same career always gets the same coach; the global
+  dice untouched) when `Athlete.coach_id` names no record: on `start_career` and on loading an older save (its relation then counts
+  the weeks since the career began, trust as if it had drifted all along). Switches for the tools: `model_enabled` (off = every effect
+  neutral, trust stands still) and `neutral_club` (new club coaches get 10s, everything else unchanged).
+- **The training group** comes with the coach: 4–9 fictional teammates (names from `names_fi.json`, mixed boys and girls, born the
+  athlete's year −2…+1, an event, a level on the attribute scale around the athlete's, a role: the joker, races every rep, has been to
+  Nuorten SM, new in the group, quiet and steady, sets the pace, never stops talking). Used by the moments (P1) and later the group pull.
+- **Effects (all exactly neutral at 10):** *training*: the week's trained gain of each attribute × (1 + (group knowledge − 10) ×
+  0.012): endurance knowledge → aerobic capacity, lactate threshold, running economy; speed & strength knowledge → speed,
+  acceleration, speed endurance, strength, power; technique → running technique, starts, mobility (`WeekSim.coach_effect`, set by
+  `Game.current_week()`, → `Training._apply_progression`; natural growth and detraining are untouched). *Race advice*: his shout is
+  right with 0.8 + (race reading − 10) × 0.015 (0.55–0.97; `Race.coach_accuracy`, set by `RaceDay` through
+  `CoachSystem.race_accuracy_for`; −1 = `controls.coach.accuracy`, which a race reading of 10 gives exactly). *Prepared, not used
+  yet:* `effect(attribute, key)` / `youth_factor(key, age)` with numbers for youth development (growth niggles, novice years, under
+  18), load management (C4), periodization, mental coaching and motivating (M1).
+- **Fit and trust:** `fit_of(temperament, coach)` → click / fine / friction, shown after 4 weeks ("Too early to say" before).
+  Trust 0–100 (start 50): New for the first 8 weeks, then Strong ≥ 70, Strained < 30, else Good; each Sunday it moves 5 % of the
+  way to 75 / 60 / 40 by fit (friction alone never makes it Strained); `add_trust(delta, cause)` for C2 / C4 / C5. Nothing reads
+  them yet.
+- **`Coaches.id_of`** now gives the *voice* of the athlete's coach record (a voice id set directly, as the race tools do, still works);
+  `Coaches.club_voice` = the old pick from the name.
+- **Save version 4:** the `coach` system state, `Athlete.coach_id` (e.g. `coach_1`) and `temperament`. Versions 1–3 load and get
+  their club coach.
+
+**Measured (`tools/coach_check.gd`, 500 athletes; ALL CHECKS PASSED):** club-coach averages mean 9.98, sd 1.55, 6.9–13.2 (7–8: 11 %,
+8–9: 16 %, 9–10: 22 %, 10–11: 23 %, 11–12: 16 %, 12–13: 10 %, 13+: 2 %); qualifications level 1 29 %, level 2 40 %, level 3 15 %,
+VAT 16 %; fit overall click 35 % / fine 51 % / friction 15 %. A year of the coach week (the `training_balance` athlete): a coach of 10s
+= the coach model off, bit for bit (attribute sum 206.798298350); endurance knowledge 16: aerobic capacity +0.233, lactate threshold
++0.062, running economy +0.085, nothing else; endurance knowledge 4: the same amounts less; speed & strength 16: speed +0.170, speed
+endurance +0.104, strength +0.104 (acceleration and power aren't trained by that week); technique 16: running technique +0.132,
+mobility +0.113; the other eight attributes at 16: no change; 16s everywhere: +1.00 attribute points in a year (206.80 → 207.80).
+The test athlete's own club coach (Heikki Laine, average 11.3): 206.98. Race reading 16: right 0.89 of the time. Save / load bit for
+bit; a version-3 save gets the same club coach back; the user's two saves (Timo Suuronen: Pekka Rautio, average 11.6, level 3,
+group of 7) and the v1 test save load, play a week, save and reload. `training_balance -- 0`: 206.798298350 / 14.102831594 /
+1226.006524079 for the coach row, parts 2, 2b and 2c (the real club coach with the model off) identical.
+
+**Not in C1:** no UI (the People tab, profile and thread are C3), no help entry yet (nothing is shown); trust, fit, demands, style and
+the group are stored but read by nothing; the prepared hooks are wired in C4 / M1 / the balance session; the effect sizes (0.012 a
+point, 0.015 for race advice) are first guesses for the balance session (target 4.9.7: a top coach who fits ~1–1.5 % of the 800 m time
+by 21).
 
 ### Other systems (to be designed)
 

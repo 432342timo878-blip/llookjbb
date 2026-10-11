@@ -67,9 +67,12 @@ var cards_shown := 0
 var effort := "hold"
 var card_log: Array = []
 ## R4 (recording only): the player's choices and commands as they happened: {key ("break.lead", "bar.push", ...), t,
-## to_go}, for the commentary's "you" lines. `coach_id` = the player's coach (data/coaches.json): his shouts' wording.
+## to_go}, for the commentary's "you" lines. `coach_id` = the voice of the player's coach (data/coaches.json): his
+## shouts' wording. `coach_accuracy` = how often his shout is right (C1: his race reading, CoachSystem.race_accuracy;
+## -1 = controls.coach.accuracy).
 var say_log: Array = []
 var coach_id := ""
+var coach_accuracy := -1.0
 var _card_counts := {}
 var _last_card_t := -1000.0
 var _ctl: Dictionary              # data/races.json "controls"
@@ -1635,7 +1638,7 @@ func coach_sees_at(d: float) -> bool:
 
 
 ## The coach's shout for the card `id`, or {} when he can't see: {option, text}. He is right with chance
-## controls.coach.accuracy. His dice come from the race's seed but not from its dice, so a watched race and a
+## coach_accuracy (his race reading, CoachSystem.race_accuracy; -1 = controls.coach.accuracy). His dice come from the race's seed but not from its dice, so a watched race and a
 ## quick one stay comparable.
 func _coach_line(id: String, info: Dictionary) -> Dictionary:
 	if not coach_sees():
@@ -1648,7 +1651,7 @@ func _coach_line(id: String, info: Dictionary) -> Dictionary:
 	if _coach_rng == null:
 		_coach_rng = RandomNumberGenerator.new()
 		_coach_rng.seed = hash("coach %d" % _rng.state)   # (the state, not the seed: it differs from race to race)
-	if _coach_rng.randf() >= float(_ctl.coach.accuracy):
+	if _coach_rng.randf() >= (coach_accuracy if coach_accuracy >= 0.0 else float(_ctl.coach.accuracy)):
 		var others := shouts.keys().filter(func(k): return k != right)
 		if not others.is_empty():
 			pick = others[_coach_rng.randi_range(0, others.size() - 1)]

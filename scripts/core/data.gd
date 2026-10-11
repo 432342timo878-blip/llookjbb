@@ -16,6 +16,7 @@ var races: Dictionary = {}             # data/races.json: 800 m race model tunin
 var race_cards: Dictionary = {}        # data/race_cards.json: the player's race cards, choice lines, the coach's shouts
 var race_commentary: Dictionary = {}   # data/race_commentary.json: the broadcast voices, lines per race event, verdicts, the Race story
 var coaches: Dictionary = {}           # data/coaches.json: the coaches' personalities and their words
+var coaching: Dictionary = {}          # data/coaching.json: the coach model (attributes, effects, club coach, fit, trust)
 var health: Dictionary = {}            # data/health.json: day intensity, body areas, strain, illness, risks
 var injuries: Array = []               # data/injuries.json: the injury and illness catalogue
 var periodization: Dictionary = {}     # data/periodization.json: phases, week rules, the coach's season plans
@@ -44,6 +45,7 @@ func _ready() -> void:
 	race_cards = _load("res://data/race_cards.json")
 	race_commentary = _load("res://data/race_commentary.json")
 	coaches = _load("res://data/coaches.json")
+	coaching = _load("res://data/coaching.json")
 	health = _load("res://data/health.json")
 	injuries = _load("res://data/injuries.json").get("injuries", [])
 	periodization = _load("res://data/periodization.json")

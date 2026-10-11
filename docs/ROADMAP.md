@@ -317,7 +317,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
       Video review, Warm-up routine, Gym day later. Build in the sessions below, in order; **each ends with its checks, the proof that
       the neutral setting gives identical `training_balance -- 0` fingerprints, a help entry for anything new, a commit and "Push
       origin".** *(The originals of the two items follow the list.)*
-  - [ ] **C1. Coach model (headless):** coach data format (attributes, character words, facts, `source` for real coaches), the
+  - [x] **C1. Coach model (headless)** *(done 2026-10-11, GDD 4.9 "Built (step C1)"; user: club coaches' level varies, averages
+        ~7–13, a coach of 10s is the neutral setting)*: coach data format (attributes, character words, facts, `source` for real coaches), the
         club-coach generator (each career's club coach averages 10: weak somewhere, good somewhere; the four personalities of
         `coaches.json` kept), `CoachSystem` (GameSystem id `coach`, off switch for the tools), effect hooks all neutral at 10 (training
         effect by attribute group, race-advice accuracy replacing `controls.coach.accuracy`, youth development / load management hooks

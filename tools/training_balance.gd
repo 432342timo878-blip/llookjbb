@@ -5,6 +5,8 @@ extends SceneTree
 ##    never change unless the training model itself is meant to change.
 ## 2. The same rows played day by day through the game with the health model switched off: the
 ##    fingerprints must be identical to part 1 (proves the health model changes nothing when it's off).
+##    Every career here gets a club coach of 10s (CoachSystem.neutral_club, session C1); part 2c plays the rows with the
+##    real club coach and the coach model off (same fingerprints) and shows the first row with the model on.
 ## 3. Health (GDD 4.6): 200 athletes per row (random backgrounds, boys and girls), 1 year from age 14
 ##    through the game's day loop with the health model on, entering the coach's recommended meets.
 ##    Policies: neutral = follows injury limits, ignores soreness; careful = takes it easy when sore
@@ -31,6 +33,7 @@ var W
 var WP
 var RP
 var H
+var C
 
 
 func _initialize() -> void:
@@ -46,6 +49,10 @@ func _run() -> void:
 	Cal = load("res://scripts/core/calendar.gd")
 	RP = load("res://scripts/core/race_performance.gd")
 	H = load("res://scripts/core/health_system.gd")
+	C = load("res://scripts/core/coach_system.gd")
+	# The balance is measured with a club coach of 10s (session C1: a coach of 10s changes nothing); part 2c checks a
+	# real club coach with the coach model off.
+	C.neutral_club = true
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
@@ -80,6 +87,24 @@ func _run() -> void:
 		same_plan = same_plan and _m1_row(runs[i], plans, true, true) == fingerprints[i]
 	H.model_enabled = true
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_plan else "NO  <-- plan-level intensity differs!"))
+
+	# Session C1: parts 2 / 2b ran with the coach model ON and a club coach of 10s; the real club coach with the model
+	# OFF must give the same too. Then, for information, the real club coach with the model on.
+	print("\n== 2c. Coach model (session C1): the career's real club coach with the coach model OFF: same fingerprints")
+	H.model_enabled = false
+	C.neutral_club = false
+	C.model_enabled = false
+	var same_coach := true
+	for i in runs.size():
+		same_coach = same_coach and _m1_row(runs[i], plans, true) == fingerprints[i]
+	C.model_enabled = true
+	print("   fingerprints identical to part 1: %s" % ("YES" if same_coach else "NO  <-- the coach model's off switch leaks!"))
+	print("   For information, the same club coach with the model ON (not a check):")
+	_m1_row(runs[0], plans, true)
+	var club: Dictionary = game.get_system("coach").head()
+	print("   (%s, %s, average %.1f: %s)" % [club.name, club.voice, C.average(club), club.attributes])
+	C.neutral_club = true
+	H.model_enabled = true
 
 	var n := 200
 	var args := OS.get_cmdline_user_args()

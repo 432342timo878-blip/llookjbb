@@ -310,37 +310,37 @@
     {
      "text": "Can't wait to get going",
      "detail": "Big moments bring out your best, small ones bore you.",
-     "experience": 1,
+     "experience": 1, "temperament": "eager",
      "effects": {"composure": 1.5, "competitiveness": 1, "consistency": -1}
     },
     {
      "text": "Get fired up and angry",
      "detail": "You want to beat everyone, sometimes too badly.",
-     "experience": 1,
+     "experience": 1, "temperament": "fiery",
      "effects": {"competitiveness": 2, "pain_tolerance": 1, "race_tactics": -1, "consistency": -0.5}
     },
     {
      "text": "Feel nervous but manage it",
      "detail": "Steady and reliable.",
-     "experience": 1,
+     "experience": 1, "temperament": "steady",
      "effects": {"composure": 0.5, "consistency": 1}
     },
     {
      "text": "Overthink everything",
      "detail": "Nerves can get to you, but you prepare carefully.",
-     "experience": 1,
+     "experience": 1, "temperament": "overthinker",
      "effects": {"composure": -1.5, "professionalism": 1.5, "race_tactics": 1.5}
     },
     {
      "text": "Don't really care how it goes",
      "detail": "Relaxed, maybe a bit too relaxed.",
-     "experience": 1,
+     "experience": 1, "temperament": "relaxed",
      "effects": {"composure": 2, "competitiveness": -1.5, "consistency": 1, "ambition": -1}
     },
     {
      "text": "No idea, I've never raced",
      "detail": "Everything about competing is new to you.",
-     "experience": 0,
+     "experience": 0, "temperament": "new",
      "effects": {"race_tactics": -1, "composure": -0.5, "ambition": 1}
     }
    ]
