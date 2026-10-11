@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.9 — 2026-10-10 (step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
+Version 0.9 — 2026-10-11 (the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
 `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; race realism R1–R5, M2 steps 3–6). Living document: updated after
 each design discussion.
 
@@ -155,7 +155,10 @@ field), health per week; the rivals' ability and SB quantiles; national field si
 Nuorten SM 14–15 (Mikkeli) winners P14 2:05.6, P15 2:05.2, T14 2:16.1, T15 2:15.4, 8th P15 2:14.0, T15 2:22.3; 16–17 (Hyvinkää) M16
 2:01.9 / 8th 2:09.5, M17 1:55.8 / 8th 2:04.2, N16 2:14.3, N17 2:16.4; 19–22 (Pori) M19 1:53.6, M22 1:53.9, N19 2:16.8, N22 2:12.9;
 Kalevan kisat (Jyväskylä) men's final 1:50.88–1:53.59 (2nd an athlete of 20, 4th of 21, 7th of 18), slowest heat runner 1:58.5;
-women 2:01.6 … final 8th 2:15.2. Finland's 2025 top 20 (all ages): men 1st 1:47.09, 10th 1:51.12, 20th 1:53.12 (an 18- and a
+women 2:01.6 … final 8th 2:15.2. (The slowest heat time is not the entry level: **SUL's SM standards 2025** give Kalevan kisat 800 m
+direct entry for 1:53.50 men / 2:11.00 women (1 May of the year before to the entry deadline), a waiting list for at least 1:55.50 /
+2:15.00 run in the same calendar year, filled by ranking up to the target of 27 runners per sex; indoor times count as they are,
+club-only meets (seurakisat) do not. The 16–22 youth SM have no standards. Check-in 2026-10-11, `docs/AUDIT.md`.) Finland's 2025 top 20 (all ages): men 1st 1:47.09, 10th 1:51.12, 20th 1:53.12 (an 18- and a
 17-year-old under 1:51); women 2:01.13 / 2:08.84 / 2:11.75 (a 15-year-old 20th). Yearly improvement of the top 100 Norwegian
 juniors per age (Tønnessen et al. 2015, PLoS ONE 10:e0129014): boys 14→15 5.2 s, 15→16 3.2, 16→17 2.3, 17→18 1.5; girls 2.2 /
 1.6 / 1.5 / 0.6 s. The bands (1st / 8th / 20th of a birth year): boys 15: 2:00–2:06 / 2:09–2:15 / 2:16–2:23, 17: 1:51–1:57 /
@@ -226,8 +229,14 @@ juniors per age (Tønnessen et al. 2015, PLoS ONE 10:e0129014): boys 14→15 5.2
 | Senior final gaps 1→2 / 4 / last (`race_shape` rows 5 and 7, age 25) | 0.8 / 2.2 / 5.9 s; 0.6 / 1.7 / 4.6 s | 0.6 / 2.0 / 5.0 s; 0.5 / 1.4 / 4.1 s | Kalevan kisat 2026 0.06 / 1.1 / 4.1 s |
 | Healthy race-day spread at 19–21 | 2.0–2.5 % | 1.9–2.2 % | elite ~1.0 % |
 
-- A talented player (potential ~17.5) now runs ~2:05 at 17 (the real M17 final), ~2:03 at 19 and ~1:59 at 21 (near the Kalevan kisat
-  entry level); most rivals level off at 2:05–2:15 (boys), as most real juniors do. The player's hidden potential (13–18) is above the
+- A talented player (potential ~17.5) now runs ~2:05 at 17 (the real M17 final), ~2:03 at 19 and ~1:59 at 21 (~~near the Kalevan kisat
+  entry level~~: wrong, the direct standard is 1:53.50 and the waiting list 1:55.50, see above); most rivals level off at 2:05–2:15
+  (boys), as most real juniors do. **Check-in 2026-10-11 (11 seasons, ages 14–25, `career_check -- 4 trained,average 11` and
+  `-- 8 random 11`, norace, Balanced):** no player of 16 reached the Kalevan kisat standard; trained boys with potential 17.4 ran
+  2:04.8 at 21 and 2:00.6 at 25 (76th percentile), the best of all 2:00.0; the birth year's best rivals 1:49–1:51 at 25. The start
+  decides: a top-potential boy goes from the 67th to the 76th percentile in ten years, his attributes at 25 still 1–6 below his
+  potential; an average story never catches a trained one (0 of 4 pairs at 25). The late rate is realistic (21 → 25 ~2.7 %; Haugen
+  et al. 2018: ~3.4 % over the 5 years before the peak, 800 m men peak at 24.5). To fix in its own balance session (ROADMAP). The player's hidden potential (13–18) is above the
   rivals' typical ceiling (13 ± 2.5), so a player who trains every day on the coach's plan usually ends in the top third of the birth
   year: a career game about a serious athlete.
 - `training_balance.gd -- 0`: fingerprints changed by exactly +0.180430390 in every row (attributes only; fatigue identical) = the

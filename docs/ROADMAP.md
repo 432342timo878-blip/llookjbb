@@ -279,6 +279,22 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       do; check that the experience trade is fair (a beginner, pool 6, catches a trained athlete, pool 16, by about
       16–17, and neither always wins); in the user's season the rivals' middle grew ~1.9 ability, the player ~1.2
       (potential 13.2), so the player fell from the bottom quarter to the bottom tenth. *(Opus)*
+- [x] **Check-in 2026-10-11** (realism audit since the last check-in + project review, `docs/AUDIT.md` "Check-in
+      (2026-10-11)"): found that a top talent never reaches senior national level (16 careers to age 25 on the coach's
+      plan: none at the Kalevan kisat standard 1:53.50, the best 2:00.0) and that the rival pool's youth leaders stay
+      leaders far more often than real ones; fixed the calendar lookups (`week_for` 993 → 201 µs, its check was flaky
+      since step 7), moved the indoor-bend number into `races.json`, corrected GDD 4.2 (SUL's real Kalevan kisat entry
+      rule). Order agreed below. Next check-in at the end of M2.
+- [ ] **Talent balance: can a talent make it? (agreed 2026-10-11, before Coaching + School):** measure first with
+      `career_check.gd` over 11 seasons (ages 14–25) on the Steady / Balanced / Ambitious plans and a best-case plan,
+      with races run; agree targets with the user (the shape: a top talent, potential 17+, on a decent plan reaches the
+      top 3 of the birth year by 19–21 and the Kalevan kisat standard by about 21–23; an average one national youth
+      finals; a low one club level) and compare with real Finnish careers; then tune what the measurements point at
+      (the start deciding everything, potential barely used, trainability barely showing, the average-vs-trained
+      pairs never level). Also the rivals' growth churn (late bloomers, early plateaus; real: ~20 % of top U18
+      middle-distance runners reach the senior top, Brustio et al. 2024). Coaching later adds a smaller layer on top
+      (coach quality and fit: finalist vs medallist), so the club coach is never a trap. Prove that the first season's
+      balance moves only as intended (`training_balance`, `season_check`). *(Opus)*
 
 Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepares the coach's plans). Agreed
 2026-10-10: Coaching and School are designed together (both compete for the athlete's time), after step 7:
@@ -291,7 +307,10 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 - [ ] School (grades, exams vs meets, Finnish school calendar)
 
 After Coaching and School (agreed order 2026-10-10): athlete reputation, the Statistics tab, the pre- and post-race
-studios (with the race ceremony), audio. Details in the ideas backlog.
+studios (with the race ceremony), audio. Details in the ideas backlog. Check-in 2026-10-11: the talent balance session
+comes first (above), then the Coaching + School design (with "Never stale", mental training and moods, the written coach
+dialogue and 2–3 light-minigame ideas for the user to judge), then **more meets** (backlog "More meets in the calendar";
+independent research + data, so it may run beside the design).
 
 ## Ideas backlog (from the user, 2026-10-06; placement is Claude's proposal, not yet designed)
 - ~~**Ctrl+S to save**~~ — done in M2 step 4 (same as the Save button, "Saved ✓", desktop only).
@@ -315,7 +334,11 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
 - **More meets in the calendar (user, 2026-10-07):** add all the national and international meets that can be found, on top of
   the SUL Arvokilpailukalenteri 2027 PDF (https://www.yleisurheilu.fi/wp-content/uploads/2026/05/Arvokilpailukalenteri-2027.pdf)
   already used. Real dates with sources; where unknown, realistic estimates marked `estimated`. Also fills in more `main` meets
-  for the season model (GDD 4.8). Research + data task. *(Sonnet)*
+  for the season model (GDD 4.8). Research + data task. *(Sonnet)* **Placed (user, check-in 2026-10-11):** after the talent
+  balance session, beside the Coaching + School design (independent); new meets change which races careers run, so
+  measure before / after (`career_check`, `season_check`). SUL's real Kalevan kisat entry rule (direct 1:53.50 / 2:11.00,
+  waiting list 1:55.50 / 2:15.00 in the same year, target 27 per sex, `docs/AUDIT.md`) goes into the data when seniors
+  can enter it (M4).
 - [x] **In-game help per menu (user, 2026-10-07; built 2026-10-07, GDD 5 "Help"):** not a full tutorial: every screen / tab (Overview, Training, Calendar, Rankings, Report,
   day editor, race screen, season plan later) gets a "?" / "How this works" button that opens a short help panel for that screen only,
   when the player wants it. The game is deep (training, health, form, periodization), so the help text explains each concept in plain
@@ -433,6 +456,12 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
   (7) **variety in the races themselves:** weather, venues, the 1500 m / 400 m / relays / cross-country (D6);
   (8) a **"never twice" rule checked by a tool** (as `commentary_check` does for the commentary).
   Placement: the Coaching + School design session (it designs the days), then each piece in its own build step. *(Opus)*
+  **Decided at the check-in 2026-10-11:** D1 / D2 stay (no dexterity; sessions played through with decisions are
+  fine), but the user is still interested in light minigames "if we can figure out what and the proper way to
+  implement them" (the not-getting-bored factor): the design session brings 2–3 concrete, realistic, phone-friendly
+  ideas for the user to judge. Rival churn is split: late bloomers and plateaus in the talent balance session,
+  dropouts and rivals' life events here and with the rival profiles (the pool's top 20 at 17 stays top 20 at 21 77 %
+  of the time; real ~20–30 %, `docs/AUDIT.md`).
 - **More attributes, mental training (user, 2026-10-11):** "Are we sure we don't need more athlete attributes? Mental,
   physical? Maybe the mental side could use more training options. Keep them realistic (what athletes train in real
   life)." Today: 10 physical, 2 technical, 7 mental, 6 hidden; the mental ones grow only from races (consistency never
@@ -477,7 +506,8 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
   (GDD 1–2) and the roadmap, what is still missing, what is fragile or slow (tools, checks, code), Claude's honest
   feedback and opinions, and an open dialogue about priorities. Claude's proposed rhythm: after each larger step (next:
   after R4, after step 7, at the end of M2), or whenever the user asks. Output: a dated section in `docs/AUDIT.md`
-  + roadmap changes the user agrees to. *(Opus)* First one done 2026-10-10 (`docs/AUDIT.md`); next after step 7.
+  + roadmap changes the user agrees to. *(Opus)* First one done 2026-10-10 (`docs/AUDIT.md`); the second after step 7
+  done 2026-10-11; next at the end of M2.
 - **Zoom in on the race (user, 2026-10-09; parked → M3, check-in 2026-10-10):** on the race screen the dots sometimes look far away. Let the player zoom
   in on the field (e.g. a camera that follows the pack or the player, zoom buttons / pinch on a phone, 44 px, no
   hover), keeping the whole-track view as an option. Mind `race_perf` (the stadium is drawn once; the dots view is

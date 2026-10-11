@@ -162,6 +162,8 @@
   },
   "heat_ease": {"_note": "Heats with automatic places (R2; 'running to qualify', GDD 4.3.1 decision 33): a runner in an automatic place at least `margin` metres ahead of the first runner outside them eases to speed x their speed in the last `from` metres (rolled per runner), and keeps easing while that runner is at least `keep` metres behind.", "from": [50.0, 80.0], "margin": 4.0, "keep": 1.5, "speed": 0.92},
   "indoor_break_bends": 2,
+  "_indoor_bend": "Indoors (a 200 m track) every runner's speed on a bend is x indoor_bend_speed (tight bends; bends are about half of a 200 m lap, so ~0.8 % slower over 800 m). Was a constant in race.gd until the check-in 2026-10-11.",
+  "indoor_bend_speed": 0.985,
   "_events": "Race events (R2): a kick that empties the reserve with more than kick_dying_to_go metres left is 'kick dying'; a new leader counts as a lead change when the old one had led lead_change_s seconds; adjacent finishers under close_finish_s apart are a close finish, under photo_finish_s a photo finish.",
   "kick_dying_to_go": 30.0, "lead_change_s": 2.0, "close_finish_s": 0.3, "photo_finish_s": 0.05
  },

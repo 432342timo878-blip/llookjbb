@@ -17,8 +17,8 @@ extends RefCounted
 const DISTANCE := 800.0
 const LANE_W := 1.22
 const DT := 0.1
-## Indoor bends are tight: runners lose a little speed on them.
-const INDOOR_BEND_SPEED := 0.985
+## Indoor bends are tight: runners lose a little speed on them (races.json engine.indoor_bend_speed, set in setup).
+var indoor_bend_speed := 0.985
 
 # Track geometry (set in setup). Distances are along the lane 1 measuring line, 30 cm outside the kerb.
 var indoor := false
@@ -222,6 +222,7 @@ func setup(entrants: Array, gender: String, big_meet: bool, player_fatigue: floa
 	_own_floor = float(_eng.own_floor)
 	_surge_max = int(_eng.moves.max_per_runner)
 	_surge_after = float(_eng.moves.after_break)
+	indoor_bend_speed = float(_eng.get("indoor_bend_speed", 0.985))
 	var e_cfg := _eng
 	if indoor_track:
 		# A standard 200 m indoor track with 6 lanes.
@@ -622,7 +623,7 @@ func _move(r: Runner, order: Array[Runner]) -> void:
 
 	var progress := r.v * DT
 	if indoor and is_bend(r.d):
-		progress *= INDOOR_BEND_SPEED       # tight indoor bends slow everyone down
+		progress *= indoor_bend_speed       # tight indoor bends slow everyone down
 	if r.d < break_line:
 		r.d += progress                     # in lanes: the stagger makes every lane equal
 	else:

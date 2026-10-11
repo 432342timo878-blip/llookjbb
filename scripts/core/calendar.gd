@@ -12,18 +12,23 @@ static func meets_between(from: Dictionary, to: Dictionary) -> Array:
 	var result := []
 	var lo := date_key(from)
 	var hi := date_key(to)
-	for m in _all_meets():
-		var k := date_key(m.date)
+	var meets := _all_meets()
+	_index(meets)
+	var i := _date_keys.bsearch(lo) if _index_sorted else 0   # (the first meet on or after `from`)
+	while i < meets.size():
+		var k := _date_keys[i]
+		if k > hi and _index_sorted:
+			break
 		if k >= lo and k <= hi:
-			result.append(m)
+			result.append(meets[i])
+		i += 1
 	return result
 
 
 static func get_meet(key: String) -> Dictionary:
-	for m in _all_meets():
-		if m.key == key:
-			return m
-	return {}
+	var meets := _all_meets()
+	_index(meets)
+	return _by_key.get(key, {})
 
 
 ## "M15" / "N14" etc. for the competition year.
@@ -169,6 +174,31 @@ static var _meets_cache: Array = []
 ## calendar years (364 days for 1 and 2 seasons, as before; 1099 = 157 weeks for 3).
 static func season_offset(season: int) -> int:
 	return 7 * roundi(365.2425 * season / 7.0)
+
+
+## Lookups over the cached meets: the first meet per key and every meet's date key (check-in 2026-10-11: with 21
+## seasons of meets since step 7, walking the whole list on every call made week_for ~2.5x slower). Rebuilt whenever
+## the cache is another array (tools may set _meets_cache themselves); the answers are the same as walking the list.
+static var _index_of: Array = []
+static var _by_key: Dictionary = {}
+static var _date_keys: PackedInt64Array = PackedInt64Array()
+static var _index_sorted := true
+
+
+static func _index(meets: Array) -> void:
+	if is_same(meets, _index_of) and _date_keys.size() == meets.size():
+		return
+	_index_of = meets
+	_by_key = {}
+	_date_keys = PackedInt64Array()
+	_index_sorted = true
+	for m in meets:
+		var k := date_key(m.date)
+		if not _date_keys.is_empty() and k < _date_keys[-1]:
+			_index_sorted = false
+		_date_keys.append(k)
+		if not _by_key.has(m.key):
+			_by_key[m.key] = m
 
 
 static func _all_meets() -> Array:

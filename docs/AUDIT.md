@@ -205,3 +205,140 @@ used is the one quoted in the audit above. No source was found on who streams th
   Ntoumanis & Thøgersen-Ntoumani 2010, controlling interpersonal style in a coaching context (J Sport Exerc Psychol).
 - Our tools: `commentary_check.gd -- 50`, `race_rounds.gd`, `day_engine_check.gd`, `help_check.gd` (headless and
   windowed); R5's `race_value.gd` numbers (GDD 4.3.1 "Built (step R5)").
+
+# Check-in (2026-10-11): realism audit since the last check-in + project review
+
+The second regular check-in, due after step 7. Part 1 audits what was built since the check-in above: the fix session
+(GDD 4.3.1 "Built (check-in fixes)"), the character-creation points pool (GDD 4.1.1 "Built (points pool)"), the
+playtest fixes (GDD 4.3.1 "Built (playtest fixes)") and step 7, the multi-year check (GDD 4.2 "Multi-year check").
+Part 2 reviews the project, with the 2026-10-11 backlog notes ("Never stale", "More attributes, mental training", the
+coach chat). The user's answers are at the end. Same marks: ✓ matches, ≈ simplification, ✗ gap.
+
+**Checks run first** (stderr read too): `run_all_checks.bat` **11 of 12 passed**; `season_plan_check` failed its speed
+test, "week_for is cheap (< 1 ms)": 3046 µs per call with three other Godot processes running. Earlier runs of the same
+check: 362–381 µs (fix session, points pool, playtest fixes), **935 µs at step 7** (passed by 65 µs), 993 µs alone
+today. Cause: step 7's 21 seasons of meets (`Calendar.SEASONS_AHEAD` 20, was 2) and `Calendar.get_meet` /
+`meets_between` walking the whole list on every call. No SCRIPT ERROR / Parse Error in any output; only the usual
+"ObjectDB instances leaked at exit" warnings of tools that quit.
+
+**What could and could not be verified.** Read: SUL's *SM-kisojen tulosrajat ulkoratakaudella 2025* (the official PDF,
+with Poppler), Tønnessen et al. 2015 (full text), Haugen et al. 2018 (accepted manuscript), the abstracts of Hopkins
+2005, Hopkins & Hewson 2001, Kearney & Hayes 2018 and Brustio et al. 2024. Not found: SUL's 2026 standards PDF (the
+data's 14–15 standards say they are from it; the 2025 numbers are 0.5 s off for M15 only), the Nuorten SM 16–17 2026
+result pages, anything about the Nuorten SM stream crew.
+
+**New measurements** (scratchpad runs, not in the project): `career_check.gd -- 4 trained,average 11 0 rows norace` and
+`-- 8 random 11 0 rows norace` (16 careers, 11 seasons = ages 14–25, Balanced, races finished without running them); a
+throwaway rank-stability tool on the rival pool alone (20 pools of 150 per gender, `Rivals.train_week`, 11 seasons).
+
+## Part 1: the table
+
+| Area | Item | Verdict | Source / measurement |
+|---|---|---|---|
+| Step 7 | "~1:59 at 21, near the Kalevan kisat entry level"; "slowest heat runner 1:58.5" as the level | ✗ (wording) → **fixed in the GDD** | SUL SM-tulosrajat 2025: direct entry **1:53.50 / 2:11.00** (1.5. of the year before to the deadline), waiting list at least **1:55.50 / 2:15.00** in the same calendar year, filled by ranking to a target of **27** per sex; the slowest heat time came from a runner with a faster season best. No data uses it yet (Kalevan kisat is watch-only) |
+| | Indoor times for the standards | ✓ | SUL 2025: "Sisäradoilla tehdyt tulokset hyväksytään ... ajat otetaan huomioon sellaisinaan" (a hall track up to 400 m) |
+| | Club-only meets (seurakisat) for the standards | ≈ (later, M4) | SUL 2025 rule 3: Kalevan kisat standards only from statistics-valid meets in kilpailukalenteri.fi, not club meets; the game's open club meets are a stand-in for both |
+| | 14–15 SM standards; no standards at the 16–22 SM; max 3 events, 1 without the standard | ✓ | SUL 2025 (M15 2:20.50, N15 2:35.00, M14 2:28.00, N14 2:36.00; the data's 2026 values 2:21.00 / 2:35 / 2:28 / 2:36); "M/N 16-17-19-22-sarjojen SM-kilpailut: ei käytetä tulosrajoja" |
+| | Yearly improvement of the top 100 juniors (Tønnessen 2015) | ✓ | Table 1: boys 14→15 5.2 s, 15→16 3.2, 16→17 2.3, 17→18 1.5; girls 2.2 / 1.6 / 1.5 / 0.6 (exactly the numbers used) |
+| | Puberty window: natural growth full until a year after the peak, gone 3 years later | ✓ | Strength spurts at the growth peak or up to ~1 year after it (Beunen et al. 1988: explosive strength 6 months after; INEX study 2021: at or within 6 months); later strength gains come from training |
+| | The player's growth 21 → 25 | ✓ | ~2.7 % (ability 12.04 → 12.83, trained boys) vs Haugen et al. 2018: middle-distance runners ~3.4 % over the 5 years before their peak |
+| | **A top talent never reaches senior national level** | **✗ (big)** | 16 careers to 25: nobody at the Kalevan kisat standard (≈ ability 14.9 men, 14.1 women); trained boys (potential 17.4 of max 18) 2:04.8 at 21, 2:00.6 at 25 (76th percentile); the best of all 2:00.0; trained girl (potential 16.3) 2:15.6 at 25; the birth year's best rivals 1:49–1:51. The start decides: 67th → 76th percentile in ten years, attributes at 25 still 1–6 below the potential (strength 11.3, lactate 12.4, speed 13.4). The GDD's "~1:59 at 21" was optimistic (2:04–2:05 in these runs). Only Balanced tried |
+| | Experience trade (pairs) | ✓ beginners / ✗ average vs trained | Beginner (pool 6) catches the trained athlete at ~17 (step 7); an average story (pool 12, no novice bonus) never does: −0.88 at 15 → −0.58 at 25, ahead in 0 of 4 pairs. The higher trainability barely shows: the start decides (same root as above) |
+| | Youth success vs senior success in the rival pool | ✗ (medium) | Game: top 20 at 17 still top 20 at 21 **77 %** boys / 83 % girls (top 20 at 15 → 21: 50 / 64 %). Real: Brustio et al. 2024, ~19–21 % of top U18 middle- and long-distance runners reach the senior top (7× the chance of the others); Kearney & Hayes 2018, only 9 % of senior top-20 men were top 20 at U13, weak to moderate correlations up to U17–U20. Not the same measure (dropouts, older senior fields), but the direction is clear: rivals never quit, stall early or bloom late |
+| | Rivals' late years | ✓ | Best of a birth year 1:51.9 at 21 → 1:49.8 at 25, 20th 2:00.3 → 1:57.9 (still improving slowly, as the real ones) |
+| | Peak age and decline | ✗ (later, M4 / D19) | 800 m men peak at 24.5 y, women's middle distance 26.8 y (Haugen 2018); the game has no peak and no decline for anyone |
+| | Race-day spread, youth (after the 25 % cut) | ✓ | 2.1–2.4 % (the user's athlete, watched / quick). Hopkins 2005: elite up to 1500 m 1.0 % (top half 0.8, bottom half 1.1); Hopkins & Hewson 2001: slower runners ×1.0–2.3, younger ×1.1–1.8 |
+| | Race-day spread, seniors | ✗ (open, as in 4.2) | ~2 % at 19–21 vs ~1 % elite |
+| | Consistency comes from experience | ✗ (design) | Hopkins & Hewson put most differences in variability down to competitive experience and attitude; the game's consistency never grows (the senior narrowing is an age factor) → the mental attributes design |
+| | Real championship fields; rival injuries ~4 % out | ✓ | From the 2026 entries (not re-read); Mann et al. 2021: time loss ~4 % of weeks |
+| Points pool | Pool from training years, experience costs trainability | ✓ (idea) / ≈ (sizes) | Well-trained athletes respond less (HERITAGE, earlier audit); the sizes are tuning; see the pairs above |
+| Playtest fixes | SB on the first time of a year; PB on a first ever time | ✓ / ≈ | The first mark of a season is its best (results convention); a debut PB is a choice |
+| | One PB / SB for indoor and outdoor | ≈ | World Athletics lists short track separately ("sh"), Finnish statistics keep hall lists apart; SUL's standards take indoor times as they are |
+| | Indoor tracks slower | ✓ | Bends ×0.985, about half of a 200 m lap → ~0.8 % over 800 m (the number moved to `races.json`, see the fixes) |
+| | The kick is the player's call; Quick result follows a kick plan; no contradicting shouts; verdicts against the athlete's own PB / SB | ✓ (design) | The user's decisions; a coach judges a race against the athlete's own level |
+| Check-in fixes | Section and heat places never a medal; the 10 s verdict "so far"; the crew knows the favourites | ✓ | SUL MK-säännöt 4.5 (previous check-in) |
+| | Nuorten SM = one commentator | unverified | No source on who streams it |
+| Code | `week_for` 2.5× slower since step 7, its check flaky | ✗ → **fixed** | 993 → **201 µs** alone (see the fixes) |
+| | `INDOOR_BEND_SPEED` a constant in `race.gd` | ✗ (small) → **fixed** | CLAUDE.md: every race number in `races.json` |
+| | Rivals' weekly training uses the global random numbers | ≈ (still open) | From the last check-in: a loaded game's rivals don't continue bit for bit |
+
+## Fixes made in this session (user's OK, 2026-10-11; no change to how the game plays)
+
+- **Calendar lookups.** `Calendar._index`: the first meet per key (`_by_key`) and every meet's date key in order
+  (`_date_keys`, binary search in `meets_between`), rebuilt whenever the cache is another array (`career_check` sets
+  `_meets_cache` itself), with a fallback to the full walk if a cache is ever unsorted. `week_for` 993 → 201 µs.
+- **`races.json` `engine.indoor_bend_speed`** 0.985 (was the constant `INDOOR_BEND_SPEED` in `race.gd`).
+- **GDD 4.2** corrected: the Kalevan kisat rule from SUL's 2025 standards and the 11-season result.
+- **Proof:** `training_balance.gd -- 0` (fingerprints 204.145691989 / 14.102831594 / 1226.006524079) and
+  `race_shape.gd -- 30` (all 8 rows, the indoor one included) identical to the digit before and after; `season_plan_check`
+  ALL CHECKS PASSED alone; `run_all_checks.bat` after the fixes: **ALL 12 CHECKS PASSED**, no SCRIPT ERROR in any
+  output, `week_for` 179 µs.
+
+## Part 2: project review (Claude's honest opinion)
+
+- **Where we are.** M2 part 1 is complete: day-by-day, health, periodization, the race (R1–R5, meet formats, R4) and
+  now the multi-year curves. Since the last check-in five sessions in one day (fix session, points pool, playtest
+  fixes, step 7, the backlog notes) all made the numbers make sense; none touched the playtest's headline ("very
+  bored, wouldn't return after one season"). Coaching + School, designed together, is the right next design.
+- **The talent finding matters for the career's promise** (GDD 1: from 14 to retirement, all events, the real world):
+  if a top talent can't reach Kalevan kisat by 25, the game has no senior career to grow into. It also matters for
+  Coaching: the coach's season goals ("what makes the coach happy", the playtest) need a believable path.
+- **Never stale.** D1 / D2 (no dexterity) are what make this an FM-style game that works on a phone; sessions played
+  through with decisions (the race engine reused), tests that reveal progress, standing orders and storylets with
+  memory fight staleness without breaking them. The strongest anti-staleness lever is a world that changes: rivals
+  who quit, stall, bloom late, move clubs (the churn finding above).
+- **More attributes.** Not many more numbers: make consistency and composure grow with racing experience and mental
+  training (it is also the real reason seniors are more consistent), and add confidence and motivation as moods that
+  move week to week (they give Coaching and School something to act on). Physical: enough for now.
+- **The coach chat** (decided: written dialogue, no AI): it lives or dies by the storylet system; design both at once.
+- **Fragile:** (1) a speed check that passes by microseconds (fixed now); (2) `CLAUDE.md` grew 44.6 → 50.8 KB in a day
+  and is read every session (still mostly build history that the GDD holds); (3) the GDD is 238 KB, its "Built"
+  sections are build logs; (4) the multi-year balance was measured on one plan only, and no tool measured past 21
+  before today; (5) the rivals' global random numbers. Code: 14 240 lines of game code (was 12 977), 9 980 of tools
+  (8 381); `race.gd` 1 691 lines, the rest under 1 000.
+- **Missing against the vision:** D9 (coaching, money, media, motivation, nutrition, relationships), D17 school, D18
+  hired coaches with a veto, D6 other events, D20 real senior athletes and the world simulation, M3 stadium view,
+  peak age and decline (D19).
+
+## Agreed with the user (2026-10-11)
+
+- **The talent fix = both, with clear roles.** First its own balance session (Opus): measure the Ambitious plan and a
+  best-case plan too, agree targets with the user (the shape: a top talent on a decent plan reaches the top of the
+  birth year and Kalevan kisat by about 21–23, an average one national youth finals, a low one club level), then tune,
+  including late bloomers and plateaus for rivals (churn, growth part). Then Coaching adds the realistic layer on top:
+  coach quality and fit, better plans and good choices move the outcome by a few percent (finalist vs medallist), so
+  the club coach is never a trap.
+- **More meets** (national and international, real dates with sources): its own research + data session after the
+  talent session (it changes which races careers run, so it is measured too); ROADMAP backlog "More meets in the
+  calendar".
+- **Minigames:** D1 / D2 stay (no dexterity; played-through sessions with decisions are fine), but the user is still
+  interested in light minigames if a proper, realistic form is found: the Coaching + School design brings 2–3
+  concrete ideas to judge.
+- **Rival churn split:** growth (late bloomers, plateaus) in the talent session; dropouts and rivals' life events with
+  the rival profiles and the "Never stale" storylets.
+- **Small fixes now:** done (above).
+- **Order of work:** (1) the talent balance session; (2) Coaching + School designed together (with "Never stale",
+  mental training and moods, the written coach dialogue, the minigame ideas); (3) more meets (research + data; may
+  run beside the design since it is independent); the race-controls idea in its own design session; then reputation,
+  statistics, studios, audio.
+- **Next check-in:** at the end of M2 (after Coaching + School are built), or whenever the user asks.
+
+## Sources (this check-in)
+
+- SUL, *SM-kisojen tulosrajat ulkoratakaudella 2025* (vahvistettu 25.2.2025),
+  yleisurheilu.fi/wp-content/uploads/2025/02/SM-tulosrajat-2025.pdf.
+- Tønnessen E et al. 2015, Performance development in adolescent track and field athletes according to age, sex and
+  sport discipline, PLoS ONE 10(6): e0129014 (PMC4456243), Table 1.
+- Haugen TA et al. 2018, Peak age and performance progression in world-class track-and-field athletes, IJSPP.
+- Hopkins WG 2005, Competitive performance of elite track-and-field athletes: variability and smallest worthwhile
+  enhancements, Sportscience 9: 17–20; Hopkins WG & Hewson DJ 2001, Variability of competitive performance of
+  distance runners, MSSE 33(9): 1588–1592.
+- Kearney PE & Hayes PR 2018, Excelling at youth level in competitive track and field athletics is not a prerequisite
+  for later success, J Sports Sci 36(21): 2502–2509; Brustio PR et al. 2024, Performance pathways in elite middle- and
+  long-distance track and field athletes: the influence of a successful youth, J Sci Med Sport.
+- Beunen G et al. 1988 (adolescent growth and motor performance, Belgian boys); Muscular strength spurts in adolescent
+  male basketball players: the INEX study, 2021 (PMC7831329).
+- Athletics abbreviations (PB, SB, "sh" = short track), Wikipedia; World Athletics athlete profiles (short-track events
+  listed apart).
+- Our tools: `run_all_checks.bat` (twice), `career_check.gd` (11 seasons), `season_plan_check.gd` alone,
+  `training_balance.gd -- 0` and `race_shape.gd -- 30` before / after; a rank-stability scratch tool.
