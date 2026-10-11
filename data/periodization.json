@@ -166,6 +166,32 @@
     "race_season": {"days": [[], ["intervals_800"], ["strength", "speed_strides"], ["easy_run", "drills"], ["mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "easy", "easy", "normal", "normal", "easy"]},
     "transition": {"days": [["mobility"], [], ["easy_run"], [], ["easy_run"], [], ["easy_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
     "autumn_general": {"days": [["easy_run", "drills"], ["club_session"], ["strength"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "normal", "easy", "normal"]}
+   },
+   "by_age": {
+    "u18": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["club_session"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run"], ["strength", "hill_sprints"], ["fartlek", "drills"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "speed_strides"], ["club_session"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800"], ["strength", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "easy", "easy", "easy", "normal", "easy"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]}
+    }},
+    "u20": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["club_session"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["club_session"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "easy", "easy", "easy", "normal", "easy"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]}
+    }},
+    "adult": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "mobility"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "mobility"], ["club_session", "speed_strides"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session", "speed_strides"], ["long_run"]], "intensity": ["normal", "normal", "easy", "easy", "easy", "normal", "easy"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "mobility"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "easy", "easy", "normal", "normal"]}
+    }}
    }
   },
   "balanced": {
@@ -181,6 +207,32 @@
     "race_season": {"days": [[], ["intervals_800"], ["strength", "speed_strides"], ["fartlek", "drills"], ["mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "easy"]},
     "transition": {"days": [["mobility"], [], ["easy_run"], [], ["easy_run"], [], ["easy_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
     "autumn_general": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["mobility"], ["long_run"], []], "intensity": ["easy", "normal", "normal", "normal", "normal", "normal", "normal"]}
+   },
+   "by_age": {
+    "u18": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["normal", "normal", "normal", "normal", "easy", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["club_session"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "normal", "normal", "easy", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run"], ["strength", "hill_sprints"], ["fartlek", "drills"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "normal", "normal", "easy", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "speed_strides"], ["club_session"], []], "intensity": ["easy", "normal", "normal", "normal", "easy", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800"], ["strength", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "normal", "normal", "easy", "normal", "easy"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session"], ["strength", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["normal", "normal", "normal", "normal", "easy", "normal", "normal"]}
+    }},
+    "u20": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["club_session"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek"], ["easy_run", "speed_strides"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek"], ["easy_run", "mobility"], ["club_session"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session"], ["long_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run"], ["easy_run", "mobility"], ["long_run"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]}
+    }},
+    "adult": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "mobility"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "mobility"], ["club_session", "speed_strides"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["easy_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session", "speed_strides"], ["long_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "mobility"], ["long_run", "strength"], []], "intensity": ["easy", "normal", "easy", "normal", "easy", "normal", "normal"]}
+    }}
    }
   },
   "ambitious": {
@@ -196,7 +248,43 @@
     "race_season": {"days": [[], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session"], ["long_run", "strength"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
     "transition": {"days": [["mobility"], [], ["easy_run"], [], ["easy_run"], [], ["easy_run"]], "intensity": ["normal", "normal", "easy", "normal", "easy", "normal", "easy"]},
     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["fartlek"], ["mobility"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]}
+   },
+   "by_age": {
+    "u18": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "drills"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["long_run", "drills"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["normal", "hard", "normal", "hard", "normal", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["club_session", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "drills"], ["easy_run", "mobility"], ["club_session", "speed_strides"], ["long_run", "strength"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["fartlek", "easy_run"], ["mobility"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]}
+    }},
+    "u20": {"templates": {
+     "general_base": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "drills"], ["long_run", "strength"], []], "intensity": ["normal", "hard", "normal", "hard", "normal", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["club_session", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "drills"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["normal", "hard", "normal", "hard", "normal", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "drills"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["club_session", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "mobility"], ["club_session", "speed_strides"], ["long_run", "strength"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "mobility"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]}
+    }},
+    "adult": {"templates": {
+     "general_base": {"days": [["easy_run", "strength"], ["club_session", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "drills"], ["long_run", "strength"], []], "intensity": ["normal", "hard", "normal", "hard", "normal", "normal", "normal"]},
+     "indoor_specific": {"days": [["easy_run", "strength"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["club_session", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "spring_base": {"days": [["easy_run", "strength"], ["tempo_run", "strength"], ["easy_run", "hill_sprints"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["long_run", "strength"], []], "intensity": ["normal", "hard", "normal", "hard", "normal", "normal", "normal"]},
+     "pre_competition": {"days": [["easy_run", "strength"], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "speed_strides"], ["club_session", "speed_strides"], []], "intensity": ["normal", "normal", "normal", "hard", "normal", "normal", "normal"]},
+     "race_season": {"days": [[], ["intervals_800", "strength"], ["tempo_run", "speed_strides"], ["fartlek", "easy_run"], ["easy_run", "mobility"], ["club_session", "speed_strides"], ["long_run", "strength"]], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]},
+     "autumn_general": {"days": [["easy_run", "drills"], ["club_session", "strength"], ["easy_run", "speed_strides"], ["tempo_run", "easy_run"], ["easy_run", "mobility"], ["long_run", "strength"], []], "intensity": ["normal", "normal", "normal", "normal", "normal", "normal", "normal"]}
+    }}
    }
   }
+ },
+ "age_groups": {
+  "_note": "Talent session 2026-10-11 (GDD 4.2 'Talent balance', the user's choice 3A): the coach's plans grow with the athlete. A season's age group comes from the age class of its summer (the summer's year minus the birth year): the first group whose max_age it fits. Each variant's by_age.<group>.templates replaces its base templates for that group (a phase missing there uses the base one; the base templates are the 14-15 group's, so a new career's first two seasons are unchanged); ramp_weeks stay the variant's. name = shown on the plan cards; text = what changes, shown when a season is the first of its group (the autumn offer and the Training tab's plan cards). caption = the line over the plan cards ({name} = the group's name).",
+  "caption": "The coach's plans for ages {name}.",
+  "groups": [
+   {"id": "u16", "max_age": 15, "name": "14–15", "text": ""},
+   {"id": "u18", "max_age": 17, "name": "16–17", "text": "New for 16–17: an extra easy run and a second speed session in the race-specific weeks."},
+   {"id": "u20", "max_age": 19, "name": "18–19", "text": "New for 18–19: strength twice a week, tempo runs and more easy running."},
+   {"id": "adult", "max_age": 999, "name": "20 and older", "text": "New for adults: your first double days (an easy run beside the quality session) and two 800 m sessions a week before and in the race season."}
+  ]
  }
 }

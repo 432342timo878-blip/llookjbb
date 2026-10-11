@@ -285,7 +285,15 @@ Part 1: day-by-day mode, injuries & health (design: GDD 4.5–4.7). One session 
       leaders far more often than real ones; fixed the calendar lookups (`week_for` 993 → 201 µs, its check was flaky
       since step 7), moved the indoor-bend number into `races.json`, corrected GDD 4.2 (SUL's real Kalevan kisat entry
       rule). Order agreed below. Next check-in at the end of M2.
-- [ ] **Talent balance: can a talent make it? (agreed 2026-10-11, before Coaching + School):** measure first with
+- [x] **Talent balance: can a talent make it? (done 2026-10-11, GDD 4.2 "Talent balance"):** measured 64 careers to 25 on
+      Steady / Balanced / Ambitious / a best-case plan (no top talent reached Kalevan kisat; the 800 m-specific qualities barely
+      responded, the age brake hit everyone, the plans never grew, the rivals' order was fixed at 14); targets agreed with real
+      sources; built the user's choices: a dose per attribute, the age brake only near the ceiling, the coach's plans by age group
+      (14–15 / 16–17 / 18–19 / adults), rivals' churn (drifting ceilings, bloom ages, good and flat years). Now top-talent
+      boys on Balanced are 4th–7th of the birth year at 21 and 3 of 4 under 1:53.50 by 23 (Ambitious: all by 21); rivals'
+      top 20 kept 17 → 21 58–62 % (was 75–82 %).
+      Open: the plans differ by only 1–2 s at 21 (Coaching), ~2 races a year from 23 (more meets), dropouts (rival profiles).
+      Original task: measure first with
       `career_check.gd` over 11 seasons (ages 14–25) on the Steady / Balanced / Ambitious plans and a best-case plan,
       with races run; agree targets with the user (the shape: a top talent, potential 17+, on a decent plan reaches the
       top 3 of the birth year by 19–21 and the Kalevan kisat standard by about 21–23; an average one national youth
@@ -308,7 +316,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
 
 After Coaching and School (agreed order 2026-10-10): athlete reputation, the Statistics tab, the pre- and post-race
 studios (with the race ceremony), audio. Details in the ideas backlog. Check-in 2026-10-11: the talent balance session
-comes first (above), then the Coaching + School design (with "Never stale", mental training and moods, the written coach
+comes first (above, done 2026-10-11; its open point for Coaching: make the plan choice matter more, now 1–2 s at 21), then the Coaching + School design (with "Never stale", mental training and moods, the written coach
 dialogue and 2–3 light-minigame ideas for the user to judge), then **more meets** (backlog "More meets in the calendar";
 independent research + data, so it may run beside the design).
 

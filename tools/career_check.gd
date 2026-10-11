@@ -16,8 +16,15 @@ extends SceneTree
 ## "rows" also prints every athlete's season lines; "norace" finishes race days without running them (~10× faster: abilities,
 ## health and rivals only). Athlete i of every kind has the same random rolls (only the story differs), so kinds are compared
 ## pair by pair (the experience trade: beginner vs trained). Races use their own random numbers (RaceDay), so two runs differ a little.
+## Talent session (2026-10-11): "plan=steady|balanced|ambitious|best" (best = a best-case plan made here from Ambitious:
+## the key sessions Hard, an extra easy run on single-session days; not in the game's data); a kind "story@17.5" = that
+## story with the hidden potential set to 17.5 (top talent / average / low); the report adds the senior standards
+## (Kalevan kisat 1:53.50 / 2:11.00, waiting list 1:55.50 / 2:15.00) reached by age, the best national place, the
+## growth breakdown (stimulus, saturation, headroom, age rate, novice bonus per key attribute) and the rivals' rank churn.
 
 const START_YEAR := 2026
+const STANDARD := {"male": [113.5, 115.5], "female": [131.0, 135.0]}   # SUL 2025: Kalevan kisat direct / waiting list
+const GROWTH_ATTRS := ["speed_endurance", "aerobic_capacity", "lactate_threshold", "speed"]
 const STORIES := {
 	"beginner": ["Never really exercised", "Nobody, it was your own idea", "Not sporty at all", "Nowhere yet",
 			"About average", "No idea, I've never raced", "Doing fine"],
@@ -47,6 +54,8 @@ var print_rows := false
 var no_races := false   # "norace": race days are finished without running the race (fast; abilities only, no times)
 var recs := []       # one per athlete-season: see _season_rec
 var races := []      # one per player race day: {kind, gender, age, level, ratio, place, field, status, entrants, gaps}
+var plan := "balanced"
+var growth := {}     # "kind|age" -> attr -> {n, s, sat, head, age, nov, gain}: the weekly growth breakdown
 
 
 func _initialize() -> void:
@@ -76,17 +85,25 @@ func _run() -> void:
 	var first := int(args[3]) if args.size() > 3 else 0
 	print_rows = "rows" in args
 	no_races = "norace" in args
+	for arg in args:
+		if arg.begins_with("plan="):
+			plan = arg.split("=")[1]
+	if plan == "best":
+		_make_best_plan()
 	for arg in args:   # what-ifs: training.progression.novice.bonus=1.1 (a data path = a number)
-		if arg.contains("=") and arg.contains("."):
+		if arg.contains("=") and arg.contains(".") and not arg.begins_with("plan="):
 			var path := arg.split("=")[0].split(".")
 			var d = data.get(path[0])
 			for k in range(1, path.size() - 1):
+				if not d.has(path[k]):
+					d[path[k]] = {}
 				d = d[path[k]]
-			d[path[-1]] = float(arg.split("=")[1])
+			var value := arg.split("=")[1]   # a number, or numbers joined with | = an array (age_brake_gap=2|6)
+			d[path[-1]] = Array(value.split("|")).map(func(x): return float(x)) if value.contains("|") else float(value)
 			print("what-if: %s" % arg)
 	_extend_calendar(seasons)
 	var t0 := Time.get_ticks_msec()
-	print("career_check: %d athletes per kind, kinds %s, %d seasons from Nov %d" % [n, kinds, seasons, START_YEAR])
+	print("career_check: %d athletes per kind, kinds %s, %d seasons from Nov %d, plan %s" % [n, kinds, seasons, START_YEAR, plan])
 	for kind in kinds:
 		for i in n:
 			_career(kind, first + i)
@@ -114,21 +131,52 @@ func _extend_calendar(count: int) -> void:
 	Cal._meets_cache = meets
 
 
+## The best-case plan (plan=best): Ambitious, with the key sessions (800 m intervals, tempo run, hill sprints, fartlek)
+## Hard and an easy run added to every day with one session (not in the transition). Only in this tool.
+func _make_best_plan() -> void:
+	var v: Dictionary = data.periodization.variants.ambitious.duplicate(true)
+	v.name = "Best case"
+	var weeks := []   # [phase id, template] of the base weeks and every age group's (talent session)
+	for phase in v.templates:
+		weeks.append([phase, v.templates[phase]])
+	for group in v.get("by_age", {}):
+		for phase in v.by_age[group].templates:
+			weeks.append([phase, v.by_age[group].templates[phase]])
+	for pt in weeks:
+		var phase: String = pt[0]
+		if phase == "transition":
+			continue
+		var t: Dictionary = pt[1]
+		for d in 7:
+			var day: Array = t.days[d]
+			if day.is_empty():
+				continue
+			for id in ["intervals_800", "tempo_run", "hill_sprints", "fartlek"]:
+				if id in day:
+					t.intensity[d] = "hard"
+			if day.size() == 1 and not "long_run" in day:
+				day.append("easy_run")
+	data.periodization.variants["best"] = v
+
+
 func _athlete(kind: String, i: int):
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 9000 + i * 7   # (the same rolls for every kind: pairs)
+	var story := kind.split("@")[0]
 	var answers := {}
-	if kind == "random":
+	if story == "random":
 		for q in data.background_questions:
 			answers[q.id] = rng.randi_range(0, q.answers.size() - 1)
 	else:
 		for q in data.background_questions:
 			for k in q.answers.size():
-				if q.answers[k].text in STORIES[kind]:
+				if q.answers[k].text in STORIES[story]:
 					answers[q.id] = k
 	var a = F.create({"first_name": "Test", "last_name": "%s%d" % [kind.capitalize(), i], "gender": "male" if i % 2 == 0 else "female",
 			"hometown": "Tampere", "club_id": "tap", "main_event": "800m",
 			"birth_date": {"year": 2012, "month": rng.randi_range(1, 10), "day": rng.randi_range(1, 28)}, "answers": answers}, rng)
+	if kind.contains("@"):
+		a.set_attr("potential", float(kind.split("@")[1]))
 	F.spend(a, F.coach_spread(a, F.pool_for(answers)))
 	return [a, F.pool_for(answers)]
 
@@ -137,7 +185,7 @@ func _career(kind: String, i: int) -> void:
 	var made: Array = _athlete(kind, i)
 	var a = made[0]
 	seed(12345 + i * 31)   # the rivals' weekly training uses the global random numbers
-	game.start_career(a, SP.PHASES, "balanced")
+	game.start_career(a, SP.PHASES, plan)
 	var rrng := RandomNumberGenerator.new()
 	rrng.seed = 777 + i
 	game.rivals = RV.generate(a, rrng)
@@ -161,14 +209,51 @@ func _career(kind: String, i: int) -> void:
 			st.entered[sy] = true
 			_enter_recommended(sy)
 		var out_before: int = int(h.counters.days_out)
+		var week = game.current_week()
 		var r: String = game.advance_day()
 		if r == game.RACE:
 			if not no_races:
 				_run_race(st)
 			r = game.finish_race()
+		if game.current_week() != week:
+			_growth_week(st, week)
 		_health_day(st, sy, out_before)
 		_answer()
 	_season_rec(st, y, prev)
+
+
+## The weekly growth breakdown of the week just ended (the formula of Training._apply_progression, with the
+## attributes as they are after the week): stimulus, saturation 1 − e^(−(s − 0.5) / dose scale), headroom
+## (potential − value) / headroom_span, the age rate's share (after the age brake by gap), novice bonus and the gain they give, per key attribute; summed per kind and age (by the season's summer).
+func _growth_week(st: Dictionary, week) -> void:
+	var a = game.athlete
+	var T = load("res://scripts/core/training.gd")
+	var monday: Dictionary = week.monday
+	var key := "%s|%d" % [st.kind, SP.year_of(monday) + 1 - 2012]
+	if not growth.has(key):
+		growth[key] = {}
+	var tr: float = 0.6 + a.get_attr("trainability") / 20.0 * 0.8
+	var age_r: float = T.age_rate(a, monday)
+	var nov: float = 1.0 + T.novice_bonus(a)
+	var span := float(data.training.progression.get("headroom_span", 5.0))
+	for id in GROWTH_ATTRS:
+		var s: float = float(week._stimulus.get(id, 0.0))
+		var sat: float = 1.0 - exp(-(s - 0.5) / T.dose_scale(id)) if s > 0.5 else 0.0
+		var gap_now: float = a.get_attr("potential") - a.get_attr(id)
+		var head: float = clampf(gap_now / span, 0.05, 1.0)
+		var age_s: float = T.age_share(age_r, gap_now)
+		if not growth[key].has(id):
+			growth[key][id] = {"n": 0, "s": 0.0, "sat": 0.0, "head": 0.0, "age": 0.0, "nov": 0.0, "tr": 0.0, "gain": 0.0, "gap": 0.0}
+		var g: Dictionary = growth[key][id]
+		g.n += 1
+		g.s += s
+		g.sat += sat
+		g.head += head
+		g.age += age_s
+		g.nov += nov
+		g.tr += tr
+		g.gain += 0.14 * sat * tr * head * age_s * nov
+		g.gap += a.get_attr("potential") - a.get_attr(id)
 
 
 ## The season's record, at its end (the first day of the next season, before it is played).
@@ -214,7 +299,15 @@ func _season_rec(st: Dictionary, y: int, prev: Dictionary) -> Dictionary:
 			inj += 1
 			serious += 1 if x.tier == "serious" else 0
 	var my_races := races.filter(func(r): return r.athlete == "%s%d" % [st.kind, st.i] and r.season == y)
+	var order: Array = game.rivals.duplicate()
+	order.sort_custom(func(p, q): return float(p.ability) > float(q.ability))
+	var top := order.slice(0, 20).map(func(r): return str(r.id))
+	var nat_place := 0
+	for r in my_races:
+		if r.level == "national" and r.status == "" and (nat_place == 0 or int(r.place) < nat_place):
+			nat_place = int(r.place)
 	var rec := {"kind": st.kind, "i": st.i, "gender": st.gender, "pool": st.pool, "season": y, "age": year - 2012,
+			"top": top, "nat_place": nat_place, "career": "%s%d" % [st.kind, st.i],
 			"ability": ab, "gain": ab - float(prev.ability), "pb": pb, "sb": sb, "pct": 100.0 * below / maxf(game.rivals.size(), 1),
 			"rank": rank, "ranked": list.size(), "attrs": attrs, "rivals_ab": rab, "rivals_sb": rsb,
 			"weeks": int(hs.get("weeks", 0)), "w_any": int(hs.get("w_any", 0)), "w_sub": int(hs.get("w_sub", 0)),
@@ -266,7 +359,7 @@ func _answer() -> void:
 		var e: Dictionary = game.pending_event()
 		var answer := "ok"
 		match str(e.get("kind", "")):
-			"offer": answer = "balanced"
+			"offer": answer = plan
 			"return": answer = "accept"
 			"sore": answer = "keep"
 		game.answer_event(e.id, answer)
@@ -386,6 +479,77 @@ func _report(kinds: Array) -> void:
 		print("  (ability → time: %s)" % ", ".join([5, 7, 9, 11, 13, 15].map(func(x): return "%d = %s" % [x, _t(RP.time_for(x, g))])))
 	_pairs(kinds, ages)
 	_race_report(ages)
+	_talent_report(kinds, ages)
+	_growth_report(kinds, ages)
+	_churn_report(ages)
+
+
+## Can a talent make it? Per kind and gender and age: SB median, SB rank in the birth year (median, best), the share
+## whose PB is under the Kalevan kisat waiting-list / direct standard by then, the best national championship place
+## (median of those who ran one) and the shares in the top 8 / top 3.
+func _talent_report(kinds: Array, ages: Array) -> void:
+	print("\n=== TALENT: senior standards (waiting list / direct, PB by then) and national championship places ===")
+	for g in ["male", "female"]:
+		var std: Array = STANDARD[g]
+		print("  %s: Kalevan kisat direct %s, waiting list %s" % ["BOYS" if g == "male" else "GIRLS", _t(std[0]), _t(std[1])])
+		for kind in kinds:
+			var rows := recs.filter(func(r): return r.kind == kind and r.gender == g)
+			if rows.is_empty():
+				continue
+			print("  -- %s (potential median %.1f)" % [kind, _q(rows.map(func(r): return r.potential), 0.5)])
+			print("    age  n   SB median  rank median (best)  waiting / direct   nat. place median  top 8 / top 3 (of ran)")
+			for age in ages:
+				var a := rows.filter(func(r): return r.age == age)
+				if a.is_empty():
+					continue
+				var sb := a.map(func(r): return r.sb).filter(func(x): return x > 0.0)
+				var ranks := a.map(func(r): return r.rank).filter(func(x): return x > 0)
+				var wait := a.filter(func(r): return r.pb > 0.0 and r.pb <= std[1]).size()
+				var direct := a.filter(func(r): return r.pb > 0.0 and r.pb <= std[0]).size()
+				var nat := a.map(func(r): return r.nat_place).filter(func(x): return x > 0)
+				print("    %3d %2d   %s   %5.0f (%3.0f)          %d / %d of %d         %5.0f             %d / %d of %d" % [age, a.size(), _t(_q(sb, 0.5)),
+						_q(ranks, 0.5), _q(ranks, 0.0), wait, direct, a.size(), _q(nat, 0.5),
+						nat.filter(func(x): return x <= 8).size(), nat.filter(func(x): return x <= 3).size(), nat.size()])
+
+
+## What limits growth: per kind and age, the mean weekly stimulus of each key attribute and the factors of the gain
+## (gain = 0.14 × saturation × trainability × headroom × age rate × novice), the yearly gain they give and the mean gap
+## to the potential.
+func _growth_report(kinds: Array, ages: Array) -> void:
+	print("\n=== GROWTH BREAKDOWN (mean per week; gain per year = 52 × weekly; gap = potential − value) ===")
+	for kind in kinds:
+		print("  -- %s" % kind)
+		print("    age  attribute           stim   sat   train  head   age   novice  gain/yr  gap")
+		for age in ages:
+			var key := "%s|%d" % [kind, age]
+			if not growth.has(key):
+				continue
+			for id in GROWTH_ATTRS:
+				var g: Dictionary = growth[key].get(id, {})
+				if g.is_empty() or g.n == 0:
+					continue
+				var n := float(g.n)
+				print("    %3d  %-18s %5.2f  %4.2f  %4.2f  %4.2f  %4.2f  %4.2f   %5.2f   %4.1f" % [age, id, g.s / n, g.sat / n, g.tr / n,
+						g.head / n, g.age / n, g.nov / n, 52.0 * g.gain / n, g.gap / n])
+
+
+## The rivals' rank churn (Brustio et al. 2024: ~20 % of top U18 middle-distance runners reach the senior top): the share
+## of a career's top 20 (by ability) at one age who are still top 20 at a later age, over all careers.
+func _churn_report(ages: Array) -> void:
+	print("\n=== RIVALS' RANK CHURN: share of the top 20 (ability) at age A still top 20 at age B ===")
+	for pair in [[15, 17], [15, 21], [17, 21], [17, 25], [19, 25]]:
+		var keep := []
+		var keep3 := []
+		for r in recs:
+			if r.age != pair[0]:
+				continue
+			for t in recs:
+				if t.career == r.career and t.kind == r.kind and t.age == pair[1]:
+					var same: int = r.top.filter(func(id): return id in t.top).size()
+					keep.append(same / 20.0)
+					keep3.append(r.top.slice(0, 3).filter(func(id): return id in t.top.slice(0, 3)).size() / 3.0)
+		if not keep.is_empty():
+			print("  %d → %d: top 20 kept %.0f %%, top 3 kept %.0f %% (%d careers)" % [pair[0], pair[1], 100.0 * _mean(keep), 100.0 * _mean(keep3), keep.size()])
 
 
 ## The experience trade (GDD 4.1.1): each kind against "trained" with the same rolls (athlete i of both kinds): the

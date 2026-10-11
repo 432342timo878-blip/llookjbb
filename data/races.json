@@ -21,13 +21,16 @@
  "rivals": {
   "_note": "Fictional rivals of the player's age and gender (real youth athletes are minors, so they're not used). Ability at career start ~ N(mean, sd).",
   "count": 150, "ability_mean": 7.2, "ability_sd": 2.0, "ability_min": 3.0, "ability_max": 13.5,
-  "ceiling_mean": 13.0, "ceiling_sd": 2.5, "ceiling_max": 17.5,
-  "_growth": "Step 7 (GDD 4.2 'Multi-year check'): weekly gain = weekly_rate x trainability x headroom to the ceiling (none above it) x random 0.4-1.6 x growth_by_age ([age in years, share], interpolated, by gender: girls level off earlier). Tuned with tools/rival_curves.gd so a birth year's 1st / 8th / 20th best fall in the real Finnish bands (Tilastopaja 2026 championships, GDD 4.2).",
+  "ceiling_mean": 10.5, "ceiling_sd": 2.5, "ceiling_max": 17.5,
+  "_growth": "Step 7 (GDD 4.2 'Multi-year check'): weekly gain = weekly_rate x trainability x headroom to the ceiling (none above it) x random 0.4-1.6 x growth_by_age ([age in years, share], interpolated, by gender: girls level off earlier). Tuned with tools/rival_curves.gd so a birth year's 1st / 8th / 20th best fall in the real Finnish bands (Tilastopaja 2026 championships, GDD 4.2). Talent session 2026-10-11 (GDD 4.2 'Talent balance', the rivals' churn): growth possible later (growth_by_age), ceilings lower on average (ceiling_mean 13 -> 10.5) but drifting: the ceiling wanders around the rival's own (stationary sd ceiling_drift_sd, pulled back over ceiling_drift_years, never more than ceiling_floor below it), a rival above a ceiling that drifted down loses above_ceiling_fall of the excess a week (stagnation); bloom = a rival's development timing in years (N(0, bloom_sd), at most bloom_max; a late bloomer starts bloom x bloom_start lower and grows like a younger runner); pace = a rival's year, drawn each autumn (log-normal pace_sd, pace_keep carried over): good years and flat years. Measured with rival_curves.gd (20 pools): of the top 20 at 17, 60-62 % are still top 20 at 21 (was 75-82 %), top 3 37-40 % (53-72 %), 15 -> 21 37-41 % (47-64 %); the real ~20 % of Brustio et al. 2024 includes dropouts, which come with the rival profiles.",
   "weekly_rate": 0.055,
   "growth_by_age": {
-   "male": [[14.5, 0.55], [15.5, 0.45], [16.5, 0.38], [17.5, 0.3], [18.5, 0.25], [19.5, 0.2], [21.0, 0.15]],
-   "female": [[14.5, 0.5], [15.5, 0.3], [16.5, 0.22], [17.5, 0.17], [18.5, 0.13], [21.0, 0.1]]
+   "male": [[14.5, 0.55], [16.5, 0.5], [19.5, 0.5], [21.0, 0.4], [25.0, 0.25]],
+   "female": [[14.5, 0.5], [16.5, 0.38], [19.5, 0.35], [21.0, 0.3], [25.0, 0.2]]
   },
+  "bloom_sd": 1.2, "bloom_max": 2.5, "bloom_start": 0.8,
+  "ceiling_drift_sd": 2.0, "ceiling_drift_years": 4.0, "ceiling_floor": 3.0, "above_ceiling_fall": 0.02,
+  "pace_sd": 0.5, "pace_keep": 0.5,
   "race_chance_by_month": [0.08, 0.10, 0.10, 0.12, 0.25, 0.30, 0.25, 0.30, 0.25, 0.10, 0.06, 0.06]
  },
  "rounds": {

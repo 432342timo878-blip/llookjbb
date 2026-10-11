@@ -146,11 +146,10 @@ static func phase_week_now(p: Dictionary) -> int:
 ## Average planned weekly load of one of the coach's plans over a season: each phase's week (session load ×
 ## intensity) weighted by its weeks in the season's current layout. No ramp, lighter weeks or taper.
 static func variant_load(a: Athlete, variant_id: String, year: int) -> float:
-	var templates: Dictionary = Data.periodization.variants[variant_id].templates
 	var total := 0.0
 	var weeks := 0
 	for p in Game.season.layout(year):
-		var plan: Dictionary = templates[p.id]
+		var plan: Dictionary = SeasonPlan.template(variant_id, p.id, Game.season.age_class(year))
 		var week_load := 0.0
 		for d in 7:
 			var mult := float(Training.intensity(plan.intensity[d]).load)

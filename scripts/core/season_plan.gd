@@ -712,7 +712,34 @@ func _phase_week(year: int, phase_id: String) -> Dictionary:
 	var stored: Dictionary = rec.phases.get(phase_id, {})
 	if stored.has("week"):
 		return stored.week
-	return Data.periodization.variants[rec.variant].templates[phase_id]
+	return template_for(year, phase_id)
+
+
+## The coach's week of a phase in a season: the season's plan for the athlete's age group (GDD 4.2 "Talent
+## balance": the plans grow with the athlete; data/periodization.json age_groups and each variant's by_age).
+func template_for(year: int, phase_id: String) -> Dictionary:
+	return template(variant(year), phase_id, age_class(year))
+
+
+## The age class of a season (its summer's year minus the birth year): 15 for a career's first season.
+func age_class(year: int) -> int:
+	return year + 1 - birth_year
+
+
+## One of the coach's plans, a phase's week for an age class (the age group's own week, else the base one).
+static func template(variant_id: String, phase_id: String, age: int) -> Dictionary:
+	var v: Dictionary = Data.periodization.variants[variant_id]
+	var own: Dictionary = v.get("by_age", {}).get(str(age_group(age).get("id", "")), {}).get("templates", {})
+	return own.get(phase_id, v.templates[phase_id])
+
+
+## The age group of an age class ({id, max_age, name, text}; {} without groups in the data).
+static func age_group(age: int) -> Dictionary:
+	var groups: Array = Data.periodization.get("age_groups", {}).get("groups", [])
+	for g in groups:
+		if age <= int(g.max_age):
+			return g
+	return {} if groups.is_empty() else groups.back()
 
 
 ## The phase's week to edit in place (a copy of the template is stored on the first call).
@@ -726,7 +753,7 @@ func edit_phase(year: int, phase_id: String) -> Dictionary:
 ## True when the player has changed the phase's week, its lighter weeks or its ramp from the coach's.
 func is_edited(year: int, phase_id: String) -> bool:
 	var stored: Dictionary = _record(year).phases.get(phase_id, {})
-	if stored.has("week") and not WeekPlan.equals(stored.week, Data.periodization.variants[_record(year).variant].templates[phase_id]):
+	if stored.has("week") and not WeekPlan.equals(stored.week, template_for(year, phase_id)):
 		return true
 	return (stored.has("lighter") and bool(stored.lighter) != bool(phase_type(phase_id).get("lighter", false))) \
 			or (stored.has("ramp_weeks") and int(stored.ramp_weeks) != _variant_ramp(year, phase_id))

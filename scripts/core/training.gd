@@ -112,6 +112,10 @@ static func expected_fatigue(a: Athlete, plan: Variant, monday: Dictionary) -> D
 ## {before, after}. Step 7 (GDD 4.2 "Multi-year check"): trained physical gains shrink with age (age_rate), a beginner
 ## responds more in their first years (novice_bonus, physical and technical), and puberty growth follows the growth
 ## spurt (puberty_share) instead of going on for life.
+## Talent session (2026-10-11, GDD 4.2 "Talent balance"): each attribute has its own dose scale (progression.dose: fast
+## qualities respond to small amounts of quality work, the aerobic engine needs volume), headroom counts over
+## progression.headroom_span points below the potential, and the age brake applies only near the ceiling
+## (age_share: none while an attribute is at least age_brake_gap[1] below the potential, all of it from [0]).
 static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Dictionary) -> Dictionary:
 	var trainability := 0.6 + a.get_attr("trainability") / 20.0 * 0.8
 	var growth := puberty_share(a, monday)
@@ -125,9 +129,9 @@ static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Diction
 			var s: float = stimulus.get(id, 0.0)
 			var gain := 0.0
 			if s > MIN_DOSE:
-				gain = WEEKLY_RATE * (1.0 - exp(-(s - MIN_DOSE) / SATURATION)) * trainability * _headroom(a, before)
+				gain = WEEKLY_RATE * (1.0 - exp(-(s - MIN_DOSE) / dose_scale(id))) * trainability * _headroom(a, before)
 				if category == "physical":
-					gain *= by_age * novice
+					gain *= age_share(by_age, a.get_attr("potential") - before) * novice
 				elif category == "technical":
 					gain *= novice
 			elif category == "physical":
@@ -182,9 +186,25 @@ static func age_years(a: Athlete, date: Dictionary) -> float:
 	return Calendar.days_between(a.birth_date, date) / 365.25
 
 
-## 1.0 far below the athlete's (hidden) ceiling, shrinking towards it.
+## 1.0 far below the athlete's (hidden) ceiling (progression.headroom_span points or more), shrinking towards it.
 static func _headroom(a: Athlete, value: float) -> float:
-	return clampf((a.get_attr("potential") - value) / 5.0, 0.05, 1.0)
+	var span := float(Data.training.progression.get("headroom_span", 5.0))
+	return clampf((a.get_attr("potential") - value) / span, 0.05, 1.0)
+
+
+## The stimulus at which an attribute's weekly gain flattens out (progression.dose, else SATURATION).
+static func dose_scale(id: String) -> float:
+	var dose: Dictionary = Data.training.progression.get("dose", {})
+	return float(dose.get(id, dose.get("default", SATURATION)))
+
+
+## The share of the age rate an attribute `gap` points below the potential gets: the whole age brake near the
+## ceiling, none far below it (progression.age_brake_gap = [full brake at or below, no brake at or above]).
+static func age_share(rate: float, gap: float) -> float:
+	var g: Array = Data.training.progression.get("age_brake_gap", [])
+	if g.size() != 2:
+		return rate
+	return lerpf(rate, 1.0, clampf((gap - float(g[0])) / (float(g[1]) - float(g[0])), 0.0, 1.0))
 
 
 ## Word and colour for a fatigue level.

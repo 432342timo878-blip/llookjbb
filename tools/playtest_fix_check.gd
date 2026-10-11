@@ -279,7 +279,8 @@ func _check_marks() -> void:
 			1: _ok("slower than a PB of 1:30 gets no PB mark", mine.get("mark", "") != "PB")
 			2: _ok("faster than a PB of 6:40 is a PB", mine.get("mark", "") == "PB")
 		_ok("the rows have the earlier marks to judge by (pb_before, sb_before)", mine.has("pb_before") and mine.has("sb_before"))
-	_ok("rivals' marks follow their PB / SB (%d rows, %d PBs, %d wrong)" % [rival_rows, rival_pb, rival_bad], rival_rows > 20 and rival_bad == 0)
+	# (at least 15 rows to judge by: the field sizes come from the rival pool's dice, 20 rows since the talent session's bloom ages)
+	_ok("rivals' marks follow their PB / SB (%d rows, %d PBs, %d wrong)" % [rival_rows, rival_pb, rival_bad], rival_rows >= 15 and rival_bad == 0)
 
 
 # --- 7: the monthly record -------------------------------------------------------------------------------------------

@@ -82,7 +82,7 @@ func _build() -> void:
 
 
 func _coach_week() -> Dictionary:
-	return Data.periodization.variants[Game.season.variant(year)].templates[phase_id]
+	return Game.season.template_for(year, phase_id)
 
 
 func _month() -> int:

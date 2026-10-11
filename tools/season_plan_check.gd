@@ -197,8 +197,14 @@ func _check_variant_records() -> void:
 	var plan = SP.phased(_athlete(2012, "800m"), game.START_DATE, "steady")
 	_ok("the first season runs the plan it was made with", plan.variant(2026) == "steady")
 	_ok("a later season nobody has touched keeps that plan", plan.variant(2027) == "steady" and plan.variant(2029) == "steady")
-	var steady_week: Array = data.periodization.variants.steady.templates.general_base.days
-	_ok("...and its weeks come from it", plan.week_for(_d(2027, 11, 22), []).days == steady_week)
+	# (talent session: a season's weeks are its age group's; 2027–28 is the 16-year-old's season = the 16–17 week)
+	var steady_week: Array = data.periodization.variants.steady.by_age.u18.templates.general_base.days
+	_ok("...and its weeks come from it (its age group's week)", plan.week_for(_d(2027, 11, 22), []).days == steady_week)
+	_ok("the plans grow with the athlete: 14–15 week in the first season, 16–17 in the second, adults' from age 20",
+			plan.age_class(2026) == 15 and plan.template_for(2026, "general_base").days == data.periodization.variants.steady.templates.general_base.days
+			and SP.age_group(16).id == "u18" and SP.age_group(19).id == "u20" and SP.age_group(20).id == "adult"
+			and plan.template_for(2031, "general_base").days == data.periodization.variants.steady.by_age.adult.templates.general_base.days
+			and SP.template("balanced", "transition", 22) == data.periodization.variants.balanced.templates.transition)
 	plan.edit_phase(2026, "spring_base").days[0] = ["tempo_run"]
 	plan.edit_phase(2026, "race_season").days[0] = ["tempo_run"]
 	plan.set_shift(2026, "spring_base", 1)

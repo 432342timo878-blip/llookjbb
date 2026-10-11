@@ -10,6 +10,15 @@ extends RefCounted
 static func build(year: int, selected: String, pick: String, in_use: String, on_choose: Callable, stacked := false) -> Control:
 	var a := Game.athlete
 	var box := UIKit.vbox(10)
+	# The plans grow with the athlete (GDD 4.2 "Talent balance"): which age group's plans these are, and what is new
+	# in the first season of a group.
+	var age: int = Game.season.age_class(year)
+	var age_info := SeasonPlan.age_group(age)
+	if not age_info.is_empty() and Game.season.birth_year > 0:
+		var line := str(Data.periodization.age_groups.get("caption", "")).format({"name": age_info.name})
+		if SeasonPlan.age_group(age - 1).get("id", "") != age_info.id and str(age_info.get("text", "")) != "":
+			line += " " + str(age_info.text)
+		box.add_child(UIKit.wrapped(line))
 	var row: BoxContainer = UIKit.vbox(10) if stacked else UIKit.flex(10)
 	var group := ButtonGroup.new()
 	for id in ["steady", "balanced", "ambitious"]:

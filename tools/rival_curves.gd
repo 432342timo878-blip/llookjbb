@@ -7,7 +7,11 @@ extends SceneTree
 ## Run: godot --headless --path . -s res://tools/rival_curves.gd [-- pools [male|female|both] [key=value,...]]
 ## key=value overrides data/races.json "rivals" numbers for a what-if (e.g. ceiling_mean=11,ceiling_sd=2); arrays with |.
 
-const AGES := [15, 16, 17, 18, 19, 20, 21]
+## Talent session (2026-10-11): ages to 25 (real bands to 21 only) and the rank churn: the share of a pool's top 20 / top 3
+## (by ability) at one age still there at a later age, and how many of the top 20 at 21 were outside the top 50 at 15
+## (late bloomers). Real: ~20 % of top U18 middle-distance runners reach the senior top (Brustio et al. 2024).
+const AGES := [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+const CHURN := [[15, 17], [15, 21], [17, 21], [17, 25], [19, 25]]
 ## Real bands [low, high] in seconds for the 1st / 8th / 20th best of a birth year (GDD 4.2 "Multi-year check", sources there).
 const REAL := {
 	"male": {15: [[120, 126], [129, 135], [136, 143]], 16: [[117, 122], [125, 131], [132, 138]], 17: [[111, 117], [122, 127], [127, 133]],
@@ -52,6 +56,8 @@ func _run() -> void:
 		var by_age := {}
 		for age in AGES:
 			by_age[age] = {"q": {}, "rank": {}}
+		var churn := {}   # "a-b" -> [top-20 kept, top-3 kept] per pool
+		var late := []    # per pool: top 20 at 21 who were outside the top 50 at 15
 		for k in pools:
 			seed(500 + k)
 			var a = F.create({"first_name": "T", "last_name": "R", "gender": g, "hometown": "Tampere", "club_id": "tap",
@@ -60,6 +66,7 @@ func _run() -> void:
 			rng.seed = 777 + k
 			var pool: Array = RV.generate(a, rng)
 			var monday := {"year": 2026, "month": 11, "day": 2}
+			var order := {}   # age -> rival ids, best first
 			for season in AGES.size():
 				for w in 52:
 					if has_age:
@@ -75,15 +82,29 @@ func _run() -> void:
 				_push(by_age[age].q, 1.0, ab[-1])
 				for rank in [1, 3, 8, 20, 50, 75]:
 					_push(by_age[age].rank, rank, RP.time_for(ab[ab.size() - rank], g))
+				var sorted: Array = pool.duplicate()
+				sorted.sort_custom(func(x, y): return float(x.ability) > float(y.ability))
+				order[age] = sorted.map(func(r): return str(r.id))
+			for pair in CHURN:
+				var key := "%d-%d" % pair
+				var top_a: Array = order[pair[0]].slice(0, 20)
+				var top_b: Array = order[pair[1]].slice(0, 20)
+				_push(churn, key + " 20", top_a.filter(func(id): return id in top_b).size() / 20.0)
+				_push(churn, key + " 3", top_a.slice(0, 3).filter(func(id): return id in top_b.slice(0, 3)).size() / 3.0)
+			var top50_15: Array = order[15].slice(0, 50)
+			late.append(order[21].slice(0, 20).filter(func(id): return not id in top50_15).size())
 		print("\n=== %s: ability quantiles | time of the n-th best of 150 [real band] ===" % g.to_upper())
 		print("  age   p10   p25   p50   p75   p90   max | 1st              3rd      8th               20th              50th     75th")
 		for age in AGES:
 			var q: Dictionary = by_age[age].q
 			var r: Dictionary = by_age[age].rank
-			var real: Array = REAL[g][age]
+			var real: Array = REAL[g].get(age, [[0, 999], [0, 999], [0, 999]])
 			print("  %3d %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f | %s %s %s %s %s %s %s %s %s" % [age, _m(q[0.1]), _m(q[0.25]), _m(q[0.5]),
 					_m(q[0.75]), _m(q[0.9]), _m(q[1.0]), _t(_m(r[1])), _band(_m(r[1]), real[0]), _t(_m(r[3])), _t(_m(r[8])),
 					_band(_m(r[8]), real[1]), _t(_m(r[20])), _band(_m(r[20]), real[2]), _t(_m(r[50])), _t(_m(r[75]))])
+		print("  churn (top 20 kept / top 3 kept): " + ", ".join(CHURN.map(func(p): return "%d→%d %.0f %% / %.0f %%" % [p[0], p[1],
+				100.0 * _m(churn["%d-%d 20" % p]), 100.0 * _m(churn["%d-%d 3" % p])])))
+		print("  late bloomers: of the top 20 at 21, %.1f were outside the top 50 at 15" % _m(late))
 	print("rival_curves done")
 	quit()
 

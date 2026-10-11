@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.9 — 2026-10-11 (the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
+Version 0.10 — 2026-10-11 (the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
 `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; race realism R1–R5, M2 steps 3–6). Living document: updated after
 each design discussion.
 
@@ -247,6 +247,88 @@ juniors per age (Tønnessen et al. 2015, PLoS ONE 10:e0129014): boys 14→15 5.2
 - **Open:** the healthy race-day spread at 19–21 is still ~2 %: the form part is now ~0.8 % for seniors; the rest is the race shape
   (tactical vs fast races, wide club fields), an engine question for a later race session. Seniors (M4) need senior meets (Motonet GP,
   Kalevan kisat), real athletes and older rivals; the rival pool is one birth year, so a 20–22 class field stands in for three years.
+
+**Talent balance: can a talent make it? (2026-10-11, ROADMAP; the check-in's big finding).** Agreed roles: this session fixes the
+base curve; Coaching later adds only a smaller layer on top (coach quality and fit: finalist vs medallist), so the club coach is
+never a trap.
+
+*Measured first* (`career_check.gd -- 4 trained@17.5,average@17.5,average@15.5,average@13.5 11 0 rows plan=…`, every race run,
+2 boys + 2 girls per kind; new in the tool: `plan=steady|balanced|ambitious|best` (best = Ambitious with the key sessions Hard and
+an easy run added to single-session days, only in the tool), a kind `story@potential`, the senior standards reached, the best
+national place, the growth breakdown per key attribute and the rivals' rank churn; `rival_curves.gd` now runs to 25 and prints the
+churn). A top-talent boy (potential 17.5) on Balanced: 2:05.7 at 19 (42nd of his birth year), 2:03.0 at 21 (40th), 2:00.2 at 25;
+Ambitious 1:55.7 at 25, best case 1:56.5; nobody of 64 careers under 1:53.50 (girls: none under 2:11.00). The growth breakdown
+showed why: (1) the 800 m-specific qualities barely responded (one quality session a week = 10–16 % of the full weekly gain;
+speed and speed endurance +0.6–1.1 a year even at 15) while aerobic capacity, fed by the easy running every plan adds, reached
+its ceiling by 18–21; (2) the age brake (×0.35 from 20) hit every attribute however far below the ceiling; (3) the plans were the
+same week at 14 and at 25; (4) rivals grew on one smooth curve to a ceiling fixed at 14: 75–82 % of the top 20 at 17 still top 20 at
+21 (top 3: 53–72 %).
+
+*Targets (user, 2026-10-11):* a top talent (17–18) on a decent plan (Balanced / Ambitious) reaches the top 3 of the birth year by
+19–21 and the Kalevan kisat direct standard (1:53.50 / 2:11.00) by 21–23 (Steady: the waiting list); peak (24–26) about 1:47–1:50 /
+2:02–2:06; an average talent (15–16) national youth finals at 17–21 and 1:55–2:00 at 25; a low one (13–14) club level 2:00–2:08;
+rivals' churn 17 → 21 about 40–50 % of the top 20 kept. Real: a birth year's 1st–3rd boys about 1:47–1:52 at 21 (Tilastopaja 2026
+bands above); the 2026 Kalevan kisat men's final had finishers of 18, 20 and 21; peak age 22.7 for Brazilian 800 m men (Zaar et al.
+2013, Rev Bras Cineantropom 15(5)), 24.5 for world-class 800 m men (Haugen et al. 2018), 26.0 for Czech elite women, the U18 elite
+peaking at 19.1 (Bahensky 2019, Studia Sportiva 13(1)); ~19–21 % of the world's top U18 middle-distance runners reach the senior
+top, seven times the chance of the others (Brustio et al. 2024, J Sci Med Sport).
+
+*Decided (user, 2026-10-11: options 1A, 2A, 3A, 4A):*
+1. **Each attribute its own dose** (`training.json progression.dose`: speed and acceleration 2.0, power and speed endurance 2.5,
+   lactate threshold and strength 3.5, the rest the old 5): fast qualities respond to a little quality work, the aerobic engine needs
+   volume. `Training.dose_scale`. Tuning found that the last points below the potential were also too slow: `headroom_span` 5 → 4.
+2. **The age brake only near the ceiling** (`progression.age_brake_gap` [1.0, 3.5]: the age rate in full for an attribute at most
+   1 point below the potential, none from 3.5 below; `Training.age_share`): a 21-year-old far below their ceiling still improves,
+   one near it levels off.
+3. **The coach's plans grow with the athlete** (`periodization.json age_groups` + each variant's `by_age`): 14–15 (the old
+   templates, so a career's first two seasons are as before), 16–17 (an extra easy run, a second speed session in the specific
+   phases), 18–19 (strength twice a week, tempo runs, more easy running), adults (the first double days: an easy run beside the
+   quality session, two 800 m sessions a week before and in the race season); Steady = the same weeks mostly Easy, Ambitious = its
+   own 14–15 week plus more (see the loads below); every plan keeps a rest day. A season's group comes from its summer's age class
+   (`SeasonPlan.template_for / age_class / template / age_group`; the phase editor, the plan loads and "is edited" use it). The plan
+   cards say "The coach's plans for ages 16–17." and, in a group's first season, what is new (the autumn offer shows it too).
+4. **Rivals' churn** (`races.json rivals`): ceilings lower on average (13 → 10.5) but drifting around the rival's own (stationary sd
+   2.0, pulled back over 4 years, at most 3 below; a rival above a ceiling that drifted down loses 2 % of the excess a week:
+   stagnation), growth possible later (`growth_by_age` boys 0.55 → 0.5 to 19.5, 0.4 at 21, 0.25 at 25), a bloom age per rival
+   (N(0, 1.2) years, at most 2.5; a late bloomer starts 0.8 ability per year lower and grows like a younger runner) and a pace for
+   each year (log-normal sd 0.5, half carried over). Old saves: bloom from the id hash, no drift or pace yet = they start now.
+   Tried first: bloom + drift alone (70–74 % kept), a yearly pace alone (it spread rivals early and *raised* the 17 → 21 share),
+   unbounded drift (the slowest rivals collapsed). Below ~60 % the real time bands break: the rest of the real churn is dropouts,
+   which come with the rival profiles.
+
+*After* (the same tool and seeds, every race run, the final weeks; SB and rank in the birth year of 151; top talent = the trained
+and the average story with potential 17.5, 2 boys + 2 girls each, so ±1–2 s):
+
+| | Before | After | Target |
+|---|---|---|---|
+| Top-talent boys, Balanced: 19 / 21 (trained story; average story) | 2:05.7 (42nd) / 2:03.0 (40th); 2:10.4 (77th) / 2:06.8 (65th) | 1:58.7 (13th) / 1:54.3 (7th); 1:59.6 (11th) / 1:53.5 (4th) | top 3 by 19–21 |
+| Kalevan kisat direct (PB) by 23, top-talent boys: Balanced / Ambitious | 0 of 4 / 0 of 4 | 3 of 4 / 4 of 4 (all by 21) | 21–23 |
+| Top-talent boys at 21: Steady / Balanced / Ambitious / best case (trained story) | 2:05.0 / 2:03.0 / 1:59.5 / 2:02.8 | 1:54.5 / 1:54.3 / 1:53.2 / 1:52.9 | |
+| Top-talent girls at 21, Balanced / Ambitious (rank) | 2:18.7 (16th) / 2:16.8 (13th) | 2:09.0 (2nd), 2:10.2 (4th) / 2:08.3 (1st), 2:11.6 (1st) | |
+| Average talent (15.5), Balanced, boys at 21 / girls at 21 | 2:08.3 (75th) / 2:23.4 (41st) | 1:56.4 (12th, national finals) / 2:12.4 (7th) | finals; 1:55–2:00 at 25 |
+| Low talent (13.5), Balanced, boys at 21 / 25 | 2:10.8 / 2:07.8 | 2:06.6 / 2:03.5 | 2:00–2:08 |
+| Average story vs trained story, same potential | never level | level by 19–21 | |
+| Rivals: top 20 kept 17 → 21 / top 3 / 15 → 21 | 75–82 % / 53–72 % / 47–64 % | 58–62 % / 31–48 % / 36–41 % | ~40–50 % |
+| Rivals' SB 1st / 8th / 20th at 21 (boys) | 1:51.6 / 1:55.5 / 1:59.1 | 1:49.9 / 1:56.9 / 2:01.7 | 1:47–1:52 / 1:56–2:00 / 2:01–2:07 |
+| Weeks with a substantial health problem at 21–25 | 2–17 % | 2–10 % | ~11 % (Mann 2021) |
+
+- **First season (proofs):** with the old numbers (dose 5 everywhere, span 5, no brake) the new code gives exactly the old
+  `training_balance -- 0` fingerprints (204.145691989 / 14.102831594 / 1226.006524079); with the new numbers fatigue is identical to
+  the digit and only the attributes move: coach 206.798298350 / 14.102831594 / 1226.006524079 (hard 211.353702061, lazy unchanged
+  192.592669471, coach easy 201.992945166, coach hard 210.213339641): on the coach's week speed endurance +1.5 instead of +0.8, speed
+  +2.5 instead of +1.2, lactate threshold +0.9 instead of +0.6, strength +1.8 instead of +1.4, aerobic capacity unchanged.
+  `season_check -- 50` (ages 14–17) ALL PASSED: ability +1.72 / +1.69 / +1.42 a season (was +1.27 / +1.01 / +0.73; seasons 2–3 also
+  get the 16–17 plans), injuries 0.64 / 0.84 / 0.72 (was 0.64 / 1.00 / 0.78).
+- **Plan loads by age group** (mean raw weekly load of the six training phases, session load × intensity; 14–15 / 16–17 / 18–19 /
+  adults): Steady 68 / 77 / 84 / 99, Balanced 82 / 88 / 88 / 106 (18–19: the same load over one more session), Ambitious 121 / 131 /
+  135 / 137 (Ambitious's group weeks are its 14–15 week plus more: an easy run beside Thursday's quality, Tuesday Hard from 18,
+  strength three times a week as an adult).
+- **Open:** (1) the plans differ by ~1–2 s at 21 for a top talent (Steady 1:54.5 → Ambitious 1:53.2; the curve approaches the
+  potential on any decent plan, the plan decides how fast and how early: Ambitious makes the standard by 21, Balanced by 21–23):
+  Coaching should make the choices around the plan matter more (the coach's layer); (2) from 23 a career has only ~2 races a
+  year (club meets; no senior calendar), so SBs at 23–25 are slow and noisy: the "more meets" session; (3) dropouts (rival profiles);
+  (4) the talent is 22nd–32nd of the birth year at 15 (2:16–2:18) and climbs from there: real future seniors were often not the
+  youth leaders (Kearney & Hayes 2018), but a player told "top talent" may expect more at 15.
 
 ### 4.3 800 m race simulation (first version built)
 
@@ -1829,6 +1911,9 @@ are only weekday/weekend.
 - **Day type:** weekday / weekend now; school days, exams and holidays later.
 
 ### 4.8 Season periodization (M2 step 6, designed 2026-10-06)
+
+(Talent session 2026-10-11: the coach's three plans now have a week per age group, 14–15 / 16–17 / 18–19 / adults; the templates
+below are the 14–15 ones. See 4.2 "Talent balance", decision 3.)
 
 Decisions (user, 2026-10-06): phases are **tied to target meets**; the player can keep **one repeating week** instead
 (a switch in the Training tab); the player edits **one week per phase and moves phase edges by whole weeks** (plus the

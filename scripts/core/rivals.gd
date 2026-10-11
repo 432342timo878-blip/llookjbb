@@ -17,7 +17,11 @@ static func generate(a: Athlete, rng: RandomNumberGenerator) -> Array:
 			last = Data.names.surnames.pick_random()
 		used_names[first + last] = true
 		var ability := clampf(rng.randfn(cfg.ability_mean, cfg.ability_sd), cfg.ability_min, cfg.ability_max)
+		# Bloom age (talent session): a late bloomer (bloom > 0) is behind at 14 and keeps growing longer.
+		var bloom := clampf(rng.randfn(0.0, float(cfg.get("bloom_sd", 0.0))), -float(cfg.get("bloom_max", 0.0)), float(cfg.get("bloom_max", 0.0)))
+		ability = clampf(ability - bloom * float(cfg.get("bloom_start", 0.0)), cfg.ability_min, cfg.ability_max)
 		pool.append({
+			"bloom": bloom,
 			"id": "r%d" % i,
 			"first_name": first, "last_name": last,
 			"club_id": Data.clubs.pick_random().id,
@@ -47,6 +51,9 @@ static func ensure_personalities(pool: Array) -> void:
 			r.personality = personality_from(float(r.anaerobic), float(h) / 4294967296.0)
 		if not r.has("met"):
 			r.met = 0
+		if not r.has("bloom"):   # (older saves: from the id hash, no dice; none when bloom_max is 0)
+			var u := float((String(r.id).hash() * 40503) & 0xffff) / 65535.0
+			r.bloom = (u * 2.0 - 1.0) * 0.75 * float(Data.races.rivals.get("bloom_max", 0.0))
 
 
 ## The personality for this anaerobic value; u in [0, 1) picks from the weights in data/races.json.
@@ -70,6 +77,10 @@ static func personality_from(anaerobic: float, u: float) -> String:
 
 ## One week of training for every rival (similar growth model to the player's: slows near the ceiling and stops at
 ## it, and slows with age: data/races.json rivals growth_by_age, step 7). `birth_year` is the cohort's (the player's).
+## Churn (talent session, GDD 4.2 "Talent balance"): each rival's growth curve is shifted by their bloom age (a late
+## bloomer at 17 grows like a 16-year-old), the ceiling drifts a little every week (ceiling_drift_sd a year, never
+## above ceiling_max): some stall below the ceiling they had at 14, some break through it; and each autumn a rival's
+## pace for the year is drawn (pace_sd, pace_keep): good years and flat years.
 ## They also race elsewhere: each week a rival may run an 800 m of their own (more often in summer),
 ## which feeds their season best for the rankings. Injured rivals (out_weeks > 0, set by HealthSystem)
 ## neither train nor race.
@@ -77,11 +88,28 @@ static func train_week(pool: Array, gender: String, monday: Dictionary, birth_ye
 	var cfg: Dictionary = Data.races.rivals
 	var chances: Array = cfg.race_chance_by_month
 	var chance := float(chances[int(monday.month) - 1])
-	var by_age := growth_by_age(gender, monday, birth_year)
+	# The ceiling's drift wanders around the rival's own ceiling: stationary sd ceiling_drift_sd, pulled back over about
+	# ceiling_drift_years (so it can't run away), never below ceiling_floor under the rival's own ceiling.
+	var drift_sd := float(cfg.get("ceiling_drift_sd", 0.0))
+	var pull := 1.0 / (52.0 * maxf(float(cfg.get("ceiling_drift_years", 3.0)), 0.1))
+	var drift := drift_sd * sqrt(2.0 * pull)
+	var pace_sd := float(cfg.get("pace_sd", 0.0))
+	var new_year := int(monday.month) == 11 and int(monday.day) <= 7   # the season's first week
 	for r in pool:
+		if new_year and pace_sd > 0.0:
+			# A good or a flat year: the pace carries over partly (pace_keep) and is redrawn each autumn (log-normal,
+			# mean 1), so some rivals break through and others stall for a year or two.
+			var lp := log(float(r.get("pace", 1.0))) * float(cfg.get("pace_keep", 0.0)) + randfn(0.0, pace_sd)
+			r.pace = exp(lp - pace_sd * pace_sd / 2.0)
 		if is_out(r):
 			continue
-		var ceiling := minf(float(r.ceiling), float(cfg.ceiling_max))   # (older saves' ceilings had no cap)
+		var by_age := growth_by_age(gender, monday, birth_year, float(r.get("bloom", 0.0))) * float(r.get("pace", 1.0))
+		if drift > 0.0:
+			r.drift = float(r.get("drift", 0.0)) * (1.0 - pull) + randfn(0.0, drift)
+		var ceiling := minf(float(r.ceiling) + maxf(float(r.get("drift", 0.0)), -float(cfg.get("ceiling_floor", 99.0))),
+				float(cfg.ceiling_max))   # (older saves' ceilings had no cap)
+		if float(r.ability) > ceiling:   # (the ceiling drifted below them: a stagnating runner slowly loses the excess)
+			r.ability = float(r.ability) - (float(r.ability) - ceiling) * float(cfg.get("above_ceiling_fall", 0.0))
 		var headroom := clampf((ceiling - float(r.ability)) / 5.0, 0.0, 1.0)
 		r.ability = float(r.ability) + float(cfg.weekly_rate) * float(r.trainability) * headroom * randf_range(0.4, 1.6) * by_age
 		r.speed = minf(float(r.speed) + 0.03 * randf() * by_age, Athlete.MAX_VALUE)
@@ -94,9 +122,9 @@ static func train_week(pool: Array, gender: String, monday: Dictionary, birth_ye
 
 ## The rivals' weekly growth share at the cohort's age on `monday` (born mid-`birth_year` on average): 1.0 = the
 ## youngest rate, interpolated in data/races.json rivals growth_by_age ([age, share] by gender).
-static func growth_by_age(gender: String, monday: Dictionary, birth_year: int) -> float:
+static func growth_by_age(gender: String, monday: Dictionary, birth_year: int, bloom := 0.0) -> float:
 	var table: Array = Data.races.rivals.growth_by_age[gender]
-	var age := float(monday.year) + (float(monday.month) - 1.0) / 12.0 + float(monday.day) / 365.0 - (float(birth_year) + 0.5)
+	var age := float(monday.year) + (float(monday.month) - 1.0) / 12.0 + float(monday.day) / 365.0 - (float(birth_year) + 0.5) - bloom
 	if age <= float(table[0][0]):
 		return float(table[0][1])
 	for i in range(1, table.size()):
