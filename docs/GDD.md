@@ -2656,6 +2656,12 @@ make each fit its situation; (3) **standing orders from repeats**: the same answ
 ("Always say no to weekday parties before a hard session"), then only the result line shows; (4) rate ~3–5 moments a week, at most ~1
 people stop a week on average (the coach's Sunday talk aside); (5) `tools/storylet_check.gd` plays many seasons and reports repeats,
 moments that never fire, the rate per week and the coverage per age; (6) first build ~150–250 moments with variants for ages 14–16.
+**Consequences shown (user, 2026-10-11, after trying the C2 test moments; build in C3):** *a hint before, the changes after.*
+Every reply gets a short hint under its button in words ("Inka will be pleased · tired tomorrow"); after the player answers, a
+small **result card** shows the result line and what changed, in words with ▲ / ▼ and no numbers ("Trust in Heikki ▲ a little",
+"Inka ▼", "Sleep tonight ▼"), FM-style. Chosen over "hint only" and "exact numbers". Prepared effects (moods, sleep, grades,
+budget) are listed only once their systems exist; until then the card shows only what really changed (trust, relationship, a
+remembered flag when the storylet says so). The card is shown in the moment panel (stops) and in the thread (C3's message screen).
 **Unanswered (user: a setting):** *Play week stops for:* **Important only (default)** / Every moment; a small moment left unanswered
 passes as "you didn't answer", a real outcome (friends notice a little).
 **Where:** the People tab (threads), the Today card (today's moment), a small people mark on the week strip.
