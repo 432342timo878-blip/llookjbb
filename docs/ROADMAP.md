@@ -444,7 +444,9 @@ studios (with the race ceremony), audio. Details in the ideas backlog.
   nutrition D9). Needs research with sources and a design: each new attribute must matter in the race or training model,
   or it is only a number. Placement: designed with Coaching + School (sessions and time), built after. *(Opus)*
 - **An ongoing chat with the coach (user, 2026-10-11):** "something like a conversation we're having here; interactive,
-  not repetitive". Possible ways: (a) **an AI coach**: the game sends the coach's personality, the athlete's state (plan,
+  not repetitive". **Decided (user, 2026-10-11): no AI coach, no paid API.** What stays: (b) written dialogue built from
+  the game state, made as varied as possible with the storylet ideas above ("Never stale"). The options that were
+  weighed: (a) **an AI coach**: the game sends the coach's personality, the athlete's state (plan,
   soreness, results, goals, school) and the chat to Claude over the internet (Godot's HTTPRequest; GDScript has no
   official SDK, so raw HTTP), and the coach answers in free text; game actions (change a day, set a goal, change the plan)
   come back as structured tool calls that the game checks and shows as Accept / Veto, so the AI can never break the
