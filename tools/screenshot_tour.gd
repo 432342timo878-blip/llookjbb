@@ -225,7 +225,9 @@ func _run() -> void:
 	await _shot("14b2_progress")
 	await _form_tour(game, hub)
 
-	# The Report tab in the middle of a week: this week so far, then last week.
+	# The Report tab in the middle of a week: this week so far, then last week. (After the Saturday race Play week went on to
+	# Sunday evening, where the coach's talk waits: answered first.)
+	_answer_pending(game)
 	game.advance_day()
 	game.advance_day()
 	hub._refresh_week_ui()
@@ -625,7 +627,8 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	var hub := hub_in
 
 	# 1. Sore: shins and Achilles a bit sore. The Today card, a row opened, then calves sore and a played day:
-	#    the "sore" stop event, and the week strip with its "!" marker.
+	#    the "sore" stop event, and the week strip with its "!" marker. (A talk or proposal still waiting is answered first.)
+	_answer_pending(game)
 	_reset_health(game, health)
 	health.strain["shins"] = 36.0
 	health.strain["achilles"] = 38.0
@@ -810,6 +813,9 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 	var CT = load("res://scripts/core/coach_talk.gd")
 	load("res://scripts/core/health_system.gd").model_enabled = false
 	hub._show("overview")
+	# (No proposal stops here, so the first stop moment is the week talk: the coach only says what he'd change. Section 6 below
+	# shows the proposals.)
+	game.get_system("proposals").set_setting("never")
 	# 1. Play on to Sunday evening: the week talk stops Play week.
 	var guard := 0
 	while guard < 40:
@@ -927,6 +933,67 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 	hub._close_day()
 	hub._show("overview")
 
+	# 6. The coach's proposals (session C4): one that stops Play week ("Ask me first"), OK, the result; his change in the day
+	# editor with Veto and the reasons, vetoed; Ask the coach in the day editor and in the Training tab.
+	var cp = game.get_system("proposals")
+	var V = load("res://scripts/core/coach_verdict.gd")
+	cp.set_setting("ask")
+	var w = game.current_week()
+	var d := -1
+	for x in range(w.day, 7):
+		if w.can_change(x) and not w.session_ids(x).is_empty() and not w.changes.has(x):
+			d = x
+			break
+	if d < 0:
+		print("people tour: no day for a proposal this week")
+		return
+	var cur: Dictionary = V.day_now(w, d)
+	var to := {"sessions": cur.sessions.duplicate(), "intensity": "easy"} if cur.intensity != "easy" else {"sessions": [], "intensity": cur.intensity}
+	var j: Dictionary = V.judge(V.day_change({d: cur}, {d: to}, "day_changed", [], "proposal"))
+	cp._propose("lighter", w, [{"d": d, "from": cur, "to": to}], j, game._day_context(), MS.day_no(game.date))
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("47_proposal_stop")
+	await _scroll_event_to_end(hub)
+	await _shot("47a_proposal_replies")
+	var stop: Dictionary = game.pending_event()
+	if not stop.is_empty():
+		hub._on_event_answer(stop.id, "accept")
+		await _frames(6)
+		await _shot("47b_proposal_result")
+		hub._end_result_card()
+	await _frames(3)
+	hub._open_day(d)
+	await _frames(6)
+	await _shot("47c_day_editor_coach_change")
+	hub._editor._veto_open = true
+	hub._editor.refresh()
+	await _frames(6)
+	await _shot("47d_day_editor_veto_reasons")
+	hub._editor._veto("fine")
+	await _frames(6)
+	await _shot("47e_day_editor_vetoed")
+	var ask = _find_script(hub._editor, load("res://scripts/ui/coach_ask.gd"))
+	if ask:
+		ask.press()
+		await _frames(6)
+		await _scroll_editor_to(hub, str(data.coach_talk.verdict.ask.note))
+		await _frames(4)
+		await _shot("47f_ask_coach_day")
+	hub._close_day()
+	hub._phase_open = ""
+	hub._show("training")
+	await _frames(6)
+	var ask2 = _find_script(hub, load("res://scripts/ui/coach_ask.gd"))
+	if ask2:
+		ask2.press()
+		await _frames(6)
+		await _scroll_to_label(hub, str(data.coach_talk.verdict.ask.head).format({"coach_first": load("res://scripts/ui/day_editor.gd")._coach_name().split(" ")[0]}).to_upper())
+		await _frames(4)
+		await _shot("47g_ask_coach_week")
+	hub._show("overview")
+
 
 ## Back to a healthy body: no strain, no injuries, no leftover warnings.
 func _reset_health(game, health) -> void:
@@ -949,6 +1016,15 @@ func _new_problem(game, hub: Control, health, data, injury_id: String) -> void:
 	hub._refresh_week_ui()
 	hub._show_pending_event()
 	await _frames(6)
+
+
+## Every stop event still waiting is answered (a moment with its first reply, anything else "ok").
+func _answer_pending(game) -> void:
+	var guard := 0
+	while not game.pending_event().is_empty() and guard < 10:
+		guard += 1
+		var e: Dictionary = game.pending_event()
+		game.answer_event(e.id, str(e.choices[0].id) if not e.choices.is_empty() else "ok")
 
 
 ## One day with Next day; a race is run in quick mode, stop events are answered.

@@ -121,6 +121,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _people_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _proposal_views(main, game, data, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -874,6 +876,144 @@ func _people_views(main: Node, game, tag: String) -> void:
 	for m in ms.pending():
 		ms.answer(m.id, str(m.replies[0].id))
 	ms.mark_read("coach")
+	hub._show("overview")
+	await _frames(3)
+
+
+# --- The coach's proposals (session C4) at this window size --------------------------------------------------------
+
+## A proposal that stops the week (OK, the result card), his change in the day editor (CHANGED BY, the veto reasons, vetoed),
+## Ask the coach in the day editor and the Training tab, and his "scratch?" advice before a race (the stop, then the race day
+## after "Race anyway"). Everything is put back afterwards.
+func _proposal_views(main: Node, game, data, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var V = load("res://scripts/core/coach_verdict.gd")
+	var cp = game.get_system("proposals")
+	cp.set_setting("ask")
+	var w = game.current_week()
+	var d := -1
+	for x in range(w.day, 7):
+		if w.can_change(x) and not w.session_ids(x).is_empty() and not w.changes.has(x):
+			d = x
+			break
+	if d >= 0:
+		var cur: Dictionary = V.day_now(w, d)
+		var to := {"sessions": cur.sessions.duplicate(), "intensity": "easy"} if cur.intensity != "easy" else {"sessions": [], "intensity": cur.intensity}
+		var j: Dictionary = V.judge(V.day_change({d: cur}, {d: to}, "day_changed", [], "proposal"))
+		cp._propose("lighter", w, [{"d": d, "from": cur, "to": to}], j, game._day_context(), MS.day_no(game.date))
+		hub._refresh_week_ui()
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("%s_proposal_stop" % tag)
+		_check_overflow(hub, "%s proposal_stop" % tag)
+		var e: Dictionary = game.pending_event()
+		if e.is_empty():
+			print("WRONG: no proposal stop at ", tag)
+			return
+		hub._on_event_answer(e.id, "accept")
+		await _frames(6)
+		await _shot("%s_proposal_result" % tag)
+		_check_overflow(hub, "%s proposal_result" % tag)
+		hub._end_result_card()
+		await _frames(3)
+		if not load("res://scripts/ui/day_info.gd").of(game.current_week(), d).coach:
+			print("WRONG: the accepted proposal is not in the day (", tag, ")")
+		hub._show("overview")
+		hub._open_day(d)
+		await _frames(6)
+		await _shot("%s_editor_coach_change" % tag)
+		_check_overflow(hub, "%s editor_coach_change" % tag)
+		hub._editor._veto_open = true
+		hub._editor.refresh()
+		await _frames(6)
+		await _shot("%s_editor_veto_reasons" % tag)
+		_check_overflow(hub, "%s editor_veto_reasons" % tag)
+		hub._editor._veto("none")
+		await _frames(6)
+		await _shot("%s_editor_vetoed" % tag)
+		_check_overflow(hub, "%s editor_vetoed" % tag)
+		var ask = _find_script(hub._editor, load("res://scripts/ui/coach_ask.gd"))
+		if ask:
+			ask.press()
+			await _frames(6)
+			await _shot("%s_editor_ask" % tag)
+			_check_overflow(hub, "%s editor_ask" % tag)
+		hub._close_day()
+		await _frames(4)
+	hub._phase_open = ""
+	hub._show("training")
+	await _frames(6)
+	var ask2 = _find_script(hub, load("res://scripts/ui/coach_ask.gd"))
+	if ask2:
+		ask2.press()
+		await _frames(6)
+		await _shot("%s_training_ask" % tag)
+		_check_overflow(hub, "%s training_ask" % tag)
+	hub._show("overview")
+	await _frames(3)
+
+	# His "scratch?" advice: shin splints on the Thursday before a Saturday race, a coach of 20 (he looks three days ahead).
+	var cal = load("res://scripts/core/calendar.gd")
+	var health = game.get_system("health")
+	var head: Dictionary = game.get_system("coach").head()
+	var saved_attrs: Dictionary = head.attributes.duplicate()
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_week = game._week
+	var meet := {}
+	for m in cal.meets_between({"year": 2027, "month": 1, "day": 1}, {"year": 2027, "month": 3, "day": 31}):
+		if cal.coach_recommends(game.athlete, m, {"year": 2027, "month": 1, "day": 1}) and cal.weekday(m.date) == 5:
+			meet = m
+			break
+	if not meet.is_empty():
+		load("res://scripts/core/health_system.gd").model_enabled = true
+		health._ensure_started()
+		for at in data.coaching.attributes:
+			head.attributes[at.id] = 20
+		game.date = game.add_days(cal.monday_of(meet.date), 3)
+		game._week = null
+		game.enter(meet.key)
+		_reset_health(game, health)
+		_start_problem(health, data, game, "shin_splints")
+		for area in data.health.areas.list:
+			health.strain[area.id] = float(data.health.soreness.levels[2]) * 1.15
+		cp.list = []
+		cp.week = {}
+		cp.last_day = -1
+		cp.requests = []   # (a lighter week asked for in the talk above would be looked at first)
+		game.current_week()
+		health.refresh()
+		cp._look(game._day_context(), cal.weekday(game.date))
+		hub._refresh_week_ui()
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("%s_scratch_advice_stop" % tag)
+		_check_overflow(hub, "%s scratch_advice_stop" % tag)
+		var e2: Dictionary = game.pending_event()
+		if not e2.is_empty():
+			hub._on_event_answer(e2.id, "veto_race")
+			hub._end_result_card()
+		else:
+			print("layout_check: no scratch advice came (", tag, ")")
+		hub._show("overview")
+		hub._open_day(cal.weekday(meet.date))
+		await _frames(6)
+		await _shot("%s_scratch_advice_race_day" % tag)
+		_check_overflow(hub, "%s scratch_advice_race_day" % tag)
+		hub._close_day()
+		game.withdraw(meet.key)
+		_reset_health(game, health)
+		load("res://scripts/core/health_system.gd").model_enabled = false
+	for k in saved_attrs:
+		head.attributes[k] = saved_attrs[k]
+	game.date = saved_date
+	game._week = saved_week
+	cp.list = []
+	cp.week = {}
+	cp.last_day = -1
+	cp.requests = []
+	game.current_week()
+	hub._refresh_week_ui()
 	hub._show("overview")
 	await _frames(3)
 

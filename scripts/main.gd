@@ -9,6 +9,8 @@ func _ready() -> void:
 	# The coach's Sunday talk (always a stop) and his message after a race belong to the real game; the check tools that play
 	# weeks without this shell leave them off (see StoryletSystem.talks_enabled).
 	StoryletSystem.talks_enabled = true
+	# The coach's proposals (session C4: with "Ask me first", the default, each one stops Play week) likewise.
+	CoachProposals.enabled = true
 	Router.screen_requested.connect(_show_screen)
 	Router.screen_changed.connect(_backdrop.show_for)
 	get_window().size_changed.connect(_update_layout)

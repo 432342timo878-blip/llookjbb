@@ -10,6 +10,9 @@ extends VBoxContainer
 ##   - a race day: read-only, with the meet, a warning when racing injured and a Scratch button.
 ## Everything is a 44 px control and nothing needs hovering (descriptions are shown as text).
 ## All changes go through the WeekSim day-change functions; `changed` tells the hub to redraw the strip.
+## The coach (session C4): a day he changed shows "CHANGED BY <COACH>" with his reason and Veto (then the reasons to give,
+## CoachProposals.veto); a race day shows his "scratch?" advice when he gave one; every day that is still to come has an
+## "Ask <coach>" button whose answer shows right here (CoachAsk).
 
 signal changed          # a day change was made
 signal close_requested
@@ -18,6 +21,8 @@ signal rebuilt         # the content was redrawn (the phone sheet re-fits its he
 
 var day := 0
 var _adding := false    # an empty "Choose a session" row is open
+var _veto_open := false # the coach's change: the veto reasons are showing
+var _note: Array = []   # the lines after a veto (shown once, at the top)
 
 
 func _init() -> void:
@@ -28,6 +33,8 @@ func _init() -> void:
 func show_day(d: int) -> void:
 	day = d
 	_adding = false
+	_veto_open = false
+	_note = []
 	refresh()
 
 
@@ -47,8 +54,10 @@ func refresh() -> void:
 	rebuilt.emit()
 
 
-func _after_change() -> void:
+func _after_change(note := []) -> void:
 	_adding = false
+	_veto_open = false
+	_note = note
 	refresh()
 	changed.emit()
 
@@ -84,6 +93,13 @@ func _header(info: Dictionary) -> Control:
 func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	var month := DayInfo.month_of(w)
 	var ids: Array = info.sessions
+
+	if not _note.is_empty():
+		add_child(_veto_note())
+	var cp := Game.get_system("proposals") as CoachProposals
+	var proposal: Dictionary = cp.applied_for(info.date) if cp != null and info.coach else {}
+	if not proposal.is_empty():
+		add_child(_coach_change_box(proposal))
 
 	var health := _health_box(info)
 	if health != null:
@@ -143,10 +159,13 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 			plan_text += " · " + DayInfo.intensity_name(w.plan_intensity[day])
 		summary.add_child(UIKit.fact_row("Weekly plan", _wrapped_value(plan_text)))
 		summary.add_child(UIKit.wrapped(DayInfo.changed_text(info), ""))
-		# The coach's Veto button goes here, next to "Back to plan", once coaching exists (GDD 4.7:
-		# changes remember who made them, and a coach change shows Accept / Veto).
-		if info.by.values().all(func(who): return who == "injury"):
+		# A change of the coach is undone with his Veto (the panel at the top, session C4); Back to plan is for your own changes
+		# (it puts back the whole day, his part too).
+		var who: Array = info.by.values()
+		if who.all(func(x): return x == "injury"):
 			summary.add_child(UIKit.wrapped("Your injury sets these limits. They go away when you've recovered.", "MutedLabel"))
+		elif not proposal.is_empty() and not who.has("player"):
+			summary.add_child(UIKit.wrapped(str(_ui().veto_where).format(_coach_fill()), "MutedLabel"))
 		else:
 			var back := UIKit.button("Back to plan", false, 160)
 			back.pressed.connect(func():
@@ -158,6 +177,7 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 		summary.add_child(UIKit.wrapped("This is your season plan's day. Changes here apply to this day only." if season_plan
 				else "This is the weekly plan. Changes here apply to this day only.", "MutedLabel"))
 	add_child(UIKit.panel(summary, 14))
+	_add_ask("day", func(): return CoachVerdict.for_day(day))
 
 
 ## One session of the day: a picker to swap it, a Remove button, and what it is.
@@ -339,11 +359,15 @@ func _build_race(info: Dictionary) -> void:
 		box.add_child(UIKit.wrapped(level, "MutedLabel"))
 	box.add_child(UIKit.wrapped("The race replaces the day's training, so there is nothing to plan here. "
 			+ "You can't change a race day, but you can scratch from the race."))
-	# The coach's Veto (GDD 4.7) would sit next to this scratch button once coaching exists.
 	box.add_child(HealthUI.scratch_control(meet, _after_change))
-	var says := _coach_says(str(Data.coach_talk.day.race))
-	if says != null:
-		add_child(says)
+	var cp := Game.get_system("proposals") as CoachProposals
+	var advice: Dictionary = cp.advice_for(str(meet.key)) if cp != null else {}
+	if not advice.is_empty():
+		add_child(_advice_box(advice))   # his "scratch?" advice (session C4); you decide
+	else:
+		var says := _coach_says(str(Data.coach_talk.day.race))
+		if says != null:
+			add_child(says)
 	var warning := HealthUI.race_card(HealthUI.race_outlook(day), info.today)
 	if warning != null:
 		add_child(warning)
@@ -352,6 +376,7 @@ func _build_race(info: Dictionary) -> void:
 		var form := FormUI.race_card()   # how you will race today (a later race day: it depends on the days in between)
 		if form != null:
 			add_child(form)
+	_add_ask("race", func(): return CoachVerdict.for_race(day))
 
 
 # --- Health ------------------------------------------------------------------------------------------
@@ -414,6 +439,102 @@ func _intensity_cap() -> String:
 	if h == null or HealthUI.is_overridden(day):
 		return ""
 	return str(h.rule_at(day - Game.current_week().day + 1).intensity)
+
+
+# --- The coach (session C4) --------------------------------------------------------------------------------
+
+static func _ui() -> Dictionary:
+	return Data.coach_talk.proposal.ui
+
+
+static func _coach_name() -> String:
+	var cs := Game.get_system("coach") as CoachSystem
+	return str(cs.head().get("name", "")) if cs else ""
+
+
+static func _coach_fill() -> Dictionary:
+	var first := _coach_name().split(" ")[0]
+	return {"coach_first": first, "COACH": first.to_upper()}
+
+
+## "CHANGED BY <COACH>": his reason and Veto; after Veto the reasons to give (a reason costs nothing) and Cancel.
+func _coach_change_box(p: Dictionary) -> Control:
+	var col := UIKit.vbox(8)
+	col.add_child(UIKit.label(str(_ui().changed_head).format(_coach_fill()), "CaptionLabel"))
+	if str(p.get("said", "")) != "":
+		col.add_child(UIKit.wrapped(str(p.said), ""))
+	if not _veto_open:
+		var veto := PeopleUI.reply_button(str(_ui().veto))
+		veto.pressed.connect(func():
+			_veto_open = true
+			refresh())
+		col.add_child(veto)
+	else:
+		col.add_child(UIKit.wrapped(str(_ui().veto_ask), ""))
+		var replies: Dictionary = Data.coach_talk.proposal.replies
+		var reasons := []
+		for r in CoachProposals.veto_reasons(str(p.kind)):
+			reasons.append({"id": str(r.id), "label": str(replies.veto_prefix) + str(r.label)})
+		reasons.append({"id": "none", "label": str(replies.none_label)})
+		for r in reasons:
+			var b := PeopleUI.reply_button(str(r.label))
+			b.pressed.connect(func(): _veto(str(r.id)))
+			col.add_child(b)
+		var hint := UIKit.wrapped(str(replies.none_hint), "CaptionLabel")
+		col.add_child(hint)
+		var cancel := UIKit.button(str(_ui().veto_cancel), false, 120)
+		cancel.size_flags_horizontal = Control.SIZE_SHRINK_END
+		cancel.pressed.connect(func():
+			_veto_open = false
+			refresh())
+		col.add_child(cancel)
+	return UIKit.alert_panel(col, PeopleUI.color_of(_coach_name()), 12)
+
+
+## The Veto: the day goes back to the plan (CoachProposals.veto writes your reason and his reply into the thread).
+func _veto(reason: String) -> void:
+	var cp := Game.get_system("proposals") as CoachProposals
+	if cp == null:
+		return
+	var lines := cp.veto(Game.add_days(Game.current_week().monday, day), reason)
+	_after_change(lines if not lines.is_empty() else [""])
+
+
+## After a veto: "You vetoed <coach>'s change" and what that means (a trust line for a costly silent veto).
+func _veto_note() -> Control:
+	var col := UIKit.vbox(6)
+	col.add_child(UIKit.wrapped(str(_ui().vetoed).format(_coach_fill()), ""))
+	var lines := _note.filter(func(x): return str(x) != "")
+	if not lines.is_empty():
+		col.add_child(PeopleUI.changes_panel(lines))
+	return UIKit.alert_panel(col, Palette.BORDER, 12)
+
+
+## His "scratch?" advice for this race and where it stands (asked and waiting, you chose to race, or only his opinion).
+func _advice_box(p: Dictionary) -> Control:
+	var t: Dictionary = Data.coach_talk.proposal
+	var col := UIKit.vbox(6)
+	col.add_child(UIKit.label(str(_ui().advice_head).format(_coach_fill()), "CaptionLabel"))
+	var key := "scratch_noticed" if str(p.status) == "noticed" else "scratch"
+	var when := str(t.scratch_when.later).format({"day": str(Data.moments.day_names[day])})
+	col.add_child(UIKit.wrapped(str(t[key]).format({"meet": p.meet_name, "when": when}), ""))
+	if str(p.get("said", "")) != "":
+		col.add_child(UIKit.wrapped(str(p.said), ""))
+	match str(p.status):
+		"asked":
+			col.add_child(UIKit.wrapped(str(_ui().advice_none), "MutedLabel"))
+		"vetoed", "none":
+			col.add_child(UIKit.wrapped(str(_ui().advice_raced), "MutedLabel"))
+	return UIKit.alert_panel(col, PeopleUI.color_of(_coach_name()), 12)
+
+
+## "Ask <coach> …" (CoachAsk) at the bottom of a day still to come.
+func _add_ask(kind: String, make_change: Callable) -> void:
+	if not CoachAsk.available():
+		return
+	var ask := CoachAsk.new(kind, make_change)
+	ask.toggled.connect(func(): rebuilt.emit())
+	add_child(ask)
 
 
 # --- Helpers -----------------------------------------------------------------------------------------

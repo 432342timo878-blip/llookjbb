@@ -340,14 +340,17 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         changed, in words with ▲ / ▼, no numbers), in the moment panel and the thread; the hints of the test moments filled in.
         *(Sonnet, high)*
         Check: tour + `layout_check` (5 sizes, no OVERFLOW / SQUEEZED), `help_check` both layouts.
-  - [ ] **C4. Coach proposals + Veto + "Ask me first" + Ask the coach** (the verdict model: the truth from the training / health /
-        form models, then the coach's view through his attributes). *(Opus, high)*
-        Check: a tool that compares the coach's verdicts with the truth by attribute level (a 20 nearly always right, a 5 often wrong);
-        proposals only on unplayed non-race days; Veto restores the plan; fingerprints identical with the club coach.
-  - [ ] **C5. Season goals with times + race advice by personality:** standards in data (SM, TF-juniorit / TF-nuoret 2025 tables,
-        Kalevan kisat), the goals in the autumn offer, Overview + Progress, race advice accuracy = race reading and bias = personality,
-        the pre-race suggested plan. *(Sonnet, high)*
-        Check: `commentary_check`, `race_check` (quick mode unchanged with the club coach), `season_check`, tour.
+  - [x] **C4. Coach proposals + Veto + "Ask me first" + Ask the coach** *(done 2026-10-16, GDD 4.9 "Built (step C4)"; user: only
+        when he sees a reason, at most 2 a week; "Ask me first" always stops Play week; a veto asks for a reason, silent ones cost
+        trust from the 3rd in 4 weeks; "Never" = he notices, an ignored real warning −1 trust; Ask the coach = a card in place; meets
+        and targets moved to C5)* (the verdict model: the truth from the training / health / form models, then the coach's view
+        through his attributes). *(Opus, high)*
+        Check: `tools/verdict_check.gd` (in `run_all_checks`); `training_balance` part 2e; tour + `layout_check`.
+  - [ ] **C5. Season goals with times + race advice by personality + "Coach suggests" meets and targets:** standards in data
+        (SM, TF-juniorit / TF-nuoret 2025 tables, Kalevan kisat), the goals in the autumn offer, Overview + Progress, race advice
+        accuracy = race reading and bias = personality, the pre-race suggested plan; the coach proposes meets and targets in the
+        Calendar ("Coach suggests", moved from C4: judged with the C4 verdict model, the player decides). *(Sonnet, high)*
+        Check: `commentary_check`, `race_check` (quick mode unchanged with the club coach), `season_check`, `verdict_check`, tour.
   - [ ] **M1. Mind:** `MindSystem` (confidence / motivation / stress, causes, effects, off switch), mental attributes that grow
         (consistency from races, composure from big meets), competitiveness and ambition, the weekly mental plan and the cue word.
         *(Opus, high)*

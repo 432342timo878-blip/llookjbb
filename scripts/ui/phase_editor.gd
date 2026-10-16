@@ -74,6 +74,12 @@ func _build() -> void:
 		add_child(UIKit.alert_panel(UIKit.wrapped(note, ""), Palette.RISK_MODERATE))
 		note = ""
 	add_child(_week_box())
+	if CoachAsk.available():   # his verdict on the phase's week (session C4): a future phase from its lead-in
+		var future := state == "future"
+		var first: Dictionary = _p.first
+		add_child(CoachAsk.new("phase", func():
+			var start: Dictionary = SeasonUI.lead_in(year, phase_id, first) if future else {}
+			return CoachVerdict.for_phase(year, phase_id, start, first if future else {})))
 	add_child(_rules_box())
 	add_child(_edges_box())
 	_summary = UIKit.vbox(8)

@@ -2543,7 +2543,8 @@ character words, his group, his athletes, cost, and what working with him would 
   Form ("sore yesterday: Thursday's intervals → easy run"; "Friday mobility before the target"); a coach mark in the strip, **Veto** in
   the day editor's marked spot, his "scratch?" advice on race day. **Standing order** in the Training tab: *Let the coach adjust my
   days:* **Ask me first (default, user)** / Always, tell me / Never (he notices). Load management decides how early and how right his
-  proposals are (a poor one rests you needlessly). He also proposes meets and targets ("Coach suggests" in the Calendar).
+  proposals are (a poor one rests you needlessly). He also proposes meets and targets ("Coach suggests" in the Calendar; moved to
+  C5 by the user). *Built in C4 (all but the meets): see "Built (step C4)".*
 - **Season goals with times ("what makes the coach happy"):** with the autumn plan offer, 2–3 goals: a time ("2:12 this summer"), a
   meet / standard (the Nuorten SM final, the TF-juniorit 2:05.27, an SM standard), a process goal ("90 % of sessions", "no training
   through warnings"). The player can reply "aim higher / lower". Real milestones from data: SM standards, SUL's TF-juniorit (14–16),
@@ -2963,6 +2964,92 @@ row in every part); `layout_check` at 1280×720, 720×1280, 390×844, 1000×900,
 **Not in C3:** coach proposals, the Veto, "Ask me first" and Ask the coach (C4); season goals (C5); moods (M1); family, friends and
 school people and the real moments (P1: the threads are there, empty, and say so); the coach market and scouting ranges (C6).
 The week topics' `proposal` effects ("a lighter week") are recorded, nothing acts on them until C4.
+
+#### Built (step C4, 2026-10-11 → 2026-10-16): coach proposals, the Veto, "Ask me first", Ask the coach
+
+**Decisions with the user (asked 2026-10-11; all the recommended options):**
+1. **Proposals only when he sees a reason, at most 2 a week** (scratch advice counts), one a day.
+2. **With "Ask me first" a proposal always stops Play week** (GDD 4.9.2: a reply that changes something stops).
+3. **A veto asks for a reason** ("I feel fine" / "I want this session" / "I'll ease off myself" / "No reason"; for a scratch "I feel
+   fine" / "I want this race"). A reason costs nothing. From the 3rd silent veto within 4 weeks each costs a little trust (−2).
+4. **"Never" = he notices:** he says in the thread what he would have changed. If it was a real warning (the truth's risk part at
+   least the Risky threshold) and the day was trained as it was, trust −1. His wrong alarms cost nothing.
+5. **Ask the coach = a card right there** (day editor, Training tab, phase editor); nothing is written into the thread.
+6. **Meets and targets ("Coach suggests") come later, in C5.**
+
+**Claude's defaults (not asked; say if you want them changed):** scratching is never done by itself: with "Always" he still asks,
+with "Never" he only writes; no proposal while another stop already waits (with "Ask me first"); he never touches a day you or an
+injury already changed, or the day a "sore" warning asked you about; when an injury limit sits on a day he changed, the limit goes
+back on top of his change (and a veto puts the plan back with the limits); "Back to plan" stays for your own changes, his change has
+its own Veto at the top of the day; the coach mark on the week strip is his initial in his colour (as on his messages).
+
+**What was built:**
+- **The verdict (`CoachVerdict`, `scripts/core/coach_verdict.gd`, reading only).** THE TRUTH: the game plays the change and what it
+  replaces on copies (athlete, body, Form; no dice) over the rest of this week and one more (`verdict.window_weeks`), and puts
+  everything in *weeks of training*: training = the 800 m ability difference / a week's gain; risk = extra expected overuse injuries
+  (the health model's daily hazard at average proneness) × `injury_weeks` 6, plus, when racing on an injury that can get worse, its
+  escalation chance × `escalation_weeks` 6; Form = the race-day Form difference at the races in the window × `race_weight` (target
+  0.5, other 0.15); a scratched race loses `race_value_w` (local 0.3, district 0.5, national / international 1.0, ×2 for a target).
+  Risky = risk or Form below −0.3 weeks; Good idea = total ≥ 0.1; Pointless = total ≤ −0.1; else Fine (with the reason that decided
+  it). THE COACH sees each part with noise, sd = 0.04 + 0.075 × (20 − his attribute) × (|part| × 0.5 + 0.08): training by endurance
+  knowledge (aerobic capacity, threshold, economy) and speed & strength knowledge (the rest), risk by load management, Form by
+  periodization; his demands weigh them (steady: training × 0.75, risk × 1.3; ambitious: training × 1.4, risk × 0.75). His dice come
+  from the coach, the date and the change, so the same question on the same day gets the same answer. His words: the voice's opening
+  for the verdict + the reason (`coach_talk.json verdict`), in his detail (communication: short / normal / full). Questions:
+  `for_day` (the day against the plan's day; an unchanged day against a rest day; a rest day against an easy run), `for_race` (race
+  against scratch + easy run), `for_week` (the plan from next week on against the coach's: repeat mode `WeekPlan.coach()`, season
+  mode the same season with this phase put back; an unchanged plan against `lighter_of`), `for_phase` (the phase's week against the
+  template or one step easier; a future phase from its lead-in, `SeasonUI.lead_in`).
+- **The proposals (`CoachProposals`, `scripts/core/coach_proposals.gd`, GameSystem id `proposals`, last in `Game.systems`; static
+  `enabled` OFF unless `main.gd` switches it on, like the talk).** Every morning he looks at today, every evening from tomorrow, as
+  far ahead as his load management lets him (`look_ahead`: 1 day, 2 from 9, 3 from 14), only when something catches his eye
+  (the most strained area / 40, fatigue / 42, a race within 2 days; plus his noise 0.035 × (20 − load management), so a poor load
+  manager sees things that aren't there). He tries Easy, the hard session swapped for an easy run, a rest day, mobility before a race,
+  and proposes the one HE thinks best when he thinks it a Good idea (≥ 0.1 weeks as he sees it). A request from the Sunday talk
+  ("a lighter week" / "more") waits for the next morning: the two heaviest days left made Easy (or one), or the best step up; he goes
+  along unless he thinks it Pointless or Risky, then he says why. Scratch advice: a race within his look-ahead while an injury is
+  active or an area is sore, when scratching looks a Good idea to him. The three settings (`setting()`, saved per career): **Ask me
+  first** (default) = a proposal moment in the coach thread that stops Play week (OK / Veto: reason / Veto, no reason); **Always,
+  tell me** = he changes the day (`by = "coach"`) and writes; **Never** = he writes what he would have changed. `veto(date, reason)`
+  (the day editor) takes his parts out of the day and puts the injury limits back; `applied_for(date)`, `advice_for(meet)`.
+  Own dice (seed + state saved); nothing saved while he never proposed anything at the default setting.
+- **StoryletSystem additions:** `post_proposal` (a moment of kind `proposal`, outside the 3–5 a week; the stop title
+  `proposal.title`), `coach_says`, `player_says`, `_resolve_proposal` → `CoachProposals.on_reply` (his reply and the result card's
+  lines); the reply effect `proposal` → `CoachProposals.request`. `MomentEventPanel` captions a proposal YOUR COACH SUGGESTS.
+- **UI:** the week strip's coach mark (`DayInfo.coach`, his initial); "Changed by <his first name>" (`DayInfo.who_name`); the day
+  editor's **CHANGED BY <COACH>** panel (his reason, Veto → the reasons, Cancel; afterwards "You vetoed …" with what that means), his
+  **<COACH> ADVISES** panel on a race day (the advice and where it stands), and **Ask <coach>** at the bottom of every day still to
+  come (day / race); `CoachAsk` (`scripts/ui/coach_ask.gd`: the button and the card: what was compared, his word in its colour, his
+  message with his initial, the note that his view is only as good as he is, Hide) also in the Training tab (both modes) and the
+  phase editor; `StandingOrders` gains **Let the coach adjust my days: Ask me first / Always, tell me / Never**; `PeopleUI.reply_button`
+  (the accent-edged 44 px answer button, also the Veto). Help: new topics `coach_changes` and `ask_coach`; `overview` v6,
+  `training_season` v5, `training_repeat` v4, `phase_editor` v2, `moment` v2, `day_editor` v4.
+- **Data:** `data/coaching.json` `verdict` and `proposals` (every number above); `data/coach_talk.json` `verdict` (words, reasons,
+  short / detail lines, voices, compare lines, the Ask texts) and `proposal` (intros, change lines, ends, scratch lines, requests,
+  replies, veto reasons, answers per voice, result lines, settings, day-editor texts); `data/moments.json` `proposal` among the known
+  effects and `ui.stop_head_proposal`.
+- **Checks:** new `tools/verdict_check.gd` (in `run_all_checks`): data; sanity of the truth; the coach against the truth by level;
+  the demands bias; proposals through the game (Ask me first: unplayed non-race days only, ≤ 2 a week and 1 a day, OK applies, a veto
+  keeps the plan, a silent veto from the 3rd costs trust; Always: by the coach, Veto in the day editor; forced scratch advice in all
+  three settings); "Never" and "Ask me first" + every veto change nothing; save / load bit for bit. `training_balance` part 2e. The
+  tour (`47…47g`) and `layout_check` (`_proposal_views`) have the new views; the tour now answers the Sunday talk left waiting after
+  the Saturday race (shot 19c showed the talk instead of the soreness warning since C3).
+
+**Measured (`verdict_check`, 16 weeks; the first-guess numbers met every target, so none was changed):** 715 real changes judged
+(the truth: Fine 69 %, Pointless 20 %, Good idea 6 %, Risky 4 %); the coach agrees with the truth at level 5 / 10 / 15 / 20:
+46 / 57 / 78 / 98 % (a level-5 coach calls 14 % of Pointless / Risky changes a Good idea and 13 % of Good ideas Pointless / Risky;
+level 10: 7 % / 5 %; level 15: 1 % / 0 %; most disagreements of an average coach are Fine against Good or Pointless near the
+line); lighter changes called Good by a coach of 15: steady 18 %, balanced 13 %, ambitious 10 %; a real shin-splints niggle the day
+before the Nuorten SM: scratching is a Good idea even for a target (risk +2.9 weeks against the race's −2.0), while sore legs alone
+are not (+0.2: by the health model soreness is a warning, not an injury). Through the game with "Ask me first": 23 and 18
+proposals in 16 weeks (≈ 1.3 a week) in an Ambitious and a Balanced career, 88 % of them Good idea or Fine in truth. One truth takes
+~13 ms. `training_balance -- 0`: every part identical, 2e included (206.798298350 / 14.102831594 / 1226.006524079 for the coach row;
+270 proposals in its rows, all vetoed or only noticed). `run_all_checks` 15 / 15 PASS (help_check in both layouts,
+storylet_check, day_engine_check, verdict_check …); `layout_check` at 1280×720, 720×1280, 390×844, 1000×900, 844×390: 514 views,
+no OVERFLOW / SQUEEZED / WRONG (it now also prints WRONG when an accepted proposal is missing from its day).
+
+**Not in C4:** "Coach suggests" meets and targets in the Calendar (C5); season goals; trust effects beyond the vetoes and ignored
+warnings (C5 / M1); exam weeks as a reason (S1).
 
 ### Other systems (to be designed)
 

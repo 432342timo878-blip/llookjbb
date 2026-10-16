@@ -132,15 +132,7 @@ static func moment_card(ms: StoryletSystem, m: Dictionary, on_pick: Callable, he
 static func replies(m: Dictionary, on_pick: Callable) -> Control:
 	var col := UIKit.vbox(6)
 	for r in m.replies:
-		var b := Button.new()
-		b.text = str(r.label)
-		b.custom_minimum_size = Vector2(0, 44)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		# An answer is something to tap: a raised button with an accent edge (the panels around it are the same dark grey).
-		b.add_theme_stylebox_override("normal", _reply_style(Palette.SURFACE_3, Color(Palette.ACCENT, 0.5)))
-		b.add_theme_stylebox_override("hover", _reply_style(Color("#363c4c"), Palette.ACCENT))
-		b.add_theme_stylebox_override("pressed", _reply_style(Palette.SURFACE_2, Palette.ACCENT))
+		var b := reply_button(str(r.label))
 		b.pressed.connect(on_pick.bind(str(r.id)))
 		col.add_child(b)
 		if str(r.hint) != "":
@@ -148,6 +140,20 @@ static func replies(m: Dictionary, on_pick: Callable) -> Control:
 			hint.add_theme_font_size_override("font_size", 14)
 			col.add_child(hint)
 	return col
+
+
+## An answer to a person: a full-width 44 px button, raised, with an accent edge (the panels around it are the same dark grey,
+## so a plain button would vanish). Also the coach's Veto and its reasons in the day editor (session C4).
+static func reply_button(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(0, 44)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.add_theme_stylebox_override("normal", _reply_style(Palette.SURFACE_3, Color(Palette.ACCENT, 0.5)))
+	b.add_theme_stylebox_override("hover", _reply_style(Color("#363c4c"), Palette.ACCENT))
+	b.add_theme_stylebox_override("pressed", _reply_style(Palette.SURFACE_2, Palette.ACCENT))
+	return b
 
 
 static func _reply_style(bg: Color, border: Color) -> StyleBoxFlat:

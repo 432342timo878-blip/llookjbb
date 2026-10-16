@@ -8,6 +8,7 @@ extends SceneTree
 ##    Every career here gets a club coach of 10s (CoachSystem.neutral_club, session C1); part 2c plays the rows with the
 ##    real club coach and the coach model off (same fingerprints) and shows the first row with the model on.
 ##    Part 2d plays the rows with the moments engine's test moments ON (session C2), stop events answered: same fingerprints.
+##    Part 2e plays them with the coach's proposals ON (session C4), "Never" and "Ask me first" with every one vetoed: same.
 ## 3. Health (GDD 4.6): 200 athletes per row (random backgrounds, boys and girls), 1 year from age 14
 ##    through the game's day loop with the health model on, entering the coach's recommended meets.
 ##    Policies: neutral = follows injury limits, ignores soreness; careful = takes it easy when sore
@@ -124,6 +125,24 @@ func _run() -> void:
 	H.model_enabled = true
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_moments else "NO  <-- the moments change the training!"))
 
+	# Session C4: the coach's proposals ON. With "Never" he changes nothing (he only says what he would have changed), and
+	# with "Ask me first" every proposal is vetoed (a reason or none, by the event's id): the same fingerprints.
+	print("\n== 2e. Coach proposals (session C4) ON: 'Never', and 'Ask me first' with every proposal vetoed: same fingerprints")
+	var CP = load("res://scripts/core/coach_proposals.gd")
+	CP.enabled = true
+	H.model_enabled = false
+	var same_proposals := true
+	var proposed := 0
+	for setting in ["never", "ask"]:
+		for i in runs.size():
+			same_proposals = same_proposals and _m1_row(runs[i], plans, true, false, "important", setting) == fingerprints[i]
+			proposed += game.get_system("proposals").fired.size()
+	CP.enabled = false
+	H.model_enabled = true
+	print("   (%d proposals in the %d rows)" % [proposed, runs.size() * 2])
+	print("   fingerprints identical to part 1: %s" % ("YES" if same_proposals and proposed > 0 else
+			("NO  <-- the proposals change the training without your OK!" if not same_proposals else "NO PROPOSALS: the check proves nothing")))
+
 	var n := 200
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():
@@ -200,7 +219,8 @@ func _m1_athlete():
 ## plan_level: the row's intensity is stored in the week plan (WeekPlan) instead of set as day changes.
 ## moments ("" = as the career has them): the moments' "Play week stops for" setting (part 2d, with the test moments on);
 ## stop events are answered and the days are played to the end of each week.
-func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := false, moments := "") -> String:
+## proposals ("" = as the career has them): the coach's "Let the coach adjust my days" setting (part 2e).
+func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := false, moments := "", proposals := "") -> String:
 	var a = _m1_athlete()
 	var start := {}
 	for id in ["aerobic_capacity", "lactate_threshold", "speed_endurance", "speed", "strength", "running_technique", "race_tactics"]:
@@ -213,6 +233,8 @@ func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := fa
 		game.season.repeat_week = WP.make(plans[run[1]], [run[2], run[2], run[2], run[2], run[2], run[2], run[2]] if plan_level else [])
 		if moments != "":
 			game.get_system("moments").set_stop_mode(moments)
+		if proposals != "":
+			game.get_system("proposals").set_setting(proposals)
 	for w in 52:
 		var r: Dictionary
 		if through_game:
@@ -255,13 +277,17 @@ func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := fa
 
 
 ## Part 2d: stop events answered (a moment with one of its replies picked from its id, so every run answers the same), and
-## every other moment waiting in the threads answered when its id hashes even.
+## every other moment waiting in the threads answered when its id hashes even. Part 2e: a proposal of the coach is always
+## vetoed (one of its veto replies, by the id).
 func _answer_moments() -> void:
 	while not game.pending_event().is_empty():
 		var e: Dictionary = game.pending_event()
 		var answer := "ok"
 		if str(e.get("kind", "")) == "moment":
 			answer = str(e.choices[e.id.hash() % e.choices.size()].id)
+			var vetoes: Array = e.choices.filter(func(c): return str(c.id).begins_with("veto_"))
+			if not vetoes.is_empty():
+				answer = str(vetoes[e.id.hash() % vetoes.size()].id)
 		game.answer_event(e.id, answer)
 	var ms = game.get_system("moments")
 	for m in ms.pending():

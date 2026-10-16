@@ -5,6 +5,7 @@ extends HBoxContainer
 ## a RACE badge on race days, a dot when the day was changed, and for played days a fatigue dot (dimmed).
 ## Health: a round "!" on days you were sore and a "+" on days an injury or illness limited (see _health_marks).
 ## People: a small speech bubble (ChatMark) on days a person wrote to you, filled while a message of that day is unread.
+## Coach: his initial in his colour on a day he changed (session C4).
 ## Today has an accent border; `selected` (the day open in the day editor) a bright one.
 ## Tapping a cell emits `day_pressed`. On a phone the cells are ~62 px wide and show the day letter, the
 ## day of the month and the markers; on PC they also show the session names.
@@ -151,10 +152,14 @@ func _cell(info: Dictionary) -> Control:
 func _health_marks(info: Dictionary) -> Control:
 	var injured: bool = info.limited or not info.health.is_empty()
 	var talk: Dictionary = _people.get(StoryletSystem.day_no(info.date), {})
-	if int(info.sore) == 0 and not injured and talk.is_empty():
+	var coach: bool = info.get("coach", false)
+	if int(info.sore) == 0 and not injured and talk.is_empty() and not coach:
 		return null
 	var row := UIKit.hbox(3)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if coach:   # (the coach changed the day, session C4: his initial in his colour)
+		var name := DayInfo.who_name("coach")
+		row.add_child(UIKit.badge(name.left(1).to_upper(), PeopleUI.color_of(_coach_name()), 16))
 	if int(info.sore) > 0:
 		row.add_child(UIKit.badge("!", HealthUI.level_color(int(info.sore)), 16))
 	if injured:
@@ -162,6 +167,12 @@ func _health_marks(info: Dictionary) -> Control:
 	if not talk.is_empty():
 		row.add_child(ChatMark.new(int(talk.unread) > 0))   # (people mark, session C3)
 	return row
+
+
+## The head coach's full name (his colour comes from it, as on his messages).
+static func _coach_name() -> String:
+	var cs := Game.get_system("coach") as CoachSystem
+	return str(cs.head().get("name", "")) if cs else ""
 
 
 func _cell_style(info: Dictionary) -> StyleBoxFlat:

@@ -254,5 +254,135 @@
 				"hurt": "No conclusions from this one. Recover, then we continue."
 			}
 		}
+	},
+	"verdict": {
+		"_note": "Session C4 (GDD 4.9.2 'Ask the coach'; CoachVerdict). words = the four verdicts. reasons = why, by the part of the change that decided it as HE sees it (rest = it lowers the injury risk, fresh = better Form at the race, work = more training, race = racing is worth it, risk / form = what makes it Risky, lose_work / form_loss / bit_risky / nothing = Pointless, fine / tradeoff = Fine); short = what a coach with communication <= detail.short_max says instead, detail = the extra sentence of one with >= detail.full_min. voice = his opening word per verdict. compare = the line that says what was compared. Placeholders: {area} (the most loaded body area), {meet}, {day}, {coach_first}, {name}.",
+		"words": {"good": "Good idea", "fine": "Fine", "pointless": "Pointless", "risky": "Risky"},
+		"reasons": {
+			"rest": ["Your {area} have taken a lot lately; easing off now keeps you out of trouble.", "Your {area} could use the break, and it costs you very little."],
+			"fresh": ["You'll be fresher for {meet}.", "It leaves your legs fresh for {meet}."],
+			"work": ["It's more work, and your body can take it right now.", "Good training, and you're fresh enough to absorb it."],
+			"race": ["Race it. Racing is how you learn to race.", "Go and race. You're fit enough for it."],
+			"risk": ["Your {area} are already loaded. That's asking for an injury.", "That's a lot on your {area} right now. That's how injuries start."],
+			"form": ["So close to {meet}, you'd race on tired legs.", "That tiredness would still be in your legs at {meet}."],
+			"lose_work": ["You'd lose good training and gain nothing for it.", "You're fresh. There's no reason to back off."],
+			"form_loss": ["It takes a little of your edge off for {meet}, for nothing."],
+			"bit_risky": ["It's a bit much for your {area}, and it doesn't give you much."],
+			"nothing": ["It makes no real difference either way."],
+			"fine": ["Fine by me.", "That works."],
+			"tradeoff": ["You give up a little, you gain a little. Either way works."]
+		},
+		"short": {
+			"rest": "Your {area} need it.", "fresh": "Fresher for {meet}.", "work": "More work. Good.", "race": "Race it.",
+			"risk": "Too much on your {area}.", "form": "Too close to {meet}.", "lose_work": "You lose a session for nothing.",
+			"form_loss": "Takes your edge off.", "bit_risky": "Not worth it.", "nothing": "No difference.", "fine": "Fine.", "tradeoff": "Either way."
+		},
+		"detail": {
+			"rest": "One lighter day costs you little; an injury costs weeks.",
+			"fresh": "Hard work this close to a race doesn't make you fitter in time, it only makes you tired.",
+			"work": "You'll feel it for a day, but that's the point.",
+			"race": "The day's training would give you less than the race itself.",
+			"risk": "Soreness is the warning; most running injuries start when it's ignored.",
+			"form": "The fitness from it comes after the race; the tiredness comes right away.",
+			"lose_work": "Fitness comes from the sessions you do, and you can handle this one.",
+			"form_loss": "Keep the sharp work, ease off the volume instead.",
+			"bit_risky": "The extra strain is bigger than what it builds.",
+			"nothing": "Do whichever you feel like.",
+			"fine": "No strong opinion here.",
+			"tradeoff": "If your legs feel good, train; if not, ease off."
+		},
+		"voice": {
+			"calm": {"good": "Good thinking.", "fine": "That's fine.", "pointless": "I wouldn't bother.", "risky": "I'd rather you didn't."},
+			"drill": {"good": "Right. Do it.", "fine": "Fine.", "pointless": "Waste of a day.", "risky": "No."},
+			"warm": {"good": "Oh, I like that.", "fine": "That's okay with me.", "pointless": "Hmm, I'm not sure it helps you.", "risky": "Please don't, I'm worried about this."},
+			"tactician": {"good": "The numbers like it.", "fine": "Neutral.", "pointless": "No gain in it.", "risky": "Bad trade."}
+		},
+		"compare": {
+			"day_changed": "Your {day}: {cand} instead of the plan's {base}.",
+			"day_plan": "Your {day} as planned: {cand}.",
+			"day_rest": "Your {day}: a rest day.",
+			"race": "{day}: racing {meet}.",
+			"week_changed": "Your weekly plan from next week on, as you changed it, against the coach's.",
+			"week_plan": "Your weekly plan from next week on, against the same week one step easier.",
+			"phase_changed": "The phase's week as you changed it, against the coach's.",
+			"phase_plan": "The phase's week, against the same week one step easier."
+		},
+		"ask": {
+			"day": "Ask {coach_first} about this day",
+			"race": "Ask {coach_first}: race or scratch?",
+			"week": "Ask {coach_first} about this week's plan",
+			"phase": "Ask {coach_first} about this week",
+			"hide": "Hide",
+			"head": "{coach_first} on this",
+			"note": "His view is only as good as he is: a weak coach can be wrong both ways."
+		}
+	},
+	"proposal": {
+		"_note": "Session C4 (GDD 4.9.2 'Proposals and the veto'; CoachProposals). His messages when he changes, would change or asks to change your days, and when he advises scratching. intro = per voice; {change} = the day lines ('Thursday: Easy run instead of 800 m intervals.'); {reason} = his verdict reason (verdict.reasons, in his detail); replies = the buttons of 'Ask me first' (each veto reason gets 'Veto: ' in front); answered = his reply after your answer, per voice. settings = the standing order 'Let the coach adjust my days'. ui = the day editor's texts.",
+		"title": "{from} suggests a change",
+		"intro": {
+			"calm": "I've looked at your next days.",
+			"drill": "Change of plan.",
+			"warm": "I've been thinking about your week.",
+			"tactician": "I looked at the numbers for the coming days."
+		},
+		"change_line": "{day}: {to} instead of {from}.",
+		"change_level": "{day}: {sessions} at {to} instead of {from}.",
+		"rest_day": "a rest day",
+		"at_level": "{sessions} at {level}",
+		"ask_end": "OK with you?",
+		"applied_end": "I've changed it. If you don't want it, veto it in the day.",
+		"noticed_end": "You asked me not to change your days, so it's your call.",
+		"scratch": "I'd scratch from {meet} {when} and run easy instead.",
+		"scratch_when": {"today": "today", "tomorrow": "tomorrow", "later": "on {day}"},
+		"scratch_noticed": "If it were up to me, you wouldn't race {meet} {when}.",
+		"request_names": {"lighter_week": "a lighter week", "more_load": "more training"},
+		"request_yes": "You asked for {what}.",
+		"request_no": "You asked for {what}, but I'd keep the week as it is.",
+		"ignored": "You trained {day} as it was. I did say your {area} needed a break.",
+		"replies": {
+			"accept": {"label": "OK, do it", "hint": "He changes the day"},
+			"accept_scratch": {"label": "Scratch", "hint": "You won't start; an easy day instead"},
+			"veto_prefix": "Veto: ",
+			"race_prefix": "Race anyway: ",
+			"veto_hint": "The plan stays · no cost",
+			"none_label": "Veto, no reason",
+			"none_race": "Race anyway, no reason",
+			"none_hint": "The plan stays · many silent vetoes cost trust"
+		},
+		"veto_reasons": {
+			"lighter": [{"id": "fine", "label": "I feel fine"}, {"id": "session", "label": "I want this session"}, {"id": "myself", "label": "I'll ease off myself"}],
+			"heavier": [{"id": "tired", "label": "I'm too tired"}, {"id": "busy", "label": "Not this week"}],
+			"scratch": [{"id": "fine", "label": "I feel fine"}, {"id": "race", "label": "I want this race"}]
+		},
+		"answered": {
+			"calm": {"accept": "Good. That's settled.", "veto": "Fair enough, your call.", "silent": "All right."},
+			"drill": {"accept": "Right. Done.", "veto": "Your call. Don't make me regret it.", "silent": "If you say so."},
+			"warm": {"accept": "Thank you! Look after yourself.", "veto": "Okay, you know your body. Tell me how it goes.", "silent": "Okay..."},
+			"tactician": {"accept": "Logged.", "veto": "Noted. We'll see what the data says.", "silent": "Noted."}
+		},
+		"lines": {
+			"changed": "{day}: {to}",
+			"stays": "{day} stays as planned",
+			"scratched": "Scratched from {meet}",
+			"raced": "You race {meet}"
+		},
+		"settings": {
+			"head": "Let the coach adjust my days",
+			"ask": {"name": "Ask me first", "text": "He sends you his change as a message with OK / Veto, and Play week stops for it."},
+			"always": {"name": "Always, tell me", "text": "He changes the day himself and tells you in a message. You can veto it in the day."},
+			"never": {"name": "Never", "text": "He changes nothing, but he notices: he says what he would have changed, and ignoring a real warning costs a little trust."}
+		},
+		"ui": {
+			"changed_head": "CHANGED BY {COACH}",
+			"veto": "Veto",
+			"veto_ask": "Why? A reason costs nothing; many silent vetoes cost trust.",
+			"veto_cancel": "Cancel",
+			"vetoed": "You vetoed {coach_first}'s change: the day is back to the plan.",
+			"veto_where": "To undo {coach_first}'s change, use Veto at the top.",
+			"advice_head": "{COACH} ADVISES",
+			"advice_raced": "You chose to race.",
+			"advice_none": "You haven't answered yet."
+		}
 	}
 }

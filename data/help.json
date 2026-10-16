@@ -3,12 +3,13 @@
  "screens": {
   "overview": {
    "title": "Overview",
-   "version": 5,
+   "version": 6,
    "sections": [
     {"heading": "Playing the days", "text": "Next day plays one day. Play week plays on to Sunday night, but it stops early when something needs you: a race, a new injury, a warning sign or your coach's Sunday talk. The game saves itself after every day."},
     {"heading": "Messages", "text": "A message from your coach or someone else shows at the top of the Today card, with a dot when it is new or waits for your answer. Tap it to open the conversation in the People tab."},
     {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
     {"heading": "! and + on a day", "text": "A round ! means you were sore that day; its colour says how sore. A + means an injury or illness limited the day; its colour says how serious it is. A small speech bubble means someone wrote to you that day: filled while it is new."},
+    {"heading": "Your coach's initial", "text": "A round letter in your coach's colour means he changed that day. Tap the day to see why, and to veto it if you disagree.", "see": ["coach_changes"]},
     {"heading": "How you feel", "text": "Your fatigue: Fresh, Normal, Tired or Exhausted. Training adds to it and rest takes it away. When you are tired, sessions train you less and races go slower.", "see": ["fatigue"]},
     {"heading": "Race form", "text": "How you would race if the race were today. It is not about fitness: it is about being sharp and fresh on the day.", "see": ["form"]},
     {"heading": "Warning signs", "text": "Body areas that feel sore after training, worst first. Tap one to see why it is sore and what helps. \"A bit sore\" is the early warning.", "see": ["soreness"]},
@@ -20,7 +21,7 @@
   },
   "training_season": {
    "title": "Training: season plan",
-   "version": 4,
+   "version": 5,
    "sections": [
     {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
     {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
@@ -33,14 +34,16 @@
     {"heading": "Body strain", "text": "Under this week's plan: how much you train compared with your usual weeks, and how risky the plan is for your body right now.", "see": ["load_vs_normal", "plan_risk"]},
     {"heading": "Over the week strip", "text": "The line above the week strip shows the phase and week you are in, how many days are left before a target, or the week of easing back in."},
     {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."},
-    {"heading": "Standing orders", "text": "At the bottom: what Play week stops for. Important only stops for messages where your answer changes something; Every moment stops for all of them. Rules you made from repeated answers are listed here, and Remove takes one back."}
+    {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what he thinks of the plan from next week on: changed against his, or as it is against an easier week.", "see": ["ask_coach"]},
+    {"heading": "Standing orders", "text": "At the bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes"]}
    ]
   },
   "phase_editor": {
    "title": "Training: a phase",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "The phase's week", "text": "This week repeats through the whole phase, with the season's rules on top (lighter weeks, easing in, the easy day before a race, the taper). Change sessions and Easy / Normal / Hard here as in a repeating week."},
+    {"heading": "Ask your coach", "text": "Under the week, ask your coach about it: your changed week against his, or his own week against an easier one. For a later phase he judges it from where your body will be by then.", "see": ["ask_coach"]},
     {"heading": "Your changes", "text": "A phase you changed is marked \"your changes\". Back to coach's puts the coach's week back."},
     {"heading": "Lighter weeks", "text": "Switch the lighter weeks on or off for this phase. A lighter week makes every day one step easier.", "see": ["lighter_weeks"]},
     {"heading": "Easing in", "text": "How many weeks the phase takes to blend in from the phase before it. Fewer is a quicker change, more is gentler on the body.", "see": ["easing_in"]},
@@ -50,16 +53,17 @@
   },
   "training_repeat": {
    "title": "Training: one repeating week",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "Easing back in", "text": "After two weeks or more without running, your coach can put a few easier weeks over your plan. While they run, a box at the top shows them, and you can stop them early.", "see": ["easing_back_in"]},
     {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in the week strip."},
     {"heading": "Easy, Normal, Hard", "text": "How hard you do the day's sessions. Hard trains you a bit more but tires you and strains your body much more. Easy keeps most of the training effect for much less strain, which makes it a good way to train more without getting hurt."},
     {"heading": "Coach's plan and Clear week", "text": "Coach's plan puts back the starter week your club coach suggests. Clear week empties every day so you can start from scratch."},
+    {"heading": "Ask your coach", "text": "Under the buttons, ask your coach about your week: changed against his starter week, or his own week against an easier one.", "see": ["ask_coach"]},
     {"heading": "The summary", "text": "Weekly load, the fatigue you can expect after a few weeks of this plan, what it trains, and the body strain.", "see": ["fatigue", "load_vs_normal", "plan_risk"]},
     {"heading": "Sessions and seasons", "text": "Outdoor tracks are closed from November to April. Without an indoor track, track sessions are done on roads and work less well. Skiing is possible from December to March. The list at the bottom says what each session trains."},
     {"heading": "Back to the season plan", "text": "The switch at the top takes you back to your coach's season plan, with your earlier changes to it."},
-    {"heading": "Standing orders", "text": "At the very bottom: what Play week stops for. Important only stops for messages where your answer changes something; Every moment stops for all of them. Rules you made from repeated answers are listed there, and Remove takes one back."}
+    {"heading": "Standing orders", "text": "At the very bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes"]}
    ]
   },
   "calendar": {
@@ -103,9 +107,10 @@
   },
   "moment": {
    "title": "A message that stops the week",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Why it stops", "text": "Your coach's Sunday talk always stops Play week, and so do messages where your answer changes something. Pick an answer to carry on."},
+    {"heading": "Your coach suggests a change", "text": "He wants to change a coming day, or advises you to scratch from a race. OK lets him. Veto keeps your plan: a reason costs nothing, but many vetoes without one cost a little trust.", "see": ["coach_changes"]},
     {"heading": "The answers", "text": "The line under each button says what it may cost, like \"he will remember\". A talk without a question just needs \"Thanks, coach\"."},
     {"heading": "Later", "text": "The whole conversation stays in the People tab. What Play week stops for is a setting at the bottom of the Training tab."}
    ]
@@ -121,15 +126,17 @@
   },
   "day_editor": {
    "title": "Changing a day",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "This week only", "text": "Changes here are for this one day of this week. Days already played and race days can't be changed. To change every week, use the Training tab."},
     {"heading": "Your coach says", "text": "Under the sessions your coach tells you why you do the day. A coach who explains a lot gives the reason; a quiet one just says what to do. His voice follows his character."},
     {"heading": "Sessions", "text": "Swap a session, remove it, add a second one (two at most) or make the day a rest day. A greyed-out session isn't possible this time of year, or with your injury; the reason is in its name."},
     {"heading": "Easy, Normal, Hard", "text": "How hard you do the day. The day's load is shown next to what your plan has. Hard trains a bit more but strains the body much more.", "see": ["fatigue"]},
     {"heading": "Back to plan", "text": "A changed day says who changed it. Back to plan returns the day to your plan. The \"Season plan\" line says why the day looks as it does: a lighter week, easing in, an easy day before a race, the taper or easing back in after a layoff.", "see": ["easing_back_in"]},
+    {"heading": "Changed by your coach", "text": "A day your coach changed shows his reason at the top. Veto puts your plan back; then pick why. A reason costs nothing.", "see": ["coach_changes"]},
+    {"heading": "Ask your coach", "text": "At the bottom, ask your coach about the day as it stands, or about a race: race it or scratch? His answer shows right there.", "see": ["ask_coach"]},
     {"heading": "Injury limits", "text": "An injury or illness takes out what you shouldn't do. With a minor problem you can train through it, but it can make it worse and take longer to heal. \"Locked\" means it isn't allowed at all.", "see": ["injuries"]},
-    {"heading": "Race day", "text": "On a race day you see the meet and your race form. If you are injured or ill, you can scratch (not start). A played day only shows what you did."}
+    {"heading": "Race day", "text": "On a race day you see the meet and your race form. If you are injured or ill, you can scratch (not start), and your coach may advise you to. A played day only shows what you did."}
    ]
   },
   "race_before": {
@@ -313,6 +320,26 @@
     {"heading": "Targets ◆", "text": "The meets your season builds up to, at most three. Your coach picks the main indoor and outdoor championships for you. The first indoor and first outdoor target decide when the phases fall; a third one only gets a taper."},
     {"heading": "Changing them", "text": "Add or remove targets in the Training tab, or with Make target in the Calendar. Making a meet a target enters it when you can; withdrawing from it takes it off the list."},
     {"heading": "The taper", "text": "The ten days before a target: fewer sessions and no long runs so you arrive fresh, one sharp session three days out to keep your speed, then a rest day and an easy day."}
+   ]
+  },
+  "coach_changes": {
+   "title": "Your coach changes your days",
+   "version": 1,
+   "sections": [
+    {"heading": "When he does it", "text": "Only when something catches his eye: sore legs, tired legs, a race close, or a lighter week you asked for in the Sunday talk. At most twice a week. A coach good at load management looks further ahead and sees more truly."},
+    {"heading": "Your setting", "text": "In Standing orders (Training tab). Ask me first: he sends the change as a message and Play week stops for it. Always, tell me: he changes the day and tells you. Never: he changes nothing, only says what he would have changed."},
+    {"heading": "Veto", "text": "You decide. Veto keeps your plan, in the message or in the day. Give a reason and it costs nothing. Two silent vetoes in four weeks are fine; after that each one costs a little trust."},
+    {"heading": "Scratching", "text": "With an injury before a race he may advise you to scratch. He never scratches you himself: he always asks, and on Never he only says so. Ignoring a real warning of his costs a little trust."}
+   ]
+  },
+  "ask_coach": {
+   "title": "Ask your coach",
+   "version": 1,
+   "sections": [
+    {"heading": "What he answers", "text": "Good idea, Fine, Pointless or Risky, with his reason. He weighs the training you gain or lose, the injury risk and how fresh you will be for your next races."},
+    {"heading": "What he compares", "text": "A changed day or week against the plan; an unchanged one against an easier version; a race against scratching it. The line under his name says what he compared."},
+    {"heading": "He can be wrong", "text": "His view is only as good as he is. A coach strong in endurance, speed, load management and planning is nearly always right; a weak one can be wrong both ways. A demanding coach dislikes easy days, a careful one likes them."},
+    {"heading": "Just a question", "text": "Asking changes nothing and costs nothing, and it is not written into your messages. The same question on the same day gets the same answer."}
    ]
   }
  }

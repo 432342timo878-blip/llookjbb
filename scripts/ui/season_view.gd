@@ -312,6 +312,8 @@ func _this_week() -> void:
 	col.add_child(UIKit.label("THIS WEEK · " + SeasonUI.week_text(plan).to_upper(), "CaptionLabel"))
 	col.add_child(days)
 	add_child(UIKit.panel(col, 16))
+	if CoachAsk.available():   # his verdict on the plan from next week on (session C4)
+		add_child(CoachAsk.new("week", func(): return CoachVerdict.for_week()))
 	var summary := UIKit.vbox(8)
 	add_child(UIKit.panel(summary, 16))
 	PlanUI.fill_summary(summary, Game.athlete, plan, Game.week_monday(), HealthUI.plan_section(plan, Game.current_week()))

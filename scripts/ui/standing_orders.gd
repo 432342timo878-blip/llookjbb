@@ -1,9 +1,10 @@
 class_name StandingOrders
 extends RefCounted
 ## "Standing orders" at the bottom of the Training tab (GDD 4.9.2 / 4.9.5, session C3): the setting "Play week stops for:
-## Important only / Every moment" and the rules saved from repeated answers, each with Remove. (The coach-proposal setting
-## "Let the coach adjust my days" comes with session C4.) Reads and changes StoryletSystem only: stop_mode / set_stop_mode,
-## standing_orders / clear_rule.
+## Important only / Every moment", the coach-proposal setting "Let the coach adjust my days: Ask me first / Always, tell me /
+## Never" (session C4; CoachProposals.setting / set_setting, texts in data/coach_talk.json proposal.settings) and the rules saved
+## from repeated answers, each with Remove. Reads and changes StoryletSystem (stop_mode / set_stop_mode, standing_orders /
+## clear_rule) and CoachProposals only.
 
 
 static func build() -> Control:
@@ -27,11 +28,36 @@ static func build() -> Control:
 	box.add_child(row)
 	box.add_child(text)
 
+	var cp := Game.get_system("proposals") as CoachProposals
+	if cp != null:
+		box.add_child(_coach_setting(cp))
+
 	box.add_child(UIKit.label(PeopleUI.ui("standing_rules"), "SubheadingLabel"))
 	var rules := UIKit.vbox(8)
 	box.add_child(rules)
 	_fill_rules(ms, rules)
 	return UIKit.panel(box, 16)
+
+
+## "Let the coach adjust my days": three toggles (a row on PC, a column on a phone) and what the chosen one means.
+static func _coach_setting(cp: CoachProposals) -> Control:
+	var s: Dictionary = Data.coach_talk.proposal.settings
+	var col := UIKit.vbox(8)
+	col.add_child(UIKit.label(str(s.head), "SubheadingLabel"))
+	var text := UIKit.wrapped(str(s[cp.setting()].text))
+	var group := ButtonGroup.new()
+	var row := UIKit.flex(8)
+	for mode in Data.coaching.proposals.modes:
+		var b := UIKit.toggle(str(s[mode].name), group)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.button_pressed = cp.setting() == mode
+		b.pressed.connect(func():
+			cp.set_setting(str(mode))
+			text.text = str(s[str(mode)].text))
+		row.add_child(b)
+	col.add_child(row)
+	col.add_child(text)
+	return col
 
 
 static func _fill_rules(ms: StoryletSystem, rules: VBoxContainer) -> void:

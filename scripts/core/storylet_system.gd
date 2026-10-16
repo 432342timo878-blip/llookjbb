@@ -379,7 +379,11 @@ func _post_event(m: Dictionary, p: Dictionary) -> void:
 		choices.append({"id": rep.id, "label": rep.label, "detail": rep.hint})
 	var title := thread_name(m.thread)   # (a rule offer has no sender)
 	if not p.is_empty():
-		var pattern := str(Data.coach_talk.talk.title) if bool(m.get("talk", false)) else str(Data.moments.event_title)
+		var pattern := str(Data.moments.event_title)
+		if bool(m.get("talk", false)):
+			pattern = str(Data.coach_talk.talk.title)
+		elif str(m.kind) == "proposal":
+			pattern = str(Data.coach_talk.proposal.title)
 		title = pattern.format({"from": person_name(p), "thread": title})
 	var e := Game.post_event(id, title, m.text, choices, true)
 	e.kind = "moment"
@@ -416,6 +420,9 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 				e.answer = reply_id
 	if m.kind == "rule":
 		_resolve_rule(m, reply_id, today)
+		return
+	if m.kind == "proposal":
+		_resolve_proposal(m, reply_id)
 		return
 	var s := storylet(str(m.storylet))
 	var p: Dictionary = people.get(m.from, {})
@@ -497,6 +504,10 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 			"count":
 				for name in v:
 					counters[name] = int(counters.get(name, 0)) + int(v[name])
+			"proposal":   # (session C4: the reply asked for a lighter week / more; the coach looks at it the next morning)
+				var cp := Game.get_system("proposals") as CoachProposals
+				if cp:
+					cp.request(str(v))
 			_:
 				if not key in Data.moments.effects.prepared:
 					push_warning("Moment effect '%s' is unknown (%s)" % [key, cause])
@@ -599,6 +610,81 @@ func _post_race_note(ctx: Dictionary, today: int) -> void:
 		var topics := _pick_topics("race", ctx, today, p, 1)
 		if not topics.is_empty():
 			_post(topics[0], p, ctx, today, true, {"counted": false})
+
+
+# --- The coach's proposals (session C4) -------------------------------------------------------------------------
+
+## The head coach as a person of the threads ({} without one). Works with the moments switched off too (tools).
+func _coach_person() -> Dictionary:
+	_sync_people()
+	var coach := people_for("coach")
+	return coach[0] if not coach.is_empty() else {}
+
+
+## The threads are saved once the moments have started: a message of the coach starts them (they may be off in tools).
+func _start_threads() -> void:
+	if started_day < 0:
+		started_day = day_no(Game.date)
+
+
+## A proposal of CoachProposals ("Ask me first"): his message in the coach thread as a moment (kind "proposal") with the replies
+## OK / Veto: <reason> / Veto, no reason; with `stop` it stops Play week (user 2026-10-11: always with "Ask me first"). Outside
+## the 3-5 moments a week. The answer goes to CoachProposals.on_reply (_resolve_proposal). Returns the moment ({} without a coach).
+func post_proposal(proposal_id: String, text: String, replies: Array, stop: bool) -> Dictionary:
+	var p := _coach_person()
+	if p.is_empty():
+		return {}
+	_start_threads()
+	var today := day_no(Game.date)
+	var m := {"id": "m%d" % _next, "kind": "proposal", "proposal": proposal_id, "storylet": "", "date": Game.date.duplicate(),
+			"day": today, "thread": "coach", "from": str(p.id), "text": text, "variant": 0, "replies": replies.duplicate(true),
+			"fill": {}, "expires": today + int(Data.moments.expires_days), "stop": false, "event": "", "answer": "",
+			"answered_day": -1, "auto": false, "talk": false}
+	_next += 1
+	moments.append(m)
+	_message("coach", str(p.id), text, m.id, Game.date)
+	if stop:
+		_post_event(m, p)
+	return m
+
+
+## A message of the coach in his thread that asks nothing (a change he made, what he would have changed, his reply to a veto).
+## `read` = the player has just seen it (it answers something they did in the day editor).
+func coach_says(text: String, read := false) -> void:
+	var p := _coach_person()
+	if p.is_empty() or text == "":
+		return
+	_start_threads()
+	_message("coach", str(p.id), text, "", Game.date)
+	if read:
+		threads.coach.back().read = true
+
+
+## The player's own line in the coach thread (a veto given in the day editor).
+func player_says(text: String) -> void:
+	if _coach_person().is_empty() or text == "":
+		return
+	_start_threads()
+	_message("coach", "you", text, "", Game.date)
+
+
+## The answer to a proposal moment: the player's reply in the thread, then CoachProposals decides and his reply comes back.
+func _resolve_proposal(m: Dictionary, reply_id: String) -> void:
+	var label := ""
+	for r in m.replies:
+		if r.id == reply_id:
+			label = str(r.label)
+	if reply_id != NONE and label != "":
+		_message(m.thread, "you", label, m.id, Game.date)
+	var cp := Game.get_system("proposals") as CoachProposals
+	var res: Dictionary = cp.on_reply(str(m.proposal), reply_id if reply_id != NONE else CoachProposals.NONE) if cp else {}
+	m.changes = res.get("changes", [])
+	var result := str(res.get("result", ""))
+	if reply_id == NONE:
+		_message(m.thread, "system", str(Data.moments.no_answer.result), m.id, Game.date)
+	elif result != "":
+		_message(m.thread, str(m.from), result, m.id, Game.date)
+		threads[m.thread].back().read = true
 
 
 ## Up to `n` topic storylets (field `topic` = kind) that fit now, drawn by weight.

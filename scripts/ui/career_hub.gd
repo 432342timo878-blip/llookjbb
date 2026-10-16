@@ -904,6 +904,8 @@ func _build_training_repeat() -> void:
 		clear.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(buttons)
 	_content.add_child(UIKit.wrapped("Coach's plan puts back the starter week your club coach suggests."))
+	if CoachAsk.available():   # his verdict on the week (session C4)
+		_content.add_child(CoachAsk.new("week", func(): return CoachVerdict.for_week()))
 
 	_content.add_child(UIKit.panel(summary, 16))
 	refresh_summary.call()

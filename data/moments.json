@@ -44,6 +44,7 @@
 		"today_message": "{from} · NEW MESSAGE",
 		"stop_head": "MESSAGE",
 		"stop_head_talk": "WEEK TALK",
+		"stop_head_proposal": "YOUR COACH SUGGESTS",
 		"members_head": "IN THE GROUP",
 		"you": "You",
 		"system": "",
@@ -90,7 +91,7 @@
 		"max": 100
 	},
 	"effects": {
-		"known": ["trust", "relation", "flag", "unflag", "count"],
-		"prepared": ["confidence", "motivation", "stress", "sleep", "life_load", "grades", "budget", "proposal"]
+		"known": ["trust", "relation", "flag", "unflag", "count", "proposal"],
+		"prepared": ["confidence", "motivation", "stress", "sleep", "life_load", "grades", "budget"]
 	}
 }

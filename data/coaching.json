@@ -15,7 +15,7 @@
   {"id": "judging_ability", "name": "Judging ability", "description": "How right his estimates are: time goals, what you can run, the range he gives for your potential."}
  ],
  "effects": {
-  "_note": "Built in C1: training (the week's trained gains per attribute group, Training._apply_progression) and race_advice (how often his shout on a race card is the sensible answer; at 10 exactly races.json controls.coach.accuracy). Prepared, not used yet (C4 / M1 / the balance session): youth_development, load_management, periodization, mental_coaching, motivating.",
+  "_note": "Built in C1: training (the week's trained gains per attribute group, Training._apply_progression) and race_advice (how often his shout on a race card is the sensible answer; at 10 exactly races.json controls.coach.accuracy). Built in C4: endurance and speed & strength knowledge, load management and periodization set how clearly he sees a change (`verdict` below: his noise) and load management how early he looks ahead (`proposals`). Prepared, not used yet (M1 / the balance session): youth_development, mental_coaching, motivating.",
   "training": {
    "per_point": 0.012,
    "groups": {
@@ -26,8 +26,6 @@
   },
   "race_advice": {"attribute": "race_reading", "per_point": 0.015, "min": 0.55, "max": 0.97},
   "youth_development": {"below_age": 18, "growth_niggles_per_point": -0.03, "novice_per_point": 0.02},
-  "load_management": {"spot_per_point": 0.05, "false_alarm_per_point": -0.03},
-  "periodization": {"taper_per_point": 0.03, "pick_per_point": 0.05},
   "mental_coaching": {"composure_per_point": 0.04},
   "motivating": {"lift_per_point": 0.04}
  },
@@ -118,6 +116,37 @@
   "strong": 70.0, "strained": 30.0,
   "keep_causes": 8,
   "words": {"new": "New", "good": "Good", "strong": "Strong", "strained": "Strained"}
+ },
+ "verdict": {
+  "_note": "The coach's verdict on a change (GDD 4.9.2 'Ask the coach', session C4; CoachVerdict, scripts/core/coach_verdict.gd). THE TRUTH: the game plays the change and the plan it replaces on copies (no dice) from today over the rest of this week and window_weeks more: the 800 m ability at the end (the week's training through Training._apply_progression), the expected overuse injuries (the health model's daily hazard at average proneness, as plan_risk), race-day Form at the races in that window. Everything is turned into WEEKS OF TRAINING: train = the ability difference in seconds / a week's gain (the plan's own over the window, at least min_week_s); risk = - extra expected injuries x injury_weeks (racing on an injury adds its escalation chance x escalation_weeks); form = the Form difference in seconds x race_weight (target / other) / a week's gain; a scratched race loses race_value_w (x target_mult for a target). CATEGORIES (thresholds in weeks): Risky = risk or form below -risky; Good idea = total >= good; Pointless = total <= -pointless; else Fine. THE COACH'S VIEW: each part with noise, sd = floor + per_point x (20 - his attribute), times (|part| x rel + abs): train by endurance knowledge (aerobic capacity, lactate threshold, running economy) and speed & strength knowledge (the rest), risk by load management, form by periodization; then his demands weigh the parts (an ambitious coach counts lost training more and risk less: he dislikes Easy days even when right). The same change on the same day always gets the same answer from the same coach (his dice come from the coach, the date and the change). First guesses, calibrated with tools/verdict_check.gd.",
+  "window_weeks": 1,
+  "injury_weeks": 6.0,
+  "escalation_weeks": 6.0,
+  "min_week_s": 0.05,
+  "race_weight": {"target": 0.5, "other": 0.15},
+  "race_value_w": {"local": 0.3, "district": 0.5, "national": 1.0, "international": 1.0, "target_mult": 2.0},
+  "thresholds": {"risky": 0.3, "good": 0.1, "pointless": 0.1},
+  "noise": {"floor": 0.04, "per_point": 0.075, "rel": 0.5, "train_abs": 0.08, "risk_abs": 0.08, "form_abs": 0.08},
+  "demands": {
+   "steady": {"train": 0.75, "risk": 1.3},
+   "balanced": {"train": 1.0, "risk": 1.0},
+   "ambitious": {"train": 1.4, "risk": 0.75}
+  }
+ },
+ "proposals": {
+  "_note": "The coach changes days himself (GDD 4.9.2 'Proposals and the veto', session C4; CoachProposals, scripts/core/coach_proposals.gd). User 2026-10-11: only when he sees a reason, at most max_per_week a week (scratch advice counted), one a day; with 'Ask me first' every proposal stops Play week; a veto asks for a reason (a reason costs nothing; from the (silent_free + 1)th silent veto within silent_window_days each costs silent_cost trust); 'Never (he notices)': he says what he would have changed, and if it was a real warning (the truth's risk part at least the Risky threshold) and the day was trained as it was, trust - ignored_warning_cost. HOW HE LOOKS: every morning (today) and evening (from tomorrow) he looks look_ahead days ahead (by load management: [from attribute, days]), but only when something catches his eye: soreness (the most strained area / sore_strain), fatigue / fatigue, a race within race_days, a request from the Sunday talk; each signal with his noise (noise_per_point x (20 - load management)), so a poor load manager also sees things that aren't there. Then he tries the candidates (Easy, the hard session swapped for easy_session, a rest day, light_session before a race; heavier ones only when asked) on the days he looks at, skipping played days, race days, days you or an injury changed, days already proposed and the day a 'sore' warning asked you about, and proposes the one HE thinks is best when he thinks it is a Good idea (total >= propose_min_w as he sees it). Scratch advice: a race day within his look-ahead with soreness or an injury, when racing looks Risky to him; it never scratches you by itself (always asks, in 'Never' mode only a message). A request (week talk: lighter_week, more_load) waits request_days for the next morning he looks.",
+  "max_per_week": 2,
+  "look_ahead": [[0, 1], [9, 2], [14, 3]],
+  "trigger": {"sore_strain": 40.0, "fatigue": 42.0, "race_days": 2, "level": 1.0, "noise_per_point": 0.035},
+  "easy_session": "easy_run",
+  "light_session": "mobility",
+  "propose_min_w": 0.1,
+  "request_days": 7,
+  "veto": {"silent_window_days": 28, "silent_free": 2, "silent_cost": 2.0},
+  "ignored_warning_cost": 1.0,
+  "keep": 40,
+  "modes": ["ask", "always", "never"],
+  "default_mode": "ask"
  },
  "real": []
 }

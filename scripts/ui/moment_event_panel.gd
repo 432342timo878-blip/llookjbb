@@ -1,7 +1,7 @@
 class_name MomentEventPanel
 extends RefCounted
 ## A moment that stops Play week (StoryletSystem, event.kind "moment": the coach's Sunday week talk, an important moment, a
-## rule offer) as a MESSAGE in the career hub's dimmed decision layer (GDD 4.9.7, session C3): a caption with the date and a
+## rule offer, a proposal of the coach (session C4)) as a MESSAGE in the career hub's dimmed decision layer (GDD 4.9.7, session C3): a caption with the date and a
 ## "?", the sender's round initial and name, the text in a bubble, the replies as 44 px buttons with the cost hint under
 ## each. The same builders as the People tab (PeopleUI), so a message looks the same wherever it shows up.
 
@@ -20,7 +20,11 @@ static func build(e: Dictionary, width: float, on_answer: Callable, on_help := C
 	var m := ms.moment(str(e.moment))
 	var box := UIKit.vbox(12)
 	box.custom_minimum_size.x = width
-	var head := PeopleUI.ui("stop_head_talk") if bool(m.get("talk", false)) else PeopleUI.ui("stop_head")
+	var head := PeopleUI.ui("stop_head")
+	if bool(m.get("talk", false)):
+		head = PeopleUI.ui("stop_head_talk")
+	elif str(m.get("kind", "")) == "proposal":
+		head = PeopleUI.ui("stop_head_proposal")
 	var caption := UIKit.label("%s · %s" % [head, Calendar.format_day(e.date).to_upper()], "CaptionLabel")
 	if on_help.is_valid():
 		var row := UIKit.hbox(8)

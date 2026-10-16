@@ -12,7 +12,7 @@ const WHO := {"player": "you", "coach": "your coach", "injury": "an injury restr
 ##  and the health side (empty with the health model off): sore (highest soreness level 0–3 that day: for a played
 ##  day from the day log, for today now), sore_areas ([{id, name, level}]), health (injury ids active that day:
 ##  the day log for a played day, today's now), limited (the day was changed by an injury), tier (the worst
-##  tier of the problems that touch the day, "" for none)}
+##  tier of the problems that touch the day, "" for none), coach (the coach changed the day: CoachProposals, session C4)}
 static func of(w: WeekSim, d: int) -> Dictionary:
 	var date := Game.add_days(w.monday, d)
 	var played := d < w.day
@@ -23,6 +23,7 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 		"sore": 0, "sore_areas": [], "health": [], "limited": false, "tier": "",
 	}
 	info.limited = info.by.values().has("injury")
+	info.coach = info.by.values().has("coach")
 	_add_health(info, log_entry(date) if played else {})
 	if played:
 		var rec := _record(w, d)
@@ -141,11 +142,21 @@ static func changed_text(info: Dictionary) -> String:
 	for part in by:
 		who_set[by[part]] = true
 	if who_set.size() == 1:
-		return "Changed by %s" % WHO.get(by.values()[0], by.values()[0])
+		return "Changed by %s" % who_name(by.values()[0])
 	var parts := []
 	for part in by:
-		parts.append("%s changed by %s" % [part.capitalize(), WHO.get(by[part], by[part])])
+		parts.append("%s changed by %s" % [part.capitalize(), who_name(by[part])])
 	return " · ".join(parts)
+
+
+## "you", the head coach's first name (or "your coach"), "an injury restriction".
+static func who_name(who: String) -> String:
+	if who == "coach":
+		var cs := Game.get_system("coach") as CoachSystem
+		var first := str(cs.head().get("name", "")).split(" ")[0] if cs else ""
+		if first != "":
+			return first
+	return str(WHO.get(who, who))
 
 
 ## Why a session can't be done this month ("only Dec–Mar"), or "" when it can.
