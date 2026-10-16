@@ -96,6 +96,46 @@ static func race_change(d: int) -> Dictionary:
 	return c
 
 
+## Is racing meet `m` (not entered yet) a good idea? (session C5, "Coach suggests".) The weeks from now to a week after the meet
+## played with the meet entered (candidate) and as they are (base), from today's state. Parts as for any change: the race replaces a
+## training day (train), its load and strain (risk), the race value of its level (race). `weeks` = how many weeks ahead it is.
+static func meet_change(meet: Dictionary) -> Dictionary:
+	var key := str(meet.key)
+	var start := now_start()
+	var w := Game.current_week()
+	var n := clampi(roundi(Calendar.days_between(w.monday, Calendar.monday_of(meet.date)) / 7.0), 0, int(Data.advice.suggest.max_weeks))
+	var base_weeks := [{"current": true, "set": {}, "scratch": []}]
+	var cand_weeks := [{"current": true, "set": {}, "scratch": [], "enter": [key]}]
+	for i in range(1, n + 1 + int(Data.advice.suggest.after_weeks)):
+		var monday := Game.add_days(w.monday, 7 * i)
+		var plan := Game.season.week_for(monday)
+		base_weeks.append({"plan": plan, "monday": monday})
+		cand_weeks.append({"plan": plan, "monday": monday, "enter": [key]})
+	return {"kind": "meet", "start": start, "base": base_weeks, "cand": cand_weeks, "days": [], "compare": "meet", "meet": meet,
+			"sig": "meet|%s" % key}
+
+
+## Is making meet `m` a target (the season plan built round it, and the meet entered) a good idea? The same weeks played with the
+## target added to a copy of the season plan (candidate) and with the plan as it is (base); the target weight and race value count
+## for the meet in both, so the taper, the Form and the race itself show in the parts.
+static func target_change(meet: Dictionary) -> Dictionary:
+	var key := str(meet.key)
+	var start := now_start()
+	var w := Game.current_week()
+	var year := SeasonPlan.year_of(meet.date)
+	var n := clampi(roundi(Calendar.days_between(w.monday, Calendar.monday_of(meet.date)) / 7.0), 0, int(Data.advice.suggest.max_weeks))
+	var copy := Game.season.copy()
+	copy.add_target(year, key)
+	var base_weeks := [{"current": true, "set": {}, "scratch": []}]
+	var cand_weeks := [{"current": true, "set": {}, "scratch": [], "enter": [key]}]
+	for i in range(1, n + 1 + int(Data.advice.suggest.after_weeks)):
+		var monday := Game.add_days(w.monday, 7 * i)
+		base_weeks.append({"plan": Game.season.week_for(monday), "monday": monday})
+		cand_weeks.append({"plan": copy.week_for(monday), "monday": monday, "enter": [key]})
+	return {"kind": "target", "start": start, "base": base_weeks, "cand": cand_weeks, "days": [], "compare": "target", "meet": meet,
+			"target": key, "sig": "target|%s" % key}
+
+
 ## A week plan for the coming weeks (the Training tab: this week's plan, the phase editor: the phase's week): the rest of this
 ## week as it stands, then `cand` against `base` for window_weeks + 1 weeks. `start` = a lead-in (HealthSystem.projected, for a
 ## future phase) or {} = today. `ref_equal` = the plans are the same (then base is the lighter week: is the plan worth it?).
@@ -245,9 +285,14 @@ static func _week_of(spec: Dictionary, a: Athlete, start: Dictionary) -> WeekSim
 			w.changes.erase(int(d))
 			w.set_sessions(int(d), x.sessions, "coach")
 			w.set_intensity(int(d), str(x.intensity), "coach")
+		for key in spec.get("enter", []):   # (a meet entered in this candidate: C5, "Coach suggests")
+			var m := Calendar.get_meet(str(key))
+			var d2 := Calendar.days_between(w.monday, m.date) if not m.is_empty() else -1
+			if d2 >= 0 and d2 < 7 and w.can_change(d2):
+				w.races[d2] = m
 		return w
 	var monday: Dictionary = spec.monday
-	var w2 := WeekSim.new(a, spec.plan, monday, Calendar.races_in_week(Game.entries, monday))
+	var w2 := WeekSim.new(a, spec.plan, monday, Calendar.races_in_week(Game.entries + spec.get("enter", []), monday))
 	var now2: WeekSim = start.get("week")
 	if now2 != null:
 		w2.coach_effect = now2.coach_effect
@@ -299,17 +344,18 @@ static func truth(change: Dictionary) -> Dictionary:
 	for r in k.races:
 		by_key[r.key] = r
 	var meet := ""
+	var tk := str(change.get("target", ""))   # (a meet made a target in this change: it counts as one in both plans)
 	for r in b.races:
 		if meet == "":
 			meet = str(r.meet.get("name", ""))
-		var weight := _race_weight(r.meet)
+		var weight := _race_weight(r.meet, tk)
 		if by_key.has(r.key):
 			form_w += (float(by_key[r.key].form) - float(r.form)) * race_time * weight / ref
 			by_key.erase(r.key)
 		else:
-			race_w -= _race_value(r.meet)
+			race_w -= _race_value(r.meet, tk)
 	for key in by_key:   # (a race only in the candidate: the base scratched it)
-		race_w += _race_value(by_key[key].meet)
+		race_w += _race_value(by_key[key].meet, tk)
 		if meet == "":
 			meet = str(by_key[key].meet.get("name", ""))
 	t.form_w = form_w
@@ -325,15 +371,15 @@ static func truth(change: Dictionary) -> Dictionary:
 	return t
 
 
-static func _race_weight(meet: Dictionary) -> float:
+static func _race_weight(meet: Dictionary, target_key := "") -> float:
 	var w: Dictionary = cfg().race_weight
-	return float(w.target) if is_target(meet) else float(w.other)
+	return float(w.target) if is_target(meet) or (target_key != "" and str(meet.get("key", "")) == target_key) else float(w.other)
 
 
-static func _race_value(meet: Dictionary) -> float:
+static func _race_value(meet: Dictionary, target_key := "") -> float:
 	var v: Dictionary = cfg().race_value_w
 	var x := float(v.get(str(meet.get("level", "local")), v.local))
-	return x * float(v.target_mult) if is_target(meet) else x
+	return x * float(v.target_mult) if is_target(meet) or str(meet.get("key", "")) == target_key and target_key != "" else x
 
 
 ## A target meet of the season plan.

@@ -1,0 +1,165 @@
+{
+	"_note": "The coach's season goals (GDD 4.9.2 'Season goals with times', session C5; SeasonGoals). With the autumn plan offer (and for a season that started without one) the coach offers three goals for the season: a TIME, a MILESTONE (a real standard from data/standards.json, or a place at one of your target meets) and a HABIT (a process goal). For each the player picks one of up to four levels (user 2026-10-16: a free choice from a short list); the coach has marked his own pick. HOW HE PICKS: he estimates the time you will be able to run in the season's peak (the 800 m ability at the date of your last target, projected through the season plan on a copy of the career, with the race-day form of that race and the best-of-a-few-races gain `best_of`), as seen through his judging ability (his estimate is off by a share of the time with sd = noise.floor + noise.per_point x (20 - judging ability): a poor judge sets goals that are too easy or too hard). The levels are offsets from that estimate (levels[].offset: + = slower = easier); his pick follows his demands (pick: steady = the first level, balanced = the second, ambitious = the third) moved by `lean` (what you told him after a missed goal, -2..2). A milestone's levels are real things sorted by the time they need (standards of your age class, a top-8 or medal place at a target meet from the rival pool) and each is called by its `from` ratio to his estimate. MET / MISSED: a goal is met the moment it is reached (a message, trust + trust.met, + trust.higher when you chose a level above his pick); open goals are settled together on the evening before the next season in ONE review talk with replies; a missed goal costs nothing (trust.missed 0): the replies only tell him how to set the next goals (lean). The estimate and the goals are saved with the career. All numbers and every text of the goals live here.",
+	"version": 1,
+	"estimate": {
+		"peak": {"month": 8, "day": 1},
+		"best_of": 0.009,
+		"noise": {"floor": 0.002, "per_point": 0.0007},
+		"snap": 0.5,
+		"min_step": 0.5,
+		"form_cap": 0.012,
+		"window_weeks_max": 60
+	},
+	"levels": [
+		{"id": "safe", "name": "Safe", "offset": 0.012, "from": 0.007, "chance": "Should come with a normal season."},
+		{"id": "realistic", "name": "Realistic", "offset": 0.002, "from": -0.004, "chance": "About even."},
+		{"id": "stretch", "name": "Stretch", "offset": -0.008, "from": -0.014, "chance": "Needs a good season."},
+		{"id": "dream", "name": "Dream", "offset": -0.02, "from": -1.0, "chance": "Needs everything to go right."}
+	],
+	"far": {"below": -0.06, "chance": "Far away this year."},
+	"pick": {"steady": 0, "balanced": 1, "ambitious": 2},
+	"lean": {"min": -2, "max": 2},
+	"milestone": {
+		"reach": {"ahead": 0.04, "behind": 0.08},
+		"place": {"field": 12, "final": 8, "medal": 3, "min_pool": 12},
+		"min_gap_s": 0.4
+	},
+	"process": {
+		"by_voice": {"calm": "sessions", "drill": "sessions", "warm": "limits", "tactician": "races"},
+		"kinds": {
+			"sessions": {"levels": [75, 85, 92, 97], "unit": "%", "label": "do {n} % of the sessions in your plan", "count_note": "{done} of {planned} planned sessions done ({share} %)"},
+			"limits": {"levels": [6, 3, 1, 0], "unit": "days", "label": "train through a warning on {n} days at most", "label_zero": "never train through a warning", "count_note": "{done} days trained through a warning"},
+			"races": {"levels": [3, 5, 7, 9], "unit": "races", "label": "race at least {n} times", "max_age": 19, "count_note": "{done} races run"}
+		}
+	},
+	"trust": {"met": 3.0, "higher": 2.0, "missed": 0.0},
+	"ui": {
+		"moment_title": "{from} · season goals",
+		"offer_title": "Goals for {season}",
+		"offer_caption": "SEASON GOALS · {date}",
+		"offer_set": "Set these goals",
+		"offer_later": "Decide later",
+		"offer_later_hint": "You can ask the coach for goals on the Overview page.",
+		"pick_mark": "★ his pick",
+		"kind_head": {"time": "A TIME", "milestone": "A MILESTONE", "process": "A HABIT"},
+		"estimated_note": "This year's table is not out yet: the limit is last year's.",
+		"window": "by {date}",
+		"overview_head": "SEASON GOALS · {season}",
+		"overview_none": "The coach hasn't set goals for this season yet.",
+		"overview_ask": "Ask {coach_first} for goals",
+		"overview_ask_hint": "He suggests a time, a milestone and a habit; you pick the level of each.",
+		"progress_head": "SEASON GOALS",
+		"past_line": "{season}: {met} of {total} met",
+		"status": {"open": "Open", "met": "Met", "missed": "Missed", "void": "Not decided"},
+		"marks": {"open": "○", "met": "✓", "missed": "✗", "void": "–"},
+		"met_on": "Met on {date}",
+		"level_line": "{level} level",
+		"coach_pick_line": "His pick was {level}.",
+		"time_progress": "Best this season {best} · needs {goal}",
+		"time_none": "No race this season yet · needs {goal}",
+		"place_progress": "{meet} on {date}",
+		"place_done": "{meet}: {result}",
+		"higher_note": "You aimed higher than he did.",
+		"lean_up": "Next season's goals ▲ a step higher",
+		"lean_down": "Next season's goals ▼ a step lower",
+		"help_entry": "season_goals"
+	},
+	"place_missed": {
+		"text": {
+			"calm": "The goal to {goal_lc} didn't come off ({detail}). I know it wasn't what you wanted.",
+			"drill": "The goal to {goal_lc}: no ({detail}). Remember how this feels.",
+			"warm": "The goal to {goal_lc} didn't come off today ({detail}). I'm sorry. I know how much you wanted it.",
+			"tactician": "The goal to {goal_lc}: missed ({detail}). That is information, not a verdict."
+		}
+	},
+	"labels": {
+		"time": "Run {time} or faster",
+		"standard": "Reach the {short} ({time})",
+		"place": "Finish in the top {n} at {meet}",
+		"place_medal": "Win a medal at {meet}"
+	},
+	"offer": {
+		"intro": {
+			"calm": "Let's agree what this season is for. For each goal I have marked the level I would choose. Pick yours; there is no wrong answer, only a different price.",
+			"drill": "Goals. A season without numbers is a season without work. My picks are marked. Take them or aim higher; don't aim lower without a reason.",
+			"warm": "I'd like us to want the same things this season. My picks are marked. If something feels too much or too little, choose differently and we'll talk about it.",
+			"tactician": "Three targets for the season. Each level has a price in risk and a chance of coming off; my estimate is under each. My picks are marked."
+		},
+		"set_message": {
+			"calm": "Good. This is what we're working towards in {season}:",
+			"drill": "Right. {season}. This is what counts:",
+			"warm": "I like these. Our goals for {season}:",
+			"tactician": "Logged. The targets for {season}:"
+		},
+		"set_end": {
+			"calm": "We'll look at them again when the season is over.",
+			"drill": "I'll hold you to them.",
+			"warm": "I'll cheer for every one of them.",
+			"tactician": "I'll tell you early if the numbers say otherwise."
+		},
+		"goal_line": "- {goal}"
+	},
+	"met": {
+		"text": {
+			"calm": "You did it: {goal_lc}. That's what the work was for. Enjoy it for a day; then we go on.",
+			"drill": "{goal}. Done. Good. Don't get comfortable.",
+			"warm": "I'm so pleased! {goal}. You earned every bit of it.",
+			"tactician": "{goal}: reached. The plan worked. Now we know what it costs."
+		},
+		"higher": {
+			"calm": " And you aimed higher than I would have.",
+			"drill": " And that was higher than my pick. Respect.",
+			"warm": " And you reached higher than I dared to ask!",
+			"tactician": " That was above my estimate. I'll adjust the model."
+		},
+		"replies": [
+			{"id": "thanks", "label": "Thanks, coach", "hint": "", "lean": 0},
+			{"id": "next", "label": "What's next? I want more", "hint": "Next season's goals start a step higher", "lean": 1},
+			{"id": "luck", "label": "A good day, mostly", "hint": "", "lean": 0}
+		],
+		"answers": {
+			"calm": {"thanks": "You're welcome. It was your work.", "next": "Then we'll aim a little higher next time.", "luck": "Days like that come to those who train for them."},
+			"drill": {"thanks": "Don't thank me. Do it again.", "next": "That's what I wanted to hear. Higher.", "luck": "Luck likes the prepared. Don't sell yourself short."},
+			"warm": {"thanks": "Anytime. I'm proud of you.", "next": "I love that. Let's see how high we can go.", "luck": "Take the credit. You were ready for the day."},
+			"tactician": {"thanks": "Noted.", "next": "Then the next model gets a harder target.", "luck": "Variance is part of it. So is preparation."}
+		}
+	},
+	"review": {
+		"text": {
+			"calm": "The season is over, and here is how our goals went:",
+			"drill": "Season's over. The goals:",
+			"warm": "The season is over. I want to look at our goals with you:",
+			"tactician": "Season closed. Result against the targets:"
+		},
+		"line_met": "✓ {goal}",
+		"line_missed": "✗ {goal} ({detail})",
+		"line_missed_plain": "✗ {goal}",
+		"detail": {
+			"time": "your best was {best}",
+			"time_none": "no race with a time",
+			"place": "{result}",
+			"place_none": "you didn't start",
+			"process_sessions": "{done} of {planned} sessions",
+			"process_limits": "{done} days trained through a warning",
+			"process_races": "{done} races"
+		},
+		"comment": {
+			"calm": "A goal that isn't reached is allowed. Looking at it honestly teaches more than a good result.",
+			"drill": "Nobody likes it. Use it.",
+			"warm": "Please don't be hard on yourself. You worked, and I saw it.",
+			"tactician": "Now we know where the plan and the body disagreed."
+		},
+		"replies": [
+			{"id": "again", "label": "We try again next season", "hint": "Next season's goals stay as they are", "lean": 0},
+			{"id": "bigger", "label": "Next time I want a bigger goal", "hint": "Next season's goals start a step higher", "lean": 1},
+			{"id": "toohard", "label": "That was too hard for me", "hint": "Next season's goals start a step lower", "lean": -1},
+			{"id": "quiet", "label": "I'd rather not talk about it", "hint": "", "lean": 0}
+		],
+		"answers": {
+			"calm": {"again": "Good. We'll adjust and go again.", "bigger": "I'll remember that. We'll see how the next year looks first.", "toohard": "Thank you for saying it. I'll set them a little lower.", "quiet": "That's all right."},
+			"drill": {"again": "Good. Back to work.", "bigger": "Bigger? Fine. Earn it.", "toohard": "Too hard is information. I'll lower it, once.", "quiet": "Fine. Training's tomorrow."},
+			"warm": {"again": "I'd love that. We'll do it together.", "bigger": "That's the spirit! Let's be bold.", "toohard": "Thank you for being honest. I'll make the next ones kinder.", "quiet": "Of course. Whenever you want to."},
+			"tactician": {"again": "Understood. Same parameters.", "bigger": "Understood. Raising the target one step.", "toohard": "Understood. Lowering it one step.", "quiet": "Noted."}
+		}
+	}
+}

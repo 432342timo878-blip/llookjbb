@@ -45,6 +45,8 @@
 		"stop_head": "MESSAGE",
 		"stop_head_talk": "WEEK TALK",
 		"stop_head_proposal": "YOUR COACH SUGGESTS",
+		"stop_head_goal": "SEASON GOAL",
+		"stop_head_suggest": "YOUR COACH SUGGESTS",
 		"members_head": "IN THE GROUP",
 		"you": "You",
 		"system": "",

@@ -55,7 +55,12 @@ $checks = @(
 	@{ name = "playtest_fix_check"; args = "--headless -s res://tools/playtest_fix_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "coach_check"; args = "--headless -s res://tools/coach_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "storylet_check"; args = "--headless -s res://tools/storylet_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
-	@{ name = "verdict_check"; args = "--headless -s res://tools/verdict_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 }
+	@{ name = "verdict_check"; args = "--headless -s res://tools/verdict_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
+	@{ name = "goals_check"; args = "--headless -s res://tools/goals_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
+	@{ name = "load_check (every script loads)"; args = "--headless -s res://tools/load_check.gd"; marker = "LOAD OK"; limit = 180 },
+	# The races: 60 fixed races (quick and watched, every plan, mix and voice) must give the same hash as before session C5. An
+	# engine change that is MEANT to change the races changes it: run tools/quick_fingerprint.gd and put the new hash here.
+	@{ name = "quick_fingerprint (the races are unchanged)"; args = "--headless -s res://tools/quick_fingerprint.gd"; marker = "races fingerprint: 73182f4eb6c496760b24bc0d3b3780c2"; limit = 300 }
 )
 if ($Only -ne "") {
 	$parts = $Only.Split(",") | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ -ne "" }

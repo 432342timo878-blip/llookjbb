@@ -71,6 +71,15 @@ func _run() -> void:
 	_close_overlays(hub)
 	game.answer_event(game.pending_event().id, "later")
 	hub._show_pending_event()
+	# The first day: the coach's offer of the season's goals (session C5), a panel with its own "?".
+	_check(game.advance_day() == game.STOP and game.pending_event().get("kind", "") == "goals", "the first day starts with the coach's offer of the season goals")
+	hub._show_pending_event()
+	await _frames(4)
+	await _press_help(hub._event_overlay, "goals panel", "season_goals", false)
+	_check(_overlay_on_top(hub), "the goals' help sheet is above the stop-event layer")
+	_close_overlays(hub)
+	game.answer_event(game.pending_event().id, "set")
+	hub._show_pending_event()
 	game.advance_day()
 	hub._refresh_week_ui()
 

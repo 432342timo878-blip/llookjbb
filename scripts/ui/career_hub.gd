@@ -500,7 +500,11 @@ func _show_pending_event() -> void:
 	center.add_child(card)
 
 	# Logical window width (the screen may not be laid out yet), minus screen margin and panel padding.
-	var widest := SeasonEventPanel.max_width(e) if SeasonEventPanel.handles(e) else 480.0
+	var widest := 480.0
+	if SeasonEventPanel.handles(e):
+		widest = SeasonEventPanel.max_width(e)
+	elif GoalsEventPanel.handles(e):
+		widest = GoalsEventPanel.max_width(e)
 	var width := minf(widest, Layout.logical_width - 32.0 - 36.0 - 12.0)
 	var box: Control
 	if showing_result:   # what the answer changed (GDD 4.9.5 "Consequences shown"): the reply, ▲ / ▼ lines, Continue
@@ -513,6 +517,9 @@ func _show_pending_event() -> void:
 		var panel := SeasonEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, SeasonEventPanel.help_id(e)))
 		box = panel
+	elif GoalsEventPanel.handles(e):   # the coach's offer of the season's goals (session C5)
+		box = GoalsEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
+				func(): HelpOverlay.open(self, str(Data.goals.ui.help_entry)))
 	elif MomentEventPanel.handles(e):   # a moment (the coach's Sunday talk ...) as a message
 		box = MomentEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, MomentEventPanel.HELP))
@@ -540,7 +547,7 @@ func _show_pending_event() -> void:
 	_event_overlay.visible = true
 	_raise_overlays()
 	_fit_event_card(scroll, box)
-	if box is SeasonEventPanel:   # its content changes (a plan card chosen): fit the card again
+	if box is SeasonEventPanel or box is GoalsEventPanel:   # its content changes (a plan card chosen, a level stepped): fit the card again
 		box.rebuilt.connect(func(): _fit_event_card(scroll, box))
 
 
@@ -675,6 +682,11 @@ func _build_profile(a: Athlete) -> void:
 	_today_card.pressed.connect(func(): _open_day(Calendar.weekday(Game.date)))
 	_today_card.message_pressed.connect(_open_people)
 	_content.add_child(_today_card)
+	var goals_panel := GoalsUI.overview_panel(func():   # the season goals (session C5); with none set, a button asks the coach
+		_refresh_week_ui()
+		_show_pending_event())
+	if goals_panel != null:
+		_content.add_child(goals_panel)
 
 	var columns: Container   # wide: a grid of 4 (2 when the width is short, e.g. with the side panel open)
 	if Layout.compact:
@@ -964,6 +976,31 @@ func _build_calendar() -> void:
 		box.add_child(_meet_row(a, m))
 
 
+## The mark under a meet the coach suggests (CoachSuggests, session C5): COACH SUGGESTS, his reason and No thanks (he won't suggest it
+## again). Enter / Make target below are the Yes. Null when he suggests nothing for this meet.
+func _suggest_mark(m: Dictionary) -> Control:
+	var sg := CoachSuggests.sys()
+	if sg == null or not CoachSuggests.enabled:
+		return null
+	var s := sg.open_for(str(m.key))
+	if s.is_empty():
+		return null
+	var ui: Dictionary = Data.advice.suggest.ui
+	var col := UIKit.vbox(4)
+	col.add_child(UIKit.label(str(ui.mark_target if str(s.kind) == "target" else ui.mark), "CaptionLabel"))
+	var reason := UIKit.wrapped(sg.calendar_text(s), "")
+	reason.custom_minimum_size.x = 120
+	col.add_child(reason)
+	var no := UIKit.button(str(ui.no_thanks), false, 150)
+	col.add_child(no)
+	var panel := UIKit.alert_panel(col, Palette.ACCENT, 10)
+	no.pressed.connect(func():
+		sg.decline_from_calendar(str(m.key))
+		_refresh_week_ui()
+		panel.visible = false)
+	return panel
+
+
 ## One meet. Wide: date | details | Enter button. Phone: date, details, then a full-width button.
 func _meet_row(a: Athlete, m: Dictionary) -> Control:
 	var row: BoxContainer = UIKit.vbox(6) if Layout.compact else UIKit.hbox(16)
@@ -996,6 +1033,9 @@ func _meet_row(a: Athlete, m: Dictionary) -> Control:
 		info.add_child(UIKit.wrapped(standard, ""))
 	if not check.ok:
 		info.add_child(UIKit.wrapped(check.reason, "MutedLabel"))
+	var mark := _suggest_mark(m) if check.ok else null   # his suggestion, with his reason (session C5)
+	if mark != null:
+		info.add_child(mark)
 	row.add_child(info)
 
 	# Enter / Entered ✓, and in season-plan mode the Target toggle (GDD 4.8): marking a target enters the meet
@@ -1022,6 +1062,8 @@ func _meet_row(a: Athlete, m: Dictionary) -> Control:
 			var is_target: bool = m.key in season.targets(year)
 			t.text = "Target %s" % SeasonUI.TARGET_MARK if is_target else "Make target"
 			t.theme_type_variation = "PrimaryButton" if is_target else ""
+		if mark != null and CoachSuggests.sys() != null:   # (entered or made a target: his suggestion is answered)
+			mark.visible = not CoachSuggests.sys().open_for(str(m.key)).is_empty()
 	var after := func():
 		Game.current_week()   # this week's race days follow the entries
 		HealthUI.refresh()    # a race day that was withdrawn is a training day again: injury limits apply to it

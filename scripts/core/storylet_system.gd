@@ -33,6 +33,9 @@ static var include_test := false
 
 const NONE := "_none"   # the answer of a moment that passed unanswered
 const ACK := "talk_ack"  # the storylet of a week talk without a topic (data/storylets/week_talk.json)
+## Moments made by other systems of the coach (session C5): the moment kind -> the id of the GameSystem whose on_reply(ref, reply)
+## answers it (SeasonGoals: a goal met / missed; CoachSuggests: a meet or target he suggests).
+const CUSTOM_SYSTEMS := {"goal": "goals", "suggest": "suggests"}
 
 var rng := RandomNumberGenerator.new()
 var stop_setting := ""       # "important" / "all"; "" = the default of data/moments.json
@@ -384,6 +387,10 @@ func _post_event(m: Dictionary, p: Dictionary) -> void:
 			pattern = str(Data.coach_talk.talk.title)
 		elif str(m.kind) == "proposal":
 			pattern = str(Data.coach_talk.proposal.title)
+		elif str(m.kind) == "goal":
+			pattern = str(Data.goals.ui.moment_title)
+		elif str(m.kind) == "suggest":
+			pattern = str(Data.advice.suggest.ui.moment_title)
 		title = pattern.format({"from": person_name(p), "thread": title})
 	var e := Game.post_event(id, title, m.text, choices, true)
 	e.kind = "moment"
@@ -423,6 +430,9 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 		return
 	if m.kind == "proposal":
 		_resolve_proposal(m, reply_id)
+		return
+	if CUSTOM_SYSTEMS.has(str(m.kind)):
+		_resolve_custom(m, reply_id)
 		return
 	var s := storylet(str(m.storylet))
 	var p: Dictionary = people.get(m.from, {})
@@ -646,6 +656,47 @@ func post_proposal(proposal_id: String, text: String, replies: Array, stop: bool
 	if stop:
 		_post_event(m, p)
 	return m
+
+
+## A moment of the coach's own systems (session C5), like a proposal: his message in the coach thread with replies, outside the 3-5
+## a week, a stop with `stop`. `kind` is "goal" or "suggest" (CUSTOM_SYSTEMS), `ref` names what it is about for that system.
+## The answer goes to the system's on_reply(ref, reply_id) -> {result (his reply), changes (lines for the result card)}.
+## Works with the moments switched off too (tools). Returns the moment ({} without a coach).
+func post_custom(kind: String, ref: String, text: String, replies: Array, stop: bool) -> Dictionary:
+	var p := _coach_person()
+	if p.is_empty():
+		return {}
+	_start_threads()
+	var today := day_no(Game.date)
+	var m := {"id": "m%d" % _next, "kind": kind, "ref": ref, "storylet": "", "date": Game.date.duplicate(),
+			"day": today, "thread": "coach", "from": str(p.id), "text": text, "variant": 0, "replies": replies.duplicate(true),
+			"fill": {}, "expires": today + int(Data.moments.expires_days), "stop": false, "event": "", "answer": "",
+			"answered_day": -1, "auto": false, "talk": false}
+	_next += 1
+	moments.append(m)
+	_message("coach", str(p.id), text, m.id, Game.date)
+	if stop:
+		_post_event(m, p)
+	return m
+
+
+## The answer to a custom moment: the player's reply in the thread, then the system decides and its reply comes back.
+func _resolve_custom(m: Dictionary, reply_id: String) -> void:
+	var label := ""
+	for r in m.replies:
+		if r.id == reply_id:
+			label = str(r.label)
+	if reply_id != NONE and label != "":
+		_message(m.thread, "you", label, m.id, Game.date)
+	var sys := Game.get_system(str(CUSTOM_SYSTEMS[m.kind]))
+	var res: Dictionary = sys.on_reply(str(m.ref), reply_id) if sys != null and sys.has_method("on_reply") else {}
+	m.changes = res.get("changes", [])
+	var result := str(res.get("result", ""))
+	if reply_id == NONE:
+		_message(m.thread, "system", str(Data.moments.no_answer.result), m.id, Game.date)
+	elif result != "":
+		_message(m.thread, str(m.from), result, m.id, Game.date)
+		threads[m.thread].back().read = true
 
 
 ## A message of the coach in his thread that asks nothing (a change he made, what he would have changed, his reply to a veto).

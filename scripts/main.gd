@@ -11,6 +11,9 @@ func _ready() -> void:
 	StoryletSystem.talks_enabled = true
 	# The coach's proposals (session C4: with "Ask me first", the default, each one stops Play week) likewise.
 	CoachProposals.enabled = true
+	# The season goals and the coach's suggestions of meets and targets (session C5) likewise.
+	SeasonGoals.enabled = true
+	CoachSuggests.enabled = true
 	Router.screen_requested.connect(_show_screen)
 	Router.screen_changed.connect(_backdrop.show_for)
 	get_window().size_changed.connect(_update_layout)

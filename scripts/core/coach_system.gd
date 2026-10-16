@@ -105,9 +105,11 @@ func race_accuracy() -> float:
 	var r: Dictionary = Data.coaching.effects.race_advice
 	var base := float(Data.races.controls.coach.accuracy)
 	var rr := attr(str(r.attribute))
-	if rr == float(Data.coaching.neutral):
+	# The race-reading tactician is the most accurate (data/advice.json race.shouts.accuracy_bonus, session C5).
+	var bonus := float(Data.advice.race.shouts.accuracy_bonus.get(str(head().get("voice", "")), 0.0))
+	if rr == float(Data.coaching.neutral) and bonus == 0.0:
 		return base
-	return clampf(base + (rr - float(Data.coaching.neutral)) * float(r.per_point), float(r.min), float(r.max))
+	return clampf(base + (rr - float(Data.coaching.neutral)) * float(r.per_point) + bonus, float(r.min), float(r.max))
 
 
 ## The race-advice accuracy for a race of athlete `a` (RaceDay): the career's coach for the career's athlete, else -1.

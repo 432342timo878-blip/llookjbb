@@ -30,6 +30,9 @@ func _run() -> void:
 	var router = main.get_node("/root/Router")
 	var game = main.get_node("/root/Game")
 	var data = main.get_node("/root/Data")
+	# The season goals and the coach's suggestions (session C5) are switched on for their own views (_goals_views) only.
+	load("res://scripts/core/season_goals.gd").enabled = false
+	load("res://scripts/core/coach_suggests.gd").enabled = false
 
 	# A short career so the hub has something to show.
 	router.go("new_career")
@@ -122,6 +125,8 @@ func _run() -> void:
 		await _people_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _proposal_views(main, game, data, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
+		await _goals_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
@@ -1016,6 +1021,156 @@ func _proposal_views(main: Node, game, data, tag: String) -> void:
 	hub._refresh_week_ui()
 	hub._show("overview")
 	await _frames(3)
+
+
+# --- The season goals and the coach's suggestions (session C5) at this window size -----------------------------------
+
+## The Overview with no goals (the button to ask), his offer as a stop panel (stepped to a harder level), the goals on the Overview
+## and the Progress page, a goal met (his message in the thread) and the season review (a stop, its result card), and a meet he
+## suggests: the Calendar mark and the stop. Everything is put back afterwards and both systems are switched off again.
+func _goals_views(main: Node, game, data, tag: String) -> void:
+	var SG = load("res://scripts/core/season_goals.gd")
+	var CSG = load("res://scripts/core/coach_suggests.gd")
+	var cal = load("res://scripts/core/calendar.gd")
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	SG.enabled = true
+	CSG.enabled = true
+	var gs = game.get_system("goals")
+	var sg = game.get_system("suggests")
+	var ms = game.get_system("moments")
+	var year: int = gs.current_year()
+	gs.seasons.erase(year)
+	gs.offers.erase(year)
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(5)
+	await _shot("%s_goals_none" % tag)
+	_check_overflow(hub, "%s goals_none" % tag)
+	if _find_button_prefix(hub, "Ask ") == null:
+		print("WRONG: no button to ask the coach for goals at ", tag)
+	# His offer.
+	gs.offer(year)
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_goals_offer" % tag)
+	_check_overflow(hub, "%s goals_offer" % tag)
+	var step := _find_button(hub._event_overlay, "▶")
+	if step:
+		step.pressed.emit()
+		await _frames(6)
+		await _shot("%s_goals_offer_stepped" % tag)
+		_check_overflow(hub, "%s goals_offer_stepped" % tag)
+	else:
+		print("WRONG: no stepper in the goals offer at ", tag)
+	var scroll = _find_class(hub._event_overlay, "ScrollContainer")
+	if scroll:
+		scroll.scroll_vertical = 100000
+		await _frames(4)
+		await _shot("%s_goals_offer_buttons" % tag)
+		_check_overflow(hub, "%s goals_offer_buttons" % tag)
+	var help_btn = _find_script(hub._event_overlay, load("res://scripts/ui/help_button.gd"))
+	if help_btn:
+		help_btn.pressed.emit()
+		await _frames(6)
+		await _shot("%s_help_goals" % tag)
+		_check_overflow(hub, "%s help_goals" % tag)
+		_close_help_overlays(hub)
+	hub._on_event_answer(game.pending_event().id, "set")
+	await _frames(5)
+	hub._show("overview")
+	await _frames(5)
+	await _shot("%s_goals_overview" % tag)
+	_check_overflow(hub, "%s goals_overview" % tag)
+	hub._show("progress")
+	await _frames(5)
+	await _shot("%s_goals_progress" % tag)
+	_check_overflow(hub, "%s goals_progress" % tag)
+	# A goal met: his message waits in the coach thread; one missed: the season review stops the week.
+	var goals: Array = gs.goals_of(year)
+	if goals.size() >= 2:
+		gs._met(year, goals[0], game.date)
+		goals[1].status = "missed"
+		goals[1].detail = "your best was 2:20.00"
+		hub._people_page = "coach"
+		hub._show("people")
+		await _frames(6)
+		await _shot("%s_goal_met_thread" % tag)
+		_check_overflow(hub, "%s goal_met_thread" % tag)
+		gs._review(year)
+		hub._refresh_week_ui()
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("%s_goal_review" % tag)
+		_check_overflow(hub, "%s goal_review" % tag)
+		var e: Dictionary = game.pending_event()
+		if e.is_empty():
+			print("WRONG: no review stop at ", tag)
+		else:
+			hub._on_event_answer(e.id, "toohard")
+			await _frames(6)
+			await _shot("%s_goal_review_result" % tag)
+			_check_overflow(hub, "%s goal_review_result" % tag)
+			hub._end_result_card()
+		hub._show("overview")
+		await _frames(5)
+		await _shot("%s_goals_overview_done" % tag)
+		_check_overflow(hub, "%s goals_overview_done" % tag)
+	# A meet he suggests: the mark in the Calendar, then the stop.
+	var meet := {}
+	for m in cal.meets_between(game.add_days(game.date, 10), game.add_days(game.date, 120)):
+		if cal.can_enter(game.athlete, m, game.date).ok and not str(m.key) in game.entries:
+			meet = m
+			break
+	if not meet.is_empty():
+		var s := {"id": "s%d" % sg._next, "day": 0, "date": game.date.duplicate(), "kind": "meet", "meet": str(meet.key), "meet_name": str(meet.name),
+				"meet_date": meet.date.duplicate(), "reasons": ["tune"], "verdict": "good", "said": "Race it. Racing is how you learn to race.",
+				"status": "asked", "moment": "", "mode": "ask"}
+		sg._next += 1
+		sg.list.append(s)
+		hub._show("calendar")
+		await _frames(6)
+		var mark := _find_label(hub, str(data.advice.suggest.ui.mark))
+		if mark:
+			hub._scroll.ensure_control_visible(mark)
+			await _frames(4)
+		else:
+			print("WRONG: no COACH SUGGESTS mark in the Calendar at ", tag)
+		await _shot("%s_calendar_suggest" % tag)
+		_check_overflow(hub, "%s calendar_suggest" % tag)
+		s.moment = str(ms.post_custom("suggest", s.id, sg._text(s, "ask_end"), sg._replies(s), true).get("id", ""))
+		hub._refresh_week_ui()
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("%s_suggest_stop" % tag)
+		_check_overflow(hub, "%s suggest_stop" % tag)
+		var e2: Dictionary = game.pending_event()
+		if not e2.is_empty():
+			hub._on_event_answer(e2.id, "decline")
+			await _frames(6)
+			await _shot("%s_suggest_result" % tag)
+			_check_overflow(hub, "%s suggest_result" % tag)
+			hub._end_result_card()
+	# Everything back.
+	sg.list.clear()
+	sg.declined.clear()
+	gs.seasons.erase(year)
+	gs.offers.erase(year)
+	gs.lean = 0
+	SG.enabled = false
+	CSG.enabled = false
+	hub._show("overview")
+	await _frames(3)
+
+
+func _find_class(node: Node, cls: String):
+	if node.get_class() == cls:
+		return node
+	for c in node.get_children():
+		var found = _find_class(c, cls)
+		if found:
+			return found
+	return null
 
 
 func _find_script(node: Node, script):

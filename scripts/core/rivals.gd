@@ -120,6 +120,22 @@ static func train_week(pool: Array, gender: String, monday: Dictionary, birth_ye
 			record_time(r, RacePerformance.time_for(float(r.ability), gender) * factor, monday)
 
 
+## What a rival's ability is expected to be on `to` (a Monday on or after `from`), without any dice and without touching the global ones
+## (the coach's estimate of a field, GDD 4.9.2, session C5): every week the mean of train_week's gain (the random factor's mean is 1),
+## drift and the ceiling's pull ignored. A rival who is out keeps the ability they have.
+static func expected_ability(r: Dictionary, gender: String, from: Dictionary, to: Dictionary, birth_year: int) -> float:
+	var cfg: Dictionary = Data.races.rivals
+	var ability := float(r.ability)
+	var ceiling := minf(float(r.ceiling), float(cfg.ceiling_max))
+	var weeks := roundi(Calendar.days_between(from, to) / 7.0)
+	for w in weeks:
+		var monday := Game.add_days(from, 7 * w)
+		var by_age := growth_by_age(gender, monday, birth_year, float(r.get("bloom", 0.0))) * float(r.get("pace", 1.0))
+		var headroom := clampf((ceiling - ability) / 5.0, 0.0, 1.0)
+		ability += float(cfg.weekly_rate) * float(r.trainability) * headroom * by_age
+	return ability
+
+
 ## The rivals' weekly growth share at the cohort's age on `monday` (born mid-`birth_year` on average): 1.0 = the
 ## youngest rate, interpolated in data/races.json rivals growth_by_age ([age, share] by gender).
 static func growth_by_age(gender: String, monday: Dictionary, birth_year: int, bloom := 0.0) -> float:

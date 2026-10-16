@@ -302,6 +302,8 @@
 			"day_plan": "Your {day} as planned: {cand}.",
 			"day_rest": "Your {day}: a rest day.",
 			"race": "{day}: racing {meet}.",
+			"meet": "Racing {meet}, against not racing it.",
+			"target": "Making {meet} a target (the plan built round it), against leaving it as it is.",
 			"week_changed": "Your weekly plan from next week on, as you changed it, against the coach's.",
 			"week_plan": "Your weekly plan from next week on, against the same week one step easier.",
 			"phase_changed": "The phase's week as you changed it, against the coach's.",

@@ -34,6 +34,9 @@ func _build() -> void:
 	add_child(top)
 	add_child(UIKit.wrapped("A record of your abilities and times, taken when your career started and at the end of every month. "
 			+ "Tap a record to see how each attribute changed since the one before."))
+	var goals := GoalsUI.progress_section()   # the season goals (session C5)
+	if goals != null:
+		add_child(goals)
 	add_child(_summary())
 	for i in _rows.size():
 		add_child(_record(i))

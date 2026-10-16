@@ -1,0 +1,115 @@
+{
+	"_note": "The coach's advice (GDD 4.9.2, session C5). TWO parts. (1) `race`: his advice on a race: the pre-race plan (where to run: Lead / Sit in the pack / Wait at the back) and the kick plan, and the personality bias of his shouts in a watched race. (2) `suggest`: his 'Coach suggests' of meets and targets. All numbers and every text of both live here.",
+	"version": 1,
+	"race": {
+		"_note": "PRE-RACE ADVICE (RaceAdvice). The truth: a score per plan from the athlete against the field (measured with tools/advice_plan.gd, GDD 4.9.2 'Built (step C5)'). His view: score + his personality's lean + his error (sd = noise.floor + noise.per_point x (20 - race reading), times tactician_mult for the tactician, the most accurate), the best view wins: so a personality tilts the answer when two plans are close, race reading decides how often he is right. The kick plan: the athlete's natural kick point (races.json engine.player_kick) + his error (sd_m = kick.floor_m + kick.per_point_m x (20 - race reading)) + the personality's lean in metres (drill kicks from further out, calm and warm later, the tactician exactly), snapped to the nearest kick-plan option of races.json controls.kick_plans. His dice come from the coach, the meet and the round (the same advice every time the screen opens); the advice is never applied by itself.",
+		"plans": ["front", "pack", "back"],
+		"score": {"strength": 0.2, "lead_kick": 0.12, "lead_cost": 0.03, "back_kick": 0.12, "crowd_front": 0.25, "crowd_back": 0.45, "pack_safe": 0.06,
+			"spread_min": 0.3, "edge_cap": 1.5, "kick_ref": 3.0, "size_from": 8, "size_ref": 4.0},
+		"lean": {
+			"calm": {"front": -0.06, "pack": 0.0, "back": 0.06},
+			"drill": {"front": 0.07, "pack": 0.0, "back": -0.06},
+			"warm": {"front": -0.05, "pack": 0.08, "back": -0.03},
+			"tactician": {"front": 0.0, "pack": 0.0, "back": 0.0}
+		},
+		"noise": {"floor": 0.02, "per_point": 0.01, "tactician_mult": 0.7},
+		"kick": {
+			"floor_m": 4.0, "per_point_m": 2.5, "snap_max_m": 45.0,
+			"lean_m": {"calm": -15.0, "drill": 20.0, "warm": -15.0, "tactician": 0.0}
+		},
+		"shouts": {
+			"_note": "The personality bias of his shouts on the cards (Race._coach_line). When he is wrong, which wrong answer he shouts is weighted by his lean in the card's direction (push / ease, data/race_cards.json coach.dir): weight = 1 + lean x lean_weight. On the judgement cards (`flip_cards`) he also shouts his lean answer instead of the sensible one with chance flip (not for the tactician).",
+			"lean": {"calm": {"push": -0.5, "ease": 0.6}, "drill": {"push": 0.8, "ease": -0.5}, "warm": {"push": -0.3, "ease": 0.3}, "tactician": {"push": 0.0, "ease": 0.0}},
+			"lean_weight": 3.0,
+			"flip": {"calm": 0.1, "drill": 0.1, "warm": 0.06, "tactician": 0.0},
+			"flip_cards": ["bell", "kick", "move", "slow", "dropped"],
+			"accuracy_bonus": {"calm": 0.0, "drill": 0.0, "warm": 0.0, "tactician": 0.04}
+		},
+		"texts": {
+			"head": "{COACH} SUGGESTS",
+			"plan_names": {"front": "Lead", "pack": "Sit in the pack", "back": "Wait at the back"},
+			"kick_natural": "kick where your body suits",
+			"kick_at": "kick at {m} m to go",
+			"line_short": "{plan}, {kick}.",
+			"line": {
+				"calm": "I'd go with {plan} today. {kickline} {why}",
+				"drill": "Plan: {plan}. {kickline} {why}",
+				"warm": "Here's what I'd do today: {plan}. {kickline} {why}",
+				"tactician": "My read of this field: {plan}. {kickline} {why}"
+			},
+			"kick_line": {
+				"natural": "And let the kick come where it suits you.",
+				"at": "And start the kick at about {m} m to go."
+			},
+			"why": {
+				"front_strong": "You are the stronger runner here, and the pace is yours to make.",
+				"front_grinder": "Your strength is the long run, not a sprint finish: run from the front.",
+				"front_crowd": "A big field: the middle gets crowded, and at the front you have room.",
+				"pack": "Stay close and keep your options; the race will come to you.",
+				"back_finisher": "Your finish is your weapon: wait, and use it when the others are tired.",
+				"back_crowd": "A big field: the middle gets crowded. Wait at the back, stay out of trouble and use your finish."
+			},
+			"thresholds": {"strong": 0.3, "kicker": 0.3},
+			"use": "Use his plan",
+			"used": "Plan set. You can still change it.",
+			"hint": "Only a suggestion: it is your race. His view is only as good as his race reading.",
+			"watch_hint": "In a race you watch, he shouts on the cards, as before."
+		}
+	},
+	"suggest": {
+		"_note": "THE COACH SUGGESTS MEETS AND TARGETS (CoachSuggests, session C5; user 2026-10-16). Each Monday morning he looks at the calendar; at most per_month suggestions a calendar month, counted with the 2 a week of CoachProposals. A meet comes when there is a REASON: `gap` (no race for gap.weeks), `tune` (a target 14-42 days later and no race between), `standard` (the next target needs a limit you don't have yet and your best is within standard.within of it). He judges the meet with the C4 verdict model (racing it against not racing it, CoachVerdict.meet_change) and suggests it when HE thinks it a Good idea (his seen total >= propose_min_w). A TARGET suggestion: a national or international meet you can enter that isn't a target yet, judged with CoachVerdict.target_change (the plan built round it against as it is), when his seen total >= target.propose_min_w. A suggestion is a message with 'Yes' / 'No thanks' (Ask me first: a stop; Always: the same, not a stop, a meet is never entered by itself; Never: he only writes it) and a mark in the Calendar with the same two buttons. A meet you said no to is not suggested again. max_weeks = how far ahead a candidate is played; after_weeks = weeks played after the meet.",
+		"look_weekday": 0,
+		"start_after_days": 7,
+		"look_weeks": 8,
+		"min_ahead_days": 5,
+		"max_weeks": 30,
+		"after_weeks": 1,
+		"per_month": 1,
+		"propose_min_w": 0.1,
+		"tune": {"min_days": 14, "max_days": 42, "free_before_days": 7},
+		"gap": {"weeks": 6},
+		"standard": {"within": 0.04, "before_days": 7},
+		"target": {"look_weeks": 30, "levels": ["national", "international"], "propose_min_w": 0.25},
+		"keep": 30,
+		"ui": {
+			"moment_title": "{from} has a suggestion",
+			"mark": "COACH SUGGESTS A RACE",
+			"mark_target": "COACH SUGGESTS A TARGET",
+			"no_thanks": "No thanks",
+			"calendar_meet": "{reason}",
+			"calendar_target": "{reason}",
+			"settings_note": "Meets and targets: he suggests them, you decide. He never enters a meet by himself."
+		},
+		"intro": {
+			"calm": "I've been looking at the calendar.",
+			"drill": "You need a race.",
+			"warm": "I've been thinking about your season.",
+			"tactician": "I went through the calendar against your plan."
+		},
+		"reason": {
+			"gap": "You haven't raced for {weeks} weeks, and {meet} ({date}) is a race to sharpen on.",
+			"tune": "{meet} ({date}) is a good tune-up before {target}: a race in your legs a few weeks early.",
+			"standard": "{meet} ({date}) is your chance to run the {limit} before {target}.",
+			"target": "I'd make {meet} ({date}) a target. We build the season round it: easier days before it, a taper, the form to match."
+		},
+		"ask_end": {"meet": "Shall I put it in your calendar?", "target": "Shall we make it a target?"},
+		"always_end": {"meet": "It's marked in your calendar. Say the word.", "target": "It's marked in your calendar. Say the word."},
+		"noticed_end": {"meet": "You've asked me not to decide for you, so it's your call. It's marked in your calendar.", "target": "You've asked me not to decide for you, so it's your call. It's marked in your calendar."},
+		"replies": {
+			"accept_meet": {"label": "Yes, enter it", "hint": "It goes in your calendar and replaces that day's training"},
+			"accept_target": {"label": "Yes, make it a target ◆", "hint": "Entered, with the season plan built round it"},
+			"decline": {"label": "No thanks", "hint": "He won't suggest it again"}
+		},
+		"answered": {
+			"calm": {"accept": "Good. I've put it in.", "decline": "Fair enough."},
+			"drill": {"accept": "Good. Be ready.", "decline": "Your call. Don't come to me with excuses."},
+			"warm": {"accept": "I'm glad. We'll make it a good one.", "decline": "That's okay. Another time."},
+			"tactician": {"accept": "Entered.", "decline": "Noted. Removed from my list."}
+		},
+		"lines": {
+			"entered": "{meet}: entered",
+			"targeted": "{meet}: entered as a target",
+			"declined": "{meet}: you said no"
+		}
+	}
+}

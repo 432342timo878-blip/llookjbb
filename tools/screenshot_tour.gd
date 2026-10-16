@@ -26,6 +26,9 @@ func _run() -> void:
 	help.SEEN_PATH = "user://tour_help_seen.cfg"
 	help.reset_seen()
 	await _frames(10)
+	# The season goals and the coach's suggestions (session C5) are switched on for their own part of the tour (_goals_tour) only.
+	load("res://scripts/core/season_goals.gd").enabled = false
+	load("res://scripts/core/coach_suggests.gd").enabled = false
 	await _shot("0_main_menu")
 	var main := current_scene
 	main.get_node("/root/Router").go("new_career")
@@ -277,6 +280,8 @@ func _run() -> void:
 	await _health_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _people_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _goals_tour(main, hub)
 	saves.delete(slot)
 	quit()
 
@@ -993,6 +998,112 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 		await _frames(4)
 		await _shot("47g_ask_coach_week")
 	hub._show("overview")
+
+
+# --- Season goals and the coach's suggestions (M2 part 2, session C5): the Overview before and after, his offer as a panel (a level --
+# --- stepped, the help), the goals on the Overview and the Progress page, a goal met in the thread, the season review (a stop and ---
+# --- its result card), a meet he suggests (the Calendar mark, the stop, the result). The race screen's suggested plan is in the ----
+# --- race shots (9_race_field). -----------------------------------------------------------------------------------------------
+
+func _goals_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var data = main.get_node("/root/Data")
+	var hub: Control = hub_in
+	var cal = load("res://scripts/core/calendar.gd")
+	load("res://scripts/core/season_goals.gd").enabled = true
+	load("res://scripts/core/coach_suggests.gd").enabled = true
+	_answer_pending(game)
+	hub._refresh_week_ui()
+	var gs = game.get_system("goals")
+	var sg = game.get_system("suggests")
+	var ms = game.get_system("moments")
+	var year: int = gs.current_year()
+	hub._show("overview")
+	await _frames(6)
+	await _shot("48_overview_no_goals")
+	# His offer, the first level stepped up, the buttons, the help; then "Set these goals".
+	gs.offer(year)
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("48a_goals_offer")
+	var step := _find_button(hub._event_overlay, "▶")
+	if step:
+		step.pressed.emit()
+		await _frames(6)
+		await _shot("48b_goals_offer_stepped")
+	await _scroll_event_to_end(hub)
+	await _shot("48c_goals_offer_buttons")
+	var help_btn = _find_script(hub._event_overlay, load("res://scripts/ui/help_button.gd"))
+	if help_btn:
+		help_btn.pressed.emit()
+		await _frames(6)
+		await _shot("48d_help_goals")
+		_close_help_overlays(hub)
+	hub._on_event_answer(game.pending_event().id, "set")
+	await _frames(5)
+	await _shot("48e_overview_goals")
+	hub._show("progress")
+	await _frames(5)
+	await _shot("48f_progress_goals")
+	# A goal met (his message waits in the thread) and one missed: the season review.
+	var goals: Array = gs.goals_of(year)
+	if goals.size() >= 2:
+		gs._met(year, goals[0], game.date)
+		goals[1].status = "missed"
+		goals[1].detail = "your best was 2:20.00"
+		hub._people_page = "coach"
+		hub._show("people")
+		await _frames(6)
+		await _shot("48g_goal_met_thread")
+		gs._review(year)
+		hub._refresh_week_ui()
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("48h_goal_review")
+		await _scroll_event_to_end(hub)
+		await _shot("48h2_goal_review_replies")
+		hub._on_event_answer(game.pending_event().id, "toohard")
+		await _frames(6)
+		await _shot("48i_goal_review_result")
+		hub._end_result_card()
+		hub._show("overview")
+		await _frames(5)
+		await _shot("48j_overview_goals_done")
+	# A meet he suggests.
+	var meet := {}
+	for m in cal.meets_between(game.add_days(game.date, 10), game.add_days(game.date, 120)):
+		if cal.can_enter(game.athlete, m, game.date).ok and not str(m.key) in game.entries:
+			meet = m
+			break
+	if not meet.is_empty():
+		var s := {"id": "s%d" % sg._next, "day": 0, "date": game.date.duplicate(), "kind": "meet", "meet": str(meet.key), "meet_name": str(meet.name),
+				"meet_date": meet.date.duplicate(), "reasons": ["tune"], "verdict": "good", "said": "Race it. Racing is how you learn to race.",
+				"status": "asked", "moment": "", "mode": "ask"}
+		sg._next += 1
+		sg.list.append(s)
+		hub._show("calendar")
+		await _frames(6)
+		var mark := _find_label(hub, str(data.advice.suggest.ui.mark))
+		if mark:
+			hub._scroll.ensure_control_visible(mark)
+			await _frames(4)
+		await _shot("48k_calendar_suggest")
+		s.moment = str(ms.post_custom("suggest", s.id, sg._text(s, "ask_end"), sg._replies(s), true).get("id", ""))
+		hub._refresh_week_ui()
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("48l_suggest_stop")
+		await _scroll_event_to_end(hub)
+		await _shot("48m_suggest_replies")
+		hub._on_event_answer(game.pending_event().id, "accept")
+		await _frames(6)
+		await _shot("48n_suggest_result")
+		hub._end_result_card()
+		print("goals tour: the suggested meet is entered: ", str(meet.key) in game.entries)
+	hub._show("overview")
+	load("res://scripts/core/season_goals.gd").enabled = false
+	load("res://scripts/core/coach_suggests.gd").enabled = false
 
 
 ## Back to a healthy body: no strain, no injuries, no leftover warnings.

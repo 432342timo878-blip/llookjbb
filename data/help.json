@@ -3,8 +3,9 @@
  "screens": {
   "overview": {
    "title": "Overview",
-   "version": 6,
+   "version": 7,
    "sections": [
+    {"heading": "Season goals", "text": "Under the Today card: the three goals you and your coach set for the season, with how you stand. ✓ means met, ✗ missed. With none yet, you can ask your coach for goals.", "see": ["standards"]},
     {"heading": "Playing the days", "text": "Next day plays one day. Play week plays on to Sunday night, but it stops early when something needs you: a race, a new injury, a warning sign or your coach's Sunday talk. The game saves itself after every day."},
     {"heading": "Messages", "text": "A message from your coach or someone else shows at the top of the Today card, with a dot when it is new or waits for your answer. Tap it to open the conversation in the People tab."},
     {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
@@ -68,8 +69,9 @@
   },
   "calendar": {
    "title": "Calendar",
-   "version": 2,
+   "version": 3,
    "sections": [
+    {"heading": "Your coach suggests", "text": "A meet marked COACH SUGGESTS is one he thinks worth racing, with his reason. Enter it, or No thanks: he won't suggest it again. He also suggests making a meet a target. He never enters you himself.", "see": ["coach_changes"]},
     {"heading": "Entering a meet", "text": "Tap Enter to race a meet. On race day the race replaces that day's training. Tap Entered ✓ again to withdraw."},
     {"heading": "★ and ◆", "text": "★ means your coach suggests the meet. ◆ marks one of your season's target meets; Make target turns a meet into one (at most three a season).", "see": ["targets"]},
     {"heading": "Qualifying times", "text": "Championships have a qualifying time for your age class. The meet says whether you have it. You may still enter one event without it. The best runners of your age class usually enter, so a championship field is about as big as the real one, often 10 to 30."},
@@ -107,8 +109,9 @@
   },
   "moment": {
    "title": "A message that stops the week",
-   "version": 2,
+   "version": 3,
    "sections": [
+    {"heading": "Goals and suggestions", "text": "Your coach also writes about your season goals, when one is met or the season is looked back on, and when he suggests a meet to race or a target. Nothing is decided without you.", "see": ["standards"]},
     {"heading": "Why it stops", "text": "Your coach's Sunday talk always stops Play week, and so do messages where your answer changes something. Pick an answer to carry on."},
     {"heading": "Your coach suggests a change", "text": "He wants to change a coming day, or advises you to scratch from a race. OK lets him. Veto keeps your plan: a reason costs nothing, but many vetoes without one cost a little trust.", "see": ["coach_changes"]},
     {"heading": "The answers", "text": "The line under each button says what it may cost, like \"he will remember\". A talk without a question just needs \"Thanks, coach\"."},
@@ -117,8 +120,9 @@
   },
   "progress": {
    "title": "Progress",
-   "version": 1,
+   "version": 2,
    "sections": [
+    {"heading": "Season goals", "text": "At the top: this season's goals with how you stand, and a line for each earlier season. A goal is ✓ when met and ✗ when missed.", "see": ["standards"]},
     {"heading": "The record", "text": "A snapshot of all your attributes, your 800 m ability and your personal best, taken when your career started and at the end of every month. It is saved with your career. An older save starts its record the day you first load it."},
     {"heading": "Since the start", "text": "The box at the top compares the first record with now: how much your ability and best time improved and which attributes grew most."},
     {"heading": "A month", "text": "Tap a record to open it: every attribute with its value and how much it changed since the record before (a dash means hardly at all). Races that month are listed under the title with the best time."}
@@ -141,8 +145,9 @@
   },
   "race_before": {
    "title": "Before the race",
-   "version": 6,
+   "version": 7,
    "sections": [
+    {"heading": "Your coach suggests", "text": "A suggested plan and kick plan, in his own words. Use his plan fills in the choices below; you can still change them. His view is only as good as his race reading, and his character tilts it: a hard coach likes the front, a calm one waits, a warm one plays safe."},
     {"heading": "The field", "text": "The runners in your race (your section or heat at a championship), fastest personal best first, with this year's best (SB). Once you have raced a runner twice you also see how they run: Front runner, Pack runner, Kicker or Surger."},
     {"heading": "Sections and heats", "text": "Finnish championships run the 800 m in sections: the fastest runners in the last one, places and medals by time across all sections. PLACES says about what a medal and the top 8 will need. Senior and international meets have heats: the first few go through (Q), then the fastest of the rest (q)."},
     {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
@@ -218,6 +223,19 @@
     {"heading": "Why the coach suggests it", "text": "While you weren't running, your body lost some of what it was used to. Your old plan is now a big jump, and big jumps are when injuries happen. The risk line shows what your plan would mean with and without easing back in.", "see": ["plan_risk"]},
     {"heading": "The weeks", "text": "The first week is one easy session a day, with no hard or fast running. Then one session a day at Normal with one hard session kept. A long break ends with a lighter week. Your races stay as they are.", "see": ["easing_back_in"]},
     {"heading": "Accept or No thanks", "text": "Accept puts the weeks over your plan from tomorrow; you can stop them early in the Training tab or the day editor. No thanks keeps your plan as it is."}
+   ]
+  },
+  "season_goals": {
+   "title": "Season goals",
+   "version": 1,
+   "sections": [
+    {"heading": "Three goals", "text": "With his plan for a season your coach offers three goals: a time you run, a milestone (a real limit or a place at a meet) and a habit (sessions you do, warnings you respect, races you run). You pick the level of each."},
+    {"heading": "Choosing a level", "text": "The arrows step through the levels, from Safe to Dream. The star marks the level he would pick; it follows how demanding he is. The words say how likely it is, in his eyes."},
+    {"heading": "His estimate", "text": "He plays your plan forward and guesses what you can run at the season's peak. A coach who judges you well sets goals that fit. A poor judge may set goals that are too easy or too hard, and you won't see it until the season shows.", "see": ["ask_coach"]},
+    {"heading": "Real limits", "text": "A milestone can be a real limit of the Finnish Athletics Federation: the SM limit, the Team Finland criteria or the Kalevan kisat limit.", "see": ["standards"]},
+    {"heading": "When a goal is met", "text": "It counts as soon as you reach it: he writes to you and your trust in him grows, a little more if you chose a level above his. What is still open is settled when the season ends."},
+    {"heading": "When it is missed", "text": "A missed goal never costs you trust. He looks back with you after the meet or at the season's end. What you answer tells him how to set next season's goals: the same, higher or lower."},
+    {"heading": "Where you see them", "text": "On the Overview and the Progress page, with how you stand. If you decided later, ask your coach for goals on the Overview."}
    ]
   },
   "dev_menu": {
@@ -322,10 +340,21 @@
     {"heading": "The taper", "text": "The ten days before a target: fewer sessions and no long runs so you arrive fresh, one sharp session three days out to keep your speed, then a rest day and an easy day."}
    ]
   },
-  "coach_changes": {
-   "title": "Your coach changes your days",
+  "standards": {
+   "title": "The real limits",
    "version": 1,
    "sections": [
+    {"heading": "SM limit", "text": "To enter the Finnish youth championships (Nuorten SM) for 14–15-year-olds you need a time for your age class, or you use your one free event. The limits are the Finnish Athletics Federation's (SUL), from 2026."},
+    {"heading": "Team Finland", "text": "SUL picks juniors (14–16) and youth (17–21) for its coach groups when they reach a time for their age. The group gives camps and coaching. These times are among the milestones your coach may set."},
+    {"heading": "Kalevan kisat", "text": "The Finnish senior championships. The limit is the same for every age: 1:53.50 for men and 2:11.00 for women. For a young runner it is a dream for later."},
+    {"heading": "Old tables", "text": "The tables are SUL's for 2026. New ones come out each February. Until then the game uses the old ones, and a goal built on them says so."}
+   ]
+  },
+  "coach_changes": {
+   "title": "Your coach changes your days",
+   "version": 2,
+   "sections": [
+    {"heading": "Meets and targets", "text": "Your coach also suggests a meet to race or a meet to make a target, when he sees a reason: a gap in your racing, a tune-up before a target, a limit within reach. Never more than one a month. He never enters you himself: you say yes or no thanks.", "see": ["standards"]},
     {"heading": "When he does it", "text": "Only when something catches his eye: sore legs, tired legs, a race close, or a lighter week you asked for in the Sunday talk. At most twice a week. A coach good at load management looks further ahead and sees more truly."},
     {"heading": "Your setting", "text": "In Standing orders (Training tab). Ask me first: he sends the change as a message and Play week stops for it. Always, tell me: he changes the day and tells you. Never: he changes nothing, only says what he would have changed."},
     {"heading": "Veto", "text": "You decide. Veto keeps your plan, in the message or in the day. Give a reason and it costs nothing. Two silent vetoes in four weeks are fine; after that each one costs a little trust."},

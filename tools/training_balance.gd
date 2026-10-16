@@ -143,6 +143,27 @@ func _run() -> void:
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_proposals and proposed > 0 else
 			("NO  <-- the proposals change the training without your OK!" if not same_proposals else "NO PROPOSALS: the check proves nothing")))
 
+	# Session C5: the coach's suggestions of meets and targets ON (and the season goals, which only exist in a season-plan career):
+	# every suggestion answered "No thanks" (the player decides, so nothing is entered by himself): the same fingerprints.
+	print("\n== 2f. Coach suggests (session C5) ON, every suggestion answered 'No thanks': same fingerprints")
+	var CSG = load("res://scripts/core/coach_suggests.gd")
+	var SG = load("res://scripts/core/season_goals.gd")
+	CSG.enabled = true
+	SG.enabled = true
+	H.model_enabled = false
+	var same_suggests := true
+	var suggested := 0
+	for setting in ["ask", "never", "always"]:
+		for i in runs.size() if setting == "ask" else 1:
+			same_suggests = same_suggests and _m1_row(runs[i], plans, true, false, "important", setting) == fingerprints[i]
+			suggested += game.get_system("suggests").fired.size()
+	CSG.enabled = false
+	SG.enabled = false
+	H.model_enabled = true
+	print("   (%d suggestions in the 7 rows)" % suggested)
+	print("   fingerprints identical to part 1: %s" % ("YES" if same_suggests and suggested > 0 else
+			("NO  <-- his suggestions change the training without your OK!" if not same_suggests else "NO SUGGESTIONS: the check proves nothing")))
+
 	var n := 200
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():
@@ -288,10 +309,14 @@ func _answer_moments() -> void:
 			var vetoes: Array = e.choices.filter(func(c): return str(c.id).begins_with("veto_"))
 			if not vetoes.is_empty():
 				answer = str(vetoes[e.id.hash() % vetoes.size()].id)
+			if e.choices.any(func(c): return str(c.id) == "decline"):   # (a meet or target he suggests, session C5: always "No thanks")
+				answer = "decline"
 		game.answer_event(e.id, answer)
 	var ms = game.get_system("moments")
 	for m in ms.pending():
-		if not m.stop and m.id.hash() % 2 == 0:
+		if str(m.get("kind", "")) == "suggest":
+			ms.answer(m.id, "decline")
+		elif not m.stop and m.id.hash() % 2 == 0:
 			ms.answer(m.id, str(m.replies[m.id.hash() % m.replies.size()].id))
 
 

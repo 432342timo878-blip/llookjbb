@@ -1,0 +1,38 @@
+{
+ "_note": "Real 800 m standards for the season goals (GDD 4.9.2 'Season goals with times', session C5). Times in SECONDS (the game shows them as 2:21.00). Every set has a source (a PDF of Suomen Urheiluliitto, SUL) and the season it was published for; later seasons use the same table as an ESTIMATE (the new limits come out in February each year, so the game marks them 'estimated' after `valid`). sets.<id>: name / short = how the goal text names it; kind = what it is (entry = a limit to enter a championship, selection = a coach-group (Team Finland) selection criterion, open = a limit for a national championship); ages = who it applies to (the age the athlete turns in the year); times = key -> seconds, where the key is the gender letter (M / N) + the age or an age group. `times_from` = a path in another data file when the table already lives there (the SM 14-15 limits stay in competitions.json standards.sm_14_15 so the calendar and the race screen use the same numbers). `lookup` says how an athlete's key is made from the age: `age` = M15 / N15 (each age has its own), `group` = the first group whose ages contain it (M14-15, M16). `meet_ids` = the calendar meets the standard belongs to. All numbers copied by hand from the PDFs listed in `sources`; checked against the PDF pages on 2026-10-16.",
+ "version": 1,
+ "sources": {
+  "sul_sm_2026": {"title": "SM-kisojen tulosrajat ulkoratakaudella 2026 (Suomen Urheiluliitto, confirmed by the competition committee 25.2.2026)", "url": "https://www.yleisurheilu.fi/wp-content/uploads/2026/03/SM-tulosrajat-2026-1.pdf", "note": "M/N 14-15 SM: 800 m M15 2:21.00, N15 2:35.00, M14 2:28.00, N14 2:36.00. Kalevan kisat 2026 (liite 2): 800 m M 1:53.50, N 2:11.00; minimum limits (liite 3, a wait-list): M 1:55.50, N 2:15.00; 27 runners aimed at. M/N 16-17, 19-22 SM: no limits ('Ei käytetä tulosrajoja')."},
+  "sul_tf_2026": {"title": "Suomen Urheiluliiton valmennusryhmien valintaperusteet, Team Finland -ohjelma 2026 (published 24.2.2026)", "url": "https://www.yleisurheilu.fi/wp-content/uploads/2026/03/TF-ohjelma-Valintaperusteet-2026.pdf", "note": "TF-nuoret (selected in the year they turn 17-21): table 6.3 'Tuloskriteerit 2026 / TF-nuoret', 800 m by age, men and women. TF-juniorit (14-16): table 6.4 'Tuloskriteerit 2026 / TF-juniorit', 800 m for boys / girls 14-15 and 16. The user asked for the 2025 tables; the 2026 editions are the current ones (published Feb 2026) and the game starts in Nov 2026, so they are used."}
+ },
+ "after_valid": "estimated",
+ "sets": {
+  "sm": {
+   "name": "SM limit (Nuorten SM 14-15)", "short": "SM limit", "kind": "entry", "valid": 2026, "ages": [14, 15],
+   "lookup": "age", "times_from": "competitions.standards.sm_14_15.800m", "source": "sul_sm_2026",
+   "meet_ids": ["sm_14_15", "sm_hallit_14_15"],
+   "about": "The time you need to enter the championships of your age class for the 14-15-year-olds without using your one free event."
+  },
+  "tf_juniorit": {
+   "name": "Team Finland juniors (TF-juniorit) criterion", "short": "TF-juniorit limit", "kind": "selection", "valid": 2026, "ages": [14, 16],
+   "lookup": "group", "source": "sul_tf_2026",
+   "groups": {"14-15": [14, 15], "16": [16, 16]},
+   "times": {"M14-15": 126.03, "N14-15": 140.04, "M16": 117.64, "N16": 136.13},
+   "about": "SUL's coach group for 14-16-year-olds: a result at this level in the year you turn 14, 15 or 16 gets you in."
+  },
+  "tf_nuoret": {
+   "name": "Team Finland youth (TF-nuoret) criterion", "short": "TF-nuoret limit", "kind": "selection", "valid": 2026, "ages": [17, 21],
+   "lookup": "age", "source": "sul_tf_2026",
+   "times": {"M17": 113.5, "M18": 111.59, "M19": 110.15, "M20": 108.58, "M21": 107.39,
+             "N17": 131.5, "N18": 129.87, "N19": 128.65, "N20": 127.27, "N21": 126.22},
+   "about": "SUL's coach group for 17-21-year-olds: a result at this level in the year you turn 17-21 gets you in."
+  },
+  "kalevan": {
+   "name": "Kalevan kisat limit", "short": "Kalevan kisat limit", "kind": "open", "valid": 2026, "ages": [15, 99],
+   "lookup": "gender", "source": "sul_sm_2026",
+   "times": {"M": 113.5, "N": 131.0}, "minimum": {"M": 115.5, "N": 135.0},
+   "meet_ids": [],
+   "about": "The Finnish senior championships: a result at this limit in the season gets you a place; a slower one (the minimum) only a place on the wait-list."
+  }
+ }
+}

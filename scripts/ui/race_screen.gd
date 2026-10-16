@@ -351,6 +351,9 @@ func _show_pre() -> void:
 		side.add_child(UIKit.label(_text("round_head"), "CaptionLabel"))
 		for line in round_lines:
 			side.add_child(UIKit.wrapped(line))
+	var advice := _advice_card()   # the coach's suggested plan (session C5)
+	if advice != null:
+		side.add_child(advice)
 	side.add_child(UIKit.label("RACE PLAN", "CaptionLabel"))
 	var group := ButtonGroup.new()
 	for p in PLANS:
@@ -408,6 +411,34 @@ func _show_pre() -> void:
 	row.add_child(scroll)
 	row.add_child(side_scroll)
 	_set_body(row)
+
+
+## The coach's suggested race plan (GDD 4.9.2 "Race advice by personality", session C5; RaceAdvice): where to run and where to kick, one
+## line at local and district meets and more at bigger ones. "Use his plan" fills the plan and the kick plan below; it never starts
+## anything and you can still change both. Null without a coach.
+func _advice_card() -> Control:
+	var cs := Game.get_system("coach") as CoachSystem
+	if cs == null or cs.head().is_empty():
+		return null
+	var adv := RaceAdvice.advise(_rd)
+	var t: Dictionary = Data.advice.race.texts
+	var first := str(cs.head().get("name", "")).split(" ")[0]
+	var short: bool = str(_rd.meet.get("level", "")) in ["local", "district"]
+	var box := UIKit.vbox(6)
+	box.add_child(UIKit.label(str(t.head).format({"COACH": first.to_upper()}), "CaptionLabel"))
+	box.add_child(UIKit.wrapped(RaceAdvice.text(adv, short), ""))
+	var used: bool = _plan == str(adv.plan) and is_equal_approx(_kick_plan, float(adv.kick))
+	var use := UIKit.button(str(t.used) if used else str(t.use), not used, 200)
+	use.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	use.disabled = used
+	use.pressed.connect(func():
+		_plan = str(adv.plan)
+		_kick_plan = float(adv.kick)
+		_show_pre())
+	box.add_child(use)
+	if not short:
+		box.add_child(UIKit.wrapped(str(t.hint)))
+	return UIKit.alert_panel(box, Palette.ACCENT)
 
 
 ## A vertically scrolling column (no sideways scrolling); returns the ScrollContainer, its child is the VBox.

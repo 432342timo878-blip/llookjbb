@@ -25,6 +25,8 @@ static func build(e: Dictionary, width: float, on_answer: Callable, on_help := C
 		head = PeopleUI.ui("stop_head_talk")
 	elif str(m.get("kind", "")) == "proposal":
 		head = PeopleUI.ui("stop_head_proposal")
+	elif StoryletSystem.CUSTOM_SYSTEMS.has(str(m.get("kind", ""))):   # a goal talk, a meet or target he suggests (session C5)
+		head = PeopleUI.ui("stop_head_" + str(m.kind))
 	var caption := UIKit.label("%s · %s" % [head, Calendar.format_day(e.date).to_upper()], "CaptionLabel")
 	if on_help.is_valid():
 		var row := UIKit.hbox(8)

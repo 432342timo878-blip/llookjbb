@@ -2544,14 +2544,16 @@ character words, his group, his athletes, cost, and what working with him would 
   the day editor's marked spot, his "scratch?" advice on race day. **Standing order** in the Training tab: *Let the coach adjust my
   days:* **Ask me first (default, user)** / Always, tell me / Never (he notices). Load management decides how early and how right his
   proposals are (a poor one rests you needlessly). He also proposes meets and targets ("Coach suggests" in the Calendar; moved to
-  C5 by the user). *Built in C4 (all but the meets): see "Built (step C4)".*
+  C5 by the user). *Built in C4 (all but the meets): see "Built (step C4)"; the meets and targets in C5.*
 - **Season goals with times ("what makes the coach happy"):** with the autumn plan offer, 2–3 goals: a time ("2:12 this summer"), a
   meet / standard (the Nuorten SM final, the TF-juniorit 2:05.27, an SM standard), a process goal ("90 % of sessions", "no training
   through warnings"). The player can reply "aim higher / lower". Real milestones from data: SM standards, SUL's TF-juniorit (14–16),
   TF-nuoret (17–21) and Kalevan kisat standards. Judging ability = how realistic, demands = how ambitious. Overview + Progress page;
-  met goals raise trust and confidence, missed ones become a talk, never a punishment.
+  met goals raise trust and confidence, missed ones become a talk, never a punishment. *Built in C5: see "Built (step C5)" (confidence
+  comes with M1).*
 - **Race advice by personality:** accuracy = race reading, bias = personality (drill leans go / push, calm wait / ease, warm the safe
   answer, tactician the most accurate). Before a race his suggested plan (position, kick plan); following it is never automatic.
+  *Built in C5: see "Built (step C5)".*
 - **Trust:** one hidden number shown as *New / Good / Strong / Strained*; moves with results vs his goals, fit, moments and how vetoes
   are used (a veto with a reason is fine, constant silent vetoes aren't). Higher trust: he explains more, praise lifts more; strained:
   shorter messages, lower motivation. **A coach can end it (user: yes, with warnings):** only after weeks of *Strained* and two clear
@@ -3050,6 +3052,131 @@ no OVERFLOW / SQUEEZED / WRONG (it now also prints WRONG when an accepted propos
 
 **Not in C4:** "Coach suggests" meets and targets in the Calendar (C5); season goals; trust effects beyond the vetoes and ignored
 warnings (C5 / M1); exam weeks as a reason (S1).
+
+#### Built (step C5, 2026-10-16): season goals with times, race advice by personality, "Coach suggests" meets and targets
+
+**Decisions with the user (asked 2026-10-16, before building):**
+1. **Three goals: a time, a milestone (a real standard or a place at a meet) and a habit** (his recommendation).
+2. **Aim higher / lower = a free choice from a short list** (not his recommendation of one step once): each goal has up to four
+   levels, shown as a stepper (◀ ▶) with the level he would pick starred and his words on the chance.
+3. **Met = trust up and a short message; missed = a talk with replies and no trust loss** (recommended).
+4. **Personality bias: noticeable but not decisive** (recommended).
+5. **His suggested race plan: before every race you watch or quick-play, one line at local / district meets, more at bigger ones**
+   (recommended).
+6. **"Coach suggests" reaches you as a message (a stop with "Ask me first") and as a mark in the Calendar, both** (recommended).
+7. **At most one suggestion a calendar month, counted with the 2 a week of the proposals** (recommended).
+8. **Research the missing standards and put them in data with sources; mark anything unverified** (recommended). All of them were
+   found and read off SUL's own PDFs, so nothing is marked as an estimate except that later years reuse the table.
+
+**Claude's defaults (not asked; say if you want them changed):** the user asked for the **2025** tables, but SUL published the **2026**
+editions in February 2026 and the game starts in November 2026, so the 2026 tables are used (later years reuse them and the goal says
+so); goals exist only in a season-plan career; they are offered as soon as the season's plan is chosen (or the season has started);
+"Decide later" leaves the season without goals until you press "Ask <coach> for goals" on the Overview; Kalevan kisat is a watch-only
+meet in the game, so its limit is only a time to reach; a goal is met the moment it is reached, a place goal is settled the evening of
+its meet, the rest on the evening before the next season in one review talk (a stop); with "Always, tell me" a suggestion is a
+message that does not stop Play week (a meet is never entered by himself, as scratching is never done by himself); with "Never" he
+only writes it; a suggestion left unanswered keeps its Calendar mark until the meet is over; a meet you said no to is never
+suggested again; the review's replies and the "What's next?" reply move the NEXT season's goals one level (`lean`, used once).
+
+**Standards (`data/standards.json`, `Standards`).** Every number is copied from a SUL PDF and checked against its page on 2026-10-16:
+*SM-kisojen tulosrajat ulkoratakaudella 2026* (confirmed 25.2.2026): Nuorten SM 14–15, 800 m: M15 2:21.00, N15 2:35.00, M14 2:28.00,
+N14 2:36.00 (already in `competitions.json`, read through `times_from`, one copy); **Kalevan kisat 2026**: M 1:53.50, N 2:11.00,
+minimum limits (wait-list) M 1:55.50, N 2:15.00, 27 runners aimed at; M/N 16–17 and 19–22 SM: "Ei käytetä tulosrajoja" (no limits).
+*Suomen Urheiluliiton valmennusryhmien valintaperusteet, Team Finland -ohjelma 2026* (24.2.2026): **TF-juniorit** (14–16) 800 m: boys
+14–15 2:06.03, girls 14–15 2:20.04, boys 16 1:57.64, girls 16 2:16.13; **TF-nuoret** (17–21) men 17–21: 1:53.50 / 1:51.59 / 1:50.15 /
+1:48.58 / 1:47.39, women 17–21: 2:11.50 / 2:09.87 / 2:08.65 / 2:07.27 / 2:06.22. The indoor SM limits (2025: 1:58.50 / 2:17.00 for the
+senior hall championships) were read too but are not used (the 14–15 hall championships have the same limits as outdoors in the
+game's data). `Standards.time(id, athlete, year)` finds the row for the age the athlete turns that year (`lookup`: age / group /
+gender), `ladder(a, year)` lists what is there for them from the easiest.
+
+**What was built.**
+- **`SeasonGoals`** (GameSystem `goals`, `scripts/core/season_goals.gd`; static `enabled` OFF unless `main.gd` switches it on).
+  *The offer* (`offer(year)`: a stop event of kind `goals` on the first day, after the plan offer, or three weeks before a new season
+  once its plan is chosen): a TIME goal (four times), a MILESTONE (the real things nearest his pick: the SM / TF / Kalevan limit of the
+  athlete's age class, and a top-12 / top-8 / medal place at a target meet from the rival pool trained forward to the meet date with
+  `Rivals.expected_ability`, no dice; "Far away" for what is more than 6 % faster than he thinks you can run, offered only when
+  nothing nearer exists), a HABIT (sessions done, days trained through a warning, races run; his voice picks which). *His estimate*
+  (`estimate` / `project`): the season plan played forward to the season's peak (the last summer target) on a copy of the career
+  (`CoachVerdict.simulate`, no health model, no dice), the race-day Form of the race nearest the peak, and a best-of-a-few-races gain
+  (`best_of` 0.9 %); seen through his judging ability (his error, a share of the time with sd = 0.2 % + 0.07 % × (20 − judging), the
+  same dice every time, so a poor judge sets goals that are too easy or too hard); his pick follows his demands (steady the first
+  level, balanced the second, ambitious the third) plus `lean`. *Settling*: a goal is met when reached (`_met`: trust +3, +2 more when
+  the level was above his pick; a non-stop message `post_custom("goal", ...)` with replies "Thanks, coach" / "What's next? I want more"
+  / "A good day, mostly"), a place goal at the evening of its meet (met, or a quiet talk in the thread), the rest in ONE review stop
+  on the evening before the next season (✓ / ✗ lines, his comment, four replies: "We try again" / "Next time I want a bigger goal" /
+  "That was too hard for me" / "I'd rather not talk about it"; the result card says "Next season's goals ▲ a step higher / ▼ lower").
+  A missed goal never costs trust. Counters per season: planned / done sessions (a day the coach or an injury changed counts as
+  done), days trained through a warning, races.
+- **Panels:** `GoalsEventPanel` (the offer as a stop panel: a stepper per goal, "Set these goals" answers `set:i,j,k`), `GoalsUI`
+  (the Overview's panel under the Today card: a mark ○ / ✓ / ✗, what each asks, how you stand, or the button to ask for goals; the
+  Progress page's section with an earlier season as one line), `MomentEventPanel` heads for the new moment kinds.
+- **`CoachSuggests`** (GameSystem `suggests`, last; static `enabled` OFF unless `main.gd`): see the decisions above. A meet needs a
+  REASON: `gap` (no race for 6 weeks and none entered before the meet), `tune` (a target 14–42 days later and no race between) or
+  `standard` (the next target's limit is not yet run and your best is within 4 % of it); judged with the verdict model
+  (`CoachVerdict.meet_change`: the weeks from now to a week after the meet played with it entered and without, from today's state;
+  the race value of its level counts, the training it replaces and its load cost) and suggested only when HE thinks it a Good idea
+  (his seen total ≥ 0.1 week). A national / international meet that is not a target can be suggested as one (`target_change`: a copy of
+  the season plan with the target, the meet entered; the taper shows in Form, the race value is doubled; needs ≥ 0.25 week).
+  `StoryletSystem.post_custom(kind, ref, text, replies, stop)` + `CUSTOM_SYSTEMS` carry both kinds of moment. The Calendar shows
+  COACH SUGGESTS A RACE / A TARGET with his reason and No thanks under the meet (`open_for`, `decline_from_calendar`); Enter / Make target
+  below it are the yes.
+- **`RaceAdvice`** (`scripts/core/race_advice.gd`, `data/advice.json race`): the truth is a score per plan; his view adds his
+  personality's lean and his error, the best view wins; the kick plan is the athlete's natural kick point as he reads it, snapped to a
+  kick-plan option (same advice every time the screen opens). The race screen's card "<COACH> SUGGESTS" shows one line at local /
+  district meets ("Wait at the back, kick at 200 m to go."), more with a reason at bigger ones, and "Use his plan" fills the plan
+  and the kick plan; it never starts anything. The personality also biases his **shouts** in a watched race (`Race._coach_line`): when
+  he is wrong, which wrong answer he shouts is weighted by his lean in the card's direction (drill push, calm ease, warm ease a
+  little), and on the judgement cards (bell, kick, move, slow, dropped) he shouts the answer he likes instead of the sensible one with a
+  chance (drill 10 %, calm 10 %, warm 6 %, the tactician none); the tactician's shouts are right 4 points more often
+  (`CoachSystem.race_accuracy` adds `accuracy_bonus`). None of this reaches the race itself: the shouts have their own dice.
+- **Help:** new screen entry `season_goals` and topic `standards`; `overview` v7, `progress` v2, `calendar` v3, `race_before` v7,
+  `moment` v3, `coach_changes` v2.
+
+**Measured.**
+- *The plans (`tools/advice_plan.gd`, quick races, the same field and dice for each plan, 40 races a cell, mean place, front / pack /
+  back):* a final of **12** runners, the player 0.5 below the field's mean: 8.15 / 8.35 / 7.78 (grinder), 8.22 / 8.55 / 8.07, 8.55 /
+  9.10 / 8.00 (kicker); 1.5 below: 10.95 / 11.15 / 11.05, 11.03 / 11.20 / 11.10, 11.18 / 11.48 / 11.25 — in a big field the pack is the
+  crowded plan and waiting at the back the best, the front in between. With **8** runners the plan hardly matters (differences of
+  0.1–0.3 places, within the noise of 40 races: 5.72 / 5.80 / 6.05, 5.97 / 5.95 / 5.80, 6.05 / 5.83 / 5.92 at −0.5; 2.95 / 2.67 / 2.85,
+  2.65 / 2.58 / 2.52, 2.98 / 2.70 / 2.80 at +0.5), a grinder gaining a little by leading and a kicker by waiting. The truth's scores
+  (`score` in the data) follow that: the crowd term grows with the runners above 8, strength and the finish (anaerobic reserve) move
+  the front and back a little.
+- *Race advice (`goals_check` part 9, 400 fields of 8–10 runners):* the places he loses against the truth's best plan (race reading
+  3 / 10 / 19): the tactician 0.067 / 0.041 / 0.003, calm 0.090 / 0.085 / 0.030, drill 0.070 / 0.033 / 0.001, warm 0.090 / 0.054 /
+  0.013; at race reading 10 drill advises the front 20 % of the time, calm and warm 1 % and 7 %, calm the back 99 %, warm the pack
+  6 %; the kick estimate drill 234 m, tactician 214 m, calm and warm 199 m against a natural point of 222 m; the tactician with
+  race reading 19 reads the natural kick point within 45 m every time. A leaning coach loses less than a tenth of a place a race.
+  His shouts at the bell (600 races, accuracy 0.8): drill hardly ever shouts "ease" (6 against 57 for the tactician), calm often (138);
+  when losing contact drill shouts "dig in" 165 times against the tactician's 108.
+- *Goals by judging (`goals_check` part 6, a season each with a balanced plan and every ★ meet entered, quick races):*
+  seven batches of 5–6 athletes (a Balanced plan, the ★ meets, about 10 races a season; 38 careers in all, `best_of` 0.4 %–1.0 % while
+  it was tuned): the season best against the game's typical race (ability at the peak plus the Form of that race) is −0.9 % on
+  average with sd about 1.2 % (one athlete in 38 raced once all season: ill; a batch of 5–6 moves the mean by ±0.5 %), so the
+  best-of-a-few-races gain (`best_of`) is **0.9 %**. With it the four time levels (`levels[].offset` +1.2 / +0.2 / −0.8 / −2.0 %
+  of his estimate) come off, for a coach of judging 10 and over the batches, about: **safe 75–95 %, realistic 40–75 %, stretch
+  10–50 %, dream 0–25 %** (the batches differ because five athletes is few: aim "safe ≳ 80, realistic ≈ 55, stretch ≈ 30, dream
+  ≈ 5"). The judging ability moves the spread, not the mean: his error sd is 1.4 % at judging 3, 0.9 % at 10 and 0.3 % at 19, so the
+  level a poor judge picks as "realistic" comes off anywhere between "safe" and "stretch"; the check proves the three sds
+  (1.54 / 1.00 / 0.30 % on 12 careers). The athlete who plays more races than the ★ ones beats the estimate by more (18 races a
+  season: −1.6 % on average), so a player who races a lot meets more of his goals.
+- *Suggestions (`goals_check` part 7, an 18-week career):* five suggestions (a gap in November, tune-ups in December and January,
+  two targets in February and March), at most one a month, each with a reason and a Good idea in his eyes; accepted = entered, declined
+  = remembered and not entered; Never and Always never enter anything by themselves; a district meet 12 weeks ahead judged Good
+  (race 0.50, train −0.04, risk −0.01) and the TJIG as a target Good (race 2.00, train −0.45).
+- *Neutral = identical:* `training_balance -- 0`: every part identical, the new part 2f (the suggestions and goals ON, every
+  suggestion answered "No thanks": 77 suggestions in 7 rows) included: 206.798298350 / 14.102831594 / 1226.006524079 for the coach row.
+  `tools/quick_fingerprint.gd` (60 fixed races, quick and watched, every plan / mix / voice): the hash is the same on the last commit
+  and now (73182f4eb6c496760b24bc0d3b3780c2), so quick mode and the race engine are unchanged. Save / load: goals and suggestions come
+  back as they were and a loaded career goes on exactly as without saving.
+- *Screens:* `layout_check` at 1280×720, 720×1280, 390×844, 1000×900, 844×390: ~116 views each, no OVERFLOW / SQUEEZED / WRONG (the new
+  `_goals_views`: the Overview with and without goals, the offer and a stepped level, its buttons and help, the Progress section, a
+  goal met in the thread, the review and its result card, the Calendar mark, the suggestion's stop and result card; the pre-race
+  card is in the race views); `help_check` 697 checks on the phone layout and 706 on the PC layout.
+
+**Not in C5:** trust and motivation from goals beyond the one trust change (M1: motivation, confidence); the indoor limits (a later
+meets session); real coaches' own goal habits (D1); goals for other events (the game plays the 800 m only); a way to change goals once
+set (a talk with the coach could, later); suggestions for a camp or a test day (S2 / B1); `race_check` and `commentary_check` were not
+changed (the engine is bit-for-bit the same, see the fingerprint).
 
 ### Other systems (to be designed)
 

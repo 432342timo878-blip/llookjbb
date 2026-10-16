@@ -1651,10 +1651,26 @@ func _coach_line(id: String, info: Dictionary) -> Dictionary:
 	if _coach_rng == null:
 		_coach_rng = RandomNumberGenerator.new()
 		_coach_rng.seed = hash("coach %d" % _rng.state)   # (the state, not the seed: it differs from race to race)
+	var bias: Dictionary = Data.advice.race.shouts   # (his personality, session C5: which wrong answer he shouts, and a tilt on the close calls)
+	var lean: Dictionary = bias.lean.get(coach_id, {})
+	var dirs: Dictionary = Data.race_cards.coach.get("dir", {}).get(id, {})
+	var others := shouts.keys().filter(func(k): return k != right)
 	if _coach_rng.randf() >= (coach_accuracy if coach_accuracy >= 0.0 else float(_ctl.coach.accuracy)):
-		var others := shouts.keys().filter(func(k): return k != right)
 		if not others.is_empty():
-			pick = others[_coach_rng.randi_range(0, others.size() - 1)]
+			var weights := []
+			for k in others:
+				weights.append(maxf(0.1, 1.0 + float(lean.get(str(dirs.get(k, "")), 0.0)) * float(bias.lean_weight)))
+			pick = others[_pick_weighted(weights)]
+	elif id in bias.flip_cards and float(bias.flip.get(coach_id, 0.0)) > 0.0 and _coach_rng.randf() < float(bias.flip[coach_id]):
+		var best := ""   # a close call: he shouts the answer his personality likes most (when it is not the sensible one)
+		var best_lean := 0.0
+		for k in others:
+			var l := float(lean.get(str(dirs.get(k, "")), 0.0))
+			if l > best_lean:
+				best_lean = l
+				best = k
+		if best != "":
+			pick = best
 	# No advice that contradicts what he just said, unless the race has changed (playtest fix 4): the shout is dropped.
 	var dir := str(Data.race_cards.coach.get("dir", {}).get(id, {}).get(pick, ""))
 	if coach_conflicts(dir):
@@ -1662,6 +1678,19 @@ func _coach_line(id: String, info: Dictionary) -> Dictionary:
 	coach_note(dir)
 	var wording: String = Coaches.shout(coach_id, id, pick, String(shouts[pick]))   # (his own words, R4)
 	return {"option": pick, "text": wording.format({"name": _surname(str(info.get("name", "")))})}
+
+
+## An index drawn by weights from the coach's own dice (never the race's).
+func _pick_weighted(weights: Array) -> int:
+	var total := 0.0
+	for w in weights:
+		total += float(w)
+	var x := _coach_rng.randf() * total
+	for i in weights.size():
+		x -= float(weights[i])
+		if x < 0.0:
+			return i
+	return weights.size() - 1
 
 
 ## What the coach advised lately: [{t, dir (push / ease), pos, gap}], newest last (the card shouts and, through

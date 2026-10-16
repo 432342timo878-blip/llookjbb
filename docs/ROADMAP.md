@@ -346,11 +346,15 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         and targets moved to C5)* (the verdict model: the truth from the training / health / form models, then the coach's view
         through his attributes). *(Opus, high)*
         Check: `tools/verdict_check.gd` (in `run_all_checks`); `training_balance` part 2e; tour + `layout_check`.
-  - [ ] **C5. Season goals with times + race advice by personality + "Coach suggests" meets and targets:** standards in data
-        (SM, TF-juniorit / TF-nuoret 2025 tables, Kalevan kisat), the goals in the autumn offer, Overview + Progress, race advice
-        accuracy = race reading and bias = personality, the pre-race suggested plan; the coach proposes meets and targets in the
-        Calendar ("Coach suggests", moved from C4: judged with the C4 verdict model, the player decides). *(Sonnet, high)*
-        Check: `commentary_check`, `race_check` (quick mode unchanged with the club coach), `season_check`, `verdict_check`, tour.
+  - [x] **C5. Season goals with times + race advice by personality + "Coach suggests" meets and targets** *(done 2026-10-16, GDD
+        4.9 "Built (step C5)"; user: three goals time + milestone + habit, a free choice of level from a short list, met = trust + a
+        message and missed = a talk with no trust loss, personality noticeable but not decisive, his plan shown before every race,
+        suggestions as a message + a Calendar mark, at most one a month)*: standards in data (SM, TF-juniorit / TF-nuoret, Kalevan
+        kisat, the 2026 tables with their sources), the goals with the plan offer, Overview + Progress, race advice accuracy = race
+        reading and bias = personality, the pre-race suggested plan; the coach proposes meets and targets in the Calendar ("Coach
+        suggests", judged with the C4 verdict model, the player decides). *(Sonnet, high)*
+        Check: `goals_check` (in `run_all_checks`), `quick_fingerprint` (the races are unchanged), `training_balance -- 0` part 2f,
+        `season_check`, `verdict_check`, `help_check` in both layouts, tour + `layout_check`.
   - [ ] **M1. Mind:** `MindSystem` (confidence / motivation / stress, causes, effects, off switch), mental attributes that grow
         (consistency from races, composure from big meets), competitiveness and ambition, the weekly mental plan and the cue word.
         *(Opus, high)*
