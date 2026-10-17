@@ -408,9 +408,25 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         `training_balance -- 0` fingerprints identical.
         Left for later: the camps as a feature (applying in August, being picked, the camp week: the camp-week session, GDD 4.9.6 no. 4),
         exam days of lukio (S3), the family's reaction to a report card and sleep (P1), mood news from a report card (P1), the balance (B1).
-  - [ ] **S3. Grade-9 application + urheilulukio + matriculation exams:** the application chain with real scoring and cut-offs,
-        urheilulukio (morning slots, academy services, TF-nuoret), moving, lukio periods, the matriculation exams. *(Opus, high)*
-        Check: a tool runs the application for many athletes by school answer and talent (targets in GDD 4.9.7).
+  - [x] **S3a. The application after grade 9 + the path + moving** *(done 2026-10-17, GDD 4.9.3 "Built (step S3a)"; S3 was split
+        because the user chose individual lukio courses, a test-day minigame and a 10th-grade year; user: a stop when the window opens
+        and an editable list, school points from a test day with attributes + three choices, a rejection leads to the continuing
+        application with a 10th-grade year among the answers, sport points from the best 800 m against the real standards, an
+        academy coach you can switch to, a "training town" for moving with the club staying, the meet-and-tests rule "test the day
+        before" dropped)*: `SchoolApplication` + `data/application.json`, the stages urheilulukio / lukio / vocational / 10th grade /
+        school is over from the athlete's path, lukio exam weeks from the periods rule (checked against Helsingin kielilukio), morning
+        practice relief, the three stops, the School page's application panel + YOUR SCHOOL, Calendar bands, moving (`training_town`),
+        the market's new town + the school's academy coach, `tools/meet_test_rate.gd`. *(Opus, high)*
+        Check: `school_check` part 14, layout check (5 sizes), tour (52...), `help_check` both layouts, `run_all_checks` 21 / 21,
+        `training_balance -- 0` fingerprints identical.
+        Left for later: S3b (below), the effects of academy services and TF-nuoret, open days, reserve places, listing schools of
+        other towns than your own for the general lukio / vocational school, homesickness and family at the move (P1).
+  - [ ] **S3b. Lukio courses + the matriculation exams** *(next)*: individual courses per period with a grade per course (the user's
+        choice; the number of compulsory courses per subject to be read from the national curriculum before building), the lukio
+        card, choosing long / short maths and the languages, the matriculation exams (Finnish + at least 4 subjects, the real exam
+        days of spring / autumn from `school.json`, grades L-I over 2-3 sessions, 4 in a 4-year urheilulukio), exam vs meet in an exam
+        week (reuse `meet_test`), the choice of subjects as a stop. *(Opus, high)*
+        Check: `school_check` (courses, exam days, certificate), layout, tour, help.
   - [ ] **P1. The cast + first moments (ages 14–15):** family, friends, training group, teachers, rivals; Finnish life events;
         ~100–150 storylets. *(Opus, high)*
         Check: `storylet_check` (rate, repeats, coverage per age).

@@ -1,13 +1,19 @@
 {
  "_note": "The school model (GDD 4.9.3, session S1; scripts/core/school_system.gd). The calendar itself (real 2026-27 dates and the rules for later years) is data/school.json; this file holds the model: the stages, the subjects, the starting grades by the creation answer, the two weekly life settings, how grades drift, the tests, the report cards and the life load. NEUTRAL = IDENTICAL: a normal school day at Normal / Normal has a life load of exactly 0, and at 0 the game is today's game to the last digit (the code does not even run). Life load is a number per day in 'points': positive = a heavier day (fatigue recovers slower, colds a little more likely, injuries a little more likely), negative = a lighter one (holidays). All numbers here are Claude's first guesses (estimated), to be tuned in B1; the user's decisions of 2026-10-17 are in GDD 4.9.3 'Built (step S1)'.",
  "stages": {
-  "_note": "The school year that starts in the autumn of year Y is grade Y - birth year - grade_offset (born 2012: grade 8 in 2026-27). Grades 8 and 9 are yläkoulu; after grade 9 the placeholder 'secondary' runs (the calendar and the life load go on, the grades are frozen) until S3 builds lukio / urheilulukio / vocational school. `scale` multiplies every positive part of the life load (grade 9 has more homework); `exam_weeks` = the stage's big exam weeks (user 2026-10-17: none in yläkoulu, only single tests; the rule format is ready for S3: each item {before: christmas | winter | end, weeks: n} = the Mon-Fri school week n weeks before that break's first free day).",
+  "_note": "The school year that starts in the autumn of year Y is grade Y - birth year - grade_offset (born 2012: grade 8 in 2026-27). Grades 8 and 9 are yläkoulu (`list`); from the school year in which the athlete would be in grade 10 (born 2012: autumn 2028) the stage comes from the athlete's PATH (SchoolSystem.paths, made by the application, GDD 4.9.3 session S3a) and is one of `secondary` below. `scale` multiplies every positive part of the life load (grade 9 has more homework); `exam_weeks` = the stage's big exam weeks (user 2026-10-17: none in yläkoulu, only single tests). Rule formats: {before: christmas | winter | end, weeks: n} = the Mon-Fri school week n weeks before that break's first free day; {periods: true, last_shift_days: -2} = the last `exam_week_school_days` school days of each lukio period (data/school.json rules.lukio_periods, fitted to Helsingin kielilukio 2026-27; the last period's exam week ends `last_shift_days` days before the year's end). `applies`: the joint application is made in this stage's spring. `years`: how long a path of this kind lasts (a 4-year urheilulukio and the matriculation exams come in S3b). `final`: the last year of a path (the final certificate).",
   "grade_offset": 6,
   "list": [
    {"id": "grade_8", "grade": 8, "name": "Grade 8", "kind": "ylakoulu", "subjects": true, "scale": 1.0, "exam_weeks": []},
-   {"id": "grade_9", "grade": 9, "name": "Grade 9", "kind": "ylakoulu", "subjects": true, "scale": 1.1, "exam_weeks": [], "final": true},
-   {"id": "secondary", "grade": 10, "name": "Upper secondary (from S3)", "kind": "secondary", "subjects": false, "scale": 1.0, "exam_weeks": []}
-  ]
+   {"id": "grade_9", "grade": 9, "name": "Grade 9", "kind": "ylakoulu", "subjects": true, "scale": 1.1, "exam_weeks": [], "final": true, "applies": true}
+  ],
+  "secondary": {
+   "urheilulukio": {"id": "urheilulukio", "name": "Sports lukio", "kind": "lukio", "subjects": true, "scale": 1.0, "years": 3, "applies": false, "morning": true, "exam_weeks": [{"periods": true, "last_shift_days": -2}]},
+   "lukio": {"id": "lukio", "name": "Upper secondary school", "kind": "lukio", "subjects": true, "scale": 1.0, "years": 3, "applies": false, "exam_weeks": [{"periods": true, "last_shift_days": -2}]},
+   "vocational": {"id": "vocational", "name": "Vocational school", "kind": "vocational", "subjects": false, "scale": 1.0, "years": 3, "applies": false, "exam_weeks": []},
+   "grade_10": {"id": "grade_10", "name": "10th grade", "kind": "ylakoulu", "subjects": true, "scale": 1.0, "years": 1, "applies": true, "exam_weeks": []},
+   "graduated": {"id": "graduated", "name": "School is over", "kind": "none", "subjects": false, "scale": 1.0, "years": 0, "applies": false, "exam_weeks": []}
+  }
  },
  "subjects": {
   "_note": "The yläkoulu subjects of the report card (GDD 4.9.3). academic = the subjects of the application average (lukuaineet, S3); practical subjects are graded from the term's work without tests. In real schools music, art, crafts and home economics are partly electives in grades 8-9; S1 keeps them all on the card as the GDD lists them.",
@@ -111,7 +117,7 @@
    "when_day": "on {day}",
    "min_left_busy": 2,
    "test_on_race_day": true,
-   "test_day_before": true,
+   "test_day_before": false,
    "default": "race",
    "options": [
     {"id": "race", "label": "Race and risk the grades", "detail": "Your tests this week come out about half a grade lower. Nothing else changes.", "test_penalty": 0.5, "load": 0.0, "stress": 0.0, "scratch": false, "note": "You race and hope the tests go well enough: this week's tests will cost you a little."},
@@ -124,7 +130,7 @@
  "card": {
   "_note": "The report card day (session S2): a stop with the card (SchoolEventPanel) and, after it, the choice for the next term: keep going, study harder (Heavy) or ease off (Light); only the options that change something are offered. The final certificate has just Continue. Verdict = the average against the previous card (`delta`), level = the average now. The family's reaction comes with the people system (P1).",
   "title": {"christmas": "Your Christmas report card", "spring": "Your spring report card", "final": "Your final certificate"},
-  "intro": {"christmas": "The autumn term is over. Here is how it went.", "spring": "The school year is over. Here is your report card.", "final": "Grade 9 is over. This is your final certificate."},
+  "intro": {"christmas": "The autumn term is over. Here is how it went.", "spring": "The school year is over. Here is your report card.", "final": "This stage of school is over. This is your final certificate."},
   "first": "Your first report card of this career.",
   "verdict": [
    {"delta": 0.3, "text": "Clearly better than last time."},
@@ -141,7 +147,7 @@
    {"min": 0.0, "text": "Weak: you need to study more."}
   ],
   "choose": "How will you handle the next term?",
-  "choose_final": "Grade 9 is done. Your grades are kept for the next step.",
+  "choose_final": "This stage is done. Your grades are kept for the next step.",
   "choices": {
    "keep": {"label": "Keep going as I am", "detail": "Study effort stays {effort}."},
    "harder": {"label": "Study harder (Heavy)", "detail": "Grades rise, but school days get heavier."},
@@ -157,12 +163,12 @@
   "row_sub_none": "{stage}",
   "page_head": "School",
   "stage_line": "{stage} · {town}",
-  "secondary_note": "Your grades from grade 9 are kept. Upper secondary school comes in a later update.",
   "page_note": "School changes how heavy your days are and how your grades go. It never changes what you train.",
   "week_head": "THIS WEEK",
   "week_days": "{n} school days this week.",
   "week_off": "No school this week: {break}.",
   "week_tests": "{n} tests: {list}.",
+  "week_test_one": "1 test: {list}.",
   "week_busy": "A busy test week: the school days weigh more.",
   "week_no_tests": "No tests this week.",
   "week_chose": "Your choice: {option}.",
@@ -183,7 +189,7 @@
   "practical_head": "PRACTICAL SUBJECTS",
   "avg_all": "Average, all subjects",
   "avg_academic": "Academic average",
-  "avg_note": "The academic average is what counts when you apply to a sports upper secondary school (a later update).",
+  "avg_note": "The academic subjects and PE are what you apply with: the joint application after grade 9 counts their average.",
   "no_tests": "No test written yet in this subject.",
   "tests_recent": "Latest tests:",
   "term_avg": "This term's tests average {avg}.",

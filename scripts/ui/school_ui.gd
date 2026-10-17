@@ -245,6 +245,20 @@ static func bands(from: Dictionary, to: Dictionary) -> Array:
 			continue
 		out.append({"date": w.monday, "control": _band(str(c.busy_week).format({"n": int(w.n)}),
 				"%s - %s" % [DayInfo.short_day(w.monday), DayInfo.short_day(Game.add_days(w.monday, 4))], Palette.SCHOOL_TEST)})
+	# The joint application (S3a): the window, the test day and the results of the spring after a grade-9 / 10th-grade school year.
+	var hi := Calendar.date_key(to)
+	var ac: Dictionary = Data.application.ui.calendar
+	for yr in range(SchoolCalendar.year_of(from), SchoolCalendar.year_of(to) + 1):
+		if not bool(ss.stage_of({"year": yr + 1, "month": 1, "day": 1}).get("applies", false)):
+			continue
+		var dt := SchoolApplication.dates(yr + 1)
+		for spec in [["window", dt.open, dt.close], ["test", dt.test, dt.test], ["results", dt.results, dt.results]]:
+			var a: Dictionary = spec[1]
+			var b: Dictionary = spec[2]
+			if Calendar.date_key(b) < lo or Calendar.date_key(a) > hi:
+				continue
+			var range_text := DayInfo.short_day(a) if Calendar.date_key(a) == Calendar.date_key(b) else "%s - %s" % [DayInfo.short_day(a), DayInfo.short_day(b)]
+			out.append({"date": a, "control": _band(str(ac[str(spec[0])]), range_text, Palette.SCHOOL_TEST)})
 	for camp in Data.school.verified.camps.list:
 		var s := Calendar.parse_date(str(camp.start))
 		if Calendar.date_key(Calendar.parse_date(str(camp["end"]))) < lo or Calendar.date_key(s) > Calendar.date_key(to):

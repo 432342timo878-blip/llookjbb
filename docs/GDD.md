@@ -3695,6 +3695,126 @@ camp-week session); exam days and weeks of lukio, the grade-9 application, urhei
 family's and the moods' reaction to a report card, sleep (P1); the balance of the numbers over many seasons (B1); mood news from a
 test or a card; a class teacher or study counsellor writing in the School thread.
 
+#### Built (step S3a, 2026-10-17): the application after grade 9, the path, the test day, moving
+
+S3 was too big for one session once the user chose individual lukio courses, a test-day minigame and a 10th-grade year, so it was
+**split (user: S3a now, S3b next)**. S3a = the application chain, the path after it (urheilulukio / lukio / vocational school / a
+10th-grade year as stages with exam weeks), the morning practice, the academy coach, moving. **S3b (next) = individual lukio
+courses with a grade per course, the matriculation exams, a 4-year urheilulukio.** Until S3b a lukio uses the same 12 academic
+subjects + PE as the yläkoulu, with exam weeks and tests as the load.
+
+**Step 0:** `run_all_checks` 20 / 21 at the start: `storylet_check` failed once with "every test storylet fired at least once
+(never: test_coach_after_race)"; run alone it passed (the rare moment fired 3 times). It is a **flaky check** (a rare moment in 16
+random careers), not a regression: no code had changed since S2. Left as it is; B1 can make the careers fixed.
+
+**Decisions with the user (asked 2026-10-17 before building):**
+1. **The wish list: a stop on the day the window opens, the list editable until it closes** (my recommendation). Window by rule
+   (3rd Tuesday of February + 28 days: it reproduces the real 2026 and 2027 windows; 2028: 15 Feb - 14 Mar, estimated); a reminder
+   stop 3 days before the end only when the list is still empty; an empty list at the end = the general lukio of the town you train in.
+2. **School points from a test day that counts both attributes and a small minigame** (the user's pick; not my recommendation):
+   a physical test (speed, aerobic capacity, strength, power, mobility) 0-3, an interview (composure, determination, professionalism
+   + today's confidence) 0-2, and **three choices on the day** (the warm-up, the endurance run, the interview), each worth about ±0.3-0.5.
+3. **A rejection leads to the continuing application, and a 10th-grade year is one of the answers** (the user's pick): general
+   lukio / vocational school / a 10th-grade year; after the 10th grade the player applies again.
+4. **Sport points from the best 800 m of the last three seasons against the real standards** (my recommendation), plus the coach's
+   statement.
+5. **Individual lukio courses: yes, but in S3b** (the user's pick; the split above).
+6. **The academy coach is a coach you can switch to**, offered in the first week (recommended); you keep your head coach.
+7. **Moving = a "training town" on the athlete, the club stays** (recommended).
+8. **Matriculation exams: pick the subjects + a schedule + sit them on the real dates** (recommended, built in S3b).
+9. **The meet-and-tests decision: drop the "test the day before" rule** (recommended). **Measured afterwards: this changes the
+   rate only from 36 % to 30 % of term meets, not "most of it" as S2 said.** The rule that fires is the busy test week (7 of ~19 school
+   weeks a term, 29 % on its own); a test on the race day itself is 3 %. With the busy rule at "at least 4 tests still to write" it
+   would be 17 %. Left at 30 % pending the user's word (`tools/meet_test_rate.gd`).
+
+**Claude's defaults (not asked; say if you want them changed):**
+- **Dates (estimated, `data/application.json window`):** the entrance-test day is the 2nd Tuesday of May (one day for all schools;
+  real schools hold their own between 27 April and 13 May), results on 11 June or the next weekday, the place held 14 days, a school
+  year and moving day 1 August. Real facts used: up to **7 wishes**, results from 11 June at the earliest, accept by 25 June (read
+  from a search summary of school documents, marked `search-summary` in the data).
+- **What can be on the list:** the 16 sports lukiot of `urheilulukiot.json` (the 15 of the Olympic Committee + Leppävaara's line),
+  the general lukio and the vocational school of the town you train in. A general lukio / vocational school takes the final
+  certificate's academic + PE average against an estimated limit (6.8 / 5.0, a town-size shift, a yearly wobble).
+- **Points of 20:** grades 4-10 = 0-10 (as Mäkelänrinne's page), sport 0-5, the school's own 0-5. **Sport points** are my rule
+  (the federation's scale is not public): the anchors **SM limit 1.5, TF-juniorit 3.5, Kalevan kisat minimum 4.5, Kalevan limit 5.0**
+  (the athlete's own age class, in between by time, 0 at 1.15 x the slowest anchor's time) + the head coach's statement up to 0.5
+  (from his trust 40-80). My first anchors (1.0 / 2.5 / 4.0 / 5.0) were too low: a "Doing fine" athlete with a TF-juniorit result
+  could not reach the lowest limit, so they were raised. A school adds its own touch to the test's points (athletics a priority
+  +0.3, offered 0, not known -0.3).
+- **The limits:** each school's latest published limit (`urheilulukiot.json`; `approx` / `preliminary` marked), else an estimate by its
+  status (14.8; 12.8 for a municipal line), plus a yearly wobble (sd 0.45) from a seed of the school and the year. A school invites you
+  to its test only above its **federation-points threshold** (Lahti 2.1, Kuopio 1.8, Sotkamo 2.0 from the data, every other 1.0,
+  estimated) and four schools publish a **minimum average** that is checked too.
+- **The study counsellor's list ("Ask the study counsellor"):** sports lukiot of your own region with athletics offered / a priority
+  and a limit within 1.5 points of your points now (the school's part guessed at 3), best first (at most 4), then the general lukio
+  as the safe last wish. For a talent with poor grades the list is often just the general lukio: the game says so.
+- **Results:** one stop with every wish's line ("accepted: 17.0 points, the limit was 15.3" / "not this time: ..."); the first yes is
+  your place (take it, or decline and choose among the leftovers). The continuing application is that same stop, not a separate July
+  one. A place gives confidence +8 (first wish) / +4, a rejection −8.
+- **Morning practice:** Tue / Wed / Fri (Sammo; Leppävaara Tue-Thu; others the Sammo pattern, estimated): on those school days one of
+  two practices is the school's and a double day costs no extra life load. **Academy services (a physio check, strength coaching) and the
+  TF-nuoret centre activity are only words in the arrival message for now: no effect yet.**
+- **Moving** happens on 1 August of the path's first year if the school is in another town. The club stays, the old coach becomes
+  "far" (the existing penalties and the Strained chain apply), the coaches of the new town and region join the market, the old coach and
+  a teammate say goodbye. Dorms exist only at Kuortane and Sotkamo (flavour). **Sotkamo and Kuortane are not in `towns.json`** (no
+  population / maakunta): their calendar is estimated by the "middle" winter break, they count as "far" from everywhere.
+- **Lukio calendar:** each period's exam week = the last 7 school days of the period (periods from `school.json rules.lukio_periods`,
+  fitted to Helsingin kielilukio 2026-27 and checked against its five real exam weeks: 35 of 35 days match). An exam day carries the
+  existing +2 life load; the exam-week news (+14 stress) and the last test of a term in an exam week already existed. A vocational
+  school has no subjects, tests or exam weeks; "School is over" (`graduated`) follows the last year.
+- **The default path** (a tool that never decides, a player who never touches the list): three years of the general lukio in the
+  town you train in. Nothing in the tools asks anything: every new stop is gated by `SchoolSystem.decisions_enabled` (only `main.gd`).
+
+**What was built:**
+- **Data:** `data/application.json` (new, `Data.application`: the window, the wishes, the points, the test day, the stops' texts,
+  results, moving, arrival, morning practice, the academy coach, the page's texts, two sources); `data/school_life.json` (`stages.list`
+  = grades 8-9 + `applies`; new `stages.secondary` = urheilulukio / lukio / vocational / grade_10 / graduated; `test_day_before` false;
+  the final certificate's texts made general); `data/market.json` (`tiers.academy`); `data/help.json` (`school` v2, `calendar` v5,
+  `people` v4, `moods` v3).
+- **`SchoolApplication`** (`scripts/core/school_application.gd`, static): `dates / options / path_kind / is_far`, `average_now /
+  average_final / grade_points`, `best_time / anchors / sport_points`, `physical_points / interview_points / step_delta /
+  school_points / invite_min`, `cutoff`, `preview`, `evaluate`, `result_line`, `suggest`.
+- **`SchoolSystem`:** `paths`, `applications` (saved as `paths` / `apps`, only when there are any), `stage_of` from the path
+  (`_secondary_stage`, `segment_for`, `first_secondary_year`, `current_path`), `town()` (the town you train in), `morning_day /
+  is_double_on`, the lukio exam weeks (`_add_period_exams`), the application days (`_application_day`: open, reminder, test day,
+  results; `_lock_list` on the last day; `_decide`; `_arrival_day`, `_move_to`), the list API (`app_year_now / app_state /
+  can_edit_wishes / wishes_of / add_wish / remove_wish / move_wish / set_wishes`), the three new stop kinds `school_apply /
+  school_test / school_result`.
+- **Elsewhere:** `Athlete.training_town` (saved only when set), `CoachSystem.home_town` (training town first), `CoachMarket`
+  (`refresh_for_move`, `add_academy_coach`, `post_academy_offer`, the academy visibility by school).
+- **UI:** `SchoolApplyView` (the application panel and YOUR SCHOOL on the School page: the points now, the list with Up / Down /
+  Remove, every school with Info and Add, the results), the Calendar's window / test / results bands (`SchoolUI.bands`), the School
+  page and the Calendar use the town you train in. The three stops use the generic stop panel.
+- **Tools:** `school_check` part 14 (dates against the real windows, the anchors and the points, cut-offs, options, the lukio exam
+  weeks against Helsingin kielilukio, the stages of every path, morning practice, the whole application through the game loop the
+  tools' way and the real game's way, moving to Kuortane, save / load, the targets table), `layout_check` `_application_views`, the
+  tour `_application_tour` (shots 52...), `tools/meet_test_rate.gd`.
+
+**Measured:**
+- *Neutral = identical:* `training_balance -- 0` every part gives 206.798298350 / 14.102831594 / 1226.006524079 for the coach row;
+  `quick_fingerprint` keeps its hash (the race engine is untouched); `run_all_checks` **21 / 21**.
+- *The targets of 4.9.7 (`school_check` part 14, academic + PE average at the end of grade 9 after 580 days of drift, the points with a
+  middling test day of 3.3):* the average at Normal / Heavy effort: Top 9.06 / 9.55, Hard work 8.22 / 8.90, Doing fine 7.56 / 8.24,
+  Struggling 6.86 / 7.54, Couldn't care less 6.56 / 7.24. With a TF-juniorit result (2:05, sport 3.7): Top/Normal 15.5 points (reaches
+  Espoo 12.8, Schildt 13.8, Kerttuli 14.9, Lahti 15.0 but not Mäkelänrinne 16.1), Hard work/Normal 14.1 (Espoo, Schildt), Doing
+  fine/Normal 13.0 (Espoo only), Struggling/Normal 11.8 (none), Struggling/Heavy 12.9 (Espoo): **"Doing fine" reaches the lowest
+  limit with Normal effort, "Struggling" needs a Heavy grade 9** (12.9 and 12.8 against 12.77: **the margins are thin**, B1 will
+  tune). With a 2:15 result (sport 2.4) Espoo needs Top, Hard work with Heavy or Doing fine with Heavy; with 2:00 (4.2) "Doing
+  fine/Heavy" reaches Schildt too. Mäkelänrinne (16.1) and Lahti (15.0) are for the very best of the class with a very good test day.
+- *How often the meet-and-tests stop fires* (`meet_test_rate.gd`, 12 athletes, 204 term meets of 2026-28): 36 % as in S2 -> 30 % with
+  the day-before rule off; only a test on the race day 3 %; only the busy-week rule 29 %; the busy week at >= 4 tests left 17 %.
+- *UI:* `layout_check` at all five sizes (1280x720, 720x1280, 390x844, 1000x900, 844x390): no OVERFLOW / SQUEEZED / WRONG (the first
+  phone run found one OVERFLOW, a long button label on the results stop: shortened; the wish list's buttons moved under the name so
+  a narrow column never squeezes it); the tour's shots 52... looked at; `help_check` passes in both layouts. Also fixed: "1 tests" on the
+  School page's week.
+
+**Not in S3a:** individual lukio courses with a grade per course, the matriculation exams (subjects, schedule, real dates, grades L-I,
+a 4-year urheilulukio): all S3b; effects of the academy services and the TF-nuoret centre activity beyond the message; open days;
+reserve places (varasija); one test day for all schools; the general lukio / vocational school of other towns than the one you train in
+(you can only list those of your own town); homesickness, family and friends when moving (P1); what comes after school (M4); the
+camps (the camp-week session); the balance over many seasons (B1). **Unverified:** the athletics federation's 0-5 scale (my rule),
+the continuing application's real dates, Sotkamo's and Kuortane's size and region.
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)

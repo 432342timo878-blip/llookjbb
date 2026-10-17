@@ -1,0 +1,213 @@
+{
+ "_note": "The joint application after grade 9 (GDD 4.9.3, session S3a): when the window is, what the player can apply to, how the points are made, the entrance-test day, the results, moving and the academy coach. Facts about real schools stay in data/urheilulukiot.json (cut-offs, thresholds, sources); this file holds the game's RULES and TEXTS. `estimated` = a first guess of mine, tuned in B1 (not from a source). {x} = a value filled in by the code. The real application: up to 7 choices (hakutoivetta), a window of four weeks in February-March (2026: 17 Feb - 17 Mar, 2027: 16 Feb - 16 Mar), results from 11 June at the earliest, a place to be accepted by 25 June (source 1, a search summary: 'Enintaan seitseman hakutoivetta', 'tulokset julkaistaan aikaisintaan 11.6.2026').",
+ "window": {
+  "_note": "The window opens on the 3rd Tuesday of February and lasts 28 days (it fits 2026: Tue 17 Feb - Tue 17 Mar, and 2027: Tue 16 Feb - Tue 16 Mar). The entrance-test day is the 2nd Tuesday of May (estimated: real schools hold their own days between 27 April and 13 May, urheilulukiot.json), results come on 11 June or the first weekday after it, a school year starts on 1 August (moving day).",
+  "estimated": true,
+  "open": {"month": 2, "nth_tuesday": 3},
+  "length_days": 28,
+  "max_wishes": 7,
+  "reminder_days": 3,
+  "test": {"month": 5, "nth_tuesday": 2},
+  "results": {"month": 6, "day": 11},
+  "reply_days": 14,
+  "move": {"month": 8, "day": 1}
+ },
+ "wishes": {
+  "_note": "What can be on the list: the 15 sports lukiot (urheilulukiot.json), the general lukio and the vocational school of the town you train in. General lukio and vocational school take the academic + PE grade average of the final certificate against a cut-off (estimated: a small town's lukio takes nearly everyone with 6.5, a big city's best lukio asks for much more); size_shift moves it by the town's size class (towns.json), noise_sd is the yearly wobble. A sports lukio uses points out of 20 (grades 0-10 + sport 0-5 + school 0-5, urheilulukiot.json application.points) against its published cut-off; a school without a published cut-off uses `cutoff_unknown` by its status (the mean of the published ones is 14.9). min_grade of a school = a minimum average of the academic subjects without PE (published for four).",
+  "general": {"name": "General upper secondary school ({town})", "cutoff_avg": 6.8, "noise_sd": 0.25, "size_shift": {"village": -0.4, "small": -0.2, "town": 0.0, "city": 0.4, "capital": 0.8}, "estimated": true},
+  "vocational": {"name": "Vocational school ({town})", "cutoff_avg": 5.0, "noise_sd": 0.2, "estimated": true},
+  "cutoff_unknown": {"special_task": 14.8, "line": 12.8, "estimated": true},
+  "cutoff_noise_sd": 0.45,
+  "invite_note": "Federation points a school wants before it invites you to its entrance test (the four published ones come from urheilulukiot.json application.thresholds); every other sports lukio uses invite_default (estimated).",
+  "invite": {"lahden_lyseo": 2.1, "kuopion_klassillinen_lukio": 1.8, "sotkamon_lukio": 2.0},
+  "invite_default": 1.0
+ },
+ "points": {
+  "_note": "Grades: the average of the 12 academic subjects + PE on the final certificate (the Christmas card while the list is made) on the scale 4-10 = 0-10 points, as the Mäkelänrinne page says. Sport (the federation's 0-5): the athletics federation's own scale is NOT public (urheilulukiot.json not_verified), so this is my rule: the best 800 m time of the last three seasons against the real standards (standards.json) as anchors, in between by time, plus the head coach's statement (0 to `statement.max`, from his trust). The anchors' times are the athlete's own age class in the season before (fallback times for an age without a row). School: the entrance test (physical test 0-3 + interview 0-2 + the three choices on the day) plus the school's own adjustment, 0-5.",
+  "estimated": true,
+  "grades": {"min": 4.0, "max": 10.0, "points": 10.0},
+  "sport": {
+   "anchors": [
+    {"id": "sm", "set": "sm", "points": 1.5},
+    {"id": "tf_juniorit", "set": "tf_juniorit", "points": 3.5},
+    {"id": "kalevan_min", "set": "kalevan", "minimum": true, "points": 4.5},
+    {"id": "kalevan", "set": "kalevan", "points": 5.0}
+   ],
+   "fallback": {"sm": {"M": 141.0, "N": 155.0}, "tf_juniorit": {"M": 117.64, "N": 136.13}},
+   "zero_factor": 1.15,
+   "seasons": 3,
+   "statement": {"max": 0.5, "trust_from": 40.0, "trust_span": 40.0},
+   "max": 5.0
+  },
+  "school": {
+   "physical": {"attrs": ["speed", "aerobic_capacity", "strength", "power", "mobility"], "low": 6.0, "high": 14.0, "points": 3.0},
+   "interview": {"attrs": ["composure", "determination", "professionalism"], "low": 5.0, "high": 14.0, "points": 2.0, "confidence": {"mid": 50.0, "span": 50.0, "points": 0.3}},
+   "athletics_adjust": {"priority": 0.3, "offered": 0.0, "unverified": -0.3},
+   "guess": 3.0,
+   "max": 5.0
+  }
+ },
+ "test": {
+  "_note": "The entrance-test day (a stop in the real game; the tools take every step's `auto` option). Three choices; each option adds `delta` to the school points. `chance` + `fail_delta`: the option works with that chance, else it adds fail_delta. `attr` + `from` + `else_delta`: it works only for an athlete whose attribute is at least `from`, else it adds else_delta. `sd`: a roll around the delta (the test day's own dice, from the career's seed).",
+  "title": "Entrance test day",
+  "intro": "Today you are tested for the sports lukio places you applied to: a physical test and an interview. What you do on the day counts.",
+  "steps": [
+   {"id": "warmup", "title": "The test: the warm-up", "text": "The physical test starts in half an hour. How do you get ready?", "auto": "proper",
+    "options": [
+     {"id": "proper", "label": "Warm up properly", "detail": "A safe start: a little extra from your legs.", "delta": 0.25},
+     {"id": "own", "label": "Do your own routine", "detail": "It might suit you better, or not.", "delta": 0.1, "sd": 0.2},
+     {"id": "rush", "label": "Skip it and save your energy", "detail": "You are fresh but cold. Rarely a good idea.", "delta": -0.35}
+    ]},
+   {"id": "run", "title": "The test: the endurance run", "text": "The last part is a hard run. How do you go about it?", "auto": "even",
+    "options": [
+     {"id": "hard", "label": "Go out hard", "detail": "A big result if you hold on, a poor one if you blow up.", "delta": 0.5, "chance": 0.5, "fail_delta": -0.5},
+     {"id": "even", "label": "Run it evenly", "detail": "A solid, safe result.", "delta": 0.2},
+     {"id": "hold", "label": "Hold back", "detail": "You save yourself, and look it.", "delta": -0.2}
+    ]},
+   {"id": "interview", "title": "The interview", "text": "The panel asks why you want to study here and what you want from sport. What do you say?", "auto": "honest",
+    "options": [
+     {"id": "honest", "label": "Be honest, weaknesses too", "detail": "Works best for someone who knows their own game.", "delta": 0.3, "attr": "professionalism", "from": 10.0, "else_delta": 0.1},
+     {"id": "ambitious", "label": "Show your ambition", "detail": "Works for someone who really dreams big.", "delta": 0.4, "attr": "ambition", "from": 12.0, "else_delta": -0.2},
+     {"id": "quiet", "label": "Say little and nod", "detail": "Safe, but forgettable.", "delta": -0.2}
+    ]}
+  ],
+  "done_title": "The test day is over",
+  "done_text": "The schools will count your points. The results come on {date}.",
+  "done_none": "None of your sports lukio wishes invited you to the tests, so there was no test day for you."
+ },
+ "apply": {
+  "_note": "The stops of the application: the window opens, a reminder when the list is still empty, the result. Answers: `build` = I make the list myself on the School page, `suggest` = the study counsellor fills it (a sensible spread by the points you have now), `later`. An empty list at the end is replaced by the general lukio of the town you train in (the safe default, also for the tools). The rejection stop offers the continuing application: the general lukio or vocational school of the town you train in, or a 10th-grade year.",
+  "suggest": {"max_sports": 4, "reach": 1.5, "note": "The study counsellor's list: sports lukiot of your own region with athletics offered or a priority, whose limit your points now (with the guessed school points) come within `reach` of, best limit first (at most max_sports), then the general lukio of your town as the safe last wish."},
+  "open_title": "The joint application is open",
+  "open_text": "The joint application to upper secondary school runs {from} - {to}. You can list up to {max} wishes in order. A sports lukio counts your grades, your sport results and a test day in May. Build your list on the School page, or ask the study counsellor.",
+  "open_text_10": "You didn't get what you wanted last year, but the joint application is open again: {from} - {to}. You can list up to {max} wishes in order.",
+  "remind_title": "The application closes soon",
+  "remind_text": "The joint application closes on {to}, and your list is empty. If you do nothing you will be put down for the general lukio of {town}.",
+  "choices": {
+   "build": {"label": "I'll make the list myself", "detail": "Open the School page and add your wishes."},
+   "suggest": {"label": "Ask the study counsellor", "detail": "She fills in a sensible list from the points you have now. You can change it."},
+   "later": {"label": "Later", "detail": "Nothing changes."}
+  },
+  "locked": "The application closed. Your list: {list}.",
+  "locked_default": "You didn't make a list, so you were put down for {list}."
+ },
+ "results": {
+  "_note": "Results day. For each wish in your order: points against the cut-off of the year. You get the first wish that accepts you. The reasons: not_invited (below the school's federation threshold), min_grade (below the school's minimum average), points (below the cut-off). The line texts use {name}, {points}, {cut}, {why}.",
+  "title": "The application results",
+  "intro": "The results of the joint application are out.",
+  "line_yes": "{name}: accepted ({points} points, the limit was {cut}).",
+  "line_yes_avg": "{name}: accepted (average {points}, the limit was {cut}).",
+  "line_no": "{name}: not this time ({why}).",
+  "line_skipped": "{name}: not needed, you got an earlier wish.",
+  "why_points": "{points} points, the limit was {cut}",
+  "why_avg": "average {points}, the limit was {cut}",
+  "why_not_invited": "you were not invited to the test",
+  "why_min_grade": "your average of {points} was under the school's minimum of {cut}",
+  "why_skipped": "you got an earlier wish",
+  "accepted": "You are in: {name}. The place has to be accepted by {date}.",
+  "accept_choice": {"label": "Take the place", "detail": "{name}, {town}. You start on 1 August."},
+  "decline_choice": {"label": "Decline the place", "detail": "The continuing application has leftover places: you can choose again."},
+  "none": "None of your wishes accepted you. The continuing application still has places left. What do you do?",
+  "none_choices": {
+   "general": {"label": "The general lukio of {town}", "detail": "A place is certain. You study there and train as you do now."},
+   "vocational": {"label": "A vocational school in {town}", "detail": "A place is certain. No exam weeks, no grades to keep up."},
+   "grade_10": {"label": "A 10th-grade year", "detail": "One more year to raise your grades. You apply again next February."}
+  },
+  "path_message": "From 1 August you study at {name}.",
+  "path_message_10": "From 1 August you do a 10th-grade year at {town}.",
+  "news_delta": {"top": 8.0, "yes": 4.0, "no": -8.0},
+  "news_yes": "Got into {name}",
+  "news_top": "Got your first wish: {name}",
+  "news_no": "The application did not work out"
+ },
+ "moving": {
+  "_note": "Moving (session S3a): a school in another town than the one you train in means moving there on 1 August. You keep your club (you race for it as before); the town you live and train in changes (Athlete.training_town): the school calendar, how far your coach is, the coaches around you and your training group. Dorms: only the two schools with a dorm in urheilulukiot.json; for the others you rent a room or live with relatives (flavour only). What home, friends and family feel about it comes with the people update (P1).",
+  "dorm": ["kuortaneen_urheilulukio", "sotkamon_lukio"],
+  "title": "Moving to {town}",
+  "text_dorm": "You have moved to {town} for {school}. You live in the school's dorm, near the training halls. Your coach in {old} is far away now: the coaches around {town} are worth a look.",
+  "text_flat": "You have moved to {town} for {school}. You have a room of your own near the school. Your coach in {old} is far away now: the coaches around {town} are worth a look.",
+  "group_goodbye": "Heard you're moving to {town}. Training here won't be the same. Come and visit!",
+  "old_coach": "The new town is far from {old}: {coach} can't watch your training any more."
+ },
+ "arrival": {
+  "_note": "The first day of the new school: a short message (no stop). For a sports lukio: morning practice, the academy services and the athletics centre's TF-nuoret activity.",
+  "title": "A new school",
+  "lukio": "Your first day at {name}. The lessons are in periods, and every period ends with an exam week.",
+  "urheilulukio": "Your first day at {name}. The lessons are in periods, and every period ends with an exam week. Morning practice is on {days} at about 8:00-9:30, and a second session on those days does not weigh on your school life. As an athlete of a sports school you join the TF-nuoret activity of the athletics centre{centre}.",
+  "centre": " in {centre}",
+  "vocational": "Your first day at {name}. There are no lessons to grade here, but there are no exam weeks either.",
+  "grade_10": "A new year in grade 10. Your grades count again when you apply in February.",
+  "morning_names": ["Mon", "Tue", "Wed", "Thu", "Fri"]
+ },
+ "morning": {
+  "_note": "Morning practice at an urheilulukio (urheilulukiot.json: Tuesday, Wednesday and Friday at Sammon keskuslukio, Tuesday-Thursday at Leppävaara, ~8:00-9:30): on those school days a second session is not a double day for the life load. `days` 0 = Monday. A school without a day in the data uses `default` (the Sammo pattern: Tue / Wed / Fri; estimated).",
+  "default": [1, 2, 4],
+  "schools": {"leppavaaran_lukio": [1, 2, 3]}
+ },
+ "academy": {
+  "_note": "The school's morning-practice coach (market tier `academy`, data/market.json): a fictional coach of the school who writes to you in your first week at an urheilulukio. You keep your head coach unless you choose him (Find a coach). The offer is posted only when the market is on.",
+  "title": "Coach of {school}",
+  "offer": "I coach the athletics group at {school}. I saw your application. If you want to train with us on top of what you do now, my place for you is open. You decide who your head coach is."
+ },
+ "ui": {
+  "_note": "The School page's application and path panels.",
+  "head": "JOINT APPLICATION",
+  "path_head": "YOUR SCHOOL",
+  "closed": "The joint application opens on {date}.",
+  "open_state": "The application is open until {date}.",
+  "locked_state": "The application is closed. Results come on {date}.",
+  "done_state": "The application is done.",
+  "list_head": "Your wishes, in order",
+  "list_empty": "No wishes yet. Add schools from the list below.",
+  "full": "The list is full ({max} wishes).",
+  "add": "Add",
+  "info": "Info",
+  "remove": "Remove",
+  "up": "Up",
+  "down": "Down",
+  "choices_head": "Schools you can add",
+  "points_head": "YOUR POINTS NOW",
+  "points_grades": "Grades: average {avg} = {pts} of 10",
+  "points_sport": "Sport results: {pts} of 5 ({time})",
+  "points_sport_none": "Sport results: 0 of 5 (no race yet)",
+  "points_school": "School's own points: at the test day in May (up to 5)",
+  "points_school_done": "School's own points: {pts} of 5 from the test day (each school adds its own touch)",
+  "points_school_none": "School's own points: no school invited you to its test day",
+  "info_now": "Your points there now: about {pts}{note}",
+  "info_now_guess": " (the school's part guessed at {guess})",
+  "points_note": "The sports lukiot count these three parts, 20 points in all. The limits below are those of last year or earlier; they move every year.",
+  "info_cutoff": "Last limit: {pts} ({year}){approx}",
+  "info_cutoff_est": "Limit not published: about {pts} (an estimate)",
+  "info_cutoff_avg": "Takes your average (about {pts}, an estimate)",
+  "info_places": "{n} places",
+  "info_town": "In {town}",
+  "info_move": "You would move there.",
+  "info_stay": "You stay where you are.",
+  "info_morning": "Morning practice: {text}",
+  "info_dorm": "A dorm is available.",
+  "info_min": "Minimum average of the academic subjects: {pts}",
+  "info_invite": "You need {pts} sport points to be invited to the test.",
+  "info_athletics": {"priority": "Athletics is a priority sport.", "offered": "Athletics is offered.", "unverified": "Not known whether athletics is offered."},
+  "estimated": "(estimated)",
+  "calendar": {
+   "window": "Joint application: make your list",
+   "test": "Entrance test day for sports lukio places",
+   "results": "Application results"
+  },
+  "results_head": "Results",
+  "path_line": "{name} · {town} · {years}",
+  "years": {"1": "1 year", "3": "3 years", "4": "4 years"},
+  "path_arrive": "Started on {date}",
+  "path_none": "You are in your first school.",
+  "path_morning": "Morning practice on {days}.",
+  "path_centre": "Athletics centre: {centre}.",
+  "path_end": "Your last year ends on {date}.",
+  "after_school": "School is over. What comes after is a later update.",
+  "vocational_note": "A vocational school has no grades or exam weeks in this game.",
+  "kinds": {"urheilulukio": "Sports lukio", "lukio": "Upper secondary school", "vocational": "Vocational school", "grade_10": "10th grade"}
+ },
+ "sources": [
+  {"id": 1, "url": "https://www.oph.fi/fi/uutiset/2026/perusopetuksen-jalkeisten-koulutusten-yhteishaku-alkaa-17-helmikuuta", "read": "2026-10-17", "how": "search-summary", "facts": "joint application 17.2.-17.3.2026; up to seven choices; results from 11.6.2026 at the earliest; the place accepted by 25.6.2026 (from a search summary of the school documents listed with the page, not opened)"},
+  {"id": 2, "url": "https://www.olympiakomitea.fi/huippu-urheilu/kaksoisura/haku-urheiluoppilaitoksiin", "read": "2026-10-17", "how": "page", "facts": "the 2027 joint application 16.2.-16.3.2027; vocational sports schools also take applications all year"}
+ ]
+}

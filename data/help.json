@@ -76,9 +76,9 @@
   },
   "calendar": {
    "title": "Calendar",
-   "version": 4,
+   "version": 5,
    "sections": [
-    {"heading": "School on the Calendar", "text": "Between the meets: school breaks (teal), busy test weeks with three or more tests (violet) and the Pajulahti camp weeks for grades 7-9, which are only information for now. Plan your racing around the busy weeks."},
+    {"heading": "School on the Calendar", "text": "Between the meets: school breaks (teal), busy test weeks with three or more tests (violet) and the Pajulahti camp weeks for grades 7-9, which are only information for now. In grade 9 the joint application's window, test day and results day are listed too (violet)."},
     {"heading": "Your coach suggests", "text": "A meet marked COACH SUGGESTS is one he thinks worth racing, with his reason. Enter it, or No thanks: he won't suggest it again. He also suggests making a meet a target. He never enters you himself.", "see": ["coach_changes"]},
     {"heading": "Entering a meet", "text": "Tap Enter to race a meet. On race day the race replaces that day's training. Tap Entered ✓ again to withdraw."},
     {"heading": "★ and ◆", "text": "★ means your coach suggests the meet. ◆ marks one of your season's target meets; Make target turns a meet into one (at most three a season).", "see": ["targets"]},
@@ -106,11 +106,11 @@
   },
   "people": {
    "title": "People",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "The people around you", "text": "Messages from your coach and your training group; family and friends will write here in a later update. A number or a dot means something is new or waits for your answer. Tap a person to open the conversation."},
-    {"heading": "School", "text": "The School row opens your grades, tests and report cards, and the two school settings: study effort and free time.", "see": ["moods"]},
-    {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. Find a coach, below the list, shows every coach you can see now."},
+    {"heading": "School", "text": "The School row opens your grades, tests and report cards, the two school settings (study effort and free time), the joint application in grade 9 and the school you go to after it.", "see": ["moods"]},
+    {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. At a sports lukio the school's morning-practice coach writes in your first week. Find a coach shows every coach you can see now."},
     {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"he will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
     {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one: the phase, the hard sessions and why, and one thing to focus on. It always stops Play week. A talk may end with a question. After a race he writes to you that evening."},
     {"heading": "Coach profile", "text": "Who your coach is, the character, how well you fit and how much you trust each other. The skills are a range that narrows week by week and is exact after eight weeks together. Below them is the training group."},
@@ -119,7 +119,7 @@
   },
   "school": {
    "title": "School",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "What school does", "text": "School changes how heavy your days are and how your grades go. It never changes what you train. A normal school week at Normal study effort and Normal free time is just your normal game."},
     {"heading": "Study effort", "text": "Light, Normal or Heavy. Heavy lifts your grades but makes school days heavier: more tiredness and more colds. Light does the opposite. The same two settings are in the Training tab."},
@@ -127,8 +127,12 @@
     {"heading": "Focus subjects", "text": "Pick up to two subjects to push. They rise faster while the others slip a little. Change them any time: grades move slowly, so switching back and forth gains nothing."},
     {"heading": "Grades and tests", "text": "Each subject shows where you stand, written like a test: 8, 8+, 8½, 9-. Tap one for its latest tests. A week with more than two tests is a busy test week: heavier and more stressful."},
     {"heading": "Report cards", "text": "On the last school day before Christmas and at the end of the school year you get a report card. Play stops to show it, and you choose how to handle the next term. Your family's reaction comes in a later update."},
-    {"heading": "Tests and a race", "text": "When you have a race in a busy test week, or a test on the race day or the day before, play stops once. Race and risk the grades, study and scratch, or race and study on the bus: each has a price."},
-    {"heading": "Holidays", "text": "Breaks and the summer are lighter: you recover a little faster and feel less stressed. The week strip shades those days and the Calendar lists them. Pajulahti camp weeks are shown there too."}
+    {"heading": "Tests and a race", "text": "When you have a race in a busy test week or a test on the race day itself, play stops once. Race and risk the grades, study and scratch, or race and study on the bus: each has a price. Exam weeks nearly always count as busy."},
+    {"heading": "Holidays", "text": "Breaks and the summer are lighter: you recover a little faster and feel less stressed. The week strip shades those days and the Calendar lists them. Pajulahti camp weeks are shown there too."},
+    {"heading": "The joint application", "text": "In grade 9 you apply for upper secondary school: up to seven wishes in order, in February-March. A sports lukio counts your grades (0-10 points), your 800 m results (0-5) and its own test (0-5). Add schools, tap Info, reorder. Nothing chosen means your own town's lukio."},
+    {"heading": "Test day and results", "text": "In May the sports lukiot that invited you test you: a physical test and an interview, with three choices that count. In June you get the results: the first wish that accepts you is your place. If none does, you can pick a general lukio, a vocational school or a 10th-grade year and apply again."},
+    {"heading": "After grade 9", "text": "A lukio has periods; each ends with an exam week, heavy on school life. A sports lukio has morning practice: a second session on those days costs no extra school load. A vocational school has no grades or exam weeks here."},
+    {"heading": "Moving", "text": "A school in another town means moving there on 1 August. You keep racing for your club, but your old coach is far away and you may want a coach near the new school. The coaches there appear in Find a coach."}
    ]
   },
   "market": {
@@ -354,12 +358,12 @@
   },
   "moods": {
    "title": "Confidence, motivation and stress",
-   "version": 2,
+   "version": 3,
    "sections": [
     {"heading": "Moods, not abilities", "text": "They change week to week. Big news moves them at once: a personal best, a last place, an injury, a goal met, what you answer someone. Every Sunday night each one also settles a little towards where your situation pulls it."},
-    {"heading": "Confidence", "text": "Low, Shaky, OK, Confident, Flying. Good races and goals met raise it; races well below your level and last places lower it. At its ends it changes your race time a little, most at big meets."},
+    {"heading": "Confidence", "text": "Low, Shaky, OK, Confident, Flying. Good races, goals met and getting into the school you wanted raise it; races well below your level, last places and a rejected application lower it. At its ends it changes your race time a little, most at big meets."},
     {"heading": "Motivation", "text": "Flat, Low, OK, Keen, Fired up. A coach you click with, new things and staying healthy lift it; the same training for months, a long layoff and stress wear it down. It changes how much your sessions train you, never what you do."},
-    {"heading": "Stress", "text": "Calm, Busy, Stressed, Overwhelmed. A big meet coming, a long injury, training far above your normal and a strained coach raise it, and so does school: a week full of tests, heavy study, late nights and two practices on a school day. Holidays ease it. It drags motivation down."},
+    {"heading": "Stress", "text": "Calm, Busy, Stressed, Overwhelmed. A big meet coming, a long injury, training far above your normal and a strained coach raise it, and so does school: a week full of tests, an exam week, heavy study, late nights and two practices on a school day. Holidays ease it. It drags motivation down."},
     {"heading": "The middle does nothing", "text": "While confidence and motivation say OK and stress says Calm, nothing changes: you train and race as normal. Only the words around them matter."},
     {"heading": "Your coach", "text": "In the Sunday talk your coach may mention a mood, and when one is low he asks how you are. A coach good at motivating lifts you more; a good mental coach brings confidence back faster."}
    ]

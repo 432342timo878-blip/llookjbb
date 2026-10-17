@@ -58,6 +58,7 @@ func _run() -> void:
 	_check_save_load()
 	_check_switches()
 	_check_decisions()
+	_check_application()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -182,9 +183,9 @@ func _check_later_years() -> void:
 func _check_stages() -> void:
 	print("-- 4. stages (born 2012)")
 	var ss = _fresh()
-	_ok("2 Nov 2026 grade 8, 1 Jul 2027 still grade 8 (its summer), 1 Sep 2027 grade 9, 1 Sep 2028 the placeholder",
+	_ok("2 Nov 2026 grade 8, 1 Jul 2027 still grade 8 (its summer), 1 Sep 2027 grade 9, 1 Sep 2028 the default path (a lukio, S3a)",
 			str(ss.stage_of(_d("2026-11-02")).id) == "grade_8" and str(ss.stage_of(_d("2027-07-01")).id) == "grade_8"
-			and str(ss.stage_of(_d("2027-09-01")).id) == "grade_9" and str(ss.stage_of(_d("2028-09-01")).id) == "secondary")
+			and str(ss.stage_of(_d("2027-09-01")).id) == "grade_9" and str(ss.stage_of(_d("2028-09-01")).id) == "lukio")
 
 
 # --- 5. Life load numbers ---------------------------------------------------------------------------------------------------
@@ -745,6 +746,334 @@ func _check_decisions() -> void:
 	var heavy: Dictionary = CV.simulate(start, spec)
 	print("    his week's end fatigue: %.3f normal, %.3f at Heavy / Lots" % [with_school.athlete.fatigue, heavy.athlete.fatigue])
 	_ok("... at Heavy / Lots he sees a more tiring week", heavy.athlete.fatigue > with_school.athlete.fatigue)
+
+
+# --- 14. The joint application, the paths, the test day and moving (session S3a) ----------------------------------------------------
+
+## Plays days up to `until` (a "YYYY-MM-DD"), answering every stop: `policy` maps an event's kind to an answer id ("FIRST" = the
+## first choice, anything missing = "ok"). Returns the kinds (else the source) of the stops met, in order.
+func _play_to(until: String, policy := {}) -> Array:
+	var seen := []
+	var stop: int = Cal.date_key(_d(until))
+	while Cal.date_key(game.date) < stop:
+		game.advance_day()
+		while not game.pending_event().is_empty():
+			var e: Dictionary = game.pending_event()
+			var kind := str(e.get("kind", ""))
+			seen.append(kind if kind != "" else str(e.source))
+			var choice := str(policy.get(kind, "ok"))
+			if choice == "FIRST" and not e.choices.is_empty():
+				choice = str(e.choices[0].id)
+			game.answer_event(e.id, choice)
+	return seen
+
+
+## A 14-year-old career with an 800 m result of `time` seconds in the 2027 season (so the application has sport points).
+func _app_career(time: float, school_index := 0) -> Dictionary:
+	game.start_career(_athlete(school_index), "repeat")
+	if time > 0.0:
+		game.athlete.results.append({"date": _d("2027-07-10"), "meet": "Test", "meet_key": "t", "event": "800m", "round": "final", "place": 1,
+				"field": 8, "time": time, "pb": true})
+	return {"ss": game.get_system("school")}
+
+
+func _count(list: Array, what: String) -> int:
+	return list.filter(func(x): return str(x) == what).size()
+
+
+func _check_application() -> void:
+	print("-- 14. the joint application, the paths, the test day, moving (session S3a)")
+	var SA = load("res://scripts/core/school_application.gd")
+	var CM = load("res://scripts/core/coach_market.gd")
+	var ap: Dictionary = data.application
+	# Dates: the rule reproduces the real 2026 and 2027 windows.
+	var d26: Dictionary = SA.dates(2026)
+	var d27: Dictionary = SA.dates(2027)
+	var d28: Dictionary = SA.dates(2028)
+	_ok("the window rule gives the real 17 Feb - 17 Mar 2026 and 16 Feb - 16 Mar 2027", Cal.date_key(d26.open) == 20260217 and Cal.date_key(d26.close) == 20260317
+			and Cal.date_key(d27.open) == 20270216 and Cal.date_key(d27.close) == 20270316)
+	_ok("2028 (estimated): the window 15 Feb - 14 Mar, the test day Tue 9 May, results Mon 12 Jun (11 Jun is a Sunday), move 1 Aug",
+			Cal.date_key(d28.open) == 20280215 and Cal.date_key(d28.close) == 20280314 and Cal.date_key(d28.test) == 20280509
+			and Cal.date_key(d28.results) == 20280612 and Cal.date_key(d28.move) == 20280801)
+	_ok("results come on 11 June or later, the place is held 14 days (the real rule: from 11 Jun 2026, accept by 25 Jun)",
+			Cal.date_key(SA.dates(2026).results) == 20260611 and Cal.date_key(SA.dates(2026).accept_by) == 20260625)
+	# The sport points: the anchors of the real standards, interpolated.
+	var a = _athlete()
+	game.start_career(a, "repeat")
+	var sp := func(t: float) -> float:
+		game.athlete.results = [{"date": _d("2027-07-10"), "event": "800m", "time": t, "round": "final", "place": 1, "field": 8, "pb": true}] if t > 0.0 else []
+		return float(SA.sport_points(game.athlete, 2028).ladder)
+	var anchors: Array = SA.anchors(game.athlete, 2028)
+	print("    anchors for a boy applying in 2028 (seconds / points): %s" % ", ".join(anchors.map(func(x): return "%s %.2f / %.1f" % [x.id, x.time, x.points])))
+	_ok("four anchors, slowest first: the SM limit 141 s = 1.5, TF-juniorit 126.03 = 3.5, Kalevan minimum 115.5 = 4.5, Kalevan limit 113.5 = 5.0",
+			anchors.size() == 4 and absf(float(anchors[0].time) - 141.0) < 0.01 and absf(float(anchors[1].time) - 126.03) < 0.01
+			and absf(float(anchors[2].time) - 115.5) < 0.01 and absf(float(anchors[3].time) - 113.5) < 0.01)
+	_ok("sport points at the anchors and between: 141 s 1.5, 126.03 s 3.5, 120 s ~4.07, 113.5 s and faster 5.0, 170 s and no race 0",
+			absf(sp.call(141.0) - 1.5) < 0.001 and absf(sp.call(126.03) - 3.5) < 0.001 and absf(sp.call(120.0) - (3.5 + 1.0 * 6.03 / 10.53)) < 0.01
+			and absf(sp.call(113.5) - 5.0) < 0.001 and sp.call(100.0) == 5.0 and sp.call(170.0) == 0.0 and sp.call(0.0) == 0.0)
+	var a_f = _athlete()
+	a_f.gender = "female"
+	game.athlete = a_f
+	var an_f: Array = SA.anchors(a_f, 2028)
+	_ok("a girl: 155 / 140.04 / 135 / 131", an_f.size() == 4 and absf(float(an_f[0].time) - 155.0) < 0.01 and absf(float(an_f[1].time) - 140.04) < 0.01
+			and absf(float(an_f[2].time) - 135.0) < 0.01 and absf(float(an_f[3].time) - 131.0) < 0.01)
+	game.athlete = a
+	# Seasons: only the last three calendar years count; a DNF does not.
+	game.athlete.results = [{"date": _d("2024-07-10"), "event": "800m", "time": 100.0}, {"date": _d("2027-07-10"), "event": "800m", "time": 0.0, "status": "dnf"},
+			{"date": _d("2026-12-10"), "event": "800m", "time": 130.0}]
+	_ok("the best of the last three seasons: 2024 is too old, a DNF is skipped (130 s)", absf(SA.best_time(game.athlete, 2028) - 130.0) < 0.001)
+	# Options and cut-offs.
+	var opts: Array = SA.options("Tampere")
+	var sports := opts.filter(func(o): return str(o.kind) == "sports")
+	_ok("16 sports lukiot (the Olympic Committee's 15 + Leppävaara's line) + the general lukio + the vocational school of the town; at most 7 wishes",
+			sports.size() == data.urheilulukiot.schools.size() and sports.size() == 16 and opts.size() == 18 and int(ap.window.max_wishes) == 7)
+	var ss0 = _fresh()
+	var mk = SA.option("sports:makelanrinteen_lukio", "Tampere")
+	var cut_mk: Dictionary = SA.cutoff(ss0, mk, 2028, false)
+	var cut_kerttuli: Dictionary = SA.cutoff(ss0, SA.option("sports:kerttulin_lukio", "Tampere"), 2028, false)
+	var cut_unknown: Dictionary = SA.cutoff(ss0, SA.option("sports:ounasvaaran_lukio", "Tampere"), 2028, false)
+	_ok("cut-offs: Mäkelänrinne 16.09 (2025), Kerttuli the latest year 14.9 (2026), a school without a figure uses the estimate 14.8",
+			absf(float(cut_mk.value) - 16.09) < 0.001 and int(cut_mk.year) == 2025 and absf(float(cut_kerttuli.value) - 14.9) < 0.001
+			and bool(cut_unknown.estimated) and absf(float(cut_unknown.value) - 14.8) < 0.001)
+	var n1: float = SA.cutoff(ss0, mk, 2028)["value"]
+	var n2: float = SA.cutoff(ss0, mk, 2028)["value"]
+	var n3: float = SA.cutoff(ss0, mk, 2029)["value"]
+	_ok("the yearly wobble is the same every time it is asked and changes with the year", n1 == n2 and n1 != n3)
+	_ok("the grade points: average 4 = 0, 7 = 5, 10 = 10", SA.grade_points(4.0) == 0.0 and absf(SA.grade_points(7.0) - 5.0) < 0.001 and SA.grade_points(10.0) == 10.0)
+	_ok("an invitation needs the school's federation points: Lahti 2.1, Kuopio 1.8, Sotkamo 2.0, others 1.0",
+			SA.invite_min(SA.option("sports:lahden_lyseo", "x")) == 2.1 and SA.invite_min(SA.option("sports:sotkamon_lukio", "x")) == 2.0
+			and SA.invite_min(SA.option("sports:sammon_keskuslukio", "x")) == 1.0)
+	_check_paths_and_stages(SA)
+	_check_application_flow(SA, CM)
+	_check_application_targets(SA)
+
+
+## The stages from the path, the lukio's exam weeks against the real Helsinki calendar, the morning practice.
+func _check_paths_and_stages(SA) -> void:
+	print("   -- stages after grade 9")
+	# An athlete born 2010 is in grade 10 in 2026-27: the lukio default path in Helsinki, compared with Helsingin kielilukio's real exam weeks.
+	var a = _athlete()
+	a.birth_date = {"year": 2010, "month": 5, "day": 1}
+	a.hometown = "Helsinki"
+	game.start_career(a, "repeat")
+	var ss = game.get_system("school")
+	ss._ensure_started()
+	var real: Array = data.school.verified.lukio_example.periods
+	var ok := true
+	var shown := 0
+	for p in real:
+		var from: Dictionary = _d(str(p.exam_week[0]))
+		var to: Dictionary = _d(str(p.exam_week[1]))
+		var d: Dictionary = from
+		var n := 0
+		while Cal.date_key(d) <= Cal.date_key(to):
+			if SCal.is_school_day("Helsinki", d):
+				n += 1
+				if not ss.is_exam_day(d):
+					ok = false
+					print("    %s is not an exam day (the school's period %d)" % [Cal.format_day(d), int(p.id)])
+			d = game.add_days(d, 1)
+		shown += n
+	var total := 0
+	var d2: Dictionary = _d("2026-08-12")
+	while Cal.date_key(d2) <= Cal.date_key(_d("2027-06-05")):
+		if ss.is_exam_day(d2):
+			total += 1
+		d2 = game.add_days(d2, 1)
+	print("    Helsinki 2026-27 lukio: %d exam days from the rule, %d on the school's own dates" % [total, shown])
+	_ok("the lukio's exam weeks from the periods rule cover every exam day of Helsingin kielilukio 2026-27 (5 weeks of 7 school days)", ok and total == shown and shown == 35)
+	var exam_part := 0.0
+	for p in ss.load_parts(_d("2026-09-28"), []):
+		if str(p.id) == "exam":
+			exam_part = float(p.value)
+	_ok("a lukio stage has subjects and 3 years; an exam day carries the +2 exam load (x scale 1.0)", bool(ss.stage_of(_d("2026-09-28")).subjects)
+			and int(ss.stage_of(_d("2026-09-28")).years) == 3 and exam_part == 2.0)
+	# Paths: a sports lukio, a vocational school, a 10th grade; a 4th year does not exist yet.
+	var b = _athlete()
+	game.start_career(b, "repeat")
+	var s2 = game.get_system("school")
+	s2._ensure_started()
+	s2.paths = [{"kind": "urheilulukio", "school": "sammon_keskuslukio", "town": "Tampere", "start_year": 2028, "years": 3}]
+	s2._stage_cache = {}
+	var st: Dictionary = s2.stage_of(_d("2029-09-01"))
+	_ok("a sports lukio path: 2028-29 first year, 2030-31 the last (final), 2031-32 school is over",
+			str(s2.stage_of(_d("2028-09-01")).id) == "urheilulukio" and int(st.year_index) == 1 and not bool(st.get("final", false))
+			and bool(s2.stage_of(_d("2030-09-01")).get("final", false)) and str(s2.stage_of(_d("2031-09-01")).id) == "graduated")
+	var tue := _d("2028-11-07")
+	var mon := _d("2028-11-06")
+	_ok("morning practice Tue / Wed / Fri at Sammo: a second session is not a double day then (Mon: it is)",
+			s2.morning_day(tue) and s2.morning_day(_d("2028-11-08")) and s2.morning_day(_d("2028-11-10")) and not s2.morning_day(mon) and not s2.morning_day(_d("2028-11-09"))
+			and not s2.is_double_on(tue, ["easy_run", "tempo_run"]) and s2.is_double_on(mon, ["easy_run", "tempo_run"]) and not s2.is_double_on(tue, ["easy_run", "drills"]))
+	_ok("... and the life load follows: a double day on Tue 0, on Mon +1.5", s2.life_load(tue, ["easy_run", "tempo_run"]) == 0.0 and s2.life_load(mon, ["easy_run", "tempo_run"]) == 1.5)
+	s2.paths = [{"kind": "lukio", "school": "", "town": "Tampere", "start_year": 2028, "years": 3}]
+	s2._stage_cache = {}
+	_ok("a general lukio has no morning practice", not s2.morning_day(tue) and s2.life_load(tue, ["easy_run", "tempo_run"]) == 1.5)
+	s2.paths = [{"kind": "vocational", "school": "", "town": "Tampere", "start_year": 2028, "years": 3}]
+	s2._stage_cache = {}
+	s2._exam_days = {}
+	s2._schedules = {}
+	_ok("a vocational school: no subjects, no tests, no exam weeks", not bool(s2.stage_of(_d("2028-11-07")).subjects) and s2.tests_on(_d("2028-11-07")).is_empty()
+			and not s2.is_exam_day(_d("2028-09-28")))
+	s2.paths = [{"kind": "grade_10", "school": "", "town": "Tampere", "start_year": 2028, "years": 1}]
+	s2._stage_cache = {}
+	var after: Dictionary = s2.stage_of(_d("2029-09-01"))
+	_ok("a 10th-grade year applies again (applies) and is followed by the default 3-year lukio", bool(s2.stage_of(_d("2028-11-07")).get("applies", false))
+			and bool(s2.stage_of(_d("2028-11-07")).get("final", false)) and str(after.id) == "lukio" and str(s2.stage_of(_d("2031-09-01")).id) == "lukio"
+			and str(s2.stage_of(_d("2032-09-01")).id) == "graduated")
+	s2.paths = []
+	s2._stage_cache = {}
+
+
+## The application through the game loop: the tools' way (no stops, defaults), the real game's way (stops), moving, saving.
+func _check_application_flow(SA, CM) -> void:
+	print("   -- the application through the game loop")
+	# A. The tools' way: nobody decides; the list becomes the general lukio of the town; no school stop appears.
+	var ctx := _app_career(125.0)
+	var ss = ctx.ss
+	var seen := _play_to("2028-09-02")
+	_ok("tools (no decisions): no school stop in the whole time up to the first lukio day", seen.filter(func(k): return str(k).begins_with("school")).is_empty())
+	_ok("... the list was the general lukio of Tampere, a path was decided and the athlete stays (no move)", ss.paths.size() == 1 and str(ss.paths[0].kind) == "lukio"
+			and str(ss.paths[0].school) == "" and bool(ss.application(2028).decided) and ss.application(2028).wishes == ["general"]
+			and game.athlete.training_town == "" and str(ss.stage_of(game.date).id) == "lukio")
+	_ok("... the test day found no sports wish: nothing to test", bool(ss.application(2028).test.done) and ss.application(2028).test.invited.is_empty())
+
+	# B. The real game's way: the stops, the counsellor's list, the test steps, the results.
+	SC.decisions_enabled = true
+	var ctx2 := _app_career(125.0)
+	var ss2 = ctx2.ss
+	var policy := {"school_apply": "suggest", "school_test": "FIRST", "school_result": "accept"}
+	var seen2 := _play_to("2028-08-02", policy)
+	_ok("an arrival message on 1 August (a stop-free event) when the school is new", game.events.any(func(e): return str(e.source) == "school" and str(e.title) == str(data.application.arrival.title)))
+	seen2.append_array(_play_to("2028-09-02", policy))
+	var wishes: Array = ss2.application(2028).wishes
+	print("    the counsellor's list for a top-of-the-class boy with 2:05.0 in Tampere: %s; stops: %s" % [", ".join(wishes), ", ".join(seen2.filter(func(k): return str(k).begins_with("school_") and str(k) != "school_card"))])
+	_ok("the window opens with ONE stop (the list was filled, so no reminder)", _count(seen2, "school_apply") == 1)
+	_ok("the counsellor's list: only sports lukiot of the own region (Pirkanmaa: Sammo) with athletics, then the general lukio last, at most 7",
+			wishes.size() >= 1 and wishes.size() <= 7 and wishes.back() == "general" and wishes.all(func(w): return w == "general" or w == "sports:sammon_keskuslukio"))
+	var test: Dictionary = ss2.application(2028).test
+	_ok("an invited athlete gets the test day: three stops, the base counted from the physical test, the interview and the choices",
+			_count(seen2, "school_test") == (3 if not test.invited.is_empty() else 0) and bool(test.done) and float(test.base) >= 0.0 and float(test.base) <= 5.0)
+	_ok("results: one stop, a path decided that matches the first wish that said yes", _count(seen2, "school_result") == 1 and ss2.paths.size() == 1)
+	var first_yes := "general"
+	for r in ss2.application(2028).results:
+		if str(r.status) == "yes":
+			first_yes = str(r.wish)
+			break
+	var want_school := first_yes.trim_prefix("sports:") if first_yes.begins_with("sports:") else ""
+	_ok("... %s -> %s" % [first_yes, ss2.paths[0].kind], str(ss2.paths[0].school) == want_school)
+	_ok("the athlete's results lines name the wishes and why (the text of the stop is built from them)", ss2.application(2028).results.size() >= 1
+			and SA.result_line(ss2.application(2028).results[0]).length() > 10)
+
+	# C. Moving: a school in Kuortane. The club stays, the town changes, the old coach is far, the market has coaches of the new town.
+	var CMs = CM
+	CMs.enabled = true
+	var ctx3 := _app_career(125.0)
+	var ss3 = ctx3.ss
+	_play_to("2028-06-14", {})
+	var cm = game.get_system("market")
+	cm.ensure_pool()
+	var before: int = game.get_system("coach").coaches.size()
+	ss3.paths.clear()
+	ss3.applications["2028"].decided = false
+	ss3._stage_cache = {}
+	ss3._decide(2028, "sports:kuortaneen_urheilulukio")
+	var head: Dictionary = game.get_system("coach").head()
+	_ok("before the move the head coach is in the club's town (same)", C.distance_of(head, game.athlete) == "same" and game.athlete.training_town == "")
+	_play_to("2028-08-03", {})
+	_ok("1 August: the athlete lives in Kuortane (the club stays), the school follows the new town, the old coach is far away",
+			game.athlete.training_town == "Kuortane" and game.athlete.club_id == "tap" and ss3.town() == "Kuortane" and C.home_town(game.athlete) == "Kuortane"
+			and C.distance_of(head, game.athlete) == "far" and str(ss3.stage_of(game.date).id) == "urheilulukio")
+	var coaches_after: int = game.get_system("coach").coaches.size()
+	var academy: Dictionary = {}
+	for c in game.get_system("coach").coaches.values():
+		if str(c.get("market", {}).get("school", "")) == "kuortaneen_urheilulukio":
+			academy = c
+	_ok("the market got coaches of the new town (%d -> %d) and the school's academy coach: kind academy, offered, visible while at the school" % [before, coaches_after],
+			coaches_after > before and not academy.is_empty() and str(academy.kind) == "academy" and cm.offer_open(str(academy.id)) and cm.visible(academy))
+	ss3.paths = []
+	ss3._stage_cache = {}
+	cm.offers.erase(str(academy.id))
+	_ok("... and invisible at another school (once the offer is gone)", not cm.visible(academy))
+	_ok("a move leaves a message from the old coach (farewell) and the group", game.get_system("moments").threads.get("coach", []).any(func(m): return str(m.text).contains("Kuortane"))
+			or game.get_system("moments").threads.has("group"))
+	CMs.enabled = false
+
+	# D. Save / load: paths, applications and the training town come back and the game goes on the same.
+	var ctx4 := _app_career(125.0)
+	var ss4 = ctx4.ss
+	_play_to("2028-06-14", {"school_apply": "suggest", "school_test": "FIRST", "school_result": "accept"})
+	var snap := _json(game.to_dict())
+	_play_to("2028-09-05", {})
+	var end1 := _json(game.get_system("school").to_dict()) + _json(game.athlete.to_dict())
+	game.from_dict(_parse(snap))
+	_play_to("2028-09-05", {})
+	var end2 := _json(game.get_system("school").to_dict()) + _json(game.athlete.to_dict())
+	_ok("a loaded game goes on exactly as without saving (paths, application, test, arrival)", end1 == end2)
+	_ok("the saved school state carries paths and apps; an older state without them loads with none", snap.contains("\"paths\"") and snap.contains("\"apps\""))
+	var old: Dictionary = game.to_dict()
+	old.systems.school.erase("paths")
+	old.systems.school.erase("apps")
+	game.from_dict(old)
+	_ok("... and then plays the default lukio", game.get_system("school").paths.is_empty() and str(game.get_system("school").stage_of(_d("2028-09-02")).id) == "lukio")
+	SC.decisions_enabled = false
+
+
+## The balance target (GDD 4.9.7): which cut-offs are reachable for which athlete. The points an athlete has at the end of
+## grade 9 (the school answer x the effort of the year, the grades after a year of drift) plus the sport points of an 800 m result.
+func _check_application_targets(SA) -> void:
+	print("   -- who can reach which cut-off (GDD 4.9.7: 'Doing fine' or better with Normal effort, 'Struggling' needs a Heavy grade 9)")
+	var names := ["top", "hard_work", "fine", "struggling", "dont_care"]
+	var efforts := ["normal", "heavy"]
+	var times := {"2:05 (TF-juniorit)": 125.0, "2:00": 120.0, "2:15": 135.0}
+	_app_career(125.0)
+	var rows := []
+	var table := {}
+	for ai in names.size():
+		for effort in efforts:
+			var ss = _school_for(ai, 0)
+			ss.set_effort(effort)
+			# grade 8 to the end of grade 9 (2 Nov 2026 - 3 Jun 2028 is long; the average after 1.5 years of drift)
+			var d := _d("2026-11-02")
+			for k in 580:
+				ss.on_day_end({"date": d, "record": {}})
+				d = game.add_days(d, 1)
+			var avg: float = SA.average_now(ss)
+			table["%s/%s" % [names[ai], effort]] = avg
+	for key in table:
+		rows.append("%s %.2f" % [key, table[key]])
+	print("    academic + PE average at the end of grade 9: " + ", ".join(rows))
+	# The points of each combination against a few cut-offs.
+	var cuts := {"Espoo 12.8": 12.77, "Schildt 13.8": 13.81, "Kerttuli 14.9": 14.9, "Lahti 15.0": 15.0, "Mäkelänrinne 16.1": 16.09}
+	var school_pts := 3.3
+	print("    points = grades + sport + %.1f school points (a middling test day); 'x' = at or over the limit" % school_pts)
+	for tk in times:
+		var line := "    %s:" % tk
+		var a2 = _athlete()
+		game.athlete = a2
+		game.athlete.results = [{"date": _d("2027-07-10"), "event": "800m", "time": float(times[tk])}]
+		var sport := float(SA.sport_points(game.athlete, 2028).total)
+		line += " sport %.1f" % sport
+		print(line)
+		for key in table:
+			var total: float = SA.grade_points(float(table[key])) + sport + school_pts
+			var marks := []
+			for ck in cuts:
+				marks.append(("x " if total >= float(cuts[ck]) else ". ") + ck.split(" ")[0])
+			print("      %-18s avg %.2f -> %.1f points   %s" % [key, float(table[key]), total, "  ".join(marks)])
+	# The target as checks: "Doing fine" with Normal effort and a TF-juniorit-level result reaches the lowest sports lukio limits;
+	# "Struggling" with Normal effort does not, with a Heavy grade 9 it does.
+	var fine_n: float = table["fine/normal"]
+	var str_n: float = table["struggling/normal"]
+	var str_h: float = table["struggling/heavy"]
+	game.athlete.results = [{"date": _d("2027-07-10"), "event": "800m", "time": 126.03}]
+	var sport_tf := float(SA.sport_points(game.athlete, 2028).total)
+	var low_cut := 12.77   # the lowest published limit (Espoo's sports line)
+	var p_fine: float = SA.grade_points(fine_n) + sport_tf + school_pts
+	var p_str_n: float = SA.grade_points(str_n) + sport_tf + school_pts
+	var p_str_h: float = SA.grade_points(str_h) + sport_tf + school_pts
+	print("    TF-juniorit result + a middling test (3.3): Doing fine/Normal %.1f, Struggling/Normal %.1f, Struggling/Heavy %.1f; the lowest limit is %.2f" % [p_fine, p_str_n, p_str_h, low_cut])
+	_ok("a 'Doing fine' athlete with Normal effort and a TF-juniorit result reaches the lowest limit (Espoo 12.77): %.1f" % p_fine, p_fine >= low_cut)
+	_ok("a 'Struggling' athlete with Normal effort does not (%.1f), with a Heavy grade 9 it does (%.1f)" % [p_str_n, p_str_h], p_str_n < low_cut and p_str_h >= low_cut)
 
 
 # --- Helpers ---------------------------------------------------------------------------------------------------------------------

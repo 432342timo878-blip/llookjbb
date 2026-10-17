@@ -104,10 +104,12 @@ static func distance_of(c: Dictionary, a: Athlete) -> String:
 	return "far"
 
 
-## The town the athlete trains in: their club's home town (else their hometown).
+## The town the athlete trains in: the town they moved to for school (S3a), else their club's home town (else their hometown).
 static func home_town(a: Athlete) -> String:
 	if a == null:
 		return ""
+	if a.training_town != "":
+		return a.training_town
 	var club := Data.get_club(a.club_id)
 	return str(club.get("city", a.hometown))
 

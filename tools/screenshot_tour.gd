@@ -291,6 +291,8 @@ func _run() -> void:
 	await _market_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _school_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _application_tour(main, hub)
 	saves.delete(slot)
 	quit()
 
@@ -335,6 +337,78 @@ func _school_tour(main: Node, hub_in: Control) -> void:
 		await _frames(6)
 		await _shot("51e_report_card")
 		hub._on_event_answer(game.pending_event().id, "keep")
+	hub._show("overview")
+
+
+# --- The joint application (session S3a): the School page in the spring of grade 9 with a wish list, the schools to add with one
+# --- opened, the application stop, a test-day step, the results, the path at a sports lukio (shots 52...) ----------------------------
+
+func _application_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var hub: Control = hub_in
+	_answer_pending(game)
+	hub._show_pending_event()
+	var SC = load("res://scripts/core/school_system.gd")
+	var SAV = load("res://scripts/ui/school_apply_view.gd")
+	var ss = game.get_system("school")
+	var saved_date: Dictionary = game.date.duplicate()
+	var results_before: int = game.athlete.results.size()
+	var dec_before: bool = SC.decisions_enabled
+	SC.decisions_enabled = true
+	game.athlete.results.append({"date": {"year": 2027, "month": 7, "day": 10}, "meet": "Test", "meet_key": "t", "event": "800m", "round": "final",
+			"place": 1, "field": 8, "time": 126.0, "pb": false})
+	game.date = {"year": 2028, "month": 2, "day": 20}
+	ss._stage_cache = {}
+	ss.applications = {}
+	ss._app(2028).wishes = ["sports:sammon_keskuslukio", "sports:lahden_lyseo", "general"]
+	SAV.open = {"sports:makelanrinteen_lukio": true}
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	await _shot("52_application")
+	var more = _find_label(hub, "Schools you can add")
+	if more != null:
+		hub._scroll.ensure_control_visible(more)
+	await _frames(4)
+	await _shot("52a_application_schools")
+	ss._post_apply(2028, "open")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("52b_application_stop")
+	hub._on_event_answer(game.pending_event().id, "suggest")
+	ss._app(2028).locked = true
+	ss._app(2028).test = {"done": false, "invited": ["sports:sammon_keskuslukio"], "phys": 1.6, "interview": 1.2, "steps": {}, "base": 0.0}
+	ss._post_test_step(2028, 1)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("52c_test_step")
+	hub._on_event_answer(game.pending_event().id, "even")
+	hub._on_event_answer(game.pending_event().id, "honest")
+	game.events = game.events.filter(func(x): return not (str(x.source) == "school" and not x.stop))
+	game.date = {"year": 2028, "month": 6, "day": 13}
+	ss._results(2028)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("52d_results")
+	var pending: Dictionary = game.pending_event()
+	hub._on_event_answer(pending.id, "accept" if str(pending.get("wish", "")) != "" else "general")
+	ss.paths = [{"kind": "urheilulukio", "school": "sammon_keskuslukio", "town": "Tampere", "start_year": 2028, "years": 3}]
+	ss._stage_cache = {}
+	game.date = {"year": 2028, "month": 10, "day": 3}
+	hub._show("people")
+	await _frames(6)
+	await _shot("52e_your_school")
+	ss.paths = []
+	ss.applications = {}
+	ss._stage_cache = {}
+	ss._exam_days = {}
+	ss._schedules = {}
+	SAV.open = {}
+	SC.decisions_enabled = dec_before
+	game.date = saved_date
+	game.athlete.results.resize(results_before)
+	game.events = game.events.filter(func(x): return str(x.source) != "school")
+	hub._people_page = ""
 	hub._show("overview")
 
 

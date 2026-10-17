@@ -134,6 +134,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _school_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _application_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -1309,6 +1311,108 @@ func _school_views(main: Node, game, tag: String) -> void:
 	ss.week_choices = {}
 	game.day_log = log_before
 	SV.open = {}
+	game.events = game.events.filter(func(x): return str(x.source) != "school")
+	hub._people_page = ""
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(3)
+
+
+# --- The joint application and the school after grade 9 (session S3a) at this window size ------------------------------------------
+
+## The date is moved into the spring of grade 9 for the shots (the hub only reads it on a redraw) and everything is put back: the
+## School page with a wish list and the schools to add (one opened), the application stop, the three test-day stops, the results
+## stop (declined, then the continuing application), and the YOUR SCHOOL panel at a sports lukio.
+func _application_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var SAV = load("res://scripts/ui/school_apply_view.gd")
+	var SC = load("res://scripts/core/school_system.gd")
+	var ss = game.get_system("school")
+	ss._ensure_started()
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_dec: bool = SC.decisions_enabled
+	var results_before: int = game.athlete.results.size()
+	SC.decisions_enabled = true
+	game.athlete.results.append({"date": {"year": 2027, "month": 7, "day": 10}, "meet": "Test", "meet_key": "t", "event": "800m", "round": "final",
+			"place": 1, "field": 8, "time": 126.0, "pb": false})
+	game.date = {"year": 2028, "month": 2, "day": 20}
+	ss._stage_cache = {}
+	ss.applications = {}
+	ss._app(2028).wishes = ["sports:sammon_keskuslukio", "sports:lahden_lyseo", "general"]
+	SAV.open = {"sports:makelanrinteen_lukio": true, "sports:kuortaneen_urheilulukio": true}
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_apply_page" % tag)
+	_check_overflow(hub, "%s apply_page" % tag)
+	var more = _find_label(hub, "Schools you can add")
+	if more == null:
+		print("WRONG: no list of schools to add at ", tag)
+	else:
+		hub._scroll.ensure_control_visible(more)
+	await _frames(4)
+	await _shot("%s_apply_schools" % tag)
+	_check_overflow(hub, "%s apply_schools" % tag)
+	var open_info = _find_label(hub, "Mäkelänrinteen lukio")
+	if open_info != null:
+		hub._scroll.ensure_control_visible(open_info)
+	await _frames(4)
+	await _shot("%s_apply_info" % tag)
+	# The window-open stop.
+	ss._post_apply(2028, "open")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_apply_stop" % tag)
+	_check_overflow(hub, "%s apply_stop" % tag)
+	hub._on_event_answer(game.pending_event().id, "later")
+	# The test day: three stops.
+	ss._app(2028).locked = true
+	ss._app(2028).test = {"done": false, "invited": ["sports:sammon_keskuslukio", "sports:lahden_lyseo"], "phys": 1.6, "interview": 1.2, "steps": {}, "base": 0.0}
+	ss._post_test_step(2028, 0)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_apply_test" % tag)
+	_check_overflow(hub, "%s apply_test" % tag)
+	for choice in ["proper", "even", "honest"]:
+		hub._on_event_answer(game.pending_event().id, choice)
+	game.events = game.events.filter(func(x): return not (str(x.source) == "school" and not x.stop))
+	# Results: the stop (accepted or not by the numbers), then declined and the continuing application.
+	game.date = {"year": 2028, "month": 6, "day": 13}
+	ss._results(2028)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_apply_results" % tag)
+	_check_overflow(hub, "%s apply_results" % tag)
+	var pending: Dictionary = game.pending_event()
+	hub._on_event_answer(pending.id, "decline" if str(pending.get("wish", "")) != "" else "general")
+	if not game.pending_event().is_empty():
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("%s_apply_continuing" % tag)
+		_check_overflow(hub, "%s apply_continuing" % tag)
+		hub._on_event_answer(game.pending_event().id, "grade_10")
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_apply_after" % tag)
+	_check_overflow(hub, "%s apply_after" % tag)
+	# YOUR SCHOOL at a sports lukio (with morning practice and the athletics centre).
+	ss.paths = [{"kind": "urheilulukio", "school": "sammon_keskuslukio", "town": "Tampere", "start_year": 2028, "years": 3}]
+	ss._stage_cache = {}
+	game.date = {"year": 2028, "month": 10, "day": 3}
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_apply_path" % tag)
+	_check_overflow(hub, "%s apply_path" % tag)
+	# Put everything back.
+	ss.paths = []
+	ss.applications = {}
+	ss._stage_cache = {}
+	ss._exam_days = {}
+	ss._schedules = {}
+	SAV.open = {}
+	SC.decisions_enabled = saved_dec
+	game.date = saved_date
+	game.athlete.results.resize(results_before)
 	game.events = game.events.filter(func(x): return str(x.source) != "school")
 	hub._people_page = ""
 	hub._show("overview")

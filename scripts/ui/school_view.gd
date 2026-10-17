@@ -27,15 +27,14 @@ func _build() -> void:
 	var u := SchoolUI.ui()
 	var stage := ss.stage_of(Game.date)
 	add_child(UIKit.label(str(u.page_head), "HeadingLabel"))
-	add_child(UIKit.wrapped(str(u.stage_line).format({"stage": str(stage.name), "town": Game.athlete.hometown}), "MutedLabel"))
+	add_child(UIKit.wrapped(str(u.stage_line).format({"stage": str(stage.name), "town": ss.town()}), "MutedLabel"))
 	add_child(UIKit.wrapped(str(u.page_note), "MutedLabel"))
-	if not bool(stage.get("subjects", false)):
-		add_child(UIKit.panel(UIKit.wrapped(str(u.secondary_note), ""), 14))
 	var left := UIKit.vbox(12)
 	var right := UIKit.vbox(12)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(_week(ss))
+	left.add_child(SchoolApplyView.new())   # the joint application in grade 9, the school you go to after it (S3a)
 	left.add_child(SchoolUI.settings_panel())
 	if bool(stage.get("subjects", false)):
 		left.add_child(_focus(ss))
@@ -67,12 +66,12 @@ func _week(ss: SchoolSystem) -> Control:
 		var list := []
 		for t in tests:
 			list.append("%s %s" % [ss.subject_name(str(t.subject)), Training.DAY_NAMES[int(t.day)]])
-		box.add_child(UIKit.wrapped(str(u.week_tests).format({"n": tests.size(), "list": ", ".join(list)}), ""))
+		box.add_child(UIKit.wrapped(str(u.week_test_one if tests.size() == 1 else u.week_tests).format({"n": tests.size(), "list": ", ".join(list)}), ""))
 		if bool(w.busy):
 			box.add_child(UIKit.wrapped(str(u.week_busy), ""))
 	if str(w.choice) != "":
 		box.add_child(UIKit.wrapped(str(u.week_chose).format({"option": str(SchoolSystem.option_of(str(w.choice)).get("label", "")).to_lower()}), "MutedLabel"))
-	var y := SchoolCalendar.year_for(Game.athlete.hometown, SchoolCalendar.year_of(Game.date))
+	var y := SchoolCalendar.year_for(ss.town(), SchoolCalendar.year_of(Game.date))
 	var next: Dictionary = y.christmas_card
 	if Calendar.date_key(next) < Calendar.date_key(Game.date):
 		next = y.end
@@ -214,7 +213,7 @@ func _cards(ss: SchoolSystem) -> Control:
 	box.add_child(UIKit.label(str(u.cards_head), "CaptionLabel"))
 	var cards := ss.report_cards()
 	if cards.is_empty():
-		var y := SchoolCalendar.year_for(Game.athlete.hometown, SchoolCalendar.year_of(Game.date))
+		var y := SchoolCalendar.year_for(ss.town(), SchoolCalendar.year_of(Game.date))
 		box.add_child(UIKit.wrapped(str(u.cards_none).format({"date": Calendar.format_day(y.christmas_card)}), ""))
 	for i in range(cards.size() - 1, -1, -1):
 		box.add_child(_card_row(ss, cards, i))

@@ -20,7 +20,8 @@
   "club": {"reputation": "local", "kind": "club", "spots": [1, 4], "min_level": [0, 0], "group": [4, 9], "age": [27, 66]},
   "regional": {"reputation": "regional", "kind": "personal", "average": [11.0, 1.2, 9.0, 13.5], "cost": [30, 60], "spots": [0, 3], "min_level": [8, 11], "group": [3, 8], "age": [30, 66]},
   "national": {"reputation": "national", "kind": "personal", "average": [12.3, 1.1, 10.5, 15.0], "cost": [50, 90], "spots": [0, 2], "min_level": [10, 13], "group": [3, 7], "age": [32, 66]},
-  "remote": {"reputation": "national", "kind": "remote", "average": [12.0, 1.2, 10.0, 14.5], "cost": [35, 70], "spots": [1, 4], "min_level": [8, 12], "group": [4, 10], "age": [30, 62]}
+  "remote": {"reputation": "national", "kind": "remote", "average": [12.0, 1.2, 10.0, 14.5], "cost": [35, 70], "spots": [1, 4], "min_level": [8, 12], "group": [4, 10], "age": [30, 62]},
+  "academy": {"reputation": "regional", "kind": "academy", "average": [11.5, 1.2, 9.5, 14.0], "cost": [0, 0], "spots": [3, 8], "min_level": [0, 0], "group": [6, 12], "age": [30, 60]}
  },
  "parent": {
   "_note": "A parent as coach: only with the creation answer 'A parent competed in athletics' (family athletics_parent). Free, open, a strong fit (data/coaching.json fit.kind_bonus) and some family friction (data/mind.json drift.stress.parent_coach). The parent's last name is the athlete's.",

@@ -137,6 +137,66 @@ func _add(c: Dictionary) -> void:
 	_cs().coaches[str(c.id)] = c
 
 
+## The athlete has moved to a new town (session S3a): the coaches of the new town and region join the market (the old ones stay,
+## now far away). Own dice from the name and the town.
+func refresh_for_move() -> void:
+	if not made or Game.athlete == null:
+		return
+	var a := Game.athlete
+	var p: Dictionary = cfg().pool
+	var home := CoachSystem.home_town(a)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("move|%s|%s" % [a.full_name(), home]).hash()
+	var size := Data.town_size(home)
+	var town := Data.get_town(home)
+	var n := _roll(rng, p.own_club.get(size, [1, 1])) + (_roll(rng, p.centre_extra) if town.get("centre") != null else 0)
+	for i in maxi(n, 0):
+		_add(_make(rng, "club", "town", home, _club_in(rng, home)))
+	var region := {}
+	for t in Data.towns.towns:
+		if str(t.maakunta) == str(town.get("maakunta", "")) and str(t.name) != home:
+			region[str(t.name)] = float(t.population)
+	if not region.is_empty():
+		for i in _roll(rng, p.region):
+			var t := CoachSystem._weighted(rng, region)
+			_add(_make(rng, "regional", "region", t, _club_in(rng, t)))
+
+
+## The morning-practice coach of a sports lukio: a fictional coach of the school (tier academy), only visible while the athlete
+## goes to that school. Own dice from the school and the name.
+func add_academy_coach(school: Dictionary) -> Dictionary:
+	ensure_pool()
+	for x in _cs().coaches.values():
+		if str(x.get("market", {}).get("school", "")) == str(school.id):
+			return x
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("academy|%s|%s" % [str(school.id), Game.athlete.full_name()]).hash()
+	var c := _make(rng, "academy", "academy", str(school.town), "")
+	c.market.school = str(school.id)
+	_add(c)
+	return c
+
+
+## His message to the athlete in the first week at the school (the place is kept like any offer).
+func post_academy_offer(c: Dictionary, school: Dictionary) -> void:
+	var o: Dictionary = cfg().offers
+	var cid := str(c.id)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("academy_offer|%s" % cid).hash()
+	offers[cid] = {"until": today_no() + int(o.valid_days), "why": "better", "promise": promise_of(c, rng)}
+	last_offer[cid] = today_no()
+	var ms := Game.get_system("moments") as StoryletSystem
+	if ms == null or not enabled:
+		return
+	var a: Dictionary = Data.application.academy
+	var fill := {"school": str(school.name)}
+	var replies := []
+	for r in cfg().lines.offer_replies:
+		replies.append({"id": r.id, "label": r.label, "hint": r.hint})
+	ms.post_custom("market", "offer:" + cid, str(a.offer).format(fill), replies, false,
+			{"from": ms.market_person(c), "thread": "coaches", "expires_days": int(o.valid_days), "title": str(a.title).format(fill)})
+
+
 static func _roll(rng: RandomNumberGenerator, r: Array) -> int:
 	return rng.randi_range(int(r[0]), int(r[1]))
 
@@ -329,6 +389,10 @@ func visible(c: Dictionary) -> bool:
 		"region":
 			return age() >= int(ages.region) or "region" in opened
 		"academy":
+			var school_id := str(c.get("market", {}).get("school", ""))
+			if school_id != "":   # the morning-practice coach of the athlete's own sports lukio (session S3a)
+				var ss := SchoolSystem.sys()
+				return age() >= int(ages.academy) and ss != null and ss.current_school_id() == school_id
 			return age() >= int(ages.academy) and _centre_of_town() == _centre_of_coach(c)
 		"national":
 			return age() >= int(ages.real_personal if real else ages.national) or "national" in opened

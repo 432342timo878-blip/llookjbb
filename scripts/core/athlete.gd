@@ -12,6 +12,7 @@ var gender := "male"            # "male" | "female"
 var birth_date := {}            # {"year", "month", "day"}
 var hometown := ""
 var club_id := ""
+var training_town := ""         # where they live and train after moving to a school (S3a); "" = the club's town / hometown, as before
 var main_event := ""            # event id, e.g. "800m"
 var coach_id := ""              # the head coach: a coach record of CoachSystem (GDD 4.9.1); "" = not made yet (older saves)
 var temperament := ""           # from the creation answer "Before an important race..." (data/coaching.json temperaments); "" = not known
@@ -55,7 +56,7 @@ func age_on(date: Dictionary) -> int:
 
 
 func to_dict() -> Dictionary:
-	return {
+	var out := {
 		"first_name": first_name, "last_name": last_name, "gender": gender,
 		"birth_date": birth_date, "hometown": hometown, "club_id": club_id,
 		"main_event": main_event, "coach_id": coach_id, "temperament": temperament, "family": family, "height_cm": height_cm, "weight_kg": weight_kg,
@@ -63,6 +64,9 @@ func to_dict() -> Dictionary:
 		"experience": experience, "weeks_trained": weeks_trained, "attributes": attributes, "personal_bests": personal_bests,
 		"fatigue": fatigue, "recent_change": recent_change, "results": results,
 	}
+	if training_town != "":   # (S3a: only a career that has moved has the key)
+		out["training_town"] = training_town
+	return out
 
 
 ## -1, 0 or +1: which way the attribute has been moving lately (shown as an arrow).
