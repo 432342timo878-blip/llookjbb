@@ -6,7 +6,8 @@ extends VBoxContainer
 ## button. Newest exchange first, and what waits for an answer on top, so nothing needs scrolling down to be found.
 ## A thread is marked read when it is opened (the dot goes). Answers go through StoryletSystem.answer, which also answers
 ## the stop event of a moment. Every control is at least 44 px; nothing needs hovering.
-## `page`: "" = the list (phone) / the coach thread (PC), a thread id, or "profile".
+## `page`: "" = the list (phone) / the coach thread (PC), a thread id, "profile" (the head coach), "market" (Find a coach,
+## session C6) or "coach:<id>" (another coach's page).
 
 signal page_changed(page: String)
 signal changed   # something was answered or read: the hub redraws its marks and the stop panel
@@ -66,8 +67,38 @@ func _list(with_selection: bool) -> Control:
 		col.add_child(UIKit.wrapped(PeopleUI.ui("list_note")))
 	var current := page if page != "" else "coach"
 	for t in StoryletSystem.thread_ids():   # (a thread opened beside the list is marked; stacked pages have no selection)
+		if t == "coaches" and not CoachMarket.enabled and _ms.thread("coaches").is_empty():
+			continue   # (the coach market is off: tools)
 		col.add_child(_thread_row(str(t), with_selection and (current == t or (current == "profile" and t == "coach"))))
+	if CoachMarket.enabled:   # Find a coach (session C6)
+		col.add_child(_find_row(with_selection and (current == "market" or current.begins_with("coach:"))))
 	return col
+
+
+## The row that opens Find a coach.
+func _find_row(selected: bool) -> Control:
+	var ui: Dictionary = Data.market.ui
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", ThemeBuilder.card_box(selected))
+	card.custom_minimum_size.y = 64
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 10)
+	var col := UIKit.vbox(2)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for l in [[str(ui.find_button), "SubheadingLabel"], [str(ui.find_sub), "MutedLabel"]]:
+		var lab := UIKit.wrapped(str(l[0]), str(l[1]))
+		lab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(lab)
+	margin.add_child(col)
+	card.add_child(margin)
+	var button := Button.new()
+	button.theme_type_variation = "CardOverlay"
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(_go.bind("market"))
+	card.add_child(button)
+	return card
 
 
 func _thread_row(thread_id: String, selected: bool) -> Control:
@@ -129,17 +160,37 @@ func _waiting(thread_id: String) -> Array:
 
 func _page(shown: String) -> Control:
 	if shown == "profile":
-		return _profile()
+		return _profile("")
+	if shown == "market":
+		return _market()
+	if shown.begins_with("coach:"):
+		return _profile(shown.trim_prefix("coach:"))
 	return _thread(shown)
 
 
-func _profile() -> Control:
+## A coach's page: the head coach's (`coach_id` "") or another coach's from Find a coach (session C6).
+func _profile(coach_id: String) -> Control:
+	var col := UIKit.vbox(12)
+	if Layout.stacked() and coach_id == "":
+		col.add_child(_back_button())
+	var profile := CoachProfile.new(coach_id)
+	profile.messages_requested.connect(_go.bind("coach"))
+	profile.back_requested.connect(_go.bind("market"))
+	profile.changed.connect(func(): changed.emit())
+	col.add_child(profile)
+	return col
+
+
+## Find a coach (session C6).
+func _market() -> Control:
 	var col := UIKit.vbox(12)
 	if Layout.stacked():
 		col.add_child(_back_button())
-	var profile := CoachProfile.new()
-	profile.messages_requested.connect(_go.bind("coach"))
-	col.add_child(profile)
+	var view := CoachMarketView.new()
+	view.coach_requested.connect(func(cid: String):
+		_go("profile" if cid == Game.athlete.coach_id else "coach:" + cid))
+	view.changed.connect(func(): changed.emit())
+	col.add_child(view)
 	return col
 
 

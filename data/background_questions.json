@@ -179,36 +179,42 @@
     {
      "text": "A parent competed in athletics",
      "detail": "You grew up at the track, and everyone expects a lot of you.",
+     "family": "athletics_parent",
      "experience": 2,
      "effects": {"professionalism": 1.5, "race_tactics": 0.5, "running_technique": 0.5, "composure": -1, "potential": 0.5}
     },
     {
      "text": "A parent was a top athlete in another sport",
      "detail": "Good genes and high standards at home.",
+     "family": "top_parent",
      "experience": 1,
      "effects": {"professionalism": 1, "competitiveness": 1, "composure": -0.5, "potential": 0.5}
     },
     {
      "text": "An older sibling runs",
      "detail": "You've chased them around the track for years, and you hate losing.",
+     "family": "sibling",
      "experience": 1,
      "effects": {"competitiveness": 1.5, "race_tactics": 0.5, "composure": -0.5}
     },
     {
      "text": "Sporty family, recreational level",
      "detail": "Weekends were always active.",
+     "family": "sporty",
      "experience": 1,
      "effects": {"determination": 0.5, "durability": 0.5, "professionalism": 0.5}
     },
     {
      "text": "Not sporty at all",
      "detail": "You found the sport on your own.",
+     "family": "not_sporty",
      "experience": 0,
      "effects": {"determination": 1.5, "ambition": 2}
     },
     {
      "text": "They think sport is a waste of time",
      "detail": "You'll have to prove them wrong.",
+     "family": "against",
      "experience": 0,
      "effects": {"determination": 2, "professionalism": -1, "composure": -0.5, "ambition": 2.5}
     }

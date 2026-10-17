@@ -75,6 +75,8 @@ static func _apply_answer(a: Athlete, answer: Dictionary) -> void:
 		a.training_base = answer.training_base
 	if answer.has("temperament"):
 		a.temperament = answer.temperament
+	if answer.has("family"):
+		a.family = answer.family
 
 
 # --- The points pool ------------------------------------------------------------------------------

@@ -467,6 +467,9 @@ func pulls(mood: String, week = null) -> Array:
 				out.append({"text": str(pt.injured), "delta": float(d.injured)})
 			if cs != null and CoachSystem.model_enabled and cs.trust_level() == "strained":
 				out.append({"text": str(pt.strained).format(fill), "delta": float(d.strained)})
+			# A parent as the coach (session C6): some family friction (GDD 4.9.1).
+			if cs != null and CoachSystem.model_enabled and str(cs.head().get("kind", "")) == "parent":
+				out.append({"text": str(pt.parent_coach), "delta": float(d.parent_coach)})
 			if health != null and HealthSystem.model_enabled and week != null:
 				var pct := health.load_vs_normal(week)
 				if pct > int(d.load.from):

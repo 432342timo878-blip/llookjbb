@@ -69,7 +69,8 @@ func relation() -> Dictionary:
 	return relations.get(Game.athlete.coach_id, {})
 
 
-## The head coach's attribute (1-20); 10 when the model is off or there is no coach.
+## The head coach's attribute (1-20); 10 when the model is off or there is no coach. A coach in another town loses some of
+## what he must see (session C6: data/market.json distance; a club coach in the club's own town loses nothing).
 func attr(attr_id: String) -> float:
 	var neutral := float(Data.coaching.neutral)
 	if not model_enabled:
@@ -77,7 +78,44 @@ func attr(attr_id: String) -> float:
 	var c := head()
 	if c.is_empty():
 		return neutral
-	return float(c.attributes.get(attr_id, neutral))
+	var v := float(c.attributes.get(attr_id, neutral))
+	var pen := float(Data.market.distance[distance_of(c, Game.athlete)].penalty.get(attr_id, 0.0))
+	return maxf(1.0, v - pen) if pen != 0.0 else v
+
+
+## How far coach `c` is from athlete `a` (session C6): "same" (the club's town, or a parent), "region" (the same maakunta)
+## or "far" (anywhere else, an unknown town, or a remote coach).
+static func distance_of(c: Dictionary, a: Athlete) -> String:
+	if c.is_empty() or a == null:
+		return "same"
+	var kind := str(c.get("kind", ""))
+	if kind == "parent":
+		return "same"
+	if kind == "remote":
+		return "far"
+	var town := str(c.get("facts", {}).get("town", ""))
+	var home := home_town(a)
+	if town == home:
+		return "same"
+	var t1 := Data.get_town(town)
+	var t2 := Data.get_town(home)
+	if not t1.is_empty() and not t2.is_empty() and str(t1.maakunta) == str(t2.maakunta):
+		return "region"
+	return "far"
+
+
+## The town the athlete trains in: their club's home town (else their hometown).
+static func home_town(a: Athlete) -> String:
+	if a == null:
+		return ""
+	var club := Data.get_club(a.club_id)
+	return str(club.get("city", a.hometown))
+
+
+## He / him / his for a coach record (data/coaching.json pronouns; "unknown" = they / them / their, never a guess from a name).
+static func pronoun(c: Dictionary, key: String) -> String:
+	var p: Dictionary = Data.coaching.pronouns
+	return str(p.get(str(c.get("gender", "unknown")), p.unknown).get(key, key))
 
 
 # --- Effects (all exactly neutral at 10) ------------------------------------------------------
@@ -98,13 +136,16 @@ func training_effect() -> Dictionary:
 
 
 ## How often his shout on a race card is the sensible answer; -1 = the default (races.json controls.coach.accuracy,
-## which is also exactly what a race reading of 10 gives).
-func race_accuracy() -> float:
+## which is also exactly what a race reading of 10 gives). `meet` = the race's meet: a coach from another town who does not
+## come to it follows it from afar (session C6: data/market.json distance.<d>.race_reading off his race reading).
+func race_accuracy(meet := {}) -> float:
 	if not model_enabled or head().is_empty():
 		return -1.0
 	var r: Dictionary = Data.coaching.effects.race_advice
 	var base := float(Data.races.controls.coach.accuracy)
 	var rr := attr(str(r.attribute))
+	if not meet.is_empty() and not attends(meet):
+		rr = maxf(1.0, rr - float(Data.market.distance[distance_of(head(), Game.athlete)].race_reading))
 	# The race-reading tactician is the most accurate (data/advice.json race.shouts.accuracy_bonus, session C5).
 	var bonus := float(Data.advice.race.shouts.accuracy_bonus.get(str(head().get("voice", "")), 0.0))
 	if rr == float(Data.coaching.neutral) and bonus == 0.0:
@@ -112,12 +153,24 @@ func race_accuracy() -> float:
 	return clampf(base + (rr - float(Data.coaching.neutral)) * float(r.per_point) + bonus, float(r.min), float(r.max))
 
 
+## Does the head coach come to this meet? Always when he trains in the athlete's town; from another town only to the levels
+## of data/market.json distance.attends and to the season's targets.
+func attends(meet: Dictionary) -> bool:
+	if distance_of(head(), Game.athlete) == "same":
+		return true
+	if str(meet.get("level", "")) in Data.market.distance.attends:
+		return true
+	if Game.season != null and Game.season.mode == SeasonPlan.PHASES:
+		return str(meet.get("key", "")) in Game.season.targets(Game.season.plan_year(meet.date))
+	return false
+
+
 ## The race-advice accuracy for a race of athlete `a` (RaceDay): the career's coach for the career's athlete, else -1.
-static func race_accuracy_for(a: Athlete) -> float:
+static func race_accuracy_for(a: Athlete, meet := {}) -> float:
 	if a == null or a != Game.athlete:
 		return -1.0
 	var cs := Game.get_system("coach") as CoachSystem
-	return cs.race_accuracy() if cs else -1.0
+	return cs.race_accuracy(meet) if cs else -1.0
 
 
 ## 1 + (attribute - 10) x per_point: the general form of every coach effect.
@@ -150,6 +203,7 @@ static func fit_score(temperament: String, c: Dictionary) -> float:
 	var style := int(c.style)
 	if style > 0 or not temperament in f.no_controlling_penalty:
 		score += style * float(f.style_weight)
+	score += float(f.get("kind_bonus", {}).get(str(c.get("kind", "")), 0.0))   # a parent as the coach (C6)
 	return score
 
 
@@ -234,7 +288,7 @@ static func make_club_coach(a: Athlete, date: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	var b := a.birth_date
 	rng.seed = ("club coach|%s|%d-%d-%d" % [a.full_name(), int(b.get("year", 0)), int(b.get("month", 0)), int(b.get("day", 0))]).hash()
-	var average := clampf(rng.randfn(float(cfg.average_mean), float(cfg.average_sd)), float(cfg.average_min), float(cfg.average_max))
+	var average := clampf(rng.randfn(float(cfg.average_mean) + town_shift(home_town(a)), float(cfg.average_sd)), float(cfg.average_min), float(cfg.average_max))
 	var focus := _weighted(rng, _weights(cfg.event_focus))
 	var lean_f: Dictionary = cfg.event_focus[focus].lean
 	var lean_p: Dictionary = p.get("lean", {})
@@ -269,22 +323,41 @@ static func make_club_coach(a: Athlete, date: Dictionary) -> Dictionary:
 	}
 
 
-## The training group that comes with the coach: fictional teammates of about the athlete's age.
-static func _make_group(a: Athlete, rng: RandomNumberGenerator) -> Array:
-	var g: Dictionary = Data.coaching.club.group
+## How a town moves its club coaches' average level (session C6, user: a moderate shift): data/coaching.json club.town_shift
+## by the size class of the town (data/towns.json), plus `centre` in one of SUL's athletics-centre towns.
+static func town_shift(town: String) -> float:
+	var shift: Dictionary = Data.coaching.club.get("town_shift", {})
+	var out := float(shift.get(Data.town_size(town), 0.0))
+	if Data.get_town(town).get("centre") != null:
+		out += float(shift.get("centre", 0.0))
+	return out
+
+
+## The athlete's level on the training group's scale: the mean of their physical and technical attributes.
+static func athlete_level(a: Athlete) -> float:
 	var level := 0.0
 	var n := 0
 	for category in ["physical", "technical"]:
 		for at in Data.attributes_in(category):
 			level += a.get_attr(at.id)
 			n += 1
-	level /= maxi(n, 1)
+	return level / maxi(n, 1)
+
+
+## The training group that comes with the coach: fictional teammates of about the athlete's age. `size` [min, max] and
+## `level` (the group's centre on the attribute scale) default to the club group around the athlete's own level.
+static func _make_group(a: Athlete, rng: RandomNumberGenerator, size := [], level := -1.0) -> Array:
+	var g: Dictionary = Data.coaching.club.group
+	if level < 0.0:
+		level = athlete_level(a)
+	if size.is_empty():
+		size = g.size
 	var role_weights := {}
 	for r in g.roles:
 		role_weights[r] = float(g.roles[r].weight)
 	var used := {a.full_name(): true}
 	var out := []
-	for i in rng.randi_range(int(g.size[0]), int(g.size[1])):
+	for i in rng.randi_range(int(size[0]), int(size[1])):
 		var role := _weighted(rng, role_weights)
 		if float(g.roles[role].weight) <= 1.0:
 			role_weights.erase(role)   # (the veteran, the newcomer and the leader: one each)

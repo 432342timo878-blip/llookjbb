@@ -28,6 +28,9 @@ var standards: Dictionary = {}         # data/standards.json: the real 800 m lim
 var goals: Dictionary = {}             # data/goals.json: the coach's season goals (levels, the estimate, process goals, texts; session C5)
 var advice: Dictionary = {}            # data/advice.json: the coach's race advice by personality and his "Coach suggests" meets / targets (session C5)
 var mind: Dictionary = {}              # data/mind.json: the moods confidence / motivation / stress, mental growth, the mental plan (GDD 4.9.4, session M1)
+var market: Dictionary = {}            # data/market.json: the coach market (who you can get, scouting, distance, budget, the coaches' messages; session C6)
+var towns: Dictionary = {}             # data/towns.json: the towns (population, region, SUL centre, winter-break group; session D1)
+var urheilulukiot: Dictionary = {}     # data/urheilulukiot.json: sports schools and SUL's athletics centres (session D1)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -65,6 +68,9 @@ func _ready() -> void:
 	goals = _load("res://data/goals.json")
 	advice = _load("res://data/advice.json")
 	mind = _load("res://data/mind.json")
+	market = _load("res://data/market.json")
+	towns = _load("res://data/towns.json")
+	urheilulukiot = _load("res://data/urheilulukiot.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()
@@ -88,6 +94,26 @@ func get_event(id: String) -> Dictionary:
 
 func get_club(id: String) -> Dictionary:
 	return _find(clubs, id)
+
+
+## A town of data/towns.json by name, or {}.
+func get_town(town_name: String) -> Dictionary:
+	for t in towns.get("towns", []):
+		if str(t.name) == town_name:
+			return t
+	return {}
+
+
+## The size class id of a town (data/towns.json size_classes by population; "town" when it is not in the file).
+func town_size(town_name: String) -> String:
+	var t := get_town(town_name)
+	if t.is_empty():
+		return "town"
+	var out := "town"
+	for c in towns.size_classes:
+		if int(t.population) >= int(c.min_population):
+			out = str(c.id)
+	return out
 
 
 func get_session(id: String) -> Dictionary:

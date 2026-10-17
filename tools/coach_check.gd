@@ -85,7 +85,7 @@ func _data_checks() -> void:
 	_ok("training groups name coach attributes and athlete attributes", groups_ok)
 	_ok("race advice reads a coach attribute", str(cg.effects.race_advice.attribute) in ids)
 	var voices_ok := true
-	for v in data.coaches.pool:
+	for v in data.coaches.coaches.keys():   # (the 4 club voices of `pool` and the 4 of the market, session C6)
 		var lean: Dictionary = cg.personalities.get(v, {}).get("lean", {})
 		voices_ok = voices_ok and cg.personalities.has(v) and str(data.coaches.coaches[v].get("gender", "")) in ["male", "female"]
 		for k in lean:
@@ -102,7 +102,7 @@ func _data_checks() -> void:
 	for t in cg.fit.matrix:
 		fit_ok = fit_ok and t in temps
 		for p in cg.fit.matrix[t]:
-			fit_ok = fit_ok and p in data.coaches.pool
+			fit_ok = fit_ok and data.coaches.coaches.has(p)
 	_ok("fit matrix uses known temperaments and voices", fit_ok)
 	_ok("trust has a target for every fit and every word",
 			["click", "fine", "friction"].all(func(k): return cg.trust.target.has(k))
@@ -201,8 +201,11 @@ func _generator(n: int) -> void:
 	_ok("strong somewhere and weak somewhere: best - worst >= 3 (%d flat coaches)" % flat, flat * 50 <= n)
 	_ok("the coach is the person (and voice) the athlete's name picked before C1 (%d wrong)" % wrong_voice, wrong_voice == 0)
 	_ok("training groups: %d-%d teammates, unique names, known roles, about the athlete's age (%d bad)" % [cfg.group.size[0], cfg.group.size[1], group_bad], group_bad == 0)
-	_ok("averages centre on 10 (mean %.2f, sd %.2f) and stay within about 7-13 (%.1f-%.1f)" % [mean, sd, avgs.min(), avgs.max()],
-			absf(mean - 10.0) < 0.3 and sd > 0.8 and avgs.min() >= 6.5 and avgs.max() <= 13.5)
+	# (Session C6: the town moves the centre, data/coaching.json club.town_shift; these athletes live in Tampere, a large
+	# city and an athletics centre: +1.0, and the 13 cap pulls the mean back a little.)
+	var shift: float = C.town_shift("Tampere")
+	_ok("averages centre on 10 + the town's shift %.1f (mean %.2f, sd %.2f) and stay within about 7-13 (%.1f-%.1f)" % [shift, mean, sd, avgs.min(), avgs.max()],
+			absf(mean - (10.0 + shift)) < 0.3 and sd > 0.8 and avgs.min() >= 6.5 and avgs.max() <= 13.5)
 	print("    averages: " + _histogram(avgs))
 	for key in counts:
 		print("    %s: %s" % [key, _shares(counts[key], n)])

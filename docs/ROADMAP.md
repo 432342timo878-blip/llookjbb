@@ -376,9 +376,15 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         Left for later: **the adult-level research session** (many more real senior coaches), the federation's 0–5 scale for
         athletics (needed by S3), the unverified items listed in the files' `not_verified`, re-reading every real coach's page
         before release.
-  - [ ] **C6. Coach market:** availability (town size, remote, parent, coaches choose, spots), scouting ranges and how they narrow,
-        the profile page, Find a coach, changing coach (moments), the family budget. *(Opus, high)*
+  - [x] **C6. Coach market** *(done 2026-10-17, GDD 4.9 "Built (step C6)"; user: town size moves the club coach a moderate
+        step, the market grows with age (TF-juniorit opens it early), 4 new coach personalities, real coaches the same chain with
+        neutral words, the tighter family budget, missing fees estimated by reputation, distance in three steps, ending after
+        6 + 4 + 4 Strained weeks)*: availability (town size, remote, parent, coaches choose, spots), scouting ranges and how they
+        narrow, the profile page, Find a coach, changing coach (moments), the family budget. `CoachMarket`, `data/market.json`,
+        `tools/market_check.gd` (in `run_all_checks`). *(Opus, high)*
         Check: a 14-year-old in a small town sees 1–3 coaches, in a centre town more; ranges narrow as designed; tour + layout check.
+        Left for later: moving town (S3), camp coaches as people (G3), money (M4: a national real coach is over every budget until
+        then), family reactions to a change (P1).
   - [ ] **S1. School model (headless):** `SchoolSystem`, real subjects with aptitudes, grades, study effort / free time, focus
         subjects, life load (neutral at Normal / Normal), tests and exam weeks, report cards, stress feed. *(Opus, high)*
         Check: fingerprints identical at Normal / Normal in a normal week; grade drift per setting as in GDD 4.9.7.

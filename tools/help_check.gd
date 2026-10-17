@@ -103,6 +103,22 @@ func _run() -> void:
 		hub._show(v[0])
 		await _frames(3)
 		await _press_help(hub, "hub " + v[0], v[1], true)
+	# Find a coach and another coach's page (session C6): the header "?" opens the market's help.
+	hub._people_page = "market"
+	hub._show("people")
+	await _frames(3)
+	await _press_help(hub, "hub find a coach", "market", true)
+	var mk = game.get_system("market")
+	var other := ""
+	for c in mk.coaches():
+		if str(c.id) != game.athlete.coach_id and mk.visible(c):
+			other = str(c.id)
+	if other != "":
+		hub._people_page = "coach:" + other
+		hub._show("people")
+		await _frames(3)
+		await _press_help(hub, "hub a coach's page", "market", true)
+	hub._people_page = ""
 	hub._phase_open = "spring_base"
 	hub._show("training")
 	await _frames(3)

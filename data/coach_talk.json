@@ -109,21 +109,22 @@
 		"range_pad": 2,
 		"kinds": {"club": "Club coach", "parent": "Parent", "remote": "Remote coach", "academy": "Academy coach", "personal": "Personal coach"},
 		"together": "Together {weeks} weeks",
-		"range_note": "You have worked with him for {weeks} weeks, so these are estimates. After {need} weeks you know him well.",
-		"exact_note": "After {weeks} weeks together you know him well.",
-		"group_head": "HIS TRAINING GROUP",
+		"range_note": "You have worked together for {weeks} weeks, so these are estimates. After {need} weeks you know the coach well.",
+		"exact_note": "After {weeks} weeks together you know the coach well.",
+		"group_head": "TRAINING GROUP",
 		"group_line": "age {age} · {event} · {role}",
-		"attributes_head": "WHAT HE IS GOOD AT",
+		"attributes_head": "SKILLS",
 		"character_head": "CHARACTER",
-		"facts_head": "ABOUT HIM",
+		"facts_head": "ABOUT",
 		"explain": {
-			"style": "How he leads. A supportive coach asks and encourages; a controlling one tells you what to do. Neither is wrong, but some athletes need the one more than the other.",
-			"demands": "Which of the coach's three season plans he leans towards: Steady plays it safe, Ambitious wants more.",
-			"fit": "How your temperament and his character go together. It shows after four weeks. You click, it is fine, or there is some friction. It moves how much you trust him.",
-			"trust": "How much you trust each other. It grows when you listen to him and do well, and falls when you ignore him. A strong bond makes him explain more."
+			"style": "How the coach leads. A supportive coach asks and encourages; a controlling one tells you what to do. Neither is wrong, but some athletes need the one more than the other.",
+			"demands": "Which of the three season plans the coach leans towards: Steady plays it safe, Ambitious wants more.",
+			"fit": "How your temperament and the coach's character go together. It shows after four weeks together. You click, it is fine, or there is some friction. It moves how much you trust each other.",
+			"trust": "How much you trust each other. It grows when you listen to the coach and do well, and falls when you ignore the advice. A strong bond means more explaining."
 		},
 		"labels": {"club": "Club", "town": "Town", "qualification": "Qualification", "focus": "Event focus", "age": "Age",
-				"together": "Together", "style": "Style", "demands": "Leans to", "fit": "Fit with you", "trust": "Trust"}
+				"together": "Together", "style": "Style", "demands": "Leans to", "fit": "Fit with you", "trust": "Trust",
+					"reputation": "Reputation", "cost": "Cost"}
 	},
 	"voices": {
 		"calm": {
@@ -253,6 +254,134 @@
 				"bad": "We will find the mistake. Not tonight; rest first.",
 				"hurt": "No conclusions from this one. Recover, then we continue."
 			}
+		},
+		"analyst": {
+			"open": ["Sunday, {name}. Here's the week in numbers.", "Week summary, {name}. I've run the figures."],
+			"open_short": ["Sunday. The figures."],
+			"comment": {
+				"injured": "The injury resets the curve. We follow the limits and measure the way back.",
+				"exhausted": "Fatigue went past the line I set. That is a red flag.",
+				"tired": "Fatigue built up late in the week. Within the range I expected.",
+				"fresh": "Low fatigue. There is room in the numbers for more.",
+				"kept": "Every session done. Clean data.",
+				"missed": "Sessions missed, so the stimulus was below the plan.",
+				"none": "No training, no stimulus. The numbers start again from here.",
+				"sore": "Soreness logged. I'm watching the trend.",
+				"race_pb": "A personal best. A new baseline for every pace.",
+				"race_good": "A good race for your level. The splits were close to ideal.",
+				"race_bad": "Below the prediction. We'll find the variable that was off.",
+				"race_hurt": "A race like that gives no usable data. Recover first."
+			},
+			"focus_intro": ["The number to watch:"],
+			"close": ["The details are in the plan.", "Questions? Ask for the numbers."],
+			"day": {
+				"easy": "Easy keeps the heart rate low. That's the point.",
+				"hard": "A quality day. Hit the target splits, not faster.",
+				"rest": "Rest day. The adaptation happens now.",
+				"short_end": "Hit the splits."
+			},
+			"race": {
+				"pb": "New baseline. Recover tomorrow; I'll update the paces.",
+				"good": "Solid. I'll go through the splits tonight.",
+				"bad": "Not the numbers we wanted. Rest; we analyse later.",
+				"hurt": "No conclusions from this one. Recover first."
+			}
+		},
+		"mentor": {
+			"open": ["Sunday, {name}. Sit down a moment.", "Evening, {name}. Let's look back at the week."],
+			"open_short": ["Sunday. Briefly."],
+			"comment": {
+				"injured": "An injury is a long road made of short steps. We take them.",
+				"exhausted": "You were too tired. More is not always better.",
+				"tired": "Heavy legs. That's the work settling in.",
+				"fresh": "You're fresh. Good. Steady on.",
+				"kept": "Every session done. That's how it's built, week after week.",
+				"missed": "A few sessions missed. Don't chase them; just carry on.",
+				"none": "A week without running. We start again gently.",
+				"sore": "A little soreness. Listen to it; it's the body talking.",
+				"race_pb": "A best time. Years of patience show in days like that.",
+				"race_good": "A good, honest race.",
+				"race_bad": "Not your day. There will be others.",
+				"race_hurt": "Rest first. The rest can wait."
+			},
+			"focus_intro": ["This week, just this:"],
+			"close": ["Sleep well.", "See you at the track."],
+			"day": {
+				"easy": "Easy. Really easy.",
+				"hard": "A hard one. Steady and honest.",
+				"rest": "Rest. It's part of the work.",
+				"short_end": "Steady."
+			},
+			"race": {
+				"pb": "Good. Rest tomorrow.",
+				"good": "Well run. Eat and sleep.",
+				"bad": "Never mind. Sleep on it.",
+				"hurt": "Rest first. We talk when you're better."
+			}
+		},
+		"motivator": {
+			"open": ["Hey {name}! Sunday check-in, let's go!", "{name}! What a week. Let's talk about it!"],
+			"open_short": ["Hey {name}! Quick one!"],
+			"comment": {
+				"injured": "The injury is a setback, not the story. We come back stronger!",
+				"exhausted": "You gave so much you ran empty. Rest is training too!",
+				"tired": "Heavy legs mean you worked. Love it!",
+				"fresh": "You're fresh and buzzing. Let's use it!",
+				"kept": "Every single session! That's a champion's week!",
+				"missed": "A few missed, no drama. Next week we nail it!",
+				"none": "A week off. Recharged? Let's go again!",
+				"sore": "A bit sore. Tell me straight away if it grows!",
+				"race_pb": "A PERSONAL BEST! I'm still buzzing!",
+				"race_good": "A great race! You're on your way!",
+				"race_bad": "Not your day, and that's fine. The next one is yours!",
+				"race_hurt": "Rough one. Rest up, you'll bounce back!"
+			},
+			"focus_intro": ["This week we go for:"],
+			"close": ["Big week coming. You've got this!", "See you Monday, champion!"],
+			"day": {
+				"easy": "Easy day! Smile and enjoy it!",
+				"hard": "Big session today! Bring the energy!",
+				"rest": "Rest day! Recharge those batteries!",
+				"short_end": "You've got this!"
+			},
+			"race": {
+				"pb": "Celebrate tonight! You earned it!",
+				"good": "Great running! Enjoy it!",
+				"bad": "Head up! One race doesn't define you!",
+				"hurt": "Look after yourself first, champion."
+			}
+		},
+		"speed": {
+			"open": ["Sunday, {name}. Quick review.", "Right, {name}. Short and sharp, like the sessions."],
+			"open_short": ["Sunday. Quick one."],
+			"comment": {
+				"injured": "The injury comes first. Sharp work waits until it's healed.",
+				"exhausted": "Too tired to be sharp. Tired legs are slow legs.",
+				"tired": "Heavy legs late in the week. Keep the fast work fresh.",
+				"fresh": "Fresh legs. Good for quality.",
+				"kept": "Every session done. Sharp week.",
+				"missed": "Some sessions missed. Never skip the fast ones.",
+				"none": "A week off. The speed comes back quickly; the endurance less so.",
+				"sore": "Some soreness. Don't sprint on it.",
+				"race_pb": "A personal best. The speed is coming through.",
+				"race_good": "A good race. The finish was there.",
+				"race_bad": "Not sharp today. We fix the legs, not the head.",
+				"race_hurt": "After a race like that, rest. Speed can wait."
+			},
+			"focus_intro": ["The sharp point:"],
+			"close": ["Stay sharp.", "Fast feet, see you Monday."],
+			"day": {
+				"easy": "Easy, so the fast days stay fast.",
+				"hard": "Quality today. Every rep sharp.",
+				"rest": "Rest. Fresh legs are fast legs.",
+				"short_end": "Stay sharp."
+			},
+			"race": {
+				"pb": "Good. Rest the legs tomorrow.",
+				"good": "Sharp race. Eat, sleep.",
+				"bad": "Flat legs. We sharpen up.",
+				"hurt": "Rest first. Then we see."
+			}
 		}
 	},
 	"verdict": {
@@ -295,7 +424,11 @@
 			"calm": {"good": "Good thinking.", "fine": "That's fine.", "pointless": "I wouldn't bother.", "risky": "I'd rather you didn't."},
 			"drill": {"good": "Right. Do it.", "fine": "Fine.", "pointless": "Waste of a day.", "risky": "No."},
 			"warm": {"good": "Oh, I like that.", "fine": "That's okay with me.", "pointless": "Hmm, I'm not sure it helps you.", "risky": "Please don't, I'm worried about this."},
-			"tactician": {"good": "The numbers like it.", "fine": "Neutral.", "pointless": "No gain in it.", "risky": "Bad trade."}
+			"tactician": {"good": "The numbers like it.", "fine": "Neutral.", "pointless": "No gain in it.", "risky": "Bad trade."},
+			"analyst": {"good": "The data supports it.", "fine": "Within the range.", "pointless": "No measurable gain.", "risky": "The risk numbers say no."},
+			"mentor": {"good": "Yes. Good.", "fine": "Either way.", "pointless": "No need.", "risky": "No. Not now."},
+			"motivator": {"good": "Love it! Do it!", "fine": "Sure, why not!", "pointless": "Hmm, I'd save the energy.", "risky": "Whoa, no, that's too much!"},
+			"speed": {"good": "Sharp idea.", "fine": "Fine.", "pointless": "Doesn't make you faster.", "risky": "That'll cost your legs. No."}
 		},
 		"compare": {
 			"day_changed": "Your {day}: {cand} instead of the plan's {base}.",
@@ -326,7 +459,11 @@
 			"calm": "I've looked at your next days.",
 			"drill": "Change of plan.",
 			"warm": "I've been thinking about your week.",
-			"tactician": "I looked at the numbers for the coming days."
+			"tactician": "I looked at the numbers for the coming days.",
+			"analyst": "Your numbers for the coming days caught my eye.",
+			"mentor": "A small change.",
+			"motivator": "Hey! Quick tweak to your week!",
+			"speed": "One change, to keep you sharp."
 		},
 		"change_line": "{day}: {to} instead of {from}.",
 		"change_level": "{day}: {sessions} at {to} instead of {from}.",
@@ -361,7 +498,11 @@
 			"calm": {"accept": "Good. That's settled.", "veto": "Fair enough, your call.", "silent": "All right."},
 			"drill": {"accept": "Right. Done.", "veto": "Your call. Don't make me regret it.", "silent": "If you say so."},
 			"warm": {"accept": "Thank you! Look after yourself.", "veto": "Okay, you know your body. Tell me how it goes.", "silent": "Okay..."},
-			"tactician": {"accept": "Logged.", "veto": "Noted. We'll see what the data says.", "silent": "Noted."}
+			"tactician": {"accept": "Logged.", "veto": "Noted. We'll see what the data says.", "silent": "Noted."},
+			"analyst": {"accept": "Updated.", "veto": "Noted. I'll compare the outcome.", "silent": "Logged."},
+			"mentor": {"accept": "Good.", "veto": "Your call. Be sensible.", "silent": "Hm."},
+			"motivator": {"accept": "Great! Sorted!", "veto": "Okay! Tell me how it feels!", "silent": "Oh. Okay!"},
+			"speed": {"accept": "Good. Done.", "veto": "Your legs. Your call.", "silent": "Fine."}
 		},
 		"lines": {
 			"changed": "{day}: {to}",

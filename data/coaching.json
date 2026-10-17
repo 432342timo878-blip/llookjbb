@@ -37,6 +37,12 @@
   {"value": 2, "word": "Very supportive"}
  ],
  "demands": {"steady": "Steady: plays it safe", "balanced": "Balanced", "ambitious": "Ambitious: wants more"},
+ "pronouns": {
+  "_note": "Session C6: the words for a coach by `gender`; `unknown` (a real coach whose sources state none) = they / them / their, never a guess from a name. Texts that use them avoid a verb right after {he} (they 'are', he 'is').",
+  "male": {"he": "he", "him": "him", "his": "his"},
+  "female": {"he": "she", "him": "her", "his": "her"},
+  "unknown": {"he": "they", "him": "them", "his": "their"}
+ },
  "personalities": {
   "_note": "For each voice in coaches.json: lean = points added before the coach's own spread (then centred, so they only say where he is strong and weak), style / demands = weights of the draw.",
   "calm": {"lean": {"technique": 2, "communication": 1, "mental_coaching": 1, "load_management": 1, "motivating": -2, "race_reading": -1},
@@ -46,11 +52,21 @@
   "warm": {"lean": {"motivating": 3, "mental_coaching": 2, "youth_development": 2, "communication": 1, "periodization": -1, "race_reading": -2, "judging_ability": -2},
    "style": {"0": 1, "1": 3, "2": 3}, "demands": {"steady": 3, "balanced": 2}},
   "tactician": {"lean": {"race_reading": 3, "judging_ability": 2, "periodization": 1, "communication": 1, "motivating": -2, "youth_development": -1, "mental_coaching": -1},
-   "style": {"-1": 2, "0": 3, "1": 2}, "demands": {"steady": 1, "balanced": 3, "ambitious": 1}}
+   "style": {"-1": 2, "0": 3, "1": 2}, "demands": {"steady": 1, "balanced": 3, "ambitious": 1}},
+  "analyst": {"lean": {"judging_ability": 2, "periodization": 2, "endurance_knowledge": 1, "load_management": 1, "motivating": -2, "mental_coaching": -1, "communication": -1, "youth_development": -1},
+   "style": {"-1": 2, "0": 3, "1": 1}, "demands": {"steady": 1, "balanced": 3, "ambitious": 1}},
+  "mentor": {"lean": {"youth_development": 2, "endurance_knowledge": 2, "load_management": 1, "periodization": 1, "communication": -2, "race_reading": -1, "speed_strength_knowledge": -1, "mental_coaching": -1},
+   "style": {"-1": 2, "0": 3, "1": 2}, "demands": {"steady": 3, "balanced": 2}},
+  "motivator": {"lean": {"motivating": 3, "mental_coaching": 1, "communication": 1, "technique": -2, "periodization": -1, "judging_ability": -1, "load_management": -1},
+   "style": {"0": 2, "1": 3, "2": 1}, "demands": {"balanced": 2, "ambitious": 3}},
+  "speed": {"lean": {"speed_strength_knowledge": 3, "technique": 2, "endurance_knowledge": -2, "load_management": -1, "periodization": -1, "youth_development": -1},
+   "style": {"-1": 2, "0": 2, "1": 2}, "demands": {"balanced": 2, "ambitious": 2}}
  },
  "club": {
   "_note": "The club coach every career starts with (one of the four people of coaches.json, the one picked from the athlete's name as before). User 2026-10-11: club coaches really differ (a volunteer parent vs. an experienced club coach): his overall level (the average of his 11 attributes) is drawn around 10 between average_min and average_max; on top of it his personality's lean and his own spread (spread_sd) make him strong somewhere and weak somewhere. A typical (10) club coach plays exactly like the game before C1. The dice come from his own seed (the athlete's name and birth date), so a career always gets the same club coach. Town size and region (session D1) will move the average later (small clubs lower, the athletics centres higher).",
   "average_mean": 10.0, "average_sd": 1.6, "average_min": 7.0, "average_max": 13.0,
+  "town_shift_note": "Session C6 (user 2026-10-17, 'moderate shift'): the average is drawn around average_mean + town_shift[size class of the club's town in data/towns.json] (+ centre when the town is one of SUL's athletics centres); a town missing from towns.json counts as 'town' (0). Clamped to average_min..average_max as before.",
+  "town_shift": {"village": -1.0, "small": -0.5, "town": 0.0, "city": 0.3, "capital": 0.5, "centre": 0.5},
   "spread_sd": 2.0, "min": 3, "max": 18,
   "age": [27, 66],
   "kind": "club", "reputation": "local", "open": true,
@@ -96,13 +112,15 @@
  "fit": {
   "_note": "Fit = matrix[temperament][personality] (+1 click, -1 friction, missing 0) + style x style_weight (a supportive style helps everyone; a controlling one hurts all but the no_controlling_penalty temperaments). Score >= click -> 'You click', <= friction -> 'Friction', else 'Fine'. The word shows after reveal_weeks together. User OK 2026-10-11. It sets where trust drifts to (trust.target); motivation follows in session M1.",
   "matrix": {
-   "eager": {"drill": 1},
-   "fiery": {"drill": 1, "calm": -1},
-   "steady": {"calm": 1, "warm": 1},
-   "overthinker": {"calm": 1, "tactician": 1, "drill": -1},
-   "relaxed": {"drill": 1, "calm": -1},
-   "new": {"warm": 1, "drill": -1}
+   "eager": {"drill": 1, "motivator": 1},
+   "fiery": {"drill": 1, "motivator": 1, "calm": -1, "mentor": -1},
+   "steady": {"calm": 1, "warm": 1, "mentor": 1},
+   "overthinker": {"calm": 1, "tactician": 1, "analyst": 1, "drill": -1, "motivator": -1},
+   "relaxed": {"drill": 1, "motivator": 1, "calm": -1, "analyst": -1},
+   "new": {"warm": 1, "mentor": 1, "drill": -1}
   },
+  "kind_bonus_note": "Session C6: a parent as the coach (GDD 4.9.1: strong fit and motivation, some family friction; the friction is a stress pull in data/mind.json drift.stress.parent_coach).",
+  "kind_bonus": {"parent": 1.0},
   "style_weight": 0.25,
   "no_controlling_penalty": ["eager", "fiery"],
   "click": 0.75, "friction": -0.75,
@@ -148,7 +166,7 @@
   "modes": ["ask", "always", "never"],
   "default_mode": "ask"
  },
- "real_note": "Real coaches (session D1, 2026-10-17; user: about 12 now, as many as possible once the career reaches adult level). RULES: (1) facts come only from the public pages listed in `sources` (url + the date they were read, 2026-10-17); a fact that is not on those pages is not in the record (null / empty). (2) The athletes named are SENIOR athletes only (Team Finland huiput / haastajat or world level); youth athletes and anyone under 18 are never named, and no coach is described through a minor. (3) The attributes are OUR ESTIMATES (1-20) from the facts, never published ratings: the baseline for a tier is `real_baseline` (national 12, international 15); a documented fact lifts or lowers a single attribute and `basis` says which fact; `evidence` (high / medium / low) tells session C6 how wide the scouting range should be (low = only the role or one athlete is public). No attribute of a real coach is below 10. (4) Neutral professional voice: `personality` (the game voice) is chosen from the published coaching approach and is not a claim about character; `style` 0 and `demands` balanced for everyone (nothing public says otherwise); NEVER an invented personal storyline, quarrel or flaw - those exist only for fictional coaches. (5) `gender` only where a source states it; `unknown` = the game uses they / them (no guessing from a name). (6) `facts_estimated` lists the facts that are OUR guesses for the market (spots, min_level - on the scale of the training group's `level`: the average of the athlete's physical and technical attributes -, cost_month); `cost_note` quotes what is published. (7) Held back on purpose: coaches of a club where a news item of 2026-09-29 reports an unnamed coach under police investigation (nobody is identified; re-check before release), a coach with a charge filed in news (2025-26), and a centre manager whose post was advertised in July 2026. SAFEGUARD SEARCH 2026-10-17: every name below was searched together with words for allegation / police / charge / controversy (Finnish and English) and nothing was found; a web search is not a guarantee, so repeat it for every real coach before the game is published. Re-read every coach's page before the game is published (people change clubs).",
+ "real_note": "Real coaches (session D1, 2026-10-17; user: about 12 now, as many as possible once the career reaches adult level). RULES: (1) facts come only from the public pages listed in `sources` (url + the date they were read, 2026-10-17); a fact that is not on those pages is not in the record (null / empty). (2) The athletes named are SENIOR athletes only (Team Finland huiput / haastajat or world level); youth athletes and anyone under 18 are never named, and no coach is described through a minor. (3) The attributes are OUR ESTIMATES (1-20) from the facts, never published ratings: the baseline for a tier is `real_baseline` (national 12, international 15); a documented fact lifts or lowers a single attribute and `basis` says which fact; `evidence` (high / medium / low) tells session C6 how wide the scouting range should be (low = only the role or one athlete is public). No attribute of a real coach is below 10. (4) Neutral professional voice: `personality` (the game voice) is chosen from the published coaching approach and is not a claim about character; `style` 0 and `demands` balanced for everyone (nothing public says otherwise); NEVER an invented personal storyline, quarrel or flaw - those exist only for fictional coaches. (5) `gender` only where a source states it; `unknown` = the game uses they / them (no guessing from a name). (6) `facts_estimated` lists the facts that are OUR guesses for the market (spots, min_level - since session C6 on the 800 m ABILITY scale: the coach asks for the time that ability runs, RacePerformance.time_for, e.g. 13 = 2:00.0 for a boy; C6 moved Suhonen 9 -> 13 and Viskari 8 -> 12 to that scale -, cost_month; a cost_month of 0 with no published fee gets an estimate by reputation from data/market.json fees); `cost_note` quotes what is published. (7) Held back on purpose: coaches of a club where a news item of 2026-09-29 reports an unnamed coach under police investigation (nobody is identified; re-check before release), a coach with a charge filed in news (2025-26), and a centre manager whose post was advertised in July 2026. SAFEGUARD SEARCH 2026-10-17: every name below was searched together with words for allegation / police / charge / controversy (Finnish and English) and nothing was found; a web search is not a guarantee, so repeat it for every real coach before the game is published. Re-read every coach's page before the game is published (people change clubs).",
  "real_baseline": {"national": 12, "international": 15, "floor": 10},
  "real": [
   {"id": "real_ari_suhonen", "name": "Ari Suhonen", "gender": "male", "voice": "tactician", "kind": "personal", "real": true,
@@ -161,7 +179,7 @@
    "attributes": {"endurance_knowledge": 14, "speed_strength_knowledge": 12, "technique": 11, "periodization": 15, "youth_development": 10, "load_management": 11, "race_reading": 14, "mental_coaching": 12, "motivating": 12, "communication": 12, "judging_ability": 13},
    "basis": {"periodization": "builds a peak for the key meets (Yle 2021)", "race_reading": "800 m / 1500 m champion and record holder himself", "endurance_knowledge": "ten years of an Olympic 800 / 1500 m athlete", "judging_ability": "long record with one athlete"},
    "evidence": "medium", "personality": "tactician", "style": 0, "demands": "balanced",
-   "facts": {"birth_year": 1965, "club_id": "", "town": "", "town_note": "born in Porvoo; where he lives is not stated in the sources", "qualification": "", "reputation": "national", "event_focus": "middle_distance", "cost_month": 0, "open": false, "spots": 1, "min_level": 9},
+   "facts": {"birth_year": 1965, "club_id": "", "town": "", "town_note": "born in Porvoo; where he lives is not stated in the sources", "qualification": "", "reputation": "national", "event_focus": "middle_distance", "cost_month": 0, "open": false, "spots": 1, "min_level": 13},
    "facts_estimated": ["cost_month", "open", "spots", "min_level"], "cost_note": "private coaching: no published fee", "group": []},
   {"id": "real_mikko_rajaniemi", "name": "Mikko Rajaniemi", "gender": "male", "voice": "calm", "kind": "club", "real": true,
    "source": "Päijät-Hämeen Urheilugaala news 2023-02-19; Lahden Ahkera; SUL training groups 2026-27",
@@ -196,7 +214,7 @@
    "attributes": {"endurance_knowledge": 16, "speed_strength_knowledge": 10, "technique": 11, "periodization": 14, "youth_development": 11, "load_management": 15, "race_reading": 12, "mental_coaching": 13, "motivating": 13, "communication": 13, "judging_ability": 14},
    "basis": {"endurance_knowledge": "ten years with a European marathon champion", "load_management": "a veteran coach credits him with bringing balance to her training after injuries (Yle 2026)", "periodization": "planned a marathon championship season", "speed_strength_knowledge": "marathon focus, nothing public on speed work (baseline floor)"},
    "evidence": "medium", "personality": "tactician", "style": 0, "demands": "balanced",
-   "facts": {"birth_year": 0, "club_id": "lrum", "town": "Lappeenranta", "town_note": "tied to Lappeenrannan Urheilu-Miehet and to Lappeenranta's entrepreneurs; his home town is not stated", "qualification": "", "reputation": "national", "event_focus": "endurance", "cost_month": 60, "open": false, "spots": 3, "min_level": 8},
+   "facts": {"birth_year": 0, "club_id": "lrum", "town": "Lappeenranta", "town_note": "tied to Lappeenrannan Urheilu-Miehet and to Lappeenranta's entrepreneurs; his home town is not stated", "qualification": "", "reputation": "national", "event_focus": "endurance", "cost_month": 60, "open": false, "spots": 3, "min_level": 12},
    "facts_estimated": ["cost_month", "open", "spots", "min_level"], "cost_note": "private coaching and running academy: no published fee", "group": []},
   {"id": "real_janica_rauma", "name": "Janica Rauma", "gender": "unknown", "voice": "calm", "kind": "academy", "real": true,
    "source": "SUL athletics centres page; SUL training groups 2026-27",

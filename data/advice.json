@@ -10,20 +10,25 @@
 			"calm": {"front": -0.06, "pack": 0.0, "back": 0.06},
 			"drill": {"front": 0.07, "pack": 0.0, "back": -0.06},
 			"warm": {"front": -0.05, "pack": 0.08, "back": -0.03},
-			"tactician": {"front": 0.0, "pack": 0.0, "back": 0.0}
+			"tactician": {"front": 0.0, "pack": 0.0, "back": 0.0},
+			"analyst": {"front": 0.02, "pack": 0.02, "back": -0.02},
+			"mentor": {"front": 0.04, "pack": 0.03, "back": -0.05},
+			"motivator": {"front": 0.06, "pack": 0.02, "back": -0.06},
+			"speed": {"front": -0.07, "pack": 0.0, "back": 0.08}
 		},
 		"noise": {"floor": 0.02, "per_point": 0.01, "tactician_mult": 0.7},
 		"kick": {
 			"floor_m": 4.0, "per_point_m": 2.5, "snap_max_m": 45.0,
-			"lean_m": {"calm": -15.0, "drill": 20.0, "warm": -15.0, "tactician": 0.0}
+			"lean_m": {"calm": -15.0, "drill": 20.0, "warm": -15.0, "tactician": 0.0, "analyst": 0.0, "mentor": 5.0, "motivator": 15.0, "speed": -30.0}
 		},
 		"shouts": {
 			"_note": "The personality bias of his shouts on the cards (Race._coach_line). When he is wrong, which wrong answer he shouts is weighted by his lean in the card's direction (push / ease, data/race_cards.json coach.dir): weight = 1 + lean x lean_weight. On the judgement cards (`flip_cards`) he also shouts his lean answer instead of the sensible one with chance flip (not for the tactician).",
-			"lean": {"calm": {"push": -0.5, "ease": 0.6}, "drill": {"push": 0.8, "ease": -0.5}, "warm": {"push": -0.3, "ease": 0.3}, "tactician": {"push": 0.0, "ease": 0.0}},
+			"lean": {"calm": {"push": -0.5, "ease": 0.6}, "drill": {"push": 0.8, "ease": -0.5}, "warm": {"push": -0.3, "ease": 0.3}, "tactician": {"push": 0.0, "ease": 0.0},
+				"analyst": {"push": 0.0, "ease": 0.2}, "mentor": {"push": -0.4, "ease": 0.5}, "motivator": {"push": 0.7, "ease": -0.4}, "speed": {"push": -0.3, "ease": 0.4}},
 			"lean_weight": 3.0,
-			"flip": {"calm": 0.1, "drill": 0.1, "warm": 0.06, "tactician": 0.0},
+			"flip": {"calm": 0.1, "drill": 0.1, "warm": 0.06, "tactician": 0.0, "analyst": 0.02, "mentor": 0.08, "motivator": 0.1, "speed": 0.08},
 			"flip_cards": ["bell", "kick", "move", "slow", "dropped"],
-			"accuracy_bonus": {"calm": 0.0, "drill": 0.0, "warm": 0.0, "tactician": 0.04}
+			"accuracy_bonus": {"calm": 0.0, "drill": 0.0, "warm": 0.0, "tactician": 0.04, "analyst": 0.02, "mentor": 0.0, "motivator": 0.0, "speed": 0.0}
 		},
 		"texts": {
 			"head": "{COACH} SUGGESTS",
@@ -35,7 +40,11 @@
 				"calm": "I'd go with {plan} today. {kickline} {why}",
 				"drill": "Plan: {plan}. {kickline} {why}",
 				"warm": "Here's what I'd do today: {plan}. {kickline} {why}",
-				"tactician": "My read of this field: {plan}. {kickline} {why}"
+				"tactician": "My read of this field: {plan}. {kickline} {why}",
+				"analyst": "Based on the entry times: {plan}. {kickline} {why}",
+				"mentor": "{plan}. {kickline} {why}",
+				"motivator": "Here's the plan, champion: {plan}! {kickline} {why}",
+				"speed": "My plan: {plan}. {kickline} {why}"
 			},
 			"kick_line": {
 				"natural": "And let the kick come where it suits you.",
@@ -84,7 +93,11 @@
 			"calm": "I've been looking at the calendar.",
 			"drill": "You need a race.",
 			"warm": "I've been thinking about your season.",
-			"tactician": "I went through the calendar against your plan."
+			"tactician": "I went through the calendar against your plan.",
+			"analyst": "I ran your season through the calendar.",
+			"mentor": "About your racing.",
+			"motivator": "Ooh, I've found a race for you!",
+			"speed": "You need a sharp race."
 		},
 		"reason": {
 			"gap": "You haven't raced for {weeks} weeks, and {meet} ({date}) is a race to sharpen on.",
@@ -104,7 +117,11 @@
 			"calm": {"accept": "Good. I've put it in.", "decline": "Fair enough."},
 			"drill": {"accept": "Good. Be ready.", "decline": "Your call. Don't come to me with excuses."},
 			"warm": {"accept": "I'm glad. We'll make it a good one.", "decline": "That's okay. Another time."},
-			"tactician": {"accept": "Entered.", "decline": "Noted. Removed from my list."}
+			"tactician": {"accept": "Entered.", "decline": "Noted. Removed from my list."},
+			"analyst": {"accept": "Entered. I'll plan the week around it.", "decline": "Noted."},
+			"mentor": {"accept": "Good.", "decline": "As you like."},
+			"motivator": {"accept": "Yes! It's going to be great!", "decline": "No worries! Another time!"},
+			"speed": {"accept": "Good. Fresh legs for it.", "decline": "Fine."}
 		},
 		"lines": {
 			"entered": "{meet}: entered",

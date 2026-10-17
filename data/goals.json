@@ -25,7 +25,7 @@
 		"min_gap_s": 0.4
 	},
 	"process": {
-		"by_voice": {"calm": "sessions", "drill": "sessions", "warm": "limits", "tactician": "races"},
+		"by_voice": {"calm": "sessions", "drill": "sessions", "warm": "limits", "tactician": "races", "analyst": "sessions", "mentor": "sessions", "motivator": "races", "speed": "limits"},
 		"kinds": {
 			"sessions": {"levels": [75, 85, 92, 97], "unit": "%", "label": "do {n} % of the sessions in your plan", "count_note": "{done} of {planned} planned sessions done ({share} %)"},
 			"limits": {"levels": [6, 3, 1, 0], "unit": "days", "label": "train through a warning on {n} days at most", "label_zero": "never train through a warning", "count_note": "{done} days trained through a warning"},
@@ -69,7 +69,11 @@
 			"calm": "The goal to {goal_lc} didn't come off ({detail}). I know it wasn't what you wanted.",
 			"drill": "The goal to {goal_lc}: no ({detail}). Remember how this feels.",
 			"warm": "The goal to {goal_lc} didn't come off today ({detail}). I'm sorry. I know how much you wanted it.",
-			"tactician": "The goal to {goal_lc}: missed ({detail}). That is information, not a verdict."
+			"tactician": "The goal to {goal_lc}: missed ({detail}). That is information, not a verdict.",
+			"analyst": "The goal to {goal_lc}: not reached ({detail}). One data point; we look at the trend.",
+			"mentor": "The goal to {goal_lc} didn't come off ({detail}). There will be other days.",
+			"motivator": "The goal to {goal_lc} didn't happen today ({detail}). It hurts, I know. We go again!",
+			"speed": "The goal to {goal_lc}: not today ({detail}). We sharpen up and go again."
 		}
 	},
 	"labels": {
@@ -83,19 +87,31 @@
 			"calm": "Let's agree what this season is for. For each goal I have marked the level I would choose. Pick yours; there is no wrong answer, only a different price.",
 			"drill": "Goals. A season without numbers is a season without work. My picks are marked. Take them or aim higher; don't aim lower without a reason.",
 			"warm": "I'd like us to want the same things this season. My picks are marked. If something feels too much or too little, choose differently and we'll talk about it.",
-			"tactician": "Three targets for the season. Each level has a price in risk and a chance of coming off; my estimate is under each. My picks are marked."
+			"tactician": "Three targets for the season. Each level has a price in risk and a chance of coming off; my estimate is under each. My picks are marked.",
+			"analyst": "I've modelled the season. Each goal has four levels with my estimate of the chance; my picks are marked. Choose with the numbers in front of you.",
+			"mentor": "Goals for the season. I've marked mine. Don't reach too far; the years do the work.",
+			"motivator": "Goal time! This is the fun part. My picks are marked, but if you want to dream bigger, I'm all in!",
+			"speed": "Three goals. My picks are marked. Keep them sharp and simple."
 		},
 		"set_message": {
 			"calm": "Good. This is what we're working towards in {season}:",
 			"drill": "Right. {season}. This is what counts:",
 			"warm": "I like these. Our goals for {season}:",
-			"tactician": "Logged. The targets for {season}:"
+			"tactician": "Logged. The targets for {season}:",
+			"analyst": "Saved. The targets for {season}:",
+			"mentor": "Good. For {season}:",
+			"motivator": "Love these! Our goals for {season}:",
+			"speed": "Set. {season}:"
 		},
 		"set_end": {
 			"calm": "We'll look at them again when the season is over.",
 			"drill": "I'll hold you to them.",
 			"warm": "I'll cheer for every one of them.",
-			"tactician": "I'll tell you early if the numbers say otherwise."
+			"tactician": "I'll tell you early if the numbers say otherwise.",
+			"analyst": "I'll track them every week.",
+			"mentor": "We'll see where we are in the autumn.",
+			"motivator": "We're going to smash them!",
+			"speed": "Now we work."
 		},
 		"goal_line": "- {goal}"
 	},
@@ -104,13 +120,21 @@
 			"calm": "You did it: {goal_lc}. That's what the work was for. Enjoy it for a day; then we go on.",
 			"drill": "{goal}. Done. Good. Don't get comfortable.",
 			"warm": "I'm so pleased! {goal}. You earned every bit of it.",
-			"tactician": "{goal}: reached. The plan worked. Now we know what it costs."
+			"tactician": "{goal}: reached. The plan worked. Now we know what it costs.",
+			"analyst": "{goal}: reached. Right on the curve I drew.",
+			"mentor": "{goal}. Well done. The patience paid.",
+			"motivator": "YES! {goal}! I knew you could!",
+			"speed": "{goal}. Done. Sharp."
 		},
 		"higher": {
 			"calm": " And you aimed higher than I would have.",
 			"drill": " And that was higher than my pick. Respect.",
 			"warm": " And you reached higher than I dared to ask!",
-			"tactician": " That was above my estimate. I'll adjust the model."
+			"tactician": " That was above my estimate. I'll adjust the model.",
+			"analyst": " And above my pick. I'm updating the projections.",
+			"mentor": " Higher than I'd have dared. Good.",
+			"motivator": " And higher than my pick! Wow!",
+			"speed": " Above my pick, too. Good."
 		},
 		"replies": [
 			{"id": "thanks", "label": "Thanks, coach", "hint": "", "lean": 0},
@@ -121,7 +145,11 @@
 			"calm": {"thanks": "You're welcome. It was your work.", "next": "Then we'll aim a little higher next time.", "luck": "Days like that come to those who train for them."},
 			"drill": {"thanks": "Don't thank me. Do it again.", "next": "That's what I wanted to hear. Higher.", "luck": "Luck likes the prepared. Don't sell yourself short."},
 			"warm": {"thanks": "Anytime. I'm proud of you.", "next": "I love that. Let's see how high we can go.", "luck": "Take the credit. You were ready for the day."},
-			"tactician": {"thanks": "Noted.", "next": "Then the next model gets a harder target.", "luck": "Variance is part of it. So is preparation."}
+			"tactician": {"thanks": "Noted.", "next": "Then the next model gets a harder target.", "luck": "Variance is part of it. So is preparation."},
+			"analyst": {"thanks": "The work was yours. I only counted it.", "next": "Then I'll raise the projection.", "luck": "The day was within your range. Not luck."},
+			"mentor": {"thanks": "Thank yourself.", "next": "Steady. Higher, but steady.", "luck": "Good days come to those who train."},
+			"motivator": {"thanks": "Aww, thank YOU!", "next": "YES! Bigger goals! Let's go!", "luck": "Luck? That was all you!"},
+			"speed": {"thanks": "Good.", "next": "Then we get faster.", "luck": "Sharp legs make their own luck."}
 		}
 	},
 	"review": {
@@ -129,7 +157,11 @@
 			"calm": "The season is over, and here is how our goals went:",
 			"drill": "Season's over. The goals:",
 			"warm": "The season is over. I want to look at our goals with you:",
-			"tactician": "Season closed. Result against the targets:"
+			"tactician": "Season closed. Result against the targets:",
+			"analyst": "Season data is in. The goals:",
+			"mentor": "The season is done. Our goals:",
+			"motivator": "Season's over! Let's look at our goals together:",
+			"speed": "Season done. The goals:"
 		},
 		"line_met": "✓ {goal}",
 		"line_missed": "✗ {goal} ({detail})",
@@ -147,7 +179,11 @@
 			"calm": "A goal that isn't reached is allowed. Looking at it honestly teaches more than a good result.",
 			"drill": "Nobody likes it. Use it.",
 			"warm": "Please don't be hard on yourself. You worked, and I saw it.",
-			"tactician": "Now we know where the plan and the body disagreed."
+			"tactician": "Now we know where the plan and the body disagreed.",
+			"analyst": "A missed goal is a measurement too. We'll use it.",
+			"mentor": "Not every year goes up. The long road does.",
+			"motivator": "Missing one doesn't change how proud I am. Next season!",
+			"speed": "We'll fix what was slow."
 		},
 		"replies": [
 			{"id": "again", "label": "We try again next season", "hint": "Next season's goals stay as they are", "lean": 0},
@@ -159,7 +195,11 @@
 			"calm": {"again": "Good. We'll adjust and go again.", "bigger": "I'll remember that. We'll see how the next year looks first.", "toohard": "Thank you for saying it. I'll set them a little lower.", "quiet": "That's all right."},
 			"drill": {"again": "Good. Back to work.", "bigger": "Bigger? Fine. Earn it.", "toohard": "Too hard is information. I'll lower it, once.", "quiet": "Fine. Training's tomorrow."},
 			"warm": {"again": "I'd love that. We'll do it together.", "bigger": "That's the spirit! Let's be bold.", "toohard": "Thank you for being honest. I'll make the next ones kinder.", "quiet": "Of course. Whenever you want to."},
-			"tactician": {"again": "Understood. Same parameters.", "bigger": "Understood. Raising the target one step.", "toohard": "Understood. Lowering it one step.", "quiet": "Noted."}
+			"tactician": {"again": "Understood. Same parameters.", "bigger": "Understood. Raising the target one step.", "toohard": "Understood. Lowering it one step.", "quiet": "Noted."},
+			"analyst": {"again": "Same targets, better data.", "bigger": "I'll raise the projection a step.", "toohard": "I'll lower the projection a step.", "quiet": "Understood."},
+			"mentor": {"again": "Good. Same road.", "bigger": "Bigger, then. Patiently.", "toohard": "Then a little lower. No shame in that.", "quiet": "That's fine."},
+			"motivator": {"again": "Yes! Round two!", "bigger": "That's what I love to hear!", "toohard": "Thanks for telling me. We'll make them fit you.", "quiet": "Of course. I'm here when you want."},
+			"speed": {"again": "Good. Again.", "bigger": "Faster goals, then.", "toohard": "A step lower. Fine.", "quiet": "Fine."}
 		}
 	}
 }

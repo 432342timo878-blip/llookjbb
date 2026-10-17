@@ -130,6 +130,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _mind_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _market_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -885,6 +887,86 @@ func _people_views(main: Node, game, tag: String) -> void:
 	ms.mark_read("coach")
 	hub._show("overview")
 	await _frames(3)
+
+
+## The coach market (session C6): Find a coach, another coach's page (unknown, then asked with the answer, the visit's
+## day picker, "Start on Monday" with its warning), the head coach's page with a change waiting, and a coach's warning as
+## a stop. Nothing chosen here is kept (the pending change is cancelled, the warning answered).
+func _market_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var mk = game.get_system("market")
+	var M = load("res://scripts/core/coach_market.gd")
+	var was: bool = M.enabled
+	M.enabled = true
+	mk.ensure_pool()
+	var other := {}
+	for c in mk.listing().get("club", []):
+		if str(c.id) != game.athlete.coach_id:
+			other = c
+	if other.is_empty():
+		for c in mk.coaches():
+			if str(c.id) != game.athlete.coach_id and str(c.kind) != "parent":
+				other = c
+				break
+	for page in ["market", "coach:" + str(other.id)]:
+		hub._people_page = page
+		hub._show("people")
+		await _frames(6)
+		await _shot("%s_market_%s" % [tag, "list" if page == "market" else "coach"])
+		_check_overflow(hub, "%s market %s" % [tag, page])
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s market %s end" % [tag, page])
+	# Asked (his answer), the day picker of a visit open, "Start on Monday" pressed once.
+	mk.ask(other)
+	hub._people_page = "coach:" + str(other.id)
+	hub._show("people")
+	await _frames(4)
+	var profile = _find_profile(hub)
+	if profile != null:
+		profile._visit_open = true
+		profile._confirm = mk.may_start(other)
+		profile._build()
+	await _frames(6)
+	await _shot("%s_market_coach_asked" % tag)
+	_check_overflow(hub, "%s market coach asked" % tag)
+	# A change waiting for Monday: the head coach's page and the list.
+	if mk.may_start(other):
+		mk.start(other)
+		for page in ["profile", "market"]:
+			hub._people_page = page
+			hub._show("people")
+			await _frames(6)
+			await _shot("%s_market_pending_%s" % [tag, page])
+			_check_overflow(hub, "%s market pending %s" % [tag, page])
+		mk.cancel_pending()
+	# A warning talk (a stop).
+	mk._warn(1)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_market_warning" % tag)
+	_check_overflow(hub, "%s market warning" % tag)
+	var e: Dictionary = game.pending_event()
+	if not e.is_empty():
+		hub._on_event_answer(e.id, str(e.choices[0].id))
+		hub._end_result_card()
+	var ms = game.get_system("moments")
+	for m in ms.pending():
+		ms.answer(m.id, str(m.replies[0].id))
+	hub._people_page = ""
+	hub._show("overview")
+	M.enabled = was
+	await _frames(3)
+
+
+func _find_profile(node: Node):
+	if node.get_script() == load("res://scripts/ui/coach_profile.gd"):
+		return node
+	for ch in node.get_children():
+		var f = _find_profile(ch)
+		if f != null:
+			return f
+	return null
 
 
 # --- The coach's proposals (session C4) at this window size --------------------------------------------------------

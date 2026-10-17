@@ -35,7 +35,7 @@ const NONE := "_none"   # the answer of a moment that passed unanswered
 const ACK := "talk_ack"  # the storylet of a week talk without a topic (data/storylets/week_talk.json)
 ## Moments made by other systems of the coach (session C5): the moment kind -> the id of the GameSystem whose on_reply(ref, reply)
 ## answers it (SeasonGoals: a goal met / missed; CoachSuggests: a meet or target he suggests).
-const CUSTOM_SYSTEMS := {"goal": "goals", "suggest": "suggests"}
+const CUSTOM_SYSTEMS := {"goal": "goals", "suggest": "suggests", "market": "market"}
 
 var rng := RandomNumberGenerator.new()
 var stop_setting := ""       # "important" / "all"; "" = the default of data/moments.json
@@ -392,6 +392,8 @@ func _post_event(m: Dictionary, p: Dictionary) -> void:
 		elif str(m.kind) == "suggest":
 			pattern = str(Data.advice.suggest.ui.moment_title)
 		title = pattern.format({"from": person_name(p), "thread": title})
+	if m.has("title"):   # (the coach market's own titles, session C6)
+		title = str(m.title)
 	var e := Game.post_event(id, title, m.text, choices, true)
 	e.kind = "moment"
 	e.moment = m.id
@@ -682,22 +684,55 @@ func post_proposal(proposal_id: String, text: String, replies: Array, stop: bool
 ## a week, a stop with `stop`. `kind` is "goal" or "suggest" (CUSTOM_SYSTEMS), `ref` names what it is about for that system.
 ## The answer goes to the system's on_reply(ref, reply_id) -> {result (his reply), changes (lines for the result card)}.
 ## Works with the moments switched off too (tools). Returns the moment ({} without a coach).
-func post_custom(kind: String, ref: String, text: String, replies: Array, stop: bool) -> Dictionary:
-	var p := _coach_person()
+## `opts` (session C6): `from` = a person id other than the head coach (a coach of the market, registered with market_person)
+## and `thread` (default "coach"); `title` = the stop panel's title; `expires_days`.
+func post_custom(kind: String, ref: String, text: String, replies: Array, stop: bool, opts := {}) -> Dictionary:
+	var p: Dictionary = people.get(str(opts.from), {}) if opts.has("from") else _coach_person()
 	if p.is_empty():
 		return {}
 	_start_threads()
+	var thread := str(opts.get("thread", "coach"))
 	var today := day_no(Game.date)
 	var m := {"id": "m%d" % _next, "kind": kind, "ref": ref, "storylet": "", "date": Game.date.duplicate(),
-			"day": today, "thread": "coach", "from": str(p.id), "text": text, "variant": 0, "replies": replies.duplicate(true),
-			"fill": {}, "expires": today + int(Data.moments.expires_days), "stop": false, "event": "", "answer": "",
-			"answered_day": -1, "auto": false, "talk": false}
+			"day": today, "thread": thread, "from": str(p.id), "text": text, "variant": 0, "replies": replies.duplicate(true),
+			"fill": {}, "expires": today + int(opts.get("expires_days", Data.moments.expires_days)), "stop": false, "event": "",
+			"answer": "", "answered_day": -1, "auto": false, "talk": false}
+	if opts.has("title"):
+		m.title = str(opts.title)
 	_next += 1
 	moments.append(m)
-	_message("coach", str(p.id), text, m.id, Game.date)
+	_message(thread, str(p.id), text, m.id, Game.date)
 	if stop:
 		_post_event(m, p)
 	return m
+
+
+## A person of the coach market (session C6): a coach who is not (or not yet) the head coach, writing in the "coaches" thread.
+## Returns the person id (the coach record's id).
+func market_person(c: Dictionary) -> String:
+	var parts := str(c.name).split(" ", false, 1)
+	var pid := str(c.id)
+	if not people.has(pid):
+		people[pid] = {"id": pid, "thread": "coaches", "role": "market_coach", "first_name": parts[0],
+				"last_name": parts[1] if parts.size() > 1 else "", "relation": float(Data.moments.relation.start), "active": false}
+	return pid
+
+
+## A message that asks nothing, from any person (`from` = a person id, "you" or "system") in any thread (session C6).
+func say(thread: String, from: String, text: String, read := false) -> void:
+	if text == "":
+		return
+	_start_threads()
+	_message(thread, from, text, "", Game.date)
+	if read:
+		threads[thread].back().read = true
+
+
+## The relationship with a person (not the head coach, whose relationship is his trust): `delta` points (session C6: the old
+## coach after a goodbye).
+func add_relation(pid: String, delta: float) -> void:
+	if people.has(pid):
+		people[pid].relation = clampf(float(people[pid].get("relation", Data.moments.relation.start)) + delta, 0.0, 100.0)
 
 
 ## The answer to a custom moment: the player's reply in the thread, then the system decides and its reply comes back.
@@ -1060,6 +1095,8 @@ func _person(pid: String, thread: String, role: String, first: String, last: Str
 		people[pid] = {"id": pid, "thread": thread, "role": role, "first_name": first, "last_name": last,
 				"relation": float(Data.moments.relation.start)}
 	people[pid].active = true
+	people[pid].thread = thread   # (a coach of the market who becomes the head coach, session C6)
+	people[pid].role = role
 
 
 ## 0-100; the head coach's is his trust.

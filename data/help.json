@@ -102,13 +102,25 @@
   },
   "people": {
    "title": "People",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "The people around you", "text": "Messages from your coach and your training group; family, friends and school will write here in later updates. A number or a dot means something is new or waits for your answer. Tap a person to open the conversation."},
+    {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. Find a coach, below the list, shows every coach you can see now."},
     {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"he will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
     {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one: the phase, the hard sessions and why, and one thing to focus on. It always stops Play week. A talk may end with a question. After a race he writes to you that evening."},
-    {"heading": "Coach profile", "text": "Who he is, his character, how well you fit and how much you trust each other. What he is good at is a rough range until you have worked together for eight weeks. Below it is his training group."},
+    {"heading": "Coach profile", "text": "Who your coach is, the character, how well you fit and how much you trust each other. The skills are a range that narrows week by week and is exact after eight weeks together. Below them is the training group."},
     {"heading": "Settings", "text": "What Play week stops for, and your saved rules, are at the bottom of the Training tab."}
+   ]
+  },
+  "market": {
+   "title": "Find a coach",
+   "version": 1,
+   "sections": [
+    {"heading": "Who you can get", "text": "At 14 and 15: your club's coaches, a parent who competed in athletics, and remote coaches. From 16, or once you reach the TF-juniorit standard: other clubs in your town, coaches in your region and national coaches. An athletics-centre town has more."},
+    {"heading": "Coaches choose too", "text": "A coach may want a time from you first, or have no place this season. Club fees always fit; a personal coach must fit your family's monthly budget. After a big personal best a coach may write to you with an offer."},
+    {"heading": "Finding out more", "text": "Skills show as ranges. Look at the athletes' results, ask around (a teammate answers) or visit a session (that day becomes an easy run, or a rest day if it means travel). Eight weeks together make every skill exact.", "see": ["coach_distance"]},
+    {"heading": "Changing coach", "text": "Ask to be coached; if the answer is yes, start on the next Monday. Your old coach, the group and the club will notice. A new coach starts as New trust, with a new group."},
+    {"heading": "When a coach ends it", "text": "Only after weeks of Strained trust and two warning talks. Answering them well brings trust back. If it still ends, you choose your next coach from those who would take you."}
    ]
   },
   "moment": {
@@ -257,6 +269,15 @@
   }
  },
  "topics": {
+  "coach_distance": {
+   "title": "A coach far away",
+   "version": 1,
+   "sections": [
+    {"heading": "Same town", "text": "You train with the coach and the group every day: the full coaching."},
+    {"heading": "Same region", "text": "You train together about two days a week and follow the plan on the others. The coach sees less of you, so technique and load management are a little weaker, and race advice is weaker at meets the coach does not come to."},
+    {"heading": "Far away", "text": "A remote coach: the plan comes by message, a visit about once a month and the national meets together. Technique, load management and race reading at the other meets suffer more. Moving to a centre town comes with the sports school, later."}
+   ]
+  },
   "fatigue": {
    "title": "Fatigue",
    "version": 1,

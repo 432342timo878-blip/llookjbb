@@ -23,6 +23,7 @@
 	},
 	"threads": {
 		"coach": {"name": "Coach", "empty": "Your coach writes to you here: a talk about the week every Sunday evening, and a message after a race."},
+		"coaches": {"name": "Other coaches", "empty": "Other coaches write to you here: their answers when you ask one to coach you, and offers after a breakthrough. Find a coach is below the list."},
 		"family": {"name": "Family", "empty": "Your family will write here about the weekend, school and money. They come in a later update."},
 		"friends": {"name": "Friends", "empty": "Your friends from school will write here. They come in a later update."},
 		"group": {"name": "Training group", "empty": "Your training partners will write here as you get to know them."},
@@ -47,6 +48,7 @@
 		"stop_head_proposal": "YOUR COACH SUGGESTS",
 		"stop_head_goal": "SEASON GOAL",
 		"stop_head_suggest": "YOUR COACH SUGGESTS",
+		"stop_head_market": "YOUR COACH",
 		"members_head": "IN THE GROUP",
 		"you": "You",
 		"system": "",

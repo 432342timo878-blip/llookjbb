@@ -287,8 +287,66 @@ func _run() -> void:
 	await _goals_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _mind_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _market_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- The coach market (session C6): Find a coach, a coach unknown and then scouted and asked, a change waiting for Monday,
+# --- a real coach's page with the sources, a coach ending it (the stop with the choices) ----------------------------------
+
+func _market_tour(main: Node, hub: Control) -> void:
+	var game = main.get_node("/root/Game")
+	_answer_pending(game)
+	hub._show_pending_event()   # (clears the stop panel of the mind tour's Sunday talk)
+	var mk = game.get_system("market")
+	mk.ensure_pool()
+	hub._people_page = "market"
+	hub._show("people")
+	await _frames(6)
+	await _shot("50_find_a_coach")
+	var other := {}
+	for c in mk.listing().get("club", []):
+		if str(c.id) != game.athlete.coach_id:
+			other = c
+	if other.is_empty():
+		for c in mk.listing().get("remote", []):
+			other = c
+	if other.is_empty():
+		print("market tour: no other coach to show")
+		return
+	hub._people_page = "coach:" + str(other.id)
+	hub._show("people")
+	await _frames(6)
+	await _shot("50a_coach_unknown")
+	mk.look_results(other)
+	mk.ask_around(other)
+	mk.ask(other)
+	hub._show("people")
+	await _frames(6)
+	await _shot("50b_coach_scouted_asked")
+	if mk.may_start(other):
+		mk.start(other)
+		hub._people_page = "market"
+		hub._show("people")
+		await _frames(6)
+		await _shot("50c_change_pending")
+		mk.cancel_pending()
+	_answer_pending(game)
+	hub._show_pending_event()
+	hub._people_page = "coach:real_ari_suhonen"
+	hub._show("people")
+	await _frames(6)
+	await _shot("50d_real_coach")
+	mk._end()
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("50e_coach_ends_it")
+	_answer_pending(game)
+	hub._people_page = ""
+	hub._show("overview")
 
 
 # --- The mind (session M1): the MIND panel with its rows open, the mental plan, the Sunday talk's mood line and topic -------

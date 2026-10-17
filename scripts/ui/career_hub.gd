@@ -615,6 +615,8 @@ func _help_entry() -> String:
 		if Game.season.mode != SeasonPlan.PHASES:
 			return "training_repeat"
 		return "phase_editor" if _phase_open != "" else "training_season"
+	if _view == "people" and (_people_page == "market" or _people_page.begins_with("coach:")):
+		return "market"   # Find a coach and a coach's page (session C6)
 	return _view
 
 
@@ -766,7 +768,8 @@ func _build_people() -> void:
 	var view := PeopleView.new(_people_page)
 	view.page_changed.connect(func(p: String):
 		_people_page = p
-		_scroll.scroll_vertical = 0)
+		_scroll.scroll_vertical = 0
+		_help_button.entry_id = _help_entry())
 	view.changed.connect(func():
 		_refresh_week_ui()
 		_show_pending_event())

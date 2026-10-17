@@ -3389,6 +3389,103 @@ Pajulahti camp dates; every `search-summary` source; the maakunta of each town.
 **Next:** C6 (the coach market) uses `real`, `towns.json` and `urheilulukiot.json` `centres`; S1 (school) uses `school.json`
 and the winter groups; S3 uses `urheilulukiot.json`. A later research session (adult level) adds the senior-level real coaches.
 
+#### Built (step C6, 2026-10-17): the coach market
+
+**Before building:** `run_all_checks` gave 19 / 19 PASS (nothing to fix).
+
+**Decisions with the user (asked 2026-10-17, before building):**
+1. **Town size moves the club coach: a moderate shift** (recommended): a club coach's average level is drawn around 10 + small
+   municipality −1 / small town −0.5 / town 0 / city +0.3 / large city +0.5, and +0.5 more in an athletics-centre town
+   (`coaching.json club.town_shift`). The neutral setting (a coach of 10s) is unchanged.
+2. **The market grows with age** (recommended): at 14–15 the club's coaches (1 in a small municipality … 4–6 in a large city,
+   +1–2 in a centre town), a parent (only with "A parent competed in athletics"), 2 remote coaches; from 16 the other clubs of the
+   town, 3–5 coaches of the region, 6–10 national coaches, the centre's real manager in a centre town; the TF-juniorit standard
+   opens the regional and national coaches at any age ("camp coaches see you"). About 15–40 coaches a career.
+3. **Four new coach personalities now** (the user chose 4 over the recommended 2): *the numbers coach* (analyst: judging,
+   periodization; low motivating), *the old-school mentor* (mentor: youth development, endurance, patience; few words), *the
+   energiser* (motivator: motivating; weak technique and periodization), *the speed specialist* (speed: speed & strength,
+   technique; weak endurance). Each has every text the four old ones have (race shouts, lines, Race story, the Sunday talk, the
+   day lines, verdict words, proposals, advice, suggestions, goals, the mood lines) and its leanings (attributes, style, demands,
+   fit, race plan, kick, shouts). They are voices of market coaches; the club coach of a new career is still one of the first four.
+4. **Real coaches: the same rules, neutral words** (recommended): a real coach goes through the same warning chain, but every
+   message of a real coach is the short professional `real` text of `market.json lines` (no personal remarks, no storylines).
+5. **Family budget: the tighter numbers** (user, over the recommended): euros a month for coaching beyond the club fee: a parent
+   who competed in athletics 65, a parent who was a top athlete in another sport 80, an older sibling runs 40, a sporty family 55,
+   not sporty 35, "sport is a waste of time" 15; older saves 40. Club fees always fit; a parent is free.
+6. **Missing fees: an estimate by reputation** (recommended): a real personal / remote coach with no published fee costs regional
+   60, national 90, international 150 a month, and the screen says it is an estimate; academy fees stay as in D1.
+7. **Distance in three steps** (recommended): the same town = full coaching; the same region (maakunta) = "2 days a week with
+   him", technique and load management −2 and race reading −2.5 at the meets the coach skips; further (or a remote coach) =
+   technique and load management −4, race reading −5 at skipped meets (the coach comes to national / international meets and
+   the season's targets).
+8. **Ending it: 6 + 4 + 4 weeks** (recommended): Strained for 6 weeks in a row → warning talk 1 (a stop); 4 more → warning 2;
+   4 more → the coach ends it and the athlete picks the next coach (a stop listing who would take them now; no answer = the first).
+   Trust back above Strained resets the chain; the replies "Let's sort it out" +6 and "I hear you" +2 trust.
+
+**Claude's defaults (not asked; say if you want them changed):**
+- **Visiting a session** costs that day: in your own town it becomes an easy run with the coach's group, from another town a
+  rest day (travel); pick any of the next 8 days without a race.
+- **A coach's required level is on the 800 m ability scale** (the time that ability runs, `RacePerformance.time_for`): "Not yet:
+  wants 2:05.00 first". D1 had put `min_level` on the group-level scale; Suhonen (9 → 13 = 2:00.0 for a boy) and Viskari (8 → 12)
+  were moved to the new scale (their min_level was our estimate anyway).
+- **Scouting widths** (`market.json scouting`): unknown fictional coaches by reputation (local 8, regional 7, national 6,
+  international 5 points wide), real ones by evidence (low 8, medium 6, high 4), the parent 2, your own club's coaches 4 (seen at
+  the track). The true value sits at a fixed place inside the range (from the coach and the attribute), so ranges always nest.
+  Looking at the athletes' results: endurance, speed & strength and periodization −2, race reading and judging −1. Asking around
+  (a teammate writes in the group thread: the coach's best and worst side and style): motivating and communication −3, mental
+  coaching and youth development −2, the rest −1; shows style and demands. A visit: technique −3, endurance, speed & strength
+  and load management −2, the rest −1; shows style. Working together: the width falls in a straight line to 0 over 8 weeks.
+- **Offers:** after a personal best that clears a coach's bar for the first time (or the TF-juniorit standard), the best-known
+  coach with a place who fits the budget writes in a new thread **Other coaches**; at most one every 90 days and 2 a season, kept
+  30 days. The world-level coaches (spots 0) only ever approach the athlete this way.
+- **The parent coach:** average 9, strong in technique and motivating, weak in periodization and judging, a fit bonus of +1
+  (`coaching.json fit.kind_bonus`) and a stress pull of +6 ("training comes home with you", `mind.json drift.stress.parent_coach`).
+- **Profile words without gender:** the profile's headings no longer say "him" (SKILLS, ABOUT, TRAINING GROUP); market texts
+  use he / she / they from the record (`coaching.json pronouns`; `unknown` = they / them).
+
+**What was built:**
+- **Data:** `data/market.json` (new: ages, pool sizes by town size, the fictional tiers club / regional / national / remote and
+  the parent, scouting, distance, budget, fee estimates, offers, the ending chain, every UI text and every message by voice with
+  the neutral `real` words); `coaching.json` (the 4 new personalities, the fit matrix for them, `kind_bonus`, `club.town_shift`,
+  `pronouns`, Suhonen / Viskari min_level, the note on the scale); `coaches.json` (the 4 new voices; `pool` keeps the old four for
+  club coaches); `coach_talk.json`, `advice.json`, `goals.json`, `mind.json` (the new voices' texts; `parent_coach`);
+  `background_questions.json` (each family answer has a `family` id, saved as `Athlete.family`); `moments.json` (the thread
+  `coaches`, "Other coaches"); `help.json` (screen `market`, topic `coach_distance`, `people` v2). `Data` now also loads
+  `market.json`, `towns.json`, `urheilulukiot.json` (`Data.get_town`, `Data.town_size`).
+- **`CoachMarket`** (`scripts/core/coach_market.gd`, GameSystem id `market`, last in `Game.systems`; static `enabled` default
+  OFF, only `main.gd` switches it on): `ensure_pool` (own dice from the career; the global dice untouched; fictional records
+  `mk_N` with a `market` part, the real records copied in), `listing / section / visible / status / can_take / cost_of / budget /
+  required_time / spots_now` (fictional coaches' places drawn again every season), scouting `width / range_of / known_word /
+  knows / look_results / ask_around / visit_days / plan_visit / cancel_visit` (the visit day changes through `WeekSim.set_sessions`
+  / `make_rest_day` by the player, also in a later week via `on_week_start`), `ask / may_start / start / cancel_pending /
+  switch_to` (on Sunday night: a new relation or the old one, a training group generated for the coach, the threads' lines),
+  offers (`on_day_end`), the ending chain (`on_week_end`), `on_reply` for the market's moments (offer, farewell, warn, end),
+  `history` of the athlete's coaches. Its state is `{}` until something happens, so untouched careers save as before.
+- **`CoachSystem`:** `town_shift`, `athlete_level`, `distance_of / home_town / attends`, distance penalties in `attr()`, race
+  reading at skipped meets in `race_accuracy(meet)` (`RaceDay` passes the meet; the race engine untouched), `pronoun`,
+  `_make_group(a, rng, size, level)`, the fit bonus by kind. `MindSystem`: the parent coach's stress pull. `StoryletSystem`:
+  `post_custom(... opts)` (another sender and thread, a title), `market_person`, `say`, `add_relation`, the kind `market`.
+- **UI:** `CoachMarketView` (Find a coach: your situation, a change waiting, cards by section with cost, status and how well you
+  know the coach), `CoachProfile(coach_id)` (any coach: the status and the answer on top, "Start on Monday" in two steps, Find out
+  more with the three steps and the visit's day picker, the facts with cost and what the distance would change, a real coach's
+  senior athletes and sources, the character words once known, the skills as ranges, the coach history), the People tab's
+  **Find a coach** row and pages `market` / `coach:<id>`, the header "?" → `market`. 44 px, phone pages, no hover.
+
+**Measured (`tools/market_check.gd`, 61 checks, ALL CHECKS PASSED; in `run_all_checks`):** coaches of the club for
+14-year-olds (20 careers each): Karkkila (small municipality) 1, Vihti (small town) 1–2, Kerava (town) 2–3, Kuopio (city) 3–5,
+Tampere and Helsinki (centres) 5–8; all visible at 14 incl. the 2 remote coaches: 3 / 3–4 / 4–5 / 5–7. A Tampere career has 37
+coaches. The TF-juniorit standard at 14 (2:06.03) opens 7 → 21 coaches. A remote coach: technique 8 → 4; race advice right
+0.840 at a meet he skips vs 0.915 at a national meet. The ending chain: warnings in weeks 6 and 10, the end in week 14; trust back
+in weeks 6–7 moves the first warning to week 13. With a 15-euro budget all 21 paid coaches are over it. Six weeks with the
+market off and on (pool made) are identical bit for bit. `coach_check`: Tampere club coaches now average 10.90 (+1.0 shift, the
+13 cap); `training_balance -- 0`: 206.798298350 / 14.102831594 / 1226.006524079 (unchanged; the test athlete's real club coach
+row 206.98 → 207.15 from his town's shift); `quick_fingerprint` 73182f4e… unchanged.
+
+**Not in C6:** moving town (S3: urheilulukio, the academy morning coach), the TF camp coaches as people (a camp week, G3), the
+specialists, money beyond the budget (M4: with the tighter budget no family can afford a national real personal coach, 90, or the
+international ones, 150, until then), the coach's own wish to end it for other reasons, family reactions to a change (P1), a
+coach's group as a training pull (P1), re-reading the real coaches' pages before release.
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)

@@ -68,7 +68,7 @@
    "stress": {"from": 55, "per_point": -0.5},
    "held_back": {"ambition_above": 12, "per_point": -1.0}
   },
-  "stress": {"base": 20, "rate": 0.4, "injured": 15, "strained": 10,
+  "stress": {"base": 20, "rate": 0.4, "injured": 15, "strained": 10, "parent_coach": 6,
    "load": {"from": 130, "per_point": 0.3, "max": 20},
    "relaxation": -6}
  },
@@ -125,6 +125,7 @@
   "stress": "Stress",
   "held_back": "You want more than a Steady plan",
   "strained": "Things are strained with {coach}",
+  "parent_coach": "Your coach is also your parent: training comes home with you",
   "load": "Training far above your normal",
   "relaxation": "Relaxation training",
   "self_talk": "Self-talk"
@@ -208,6 +209,34 @@
     "motivation_low": "Your sessions have lost some edge. Let's find out why.",
     "motivation_high": "Good intent in training this week. It shows in the splits.",
     "stress_high": "Stress is up. We'll keep the week predictable."
+   },
+   "analyst": {
+    "confidence_low": "Your confidence dropped more than your numbers did. Look at the tests: you're on track.",
+    "confidence_high": "Confidence is up, and the data backs it.",
+    "motivation_low": "Your session quality dipped this week. Something's off. Tell me.",
+    "motivation_high": "Session quality was high this week. Good.",
+    "stress_high": "Your stress is up. I'll keep the plan simple and predictable."
+   },
+   "mentor": {
+    "confidence_low": "A bad patch passes. It always does.",
+    "confidence_high": "You believe in yourself. Good. Stay humble with it.",
+    "motivation_low": "You look tired of it. That happens to everyone. It comes back.",
+    "motivation_high": "Good to see you keen.",
+    "stress_high": "Too much on your plate. Let's keep training simple."
+   },
+   "motivator": {
+    "confidence_low": "Hey {first}! I believe in you, even when you don't. Remember that!",
+    "confidence_high": "Look at you, {first}! Confident and flying!",
+    "motivation_low": "You've lost a bit of spark, {first}. Let's find it again together!",
+    "motivation_high": "Love this energy, {first}! Keep it coming!",
+    "stress_high": "You're carrying a lot, {first}. Breathe. We'll keep training fun this week."
+   },
+   "speed": {
+    "confidence_low": "Your legs are faster than your head thinks right now.",
+    "confidence_high": "Confident and sharp. Good combination.",
+    "motivation_low": "You look flat. Flat legs, flat head. Let's do something fast and fun.",
+    "motivation_high": "Sharp and keen. Good week.",
+    "stress_high": "Stressed legs are slow legs. Short sessions this week."
    }
   }
  }

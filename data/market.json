@@ -1,0 +1,313 @@
+{
+ "_note": "The coach market (GDD 4.9.1 'Who you can get, and when', 'Shown and scouted', 4.9.2 'A coach can end it'; session C6, read by CoachMarket, scripts/core/coach_market.gd). THE POOL: the coaches around a career are made once (their own dice from the athlete's name and birth date: same career = same coaches; the global dice are never touched) from the club's town in data/towns.json (size class by population, the SUL centre) and data/clubs.json, and kept in CoachSystem's records (fictional ones get ids mk_1, mk_2 ...; the real coaches of data/coaching.json `real` keep their ids). WHO YOU CAN GET: each group of coaches opens at an age (`ages`); the national and regional ones open earlier once the athlete has reached the TF-juniorit standard (`seen`: camp coaches see you); real coaches follow their kind, reputation and min_level; the world-level ones (spots 0) only ever approach the athlete themselves (`offers`). COACHES CHOOSE: spots this season and min_level on the 800 m ability scale (the coach asks for the time that ability runs, RacePerformance.time_for). SCOUTING: each attribute is shown as a range of `width` points with the true value somewhere inside it (not always the middle); asking around, a visit and looking at his athletes' results take points off the width of the attributes they show; working together narrows every range to the exact value over `together_weeks`. DISTANCE (user 2026-10-17: three steps): same town = full coaching; same region (maakunta) = 2 days a week with him, half the penalty; further = a remote coach (plan by message, monthly visits), weaker technique, load management and race reading at meets he skips. BUDGET (user: the tighter numbers): the family answer sets euros a month for coaching beyond the club fee (club fees always fit); a coach with no published fee costs the estimate of his reputation (user). ENDING (user: 6 + 4 + 4 weeks): weeks of Strained trust, then two warning talks, then he ends it and the athlete picks the next coach; a real coach's words are neutral and professional (user). Every number is a first guess for the balance session (B1).",
+ "version": 1,
+ "ages": {"club": 14, "parent": 14, "remote": 14, "town": 16, "region": 16, "national": 16, "academy": 16, "real_personal": 16, "elite": 18},
+ "seen": {"_note": "Reaching the TF-juniorit standard of your age (data/standards.json, Standards.time) opens the regional and national coaches whatever the age, and one of them may write to you (an offer).", "standard": "tf_juniorit", "opens": ["region", "national"]},
+ "pool": {
+  "own_club": {"village": [1, 1], "small": [1, 2], "town": [2, 3], "city": [3, 5], "capital": [4, 6]},
+  "centre_extra": [1, 2],
+  "other_club": {"village": [1, 1], "small": [1, 1], "town": [1, 2], "city": [1, 2], "capital": [1, 3]},
+  "region": [3, 5],
+  "national": [6, 10],
+  "remote": [2, 2],
+  "national_towns": ["Helsinki", "Espoo", "Vantaa", "Tampere", "Turku", "Jyväskylä", "Lahti"],
+  "remote_towns": ["Helsinki", "Tampere", "Turku", "Jyväskylä", "Lahti", "Oulu", "Kuopio", "Vaasa", "Joensuu", "Seinäjoki"],
+  "male_share": 0.65,
+  "voices": {"calm": 2.0, "drill": 2.0, "warm": 2.0, "tactician": 2.0, "analyst": 1.5, "mentor": 1.5, "motivator": 1.5, "speed": 1.5}
+ },
+ "tiers": {
+  "_note": "Fictional coaches outside your own club. average = his overall level (mean, sd, min, max; then the personality's lean and his own spread as for club coaches, data/coaching.json club), cost = euros a month (personal coaching; club coaches of another club cost that club's fee, which always fits), spots = places this season [min, max] (0 = full; drawn again every season), min_level = the 800 m ability he asks for [min, max], group = training group size, age = his age range.",
+  "club": {"reputation": "local", "kind": "club", "spots": [1, 4], "min_level": [0, 0], "group": [4, 9], "age": [27, 66]},
+  "regional": {"reputation": "regional", "kind": "personal", "average": [11.0, 1.2, 9.0, 13.5], "cost": [30, 60], "spots": [0, 3], "min_level": [8, 11], "group": [3, 8], "age": [30, 66]},
+  "national": {"reputation": "national", "kind": "personal", "average": [12.3, 1.1, 10.5, 15.0], "cost": [50, 90], "spots": [0, 2], "min_level": [10, 13], "group": [3, 7], "age": [32, 66]},
+  "remote": {"reputation": "national", "kind": "remote", "average": [12.0, 1.2, 10.0, 14.5], "cost": [35, 70], "spots": [1, 4], "min_level": [8, 12], "group": [4, 10], "age": [30, 62]}
+ },
+ "parent": {
+  "_note": "A parent as coach: only with the creation answer 'A parent competed in athletics' (family athletics_parent). Free, open, a strong fit (data/coaching.json fit.kind_bonus) and some family friction (data/mind.json drift.stress.parent_coach). The parent's last name is the athlete's.",
+  "family": "athletics_parent",
+  "average": [9.0, 1.0, 7.0, 11.0],
+  "lean": {"technique": 2, "race_reading": 1, "motivating": 2, "youth_development": -1, "periodization": -2, "judging_ability": -2, "load_management": -1},
+  "voices": {"warm": 3.0, "drill": 2.0, "calm": 2.0, "motivator": 2.0, "mentor": 1.0},
+  "age": [38, 55],
+  "qualification": "level1"
+ },
+ "reputations": {"local": "Local", "regional": "Regional", "national": "National", "international": "International"},
+ "reputation_rank": {"local": 0, "regional": 1, "national": 2, "international": 3},
+ "scouting": {
+  "_note": "Width of the shown range (high - low) per attribute. Unknown: fictional coaches by reputation, real ones by `evidence` (how much is public about them), the parent `parent`; the head coach at the start of a career `head_start` (you have trained in his group before). Each step takes `attrs` points off those attributes and `other` off the rest, once per coach; `reveals` = the character words it shows (style, demands). Working together: the width falls in a straight line to 0 over together_weeks weeks.",
+  "width": {"local": 8, "regional": 7, "national": 6, "international": 5},
+  "evidence": {"low": 8, "medium": 6, "high": 4},
+  "parent": 2,
+  "head_start": 4,
+  "together_weeks": 8,
+  "asked": {"attrs": {"motivating": 3, "communication": 3, "mental_coaching": 2, "youth_development": 2}, "other": 1, "reveals": ["style", "demands"]},
+  "visit": {"attrs": {"technique": 3, "endurance_knowledge": 2, "speed_strength_knowledge": 2, "load_management": 2}, "other": 1, "reveals": ["style"], "near": ["easy_run"], "far": [], "days": 7},
+  "results": {"attrs": {"endurance_knowledge": 2, "speed_strength_knowledge": 2, "periodization": 2, "race_reading": 1, "judging_ability": 1}, "other": 0, "reveals": []},
+  "known_words": [[0, "Exactly"], [2, "Well"], [4, "Some"], [6, "A little"], [99, "Hardly"]]
+ },
+ "distance": {
+  "_note": "How far the coach is from the athlete's club town. The penalties are taken off the head coach's attribute (CoachSystem.attr); race_reading only at the meets he does not come to (he comes to `attends` levels and to the season's targets). A remote-kind coach is always far.",
+  "same": {"penalty": {}, "race_reading": 0.0},
+  "region": {"penalty": {"technique": 2.0, "load_management": 2.0}, "race_reading": 2.5, "days_with": 2},
+  "far": {"penalty": {"technique": 4.0, "load_management": 4.0}, "race_reading": 5.0},
+  "attends": ["national", "international"]
+ },
+ "budget": {
+  "_note": "Euros a month for coaching beyond the club fee (user 2026-10-17: the tighter numbers). Club fees always fit; a parent is free. Real money, grants and sponsors come with M4.",
+  "by_family": {"athletics_parent": 65, "top_parent": 80, "sibling": 40, "sporty": 55, "not_sporty": 35, "against": 15},
+  "unknown": 40
+ },
+ "fees": {
+  "_note": "A real coach with cost_month 0 and no published fee (personal or remote) costs the estimate of his reputation (user 2026-10-17); the screen says it is an estimate. Academy fees stay as in D1 (from the published notes, 0 = free).",
+  "estimate": {"local": 40, "regional": 60, "national": 90, "international": 150}
+ },
+ "offers": {"_note": "After a personal best that clears a coach's bar for the first time (or the TF-juniorit standard), one coach with a place may write to you: at most one every gap_days and max_per_season a season; the offer holds for valid_days (his place is kept for you).", "gap_days": 90, "valid_days": 30, "max_per_season": 2},
+ "ending": {
+  "_note": "User 2026-10-17: Strained for strained_weeks weeks in a row -> warning talk 1 (a stop); still Strained second_after weeks later -> warning talk 2; still Strained end_after weeks later -> he ends it (a stop: pick the next coach from those who would take you now, max_choices; no answer = the first). Trust back above Strained at any time resets the chain. The replies to a warning add trust.",
+  "strained_weeks": 6, "second_after": 4, "end_after": 4, "max_choices": 3,
+  "replies": {"fix": 6.0, "hear": 2.0, "part": 0.0}
+ },
+ "ui": {
+  "find_button": "Find a coach",
+  "find_sub": "Look at other coaches, scout them, ask one to coach you",
+  "find_head": "FIND A COACH",
+  "situation": "Age {age} · {town} ({size}) · Family budget €{budget} / month · club fees always fit",
+  "sections": {"club": "YOUR CLUB", "parent": "AT HOME", "town": "YOUR TOWN", "region": "YOUR REGION", "national": "NATIONAL COACHES", "remote": "REMOTE COACHES", "academy": "ATHLETICS CENTRE", "elite": "WORLD LEVEL"},
+  "more_later": "More coaches open up at 16, or as soon as you reach the TF-juniorit standard.",
+  "more_seen": "You reached the TF-juniorit standard: the regional and national coaches can see you now.",
+  "status": {
+   "head": "Your coach",
+   "ok": "Could coach you",
+   "offer": "Has a place for you (until {date})",
+   "not_yet": "Not yet: wants {time} first",
+   "no_time": "Wants to see you race first",
+   "full": "No place this season",
+   "budget": "Over your budget (€{cost} / month)",
+   "approach": "Only takes athletes they pick",
+   "pending": "Your coach from Monday",
+   "ended": "Ended the coaching"
+  },
+  "cost": {"club": "Club fee €{cost} / month (always fits)", "free": "Free", "paid": "€{cost} / month", "estimate": "About €{cost} / month (an estimate: no fee is published)", "academy": "Academy fee €{cost} / month"},
+  "known": "Known: {word}",
+  "kinds": {"club": "Club coach", "parent": "Your parent", "remote": "Remote coach", "academy": "Athletics centre coach", "personal": "Personal coach"},
+  "distance": {
+   "same": "Trains in your town: you'd train with {him} every day.",
+   "region": "Trains in {town}: you'd train with {him} {days} days a week and follow {his} plan on the others.",
+   "far": "Far away ({town}): a remote coach. The plan comes by message, with a visit about once a month and the national meets together. Technique, load management and race reading suffer from the distance.",
+   "remote": "A remote coach: the plan comes by message, a visit about once a month and the national meets. Technique, load management and race reading suffer from the distance.",
+   "home": "Lives with you: the plan is made at the kitchen table."
+  },
+  "group_line": "Training group: {n} athletes, {level}",
+  "group_level": {"weaker": "mostly slower than you", "same": "about your level", "stronger": "mostly faster than you"},
+  "athletes_head": "ATHLETES (SENIOR)",
+  "real_note": "A real coach. The facts come from the public sources below; the skills are the game's estimates from those facts, not ratings by anyone.",
+  "sources_head": "SOURCES",
+  "source_line": "{facts} ({url}, read {read})",
+  "unknown_word": "Not known yet",
+  "fit_later": "You'd find out after 4 weeks together",
+  "scout_head": "FIND OUT MORE",
+  "scout_note": "The ranges narrow as you learn about this coach. After {weeks} weeks together you'd know every skill exactly.",
+  "results_button": "Look at the athletes' results",
+  "results_done": "You looked at the results lists.",
+  "asked_button": "Ask around",
+  "asked_hint": "Someone in your group may know this coach",
+  "asked_done": "You asked around.",
+  "visit_button": "Visit a session…",
+  "visit_hint_near": "That day becomes an easy run with the group",
+  "visit_hint_far": "That day becomes a rest day for the travel",
+  "visit_pick": "Pick a day (this week and next):",
+  "visit_set": "Visit on {day}",
+  "visit_cancel": "Cancel the visit",
+  "visit_done": "You visited a session.",
+  "ask_button": "Ask to be coached",
+  "ask_line": "Hi! Would you have a place for me in your group?",
+  "ask_head": "THE ANSWER",
+  "start_button": "Start on Monday",
+  "start_confirm": "Yes, change coach on Monday",
+  "start_warn": "{old} stops being your coach on Sunday night. Changing coach is never quiet: {old}, your group and the club will notice.",
+  "cancel_button": "Cancel",
+  "pending_line": "{new} becomes your coach on Monday {date}.",
+  "pending_cancel": "Stay with {old}",
+  "back_market": "Back to the list",
+  "your_coach_note": "This is your coach. The profile shows what you know after {weeks} weeks together.",
+  "history_head": "YOUR COACHES",
+  "history_line": "{coach}: {from} – {to}"
+ },
+ "lines": {
+  "_note": "What the coaches write (C6). By voice (data/coaches.json) for fictional coaches; `real` = the neutral professional words every real coach uses (data/coaching.json real_note: never invented storylines). Placeholders: {name} the athlete's first name, {coach} / {coach_first} the coach, {old} / {new} coach names, {time}, {club}, {date}, {group} the group's size.",
+  "yes": {
+   "calm": "I'd be glad to coach you, {name}. I have a place from Monday if you want it.",
+   "drill": "You want to work? Then yes. Monday, on time.",
+   "warm": "Oh, I'd love that! There's a place in my group for you from Monday.",
+   "tactician": "I've looked at your results. Yes. A place from Monday.",
+   "analyst": "Your numbers fit my group. A place from Monday, if you want it.",
+   "mentor": "Yes. Come on Monday. We'll take it step by step.",
+   "motivator": "YES! I'd love to coach you! Monday, let's go!",
+   "speed": "Yes. Monday. Bring spikes.",
+   "real": "Thank you for asking. I can take you on from Monday if you decide so."
+  },
+  "not_yet": {
+   "calm": "Not yet, {name}. Run {time} first, then ask me again.",
+   "drill": "Not yet. Run {time}. Then we talk.",
+   "warm": "I'd love to, but my group is a bit ahead of you. Run {time} and come back to me!",
+   "tactician": "Not yet. My group runs {time} and faster. Get there first.",
+   "analyst": "Your best is below my group's level. {time} is the line. Ask again when you're there.",
+   "mentor": "Not yet. {time} first. Patience.",
+   "motivator": "Not yet, but soon! Run {time} and I'm all yours!",
+   "speed": "Run {time} first. Then we sharpen you.",
+   "real": "Thank you for asking. My group trains at a level of about {time}; please ask again when you have run that."
+  },
+  "no_time": {
+   "calm": "I'd like to see you race first. Run an 800 m and ask me again.",
+   "drill": "No race, no talk. Run an 800 m.",
+   "warm": "Let me see you race first! Then ask me again.",
+   "tactician": "I can't judge you without a race. Run one.",
+   "analyst": "No race times, no data. Run an 800 m first.",
+   "mentor": "Race first. Then we'll see.",
+   "motivator": "Race first so I can see you fly, then ask again!",
+   "speed": "Show me a race first.",
+   "real": "I would like to see a race result first. Please ask again after an 800 m."
+  },
+  "full": {
+   "calm": "I'm sorry, {name}. My group is full this season.",
+   "drill": "Full. Ask next season.",
+   "warm": "Oh, I'm sorry, my group is full this season. Ask me again next autumn!",
+   "tactician": "No place this season. Next season, maybe.",
+   "analyst": "My group is at capacity this season.",
+   "mentor": "No room this year. Next year, perhaps.",
+   "motivator": "Argh, I'm full this season! Next year, okay?",
+   "speed": "Full this season.",
+   "real": "Thank you for asking. My group is full this season."
+  },
+  "offer": {
+   "calm": "{name}, I saw your result. If you ever want a new coach, I have a place for you. Think about it.",
+   "drill": "I saw your time. I have a place in my group if you want to work. Think about it.",
+   "warm": "{name}, I saw your race and I was so impressed! If you'd like, there's a place for you in my group.",
+   "tactician": "Your last race caught my eye. I have a place if you're interested.",
+   "analyst": "Your recent times caught my attention. I have a place in my group if you want it.",
+   "mentor": "I've seen you run. There's a place for you, if you want it.",
+   "motivator": "WOW, that race! I'd love to coach you. There's a place for you if you want it!",
+   "speed": "Saw your race. You've got speed. I have a place.",
+   "real": "I followed your recent results. If you are looking for a coach, I could take you on this season."
+  },
+  "offer_seen": {
+   "calm": "I saw your name on the TF-juniorit list, {name}. If you're ever looking for a coach, I have a place.",
+   "drill": "TF-juniorit level. Good. I have a place if you want to work.",
+   "warm": "Congratulations on the TF-juniorit standard! If you'd like a new coach, I'd be happy to have you.",
+   "tactician": "TF-juniorit level. I have a place if you're interested.",
+   "analyst": "You're at the TF-juniorit standard now. I have a place in my group if you want it.",
+   "mentor": "I saw you made the TF-juniorit list. There's a place here, if you want it.",
+   "motivator": "TF-juniorit standard! Amazing! I'd love to coach you. Interested?",
+   "speed": "TF-juniorit level. I have a place.",
+   "real": "Congratulations on the TF-juniorit standard. If you are looking for a coach, I could take you on."
+  },
+  "offer_replies": [
+   {"id": "more", "label": "Tell me more", "hint": "The place is kept for 30 days: see the coach in Find a coach"},
+   {"id": "no", "label": "Not now, thanks", "hint": "No more offers from this coach this season"}
+  ],
+  "offer_answer": {
+   "more": {"calm": "Good. Look at my group and decide calmly.", "drill": "Good. Decide quickly.", "warm": "Lovely! Take your time.", "tactician": "Good. You'll find the details on my page.", "analyst": "Good. Everything is on my page.", "mentor": "Take your time.", "motivator": "Yay! Take a look!", "speed": "Good.", "real": "Thank you. The place is kept for you for a month."},
+   "no": {"calm": "That's all right.", "drill": "Your loss.", "warm": "Of course! Good luck!", "tactician": "Understood.", "analyst": "Understood.", "mentor": "As you like.", "motivator": "No worries! Good luck!", "speed": "Fine.", "real": "Understood. Good luck with your season."}
+  },
+  "farewell": {
+   "calm": "I hear you're moving to {new}. I'm sad to see you go, but I understand. Good luck, {name}.",
+   "drill": "So you're leaving for {new}. Fine. Don't waste it.",
+   "warm": "I hear you're going to train with {new}. I'll miss you! I hope it goes wonderfully for you.",
+   "tactician": "You're moving to {new}. Understood. I'll hand over your training notes.",
+   "analyst": "You're moving to {new}. I'll send over your test data and the logs.",
+   "mentor": "You're going to {new}. Go well. Remember the simple things.",
+   "motivator": "You're off to {new}?! I'll miss you so much! Go and be brilliant!",
+   "speed": "Moving to {new}. Keep your speed work going.",
+   "real": "I understand you are moving to {new}. Thank you for the time together, and good luck."
+  },
+  "farewell_replies": [
+   {"id": "thanks", "label": "Thank you for everything", "hint": "{coach_first} will remember this kindly"},
+   {"id": "why", "label": "Explain why you're leaving", "hint": "An honest goodbye"},
+   {"id": "quiet", "label": "Say nothing", "hint": "{coach_first} will remember this"}
+  ],
+  "farewell_answer": {
+   "thanks": {"calm": "You're welcome. The door is open.", "drill": "Hm. Thanks. Train hard.", "warm": "Thank YOU. Come and say hello sometimes!", "tactician": "Noted. Good luck.", "analyst": "You're welcome. Keep logging your sessions.", "mentor": "Look after yourself.", "motivator": "Aww! Go get them!", "speed": "Good luck. Stay sharp.", "real": "Thank you. All the best."},
+   "why": {"calm": "Thank you for telling me. That was brave.", "drill": "Fair enough. At least you said it.", "warm": "Thank you for being honest with me. I understand.", "tactician": "A clear reason. Good.", "analyst": "That makes sense. Thanks for explaining.", "mentor": "Honest. Good.", "motivator": "Thanks for telling me! Totally get it!", "speed": "Fair.", "real": "Thank you for explaining. Good luck."},
+   "quiet": {"calm": "All right.", "drill": "Right.", "warm": "Okay...", "tactician": "Noted.", "analyst": "Okay.", "mentor": "Hm.", "motivator": "Oh. Okay.", "speed": "Fine.", "real": "All the best."}
+  },
+  "farewell_relation": {"thanks": 8.0, "why": 5.0, "quiet": -8.0},
+  "group_goodbye": ["Wait, you're leaving the group?! We'll miss you at the Tuesday intervals.", "Heard you're changing coach. The group won't be the same. Good luck!", "So you're off to {new}. Don't forget us when you're famous."],
+  "group_hello": ["You're joining us? Welcome to the group! Tuesdays are brutal, fair warning.", "Hi! {new} said you're starting with us on Monday. See you at the track!", "New face in the group! Welcome. I'll show you the warm-up."],
+  "welcome": {
+   "calm": "Welcome, {name}. We start on Monday. I'll keep your plan going for now and we'll adjust it together.",
+   "drill": "Monday. We start. Your plan stays for now; I'll tell you what changes.",
+   "warm": "Welcome to the group, {name}! I'm so happy. We'll keep your plan for now and make it ours bit by bit.",
+   "tactician": "Monday we start. I've read your results and your plan. We'll keep it and adjust.",
+   "analyst": "Welcome. I'll need a few weeks of data before I change anything. Your plan stays for now.",
+   "mentor": "Welcome. Monday, then. Nothing changes in a hurry.",
+   "motivator": "WELCOME! This is going to be amazing! See you Monday!",
+   "speed": "Welcome. Monday. We'll add some sharpness.",
+   "real": "Welcome. We start on Monday; your current plan continues for now and we will adjust it together."
+  },
+  "switched": "{new} is your coach from today.",
+  "warn1": {
+   "calm": "{name}, I need to be honest. This isn't working well between us. I want us to talk about it properly.",
+   "drill": "We need to talk. You ignore what I say and it shows. This can't go on.",
+   "warm": "{name}, I feel we've drifted apart lately, and it worries me. Can we talk about it?",
+   "tactician": "The working relationship isn't functioning. Something has to change.",
+   "analyst": "I've noticed a pattern: my plans and what you do don't match any more. We should talk.",
+   "mentor": "It's not going well between us. We should talk.",
+   "motivator": "Hey, {name}. Things feel off between us lately, and I hate that. Let's fix it?",
+   "speed": "This isn't working. We need to sort it out.",
+   "real": "I think our cooperation is not working well at the moment. I would like us to review it."
+  },
+  "warn2": {
+   "calm": "We talked a month ago and it hasn't got better. If nothing changes, I think you'd do better with another coach.",
+   "drill": "I warned you. Last chance. Change, or find another coach.",
+   "warm": "I'm sad to say it, but it still isn't working. If it doesn't get better, it might be kinder for both of us if you found another coach.",
+   "tactician": "Second time. If nothing changes in a month, we stop.",
+   "analyst": "No change since we talked. If the pattern holds for another month, I'll end it.",
+   "mentor": "Still not right. A month more like this and we part ways.",
+   "motivator": "I've really tried, {name}. If it doesn't get better soon, maybe someone else would suit you better.",
+   "speed": "Still not working. A month, then I stop.",
+   "real": "We discussed this a month ago. If the situation does not improve, I will end our cooperation."
+  },
+  "warn_replies": [
+   {"id": "fix", "label": "Let's sort it out", "hint": "Trust in {coach_first} ▲"},
+   {"id": "hear", "label": "I hear you", "hint": "Trust in {coach_first} ▲ a little"},
+   {"id": "part", "label": "Maybe I need a new coach", "hint": "You can look at other coaches in Find a coach"}
+  ],
+  "warn_answer": {
+   "fix": {"calm": "Good. Let's start again on Monday.", "drill": "Then show me.", "warm": "Thank you. I'd like that very much.", "tactician": "Good. Let's see the change.", "analyst": "Good. I'll watch the numbers.", "mentor": "Good.", "motivator": "Yes! Fresh start!", "speed": "Good.", "real": "Thank you. Let's try."},
+   "hear": {"calm": "Thank you for listening.", "drill": "Hearing isn't doing.", "warm": "Thank you.", "tactician": "Noted.", "analyst": "Noted.", "mentor": "Hm.", "motivator": "Okay. Let's see.", "speed": "We'll see.", "real": "Thank you."},
+   "part": {"calm": "That may be right. Look around, and tell me.", "drill": "Then look. I won't stop you.", "warm": "That's all right. Look around, and I'll help if I can.", "tactician": "A reasonable option. Look at the market.", "analyst": "That's a valid conclusion.", "mentor": "Maybe. Think about it.", "motivator": "Okay. I want what's best for you.", "speed": "Your choice.", "real": "That is a fair option. Please let me know."}
+  },
+  "end": {
+   "calm": "{name}, I've decided to end our work together. It's not working, and you deserve a coach who suits you. Choose who you'd like to train with from Monday.",
+   "drill": "That's it. I'm ending it. Find another coach for Monday.",
+   "warm": "This is hard to write, {name}. I think it's time we stopped working together. I want you to have a coach who's right for you. Who would you like from Monday?",
+   "tactician": "I'm ending the coaching. It isn't working. Pick your next coach for Monday.",
+   "analyst": "The numbers and our talks say the same thing: this isn't working. I'm ending it. Choose a new coach for Monday.",
+   "mentor": "Time to part ways. Choose your next coach for Monday.",
+   "motivator": "{name}, I'm so sorry, but I think we need to stop. You deserve someone who clicks with you. Who do you want from Monday?",
+   "speed": "I'm ending it. Choose a new coach for Monday.",
+   "real": "I have decided to end our cooperation. Please choose your next coach; the change takes effect on Monday."
+  },
+  "end_reply_hint": "{kind} · {cost}",
+  "end_title": "{coach} ends the coaching",
+  "warn_title": "{coach} wants to talk",
+  "offer_title": "{coach} has a place for you",
+  "farewell_title": "{coach} on your move",
+  "asked": {
+   "intro": ["I trained with {coach_first} at a camp once.", "My cousin is in {coach_first}'s group.", "Everyone at the track has an opinion on {coach_first}."],
+   "good": {"endurance_knowledge": "The long runs and tempo sessions are really well planned.", "speed_strength_knowledge": "The speed and gym work is top level.", "technique": "Great on technique: fixes your running form.", "periodization": "Gets people in shape for the big meets.", "youth_development": "Really good with younger athletes.", "load_management": "Notices straight away when you're getting hurt.", "race_reading": "Reads races brilliantly.", "mental_coaching": "Great at calming nerves before a race.", "motivating": "Can make anyone want to train.", "communication": "Explains everything so you understand why.", "judging_ability": "Always knows what you can run."},
+   "bad": {"endurance_knowledge": "The endurance sessions are a bit random.", "speed_strength_knowledge": "Not much speed or gym work.", "technique": "Doesn't care much about technique.", "periodization": "People peak at the wrong time.", "youth_development": "Pushes the young ones too hard.", "load_management": "Lots of injuries in that group.", "race_reading": "The race advice is hit and miss.", "mental_coaching": "No help with nerves.", "motivating": "Sessions can feel a bit flat.", "communication": "Doesn't explain much. You just do it.", "judging_ability": "The time goals are often way off."},
+   "style": {"-2": "Very strict: you do what you're told.", "-1": "Quite strict.", "0": "Fair.", "1": "Listens to you.", "2": "Lets you decide a lot yourself."}
+  },
+  "visit": {
+   "line": "You trained with {coach}'s group on {day}. {good} {bad}",
+   "good": {"technique": "The drills were sharp and explained well.", "endurance_knowledge": "The session was well thought out.", "speed_strength_knowledge": "The speed work was excellent.", "load_management": "The coach checked how everyone felt before the hard part."},
+   "bad": {"technique": "Nobody looked at running form.", "endurance_knowledge": "The session felt a bit improvised.", "speed_strength_knowledge": "There was hardly any speed work.", "load_management": "Two athletes trained on sore legs and nobody stopped them."},
+   "neutral": "Nothing stood out, good or bad."
+  },
+  "results": {
+   "fictional": {"strong": "The group's results are strong: several personal bests last season and a few national-level finals.", "fair": "The group's results are steady: personal bests here and there.", "weak": "The group's results are thin: few personal bests last season."},
+   "real": "The athletes this coach has worked with (senior level, from the sources): {athletes}."
+  }
+ }
+}

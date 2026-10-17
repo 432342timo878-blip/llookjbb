@@ -92,11 +92,12 @@ func _leave_test() -> void:
 func _make_systems() -> Array:
 	# (Moments after Health and Coach: an evening moment sees the day's injury news and the coach's record. The coach's
 	# proposals last: he looks at the day after the body, Form and the moments have had their say.)
-	# (The season goals (C5) after the moments: their messages and talks are moments; the coach's meet and target suggestions last of all.)
+	# (The season goals (C5) after the moments: their messages and talks are moments; the coach's meet and target suggestions after them.)
+	# (The coach market (C6) last: a change of coach happens on Sunday night after the old coach's week is counted.)
 	# (The mind (M1) after the coach and before the moments: the day's diagnoses and race are news for the moods before an evening
 	# moment or the Sunday talk reads them.)
 	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), MindSystem.new(),
-			StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new()]
+			StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list
