@@ -30,6 +30,7 @@ func _initialize() -> void:
 func _run() -> void:
 	F = load("res://scripts/core/athlete_factory.gd")
 	C = load("res://scripts/core/coach_system.gd")
+	load("res://scripts/core/mind_system.gd").neutral = true   # (session M1: the moods in the middle = the game before the mind)
 	H = load("res://scripts/core/health_system.gd")
 	SS = load("res://scripts/core/season_system.gd")
 	saves = load("res://scripts/core/save_game.gd")
@@ -274,8 +275,10 @@ func _year(attrs) -> Dictionary:
 	for w in 52:
 		while game.advance_day() != game.WEEK_DONE:
 			pass
+	# (session C5: the tactician's shouts are right a little more often, data/advice.json race.shouts.accuracy_bonus)
+	var bonus := float(data.advice.race.shouts.accuracy_bonus.get(str(cs.head().get("voice", "")), 0.0))
 	var out := {"attributes": a.attributes.duplicate(), "fatigue": a.fatigue, "accuracy": cs.race_accuracy(),
-			"race_day_accuracy": C.race_accuracy_for(a)}
+			"race_day_accuracy": C.race_accuracy_for(a), "bonus": bonus}
 	C.model_enabled = true
 	return out
 
@@ -295,8 +298,8 @@ func _neutral_and_16s() -> void:
 	var tens := _year({})
 	_ok("model off = model on with a coach of 10s, every attribute and fatigue bit for bit",
 			_changed(off, tens).is_empty() and off.fatigue == tens.fatigue)
-	_ok("race advice: model off = default (-1), a race reading of 10 = races.json controls.coach.accuracy exactly (%.3f)" % tens.accuracy,
-			off.accuracy == -1.0 and tens.accuracy == float(data.races.controls.coach.accuracy))
+	_ok("race advice: model off = default (-1), a race reading of 10 = races.json controls.coach.accuracy exactly (%.3f; + the voice's C5 bonus %.2f)" % [tens.accuracy, tens.bonus],
+			off.accuracy == -1.0 and tens.accuracy == float(data.races.controls.coach.accuracy) + float(tens.bonus))
 	var total := 0.0
 	for k in tens.attributes:
 		total += tens.attributes[k]
@@ -327,7 +330,7 @@ func _neutral_and_16s() -> void:
 	_ok("every other attribute at 16 (%s): no training change (prepared hooks only)" % ", ".join(others.keys()),
 			_changed(tens, r_others).is_empty() and r_others.fatigue == tens.fatigue)
 	var rr: Dictionary = data.coaching.effects.race_advice
-	var expect_acc := clampf(float(data.races.controls.coach.accuracy) + 6.0 * float(rr.per_point), float(rr.min), float(rr.max))
+	var expect_acc := clampf(float(data.races.controls.coach.accuracy) + 6.0 * float(rr.per_point) + float(r_others.bonus), float(rr.min), float(rr.max))
 	_ok("race reading 16: race advice right %.3f of the time (expected %.3f; a race of the career's athlete gets it: %.3f)" % [r_others.accuracy, expect_acc, r_others.race_day_accuracy],
 			absf(r_others.accuracy - expect_acc) < 1e-12 and r_others.race_day_accuracy == r_others.accuracy)
 	var all16 := {}

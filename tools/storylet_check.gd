@@ -29,7 +29,7 @@ var _rng := RandomNumberGenerator.new()
 const CONDITIONS := ["age", "month", "weekday", "day_type", "weeks_in_career", "phase", "race_today", "race_tomorrow",
 		"race_in_days", "raced_days_ago", "pb_days_ago", "injured", "ill", "sore", "today_tags", "tomorrow_tags",
 		"tomorrow_rest", "flags", "flag_days", "counters", "seen", "not_seen", "answered", "trust", "relation", "chance",
-		"fatigue", "race_outcome"]
+		"fatigue", "race_outcome", "mood"]
 const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "teammate", "club", "meet", "race_days", "pb",
 		"weekday", "tomorrow"]
 
@@ -42,6 +42,7 @@ func _run() -> void:
 	F = load("res://scripts/core/athlete_factory.gd")
 	MS = load("res://scripts/core/storylet_system.gd")
 	C = load("res://scripts/core/coach_system.gd")
+	load("res://scripts/core/mind_system.gd").neutral = true   # (session M1: the moods in the middle = the game before the mind)
 	H = load("res://scripts/core/health_system.gd")
 	SS = load("res://scripts/core/season_system.gd")
 	saves = load("res://scripts/core/save_game.gd")
@@ -115,7 +116,7 @@ func _data_checks() -> void:
 				problems.append_array(_when_problems(sid + " variant", t.get("when", {})))
 		var replies: Array = s.get("replies", [])
 		var topic := str(s.get("topic", ""))
-		if not topic in ["", "week", "race", "ack"]:
+		if not topic in ["", "week", "race", "ack", "mood"]:   # (mood: session M1)
 			problems.append("%s: unknown topic '%s'" % [sid, topic])
 		if topic == "ack":   # (a talk without a topic: the single reply "Thanks, coach")
 			if replies.size() != 1:

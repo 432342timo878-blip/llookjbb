@@ -24,6 +24,9 @@ var played := []
 ## The coach's training effect for this week (CoachSystem.training_effect; {} = none). Set by Game.current_week()
 ## every time it hands out the week, not saved.
 var coach_effect := {}
+## Motivation's training quality (MindSystem.training_quality, session M1): every training session's training effect x this
+## (races not). Exactly 1.0 across the middle word, so the M1 balance is unchanged. Set by Game.current_week(), not saved.
+var quality := 1.0
 
 var _month := 1
 var _stimulus := {}
@@ -298,6 +301,7 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 	var mult := Training.intensity(level)
 	var load_mult := float(mult.load)
 	var effect_mult := float(mult.effect)
+	var q := 1.0 if is_race else quality
 	var day_load := 0.0
 	var keep := Training.daily_keep(a)
 	var extra_recovery := 0.0
@@ -316,7 +320,7 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 			fresh = lerpf(1.0, Training.FATIGUED_MIN_EFFECT,
 					(a.fatigue - Training.FATIGUE_LIMIT) / (100.0 - Training.FATIGUE_LIMIT))
 		for attr in s.effects:
-			_stimulus[attr] = _stimulus.get(attr, 0.0) + float(s.effects[attr]) * eff * fresh * effect_mult
+			_stimulus[attr] = _stimulus.get(attr, 0.0) + float(s.effects[attr]) * eff * fresh * effect_mult * q
 		day_load += Training.session_load(a, s) * load_mult
 		extra_recovery += float(s.get("recovery", 0))
 		_sessions += 1

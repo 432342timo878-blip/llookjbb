@@ -141,6 +141,9 @@ func _run() -> void:
 	await _shot("8d_stop_event")
 	hub._on_event_answer(game.pending_event().id, "easy")
 	await _frames(3)
+	# Self-talk in the mental plan (session M1), so the race's decision card shows the cue word.
+	game.get_system("mind").set_plan(["self_talk"])
+	game.get_system("mind").set_cue("Strong")
 	# Play weeks until the first race day stops the week.
 	var router = main.get_node("/root/Router")
 	var weeks_played := 0
@@ -282,8 +285,63 @@ func _run() -> void:
 	await _people_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _goals_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _mind_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- The mind (session M1): the MIND panel with its rows open, the mental plan, the Sunday talk's mood line and topic -------
+
+func _mind_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var hub: Control = hub_in
+	_answer_pending(game)
+	var ms = game.get_system("mind")
+	ms.values = {"confidence": 84.0, "motivation": 18.0, "stress": 62.0}
+	ms.before = {"confidence": 62.0, "motivation": 40.0, "stress": 25.0}
+	ms.causes.confidence.append({"date": game.date.duplicate(), "delta": 10.0, "text": "A personal best at Nuorten SM-hallit (M/N14-15)"})
+	ms.causes.stress.append({"date": game.date.duplicate(), "delta": 20.0, "text": "Nerves: Nuorten SM-kilpailut (M/N14-15) this week"})
+	ms.same_weeks = 13
+	load("res://scripts/ui/mind_ui.gd").open = {"confidence": true, "motivation": true, "stress": false}
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(6)
+	await _shot("49_mind_overview")
+	var row = _find_label(hub, "Motivation")
+	if row != null:
+		hub._scroll.ensure_control_visible(row)
+	await _frames(4)
+	await _shot("49a_mind_rows_open")
+	load("res://scripts/ui/mind_ui.gd").open = {}
+	ms.set_plan(["imagery", "relaxation", "self_talk"])
+	ms.set_cue("Fast feet")
+	hub._show("training")
+	await _frames(5)
+	var imagery = _find_button_prefix(hub, "✓ Imagery")
+	if imagery != null:
+		hub._scroll.ensure_control_visible(imagery)
+	await _frames(4)
+	await _shot("49b_mental_plan")
+	# The Sunday talk with motivation Low: his line and the "how are you?" topic (the talks are on in the tour, main.gd).
+	var cal = load("res://scripts/core/calendar.gd")
+	var monday: int = cal.date_key(game.add_days(game.week_monday(), 7))
+	var shot := false
+	while cal.date_key(game.date) < monday:
+		var r: String = game.advance_day()
+		if r == game.RACE:
+			break
+		var e: Dictionary = game.pending_event()
+		if not e.is_empty():
+			if not shot and str(e.get("kind", "")) == "moment" and game.get_system("moments").moment(str(e.get("moment", ""))).get("talk", false):
+				shot = true
+				hub._refresh_week_ui()
+				hub._show_pending_event()
+				await _frames(6)
+				await _shot("49c_week_talk_mood")
+			_answer_pending(game)
+	if not shot:
+		print("mind tour: no Sunday talk shot (a race or the week ended first)")
 
 
 # --- The result list after heats (R5 playtest fixes): every heat, Q = through on place, q = on time. A championship ---

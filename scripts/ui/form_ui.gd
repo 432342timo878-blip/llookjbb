@@ -46,9 +46,9 @@ static func today_row() -> Control:
 	return UIKit.tap_to_explain(row, explanation(i))
 
 
-## The card for a race day that is today: the word, what it means and what builds it, always visible.
-## Null when the form model is off.
-static func race_card() -> Control:
+## The card for a race day that is today: the word, what it means and what builds it, always visible. With `meet`, also the
+## confidence line when confidence is out of its middle (session M1, MindUI.race_line). Null when the form model is off.
+static func race_card(meet := {}) -> Control:
 	var i := info()
 	if i.is_empty():
 		return null
@@ -61,4 +61,7 @@ static func race_card() -> Control:
 	box.add_child(UIKit.wrapped(ui.race_hint, "MutedLabel"))
 	box.add_child(UIKit.wrapped(i.text, ""))
 	box.add_child(UIKit.wrapped(ui.explain + i.helps, "MutedLabel"))
+	var conf := MindUI.race_line(meet)
+	if conf != null:
+		box.add_child(conf)
 	return UIKit.panel(box, 14)

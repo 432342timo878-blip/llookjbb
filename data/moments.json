@@ -58,8 +58,9 @@
 		"thread_mark": "Message from {from}"
 	},
 	"changes": {
-		"_note": "The result card after an answer (GDD 4.9.5 'Consequences shown', session C3): what really changed, in words with an arrow and no numbers. trust = the coach's trust (his relationship), relation = another person's, remember = a reply with \"remember\": true. A change of at most size_limits[0] is 'a little', up to size_limits[1] 'somewhat', more 'a lot'. Moods, sleep, grades and the budget are listed once their systems exist.",
+		"_note": "The result card after an answer (GDD 4.9.5 'Consequences shown', session C3): what really changed, in words with an arrow and no numbers. trust = the coach's trust (his relationship), relation = another person's, remember = a reply with \"remember\": true. A change of at most size_limits[0] is 'a little', up to size_limits[1] 'somewhat', more 'a lot'. moods = the moods' labels (session M1; a reply's mood points, sized like trust). Sleep, grades and the budget are listed once their systems exist.",
 		"trust": "Trust in {who}",
+		"moods": {"confidence": "Confidence", "motivation": "Motivation", "stress": "Stress"},
 		"relation": "{who}",
 		"remember": "{who} will remember this",
 		"up": "▲",
@@ -93,7 +94,7 @@
 		"max": 100
 	},
 	"effects": {
-		"known": ["trust", "relation", "flag", "unflag", "count", "proposal"],
-		"prepared": ["confidence", "motivation", "stress", "sleep", "life_load", "grades", "budget"]
+		"known": ["trust", "relation", "flag", "unflag", "count", "proposal", "confidence", "motivation", "stress"],
+		"prepared": ["sleep", "life_load", "grades", "budget"]
 	}
 }

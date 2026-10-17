@@ -30,6 +30,8 @@ func _run() -> void:
 	load("res://scripts/core/health_system.gd").model_enabled = false
 	# A club coach of 10s (session C1): the game must equal the weekly simulation, which has no coach.
 	load("res://scripts/core/coach_system.gd").neutral_club = true
+	# The moods in the middle (session M1): the game must equal the weekly simulation, which has no moods.
+	load("res://scripts/core/mind_system.gd").neutral = true
 
 	_check_exact_numbers()
 	_check_same_as_weekly()

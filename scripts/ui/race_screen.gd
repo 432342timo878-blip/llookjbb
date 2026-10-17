@@ -328,7 +328,7 @@ func _show_pre() -> void:
 	var cond := UIKit.label("Feeling %s (fatigue %d)" % [state[0].to_lower(), roundi(_rd.fatigue)])
 	cond.add_theme_color_override("font_color", state[1])
 	side.add_child(cond)
-	var form := FormUI.race_card()   # race-day form: Peaking / Sharp / OK / Rusty / Tired (GDD 4.8)
+	var form := FormUI.race_card(_rd.meet)   # race-day form: Peaking / Sharp / OK / Rusty / Tired (GDD 4.8), + confidence (M1)
 	if form != null:
 		side.add_child(form)
 	# Racing with a niggle or a cold: slower, and it may get worse (GDD 4.6).
@@ -881,6 +881,11 @@ func _show_decision(d: Dictionary) -> void:
 	head.add_child(help)
 	box.add_child(head)
 	box.add_child(UIKit.wrapped(d.text, ""))
+	var cue := MindUI.cue_text()   # the cue word of the mental plan's self-talk (session M1)
+	if cue != "":
+		var cue_label := UIKit.label(cue, "SubheadingLabel")
+		cue_label.add_theme_color_override("font_color", Palette.ACCENT)
+		box.add_child(cue_label)
 	if d.has("coach"):   # the coach by the track shouts (when he can see you, GDD 4.3.1)
 		var shout := UIKit.vbox(2)
 		var tag := UIKit.label(Data.race_cards.coach.label, "CaptionLabel")

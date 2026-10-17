@@ -487,8 +487,9 @@ func _queue_next(next: Dictionary, after: String, today: int) -> void:
 	queue.append({"id": str(next.id), "due": today + d, "until": today + d + int(Data.moments.chain_wait_days), "after": after})
 
 
-## Effects of a reply (data/moments.json effects): trust, the sender's relationship, flags, counters. The prepared ones
-## (moods, sleep, school, budget, coach proposals) change nothing until their systems exist.
+## Effects of a reply (data/moments.json effects): trust, the sender's relationship, flags, counters, the coach's proposal and
+## (session M1) the moods confidence / motivation / stress (MindSystem.from_moment). The prepared ones (sleep, school, budget)
+## change nothing until their systems exist.
 func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 	var today := day_no(Game.date)
 	for key in effects:
@@ -518,19 +519,29 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 				var cp := Game.get_system("proposals") as CoachProposals
 				if cp:
 					cp.request(str(v))
+			"confidence", "motivation", "stress":   # (session M1: points on the mood, scaled by the sender)
+				var mind := MindSystem.sys()
+				if mind:
+					mind.from_moment(key, float(v), p)
 			_:
 				if not key in Data.moments.effects.prepared:
 					push_warning("Moment effect '%s' is unknown (%s)" % [key, cause])
 
 
 ## What an answer changed, in words for the result card (data/moments.json `changes`): ["Trust in Heikki ▲ a little", ...].
-## Only what really changes: the coach's trust (his `trust` and `relation` effects), another person's relationship, and a
-## "remember" note when the reply says so. Prepared effects (moods, sleep, grades, budget) are listed once they exist.
+## Only what really changes: the coach's trust (his `trust` and `relation` effects), another person's relationship, the moods
+## (session M1, with the mind model on), and a "remember" note when the reply says so. Prepared effects (sleep, grades, budget)
+## are listed once they exist.
 func _changes_of(effects: Dictionary, p: Dictionary, remember: bool) -> Array:
 	var cfg: Dictionary = Data.moments.changes
 	var out := []
 	if p.is_empty():
 		return out
+	if MindSystem.sys() != null:
+		for mood in MindSystem.MOODS:
+			var mv := float(effects.get(mood, 0.0))
+			if mv != 0.0:
+				out.append(_change_line(str(cfg.moods[mood]), mv))
 	var who := str(p.first_name)
 	var trust := float(effects.get("trust", 0.0))
 	var rel := 0.0
@@ -596,10 +607,19 @@ func _post_week_talk(ctx: Dictionary, today: int) -> void:
 			break
 		n += 1
 	var topics := _pick_topics("week", ctx, today, p, mini(n, 2))
+	# (session M1, user 2026-10-17: "a line + a topic when low": with a mood low, his "how are you?" topic comes first)
+	var mood_topic := _pick_topics("mood", ctx, today, p, 1)
+	if not mood_topic.is_empty():
+		topics = mood_topic + topics.slice(0, 1)
 	var s: Dictionary = topics[0] if not topics.is_empty() else storylet(ACK)
 	if s.is_empty():
 		return
 	var text := CoachTalk.week_talk(ctx, _fill(ctx, p), rng)
+	var mind := MindSystem.sys()
+	if mind:
+		var line := mind.coach_line(str(Coaches.id_of(Game.athlete)), str(Game.athlete.first_name))
+		if line != "":
+			text += "\n\n" + line
 	_post(s, p, ctx, today, false, {"prefix": text, "talk": true, "counted": false})
 	if topics.size() > 1:
 		_post(topics[1], p, ctx, today, true, {"counted": false})
@@ -895,6 +915,11 @@ func check_when(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
 			"relation":
 				ok = p.is_empty() or _in_range(relation_of(p), v)
 			"fatigue": ok = _in_range(Game.athlete.fatigue, v)
+			"mood":   # (session M1) {"motivation": ["flat", "low"], ...}: each mood's word is one of those
+				var mind := MindSystem.sys()
+				ok = mind != null
+				for mood in v:
+					ok = ok and mind.word(str(mood)).id in v[mood]
 			"race_outcome": ok = CoachTalk.race_outcome(ctx.get("race_note", {})) in v
 			"chance":
 				ok = rng.randf() < float(v)

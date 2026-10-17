@@ -128,6 +128,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _goals_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _mind_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -1028,6 +1030,65 @@ func _proposal_views(main: Node, game, data, tag: String) -> void:
 ## The Overview with no goals (the button to ask), his offer as a stop panel (stepped to a harder level), the goals on the Overview
 ## and the Progress page, a goal met (his message in the thread) and the season review (a stop, its result card), and a meet he
 ## suggests: the Calendar mark and the stop. Everything is put back afterwards and both systems are switched off again.
+## The mind (session M1): the Overview's MIND panel with every row open (moods away from the middle, causes and pulls), with and
+## without the goals beside it, and the Training tab's mental plan with all three kinds and the cue word.
+func _mind_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MUI = load("res://scripts/ui/mind_ui.gd")
+	var ms = game.get_system("mind")
+	ms.values = {"confidence": 86.0, "motivation": 24.0, "stress": 66.0}
+	ms.before = {"confidence": 60.0, "motivation": 45.0, "stress": 30.0}
+	ms.causes = {
+		"confidence": [{"date": game.date.duplicate(), "delta": 10.0, "text": "A personal best at Nuorten SM-hallit (M/N14-15)"},
+				{"date": game.date.duplicate(), "delta": 6.0, "text": "Beat runners ranked above you at Nuorten SM-hallit (M/N14-15)"}],
+		"motivation": [{"date": game.date.duplicate(), "delta": -5.0, "text": "Heikki"}],
+		"stress": [{"date": game.date.duplicate(), "delta": 20.0, "text": "Nerves: Nuorten SM-kilpailut (M/N14-15) this week"}]}
+	ms.same_weeks = 14
+	MUI.open = {"confidence": true, "motivation": true, "stress": true}
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(5)
+	await _shot("%s_mind_overview" % tag)
+	_check_overflow(hub, "%s mind_overview" % tag)
+	var SG = load("res://scripts/core/season_goals.gd")
+	var was: bool = SG.enabled
+	SG.enabled = false
+	hub._show("overview")
+	await _frames(5)
+	await _shot("%s_mind_overview_alone" % tag)
+	_check_overflow(hub, "%s mind_overview_alone" % tag)
+	SG.enabled = was
+	ms.set_plan(["imagery", "relaxation", "self_talk"])
+	ms.set_cue("Fast feet")
+	hub._show("training")
+	await _frames(5)
+	var imagery = _find_button_prefix(hub, "✓ Imagery")   # (on: all three kinds are in the plan)
+	if imagery == null:
+		print("WRONG: no mental plan in the Training tab at ", tag)
+	else:
+		hub._scroll.ensure_control_visible(imagery)
+	await _frames(4)
+	await _shot("%s_mind_training" % tag)
+	_check_overflow(hub, "%s mind_training" % tag)
+	# The MIND panel scrolled into view (its rows still open).
+	MUI.open = {"confidence": true, "motivation": true, "stress": true}
+	hub._show("overview")
+	await _frames(5)
+	var row = _find_label(hub, "Motivation")
+	if row != null:
+		hub._scroll.ensure_control_visible(row)
+	await _frames(4)
+	await _shot("%s_mind_rows" % tag)
+	MUI.open = {}
+	ms.set_plan([])
+	ms.values = {"confidence": 50.0, "motivation": 50.0, "stress": 20.0}
+	ms.before = ms.values.duplicate()
+	ms.causes = {"confidence": [], "motivation": [], "stress": []}
+	ms.same_weeks = 0
+	hub._show("overview")
+	await _frames(3)
+
+
 func _goals_views(main: Node, game, data, tag: String) -> void:
 	var SG = load("res://scripts/core/season_goals.gd")
 	var CSG = load("res://scripts/core/coach_suggests.gd")

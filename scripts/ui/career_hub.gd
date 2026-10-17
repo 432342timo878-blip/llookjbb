@@ -685,8 +685,19 @@ func _build_profile(a: Athlete) -> void:
 	var goals_panel := GoalsUI.overview_panel(func():   # the season goals (session C5); with none set, a button asks the coach
 		_refresh_week_ui()
 		_show_pending_event())
-	if goals_panel != null:
-		_content.add_child(goals_panel)
+	var mind_panel := MindUI.overview_panel()   # the moods (session M1): beside the goals on a wide screen, under them otherwise
+	if goals_panel != null and mind_panel != null and not Layout.stacked():
+		var pair := UIKit.hbox(16)
+		goals_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mind_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		goals_panel.size_flags_stretch_ratio = 1.4
+		pair.add_child(goals_panel)
+		pair.add_child(mind_panel)
+		_content.add_child(pair)
+	else:
+		for p in [goals_panel, mind_panel]:
+			if p != null:
+				_content.add_child(p)
 
 	var columns: Container   # wide: a grid of 4 (2 when the width is short, e.g. with the side panel open)
 	if Layout.compact:
@@ -773,6 +784,9 @@ func _open_people(thread_id: String) -> void:
 func _build_training() -> void:
 	_build_training_page()
 	if _phase_open == "":
+		var mental := MentalPlanUI.build()   # the weekly mental plan and the cue word (session M1)
+		if mental != null:
+			_content.add_child(mental)
 		_content.add_child(StandingOrders.build())
 
 

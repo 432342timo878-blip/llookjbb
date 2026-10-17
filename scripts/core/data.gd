@@ -27,6 +27,7 @@ var coach_talk: Dictionary = {}        # data/coach_talk.json: the head coach's 
 var standards: Dictionary = {}         # data/standards.json: the real 800 m limits (SM, TF-juniorit / TF-nuoret, Kalevan kisat; GDD 4.9.2, session C5)
 var goals: Dictionary = {}             # data/goals.json: the coach's season goals (levels, the estimate, process goals, texts; session C5)
 var advice: Dictionary = {}            # data/advice.json: the coach's race advice by personality and his "Coach suggests" meets / targets (session C5)
+var mind: Dictionary = {}              # data/mind.json: the moods confidence / motivation / stress, mental growth, the mental plan (GDD 4.9.4, session M1)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -63,6 +64,7 @@ func _ready() -> void:
 	standards = _load("res://data/standards.json")
 	goals = _load("res://data/goals.json")
 	advice = _load("res://data/advice.json")
+	mind = _load("res://data/mind.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()

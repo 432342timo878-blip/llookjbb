@@ -47,6 +47,7 @@ func _run() -> void:
 	saves = load("res://scripts/core/save_game.gd")
 	saves.DIR = "user://tool_saves/"
 	load("res://scripts/core/coach_system.gd").neutral_club = true   # (a club coach of 10s = the game before coaches, C1)
+	load("res://scripts/core/mind_system.gd").neutral = true   # (the moods in the middle = the game before the mind, M1)
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false

@@ -92,6 +92,8 @@ func _run() -> void:
 			plan = arg.split("=")[1]
 	# Session C1: careers get a club coach of 10s (= the game before coaches), unless "coach=club" asks for the real ones.
 	load("res://scripts/core/coach_system.gd").neutral_club = not "coach=club" in args
+	# Session M1: the moods stay in the middle (= the game before the mind), unless "mind=free" lets them move.
+	load("res://scripts/core/mind_system.gd").neutral = not "mind=free" in args
 	if plan == "best":
 		_make_best_plan()
 	for arg in args:   # what-ifs: training.progression.novice.bonus=1.1 (a data path = a number)

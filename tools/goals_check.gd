@@ -679,6 +679,10 @@ func _save_load() -> void:
 	print("== 8. Save / load with goals and suggestions")
 	CS.enabled = true
 	CP.enabled = true
+	# (Session M1: every race rolls fresh dice, so a race after the load is another race; since M1 its result moves the moods and
+	# through them the training. The moods stay in the middle here; tools/mind_check.gd tests their own save / load.)
+	var MI = load("res://scripts/core/mind_system.gd")
+	MI.neutral = true
 	_career(6, "balanced", 10, "balanced")
 	var counter := {"n": 0}
 	var ans := _suggest_answers(counter)
@@ -699,6 +703,7 @@ func _save_load() -> void:
 	sg = game.get_system("suggests")
 	_ok("the goals and suggestions come back as they were", JSON.stringify([gs.to_dict(), sg.to_dict()]) == before and gs.lean == 1 and gs.has_goals(2026))
 	_ok("a loaded career goes on exactly as without saving (5 weeks)", _play_on(35, ans) == after_play)
+	MI.neutral = false
 	saves.delete("goals_check")
 	CS.enabled = false
 

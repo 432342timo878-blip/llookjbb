@@ -390,6 +390,12 @@ func apply(year: int, picks: Array) -> void:
 	r.set = true
 	r.est = pack.est
 	offers.erase(year)
+	var mind := MindSystem.sys()   # (session M1: new goals lift motivation; levels above his pick lift an ambitious athlete more)
+	if mind != null:
+		var steps := 0
+		for g in r.goals:
+			steps += int(g.index) - int(g.pick)
+		mind.goals_set(steps)
 	_say_set(year)
 
 
@@ -521,6 +527,9 @@ func _check_places(year: int, date: Dictionary) -> void:
 			continue
 		g.status = "missed"
 		g.detail = str(cfg().review.detail.place_none) if res.is_empty() else str(cfg().review.detail.place).format({"result": str(res.text)})
+		var mind := MindSystem.sys()
+		if mind != null:
+			mind.goal_missed()
 		_talk_missed(year, g)
 
 
@@ -578,6 +587,10 @@ func _close_if_over(ctx: Dictionary, year: int) -> void:
 			g.detail = detail
 			missed.append(g)
 	if not missed.is_empty():
+		var mind := MindSystem.sys()   # (session M1: a missed goal costs a little confidence, never trust)
+		if mind != null:
+			for g in missed:
+				mind.goal_missed()
 		_review(year)
 
 
@@ -593,6 +606,9 @@ func _met(year: int, g: Dictionary, date: Dictionary) -> void:
 	var cs := Game.get_system("coach") as CoachSystem
 	if cs != null:
 		cs.add_trust(delta, "goal met")
+	var mind := MindSystem.sys()   # (session M1: confidence and motivation up)
+	if mind != null:
+		mind.goal_met()
 	var ms := Game.get_system("moments") as StoryletSystem
 	if ms == null:
 		return

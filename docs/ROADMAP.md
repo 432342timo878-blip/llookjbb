@@ -355,10 +355,18 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         suggests", judged with the C4 verdict model, the player decides). *(Sonnet, high)*
         Check: `goals_check` (in `run_all_checks`), `quick_fingerprint` (the races are unchanged), `training_balance -- 0` part 2f,
         `season_check`, `verdict_check`, `help_check` in both layouts, tour + `layout_check`.
-  - [ ] **M1. Mind:** `MindSystem` (confidence / motivation / stress, causes, effects, off switch), mental attributes that grow
-        (consistency from races, composure from big meets), competitiveness and ambition, the weekly mental plan and the cue word.
-        *(Opus, high)*
-        Check: fingerprints identical with the moods in the middle; a tool prints the mood weeks of a season by plan and policy.
+  - [x] **M1. Mind** *(done 2026-10-17, GDD 4.9 "Built (step M1)"; user: news + Sunday drift, the GDD sizes with a calm
+        middle, monotony after 8 weeks on the same week / phase, a MIND panel under the Today card, the coach's line + a topic
+        when a mood is low, the mental plan now, stress now with today's causes; **competitiveness in races moved to the
+        race-controls design session** (the race engine untouched))*: `MindSystem` (confidence / motivation / stress, news +
+        Sunday drift, causes and pulls, effects: training quality and a race-day term, off switch + neutral switch), consistency
+        from races and composure from big meets and the mental plan, ambition (goals, held back, the hint), the weekly mental
+        plan and the cue word, the moments' mood effects, goals met / missed / set, the coach's Motivating and mental coaching.
+        `tools/mind_check.gd` (in `run_all_checks`), `tools/mind_season.gd`. *(Opus, high)*
+        Check: fingerprints identical with the moods in the middle (`training_balance` part 2g); a tool prints the mood weeks of
+        a season by plan and policy.
+        Left for later: competitiveness in races (race controls), the training group's pull (P1), stress from school + sleep
+        (S1), a pre-race routine and video review (G2 / G3), the balance of the mood sizes (B1).
   - [ ] **D1. Research + data (may run beside the others):** real coaches (Finnish + international, public sources only, neutral
         voice), urheilulukiot with athletics and their cut-offs, hometown sizes and regions, `data/school.json` calendar (2026–27 real,
         later years by rule, `estimated`). *(Sonnet, high)*
@@ -529,7 +537,9 @@ independent research + data, so it may run beside the design).
   design session with the user. The quick fix before step 7 only frees the kick (built 2026-10-10: Wait never kicks by
   itself in a watched race, Kick now works at any distance; plus a **kick plan** for Quick result, the first piece of "a
   tactic my AI self follows": the user asked for it, and more of it (an effort plan, a reaction to moves) belongs in this
-  design session). *(Opus)*
+  design session). **Also here (user, session M1, 2026-10-17):** competitiveness for the player = a little extra dig in the
+  last 200 m when side by side with a rival you've met or one ranked just above you (GDD 4.9.4; a deliberate race-engine
+  change with a new `quick_fingerprint` hash). *(Opus)*
 - **Never stale: no "same three options again" (user, 2026-10-11; designed 2026-10-11: storylets, memory, standing orders and the
   check tool in GDD 4.9.5, the played sessions in 4.9.6; still open: rivals' dropouts and life events with the rival profiles, variety
   in the races themselves (weather, other events)):** "I'm most afraid that the game will get stale

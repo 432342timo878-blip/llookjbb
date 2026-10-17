@@ -1,0 +1,56 @@
+{
+	"_note": "The coach's MOOD topics (session M1, GDD 4.9.4; user 2026-10-17: 'a line + a topic when low'): when motivation is Low or Flat, confidence Low, or stress Stressed or worse, the Sunday talk's first topic is one of these (topic 'mood', condition `mood`; StoryletSystem._post_week_talk puts it first). Normal storylets otherwise (format in README.md). The mood effects are points (x data/mind.json news.moment_point, and from the coach x his Motivating and the trust factor). Voice-neutral wording. Real content (not test).",
+	"storylets": [
+		{
+			"id": "mood_flat", "topic": "mood", "cooldown_days": 21, "expires_days": 6,
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"mood": {"motivation": ["flat", "low"]}},
+			"text": [
+				"{name}, you've seemed a bit flat lately. What's going on?",
+				"Your sessions have looked heavy, {name}, and not only in the legs. Tell me honestly: how are you?"
+			],
+			"replies": [
+				{"id": "bored", "label": "I'm bored of the same training", "hint": "Something new would lift you", "effects": {"trust": 1, "motivation": 1, "flag": "said_bored"},
+					"result": "Fair. Then let's change something: a new session in the week, or the week itself in the Training tab. Variety keeps the head fresh.", "result_from": "sender"},
+				{"id": "tired", "label": "I'm just tired", "hint": "He may lighten your week", "effects": {"trust": 1, "motivation": 1, "proposal": "lighter_week"},
+					"result": "Then we take a little off this week. Tired and flat often go together.", "result_from": "sender"},
+				{"id": "fine", "label": "I'm fine", "hint": "", "effects": {},
+					"result": "All right. My door is open if that changes.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "mood_doubt", "topic": "mood", "cooldown_days": 21, "expires_days": 6,
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"mood": {"confidence": ["low"]}},
+			"text": [
+				"{name}, the last races have knocked you. How are you feeling about racing?",
+				"You don't look like you believe in yourself right now, {name}. Talk to me."
+			],
+			"replies": [
+				{"id": "doubt", "label": "I'm starting to doubt myself", "hint": "{coach_first} will try to lift you", "effects": {"trust": 1, "confidence": 2},
+					"result": "Doubt is normal. Your training hasn't gone anywhere. We look at what went right, and we go again.", "result_from": "sender"},
+				{"id": "angry", "label": "I'm angry. I want to prove it", "hint": "Fuel for the next race", "effects": {"confidence": 1, "motivation": 1},
+					"result": "Good. Use it in training, keep it calm on race day.", "result_from": "sender"},
+				{"id": "fine", "label": "I'm OK, really", "hint": "", "effects": {},
+					"result": "Then show me on the track.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "mood_stress", "topic": "mood", "cooldown_days": 21, "expires_days": 6,
+			"thread": "coach", "from": "coach", "slot": "evening",
+			"when": {"mood": {"stress": ["stressed", "overwhelmed"]}},
+			"text": [
+				"You seem wound up lately, {name}. Is there a lot going on?",
+				"{name}, you look stressed. Is it the training, or something else?"
+			],
+			"replies": [
+				{"id": "lot", "label": "Yes, a lot going on", "hint": "He may lighten your week", "effects": {"trust": 1, "stress": -1, "proposal": "lighter_week"},
+					"result": "Then training should be the easy part this week. We take a little off.", "result_from": "sender"},
+				{"id": "manage", "label": "I can manage", "hint": "", "effects": {"stress": -1},
+					"result": "Good. Breathe, sleep, and tell me if it gets too much.", "result_from": "sender"},
+				{"id": "leave", "label": "I don't want to talk about it", "hint": "{coach_first} will let it be", "effects": {},
+					"result": "That's fine. I'm here if you do.", "result_from": "sender"}
+			]
+		}
+	]
+}

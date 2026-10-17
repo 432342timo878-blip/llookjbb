@@ -15,7 +15,7 @@
   {"id": "judging_ability", "name": "Judging ability", "description": "How right his estimates are: time goals, what you can run, the range he gives for your potential."}
  ],
  "effects": {
-  "_note": "Built in C1: training (the week's trained gains per attribute group, Training._apply_progression) and race_advice (how often his shout on a race card is the sensible answer; at 10 exactly races.json controls.coach.accuracy). Built in C4: endurance and speed & strength knowledge, load management and periodization set how clearly he sees a change (`verdict` below: his noise) and load management how early he looks ahead (`proposals`). Prepared, not used yet (M1 / the balance session): youth_development, mental_coaching, motivating.",
+  "_note": "Built in C1: training (the week's trained gains per attribute group, Training._apply_progression) and race_advice (how often his shout on a race card is the sensible answer; at 10 exactly races.json controls.coach.accuracy). Built in C4: endurance and speed & strength knowledge, load management and periodization set how clearly he sees a change (`verdict` below: his noise) and load management how early he looks ahead (`proposals`). Built in M1 (data/mind.json, MindSystem): mental_coaching (composure growth from big meets and the mental plan x (1 + (mc - 10) x composure_per_point); confidence drifts back up faster x (1 + (mc - 10) x confidence_back_per_point)) and motivating (how strongly the coach's words in moments land: x (1 + (m - 10) x lift_per_point); the motivation target + (m - 10) x mind.json drift.motivation.motivating_per_point). Prepared, not used yet (the balance session): youth_development.",
   "training": {
    "per_point": 0.012,
    "groups": {
@@ -26,7 +26,7 @@
   },
   "race_advice": {"attribute": "race_reading", "per_point": 0.015, "min": 0.55, "max": 0.97},
   "youth_development": {"below_age": 18, "growth_niggles_per_point": -0.03, "novice_per_point": 0.02},
-  "mental_coaching": {"composure_per_point": 0.04},
+  "mental_coaching": {"composure_per_point": 0.04, "confidence_back_per_point": 0.03},
   "motivating": {"lift_per_point": 0.04}
  },
  "styles": [

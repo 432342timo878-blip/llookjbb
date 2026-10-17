@@ -9,6 +9,9 @@ extends SceneTree
 ##    real club coach and the coach model off (same fingerprints) and shows the first row with the model on.
 ##    Part 2d plays the rows with the moments engine's test moments ON (session C2), stop events answered: same fingerprints.
 ##    Part 2e plays them with the coach's proposals ON (session C4), "Never" and "Ask me first" with every one vetoed: same.
+##    Part 2f: the coach's suggestions and the season goals ON (session C5), every suggestion declined: same.
+##    The moods are pinned in the middle in every part (MindSystem.neutral, session M1); part 2g plays the rows with the mind OFF
+##    (same fingerprints) and shows the coach row with the moods free.
 ## 3. Health (GDD 4.6): 200 athletes per row (random backgrounds, boys and girls), 1 year from age 14
 ##    through the game's day loop with the health model on, entering the coach's recommended meets.
 ##    Policies: neutral = follows injury limits, ignores soreness; careful = takes it easy when sore
@@ -55,6 +58,9 @@ func _run() -> void:
 	# The balance is measured with a club coach of 10s (session C1: a coach of 10s changes nothing); part 2c checks a
 	# real club coach with the coach model off.
 	C.neutral_club = true
+	# The moods stay in the middle (session M1: OK / OK / Calm = the game before the mind); part 2g checks the mind switched off.
+	var MI = load("res://scripts/core/mind_system.gd")
+	MI.neutral = true
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
@@ -163,6 +169,26 @@ func _run() -> void:
 	print("   (%d suggestions in the 7 rows)" % suggested)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_suggests and suggested > 0 else
 			("NO  <-- his suggestions change the training without your OK!" if not same_suggests else "NO SUGGESTIONS: the check proves nothing")))
+
+	# Session M1: every part above ran with the mind ON and the moods pinned in the middle (OK / OK / Calm). The mind switched OFF
+	# must give the same. Then, for information, the coach row with the moods FREE (a year of the same week wears motivation down).
+	print("\n== 2g. The mind (session M1): moods in the middle (every part above) = the mind OFF: same fingerprints")
+	H.model_enabled = false
+	MI.model_enabled = false
+	var same_mind := true
+	for i in runs.size():
+		same_mind = same_mind and _m1_row(runs[i], plans, true) == fingerprints[i]
+	MI.model_enabled = true
+	print("   fingerprints identical to part 1: %s" % ("YES" if same_mind else "NO  <-- the mind's off switch or its middle leaks!"))
+	print("   For information, the coach row with the moods FREE (not a check):")
+	MI.neutral = false
+	_m1_row(runs[0], plans, true)
+	var mind = game.get_system("mind")
+	print("   (after the year: confidence %s %.1f, motivation %s %.1f, stress %s %.1f; %d weeks on the same week)" % [
+			mind.word("confidence").name, mind.value("confidence"), mind.word("motivation").name, mind.value("motivation"),
+			mind.word("stress").name, mind.value("stress"), mind.same_weeks])
+	MI.neutral = true
+	H.model_enabled = true
 
 	var n := 200
 	var args := OS.get_cmdline_user_args()

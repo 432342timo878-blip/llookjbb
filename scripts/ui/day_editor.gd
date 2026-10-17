@@ -373,7 +373,7 @@ func _build_race(info: Dictionary) -> void:
 		add_child(warning)
 	add_child(UIKit.panel(box, 14))
 	if info.today:
-		var form := FormUI.race_card()   # how you will race today (a later race day: it depends on the days in between)
+		var form := FormUI.race_card(meet)   # how you will race today (a later race day: it depends on the days in between)
 		if form != null:
 			add_child(form)
 	_add_ask("race", func(): return CoachVerdict.for_race(day))

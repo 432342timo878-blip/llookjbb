@@ -20,7 +20,7 @@ them, never a normal career. Rules, rates and shared texts are in `data/moments.
 | `important` | the reply changes something: Play week stops for it with the setting *Important only* (it then needs a stop token, `moments.json rate`) |
 | `expires_days` | days it waits for an answer (default `moments.json expires_days`); then "you didn't answer" |
 | `chain_only` | comes only as a chain follow-up (a reply's `next`) |
-| `topic` | `week` / `race` / `ack` (session C3): a topic of the coach's Sunday talk or of his message after a race (`week_talk.json`), never picked by the scheduler; `ack` is the talk without a topic (one reply, "Thanks, coach") |
+| `topic` | `week` / `race` / `ack` (session C3): a topic of the coach's Sunday talk or of his message after a race (`week_talk.json`), never picked by the scheduler; `ack` is the talk without a topic (one reply, "Thanks, coach"); `mood` (session M1, `mind_talk.json`): his "how are you?" topic, put FIRST in the Sunday talk whenever one fits (its `mood` condition) |
 | `standing` | a group name for a recurring choice: the same reply twice in a row offers a rule (the reply needs a `rule` text) |
 | `text` | the text variants: strings, or `{"text": ..., "when": {...}}`; never the same variant twice in a row |
 | `replies` | 2–4 replies (below) |
@@ -40,8 +40,10 @@ appear there when their systems exist.
 
 **Effects** (`moments.json effects`): `trust` (the head coach's trust, `CoachSystem.add_trust`), `relation` (the sender's
 relationship; for the coach it is his trust), `flag` (a name or a list: remembered with the date and a counter), `unflag`,
-`count` (`{"name": +1}`). Prepared for later systems (recorded, no effect yet): `confidence`, `motivation`, `stress`,
-`sleep`, `life_load`, `grades`, `budget`, `proposal`.
+`count` (`{"name": +1}`), `proposal` (session C4: "lighter_week" / "more", the coach looks at it the next morning),
+`confidence` / `motivation` / `stress` (session M1: points on the mood, each x `mind.json news.moment_point` 5; from the coach
+also x his Motivating and the trust factor; listed on the result card as "Confidence ▲ a little"). Prepared for later systems
+(recorded, no effect yet): `sleep`, `life_load`, `grades`, `budget`.
 
 ## Conditions (`when`)
 
@@ -53,7 +55,9 @@ matches] · `tomorrow_rest` true / false · `flags` ["name", "!name"] · `flag_d
 last set) · `counters` {"name": [min, max]} · `seen` / `not_seen` [storylet ids] · `answered` {"storylet": "reply" or
 ["reply", ...]} (its last answer; "_none" = not answered) · `trust` ["new", "good", "strong", "strained"] · `relation`
 [min, max] (with the sender) · `fatigue` [min, max] (the athlete's fatigue now, 0–100) · `race_outcome` ["pb", "good", "bad",
-"hurt"] (how the race that just finished went: the evening after a race only, see CoachTalk.race_outcome) · `chance` 0–1.
+"hurt"] (how the race that just finished went: the evening after a race only, see CoachTalk.race_outcome) · `mood`
+{"motivation": ["flat", "low"], "confidence": [...], "stress": [...]} (session M1: each named mood's word id is one of those;
+never true with the mind model off; word ids in data/mind.json) · `chance` 0–1.
 
 ## Placeholders
 

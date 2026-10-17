@@ -93,8 +93,10 @@ func _make_systems() -> Array:
 	# (Moments after Health and Coach: an evening moment sees the day's injury news and the coach's record. The coach's
 	# proposals last: he looks at the day after the body, Form and the moments have had their say.)
 	# (The season goals (C5) after the moments: their messages and talks are moments; the coach's meet and target suggestions last of all.)
-	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), StoryletSystem.new(),
-			SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new()]
+	# (The mind (M1) after the coach and before the moments: the day's diagnoses and race are news for the moods before an evening
+	# moment or the Sunday talk reads them.)
+	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), MindSystem.new(),
+			StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list
@@ -251,6 +253,8 @@ func current_week() -> WeekSim:
 	_week.races = Calendar.races_in_week(entries, _week.monday)
 	var coach := get_system("coach") as CoachSystem
 	_week.coach_effect = coach.training_effect() if coach else {}
+	var mind := get_system("mind") as MindSystem
+	_week.quality = mind.training_quality() if mind else 1.0   # motivation (GDD 4.9.4): exactly 1.0 in the middle
 	if created:
 		for s in systems:
 			s.on_week_start(_week)
@@ -382,7 +386,33 @@ func _make_race_note(rd: RaceDay) -> Dictionary:
 			break
 	if res.is_empty():
 		return {}
-	return {"meet": str(rd.meet.name), "key": str(rd.meet.key), "result": res, "story": rd.story.duplicate()}
+	return {"meet": str(rd.meet.name), "key": str(rd.meet.key), "result": res, "story": rd.story.duplicate(),
+			"rounds": rd.player_results.duplicate(true), "beat_above": _beaten_above(rd)}
+
+
+## The mind's news (session M1): how many runners who went into a round with a faster season best (else personal best) than the
+## player's finished behind them (each runner counted once over the meet's rounds).
+static func _beaten_above(rd: RaceDay) -> int:
+	var names := {}
+	for res in rd.all_results:
+		var mine := -1
+		for i in res.size():
+			if res[i].get("is_player", false):
+				mine = i
+		if mine < 0 or str(res[mine].get("status", "")) != "":
+			continue
+		var my_ref := float(res[mine].get("sb_before", 0.0))
+		if my_ref <= 0.0:
+			my_ref = float(res[mine].get("pb_before", 0.0))
+		if my_ref <= 0.0:
+			continue
+		for i in range(mine + 1, res.size()):
+			var ref := float(res[i].get("sb_before", 0.0))
+			if ref <= 0.0:
+				ref = float(res[i].get("pb_before", 0.0))
+			if ref > 0.0 and ref < my_ref:
+				names[str(res[i].name)] = true
+	return names.size()
 
 
 func _hook(method: String, ctx: Dictionary) -> void:

@@ -2616,7 +2616,8 @@ comments in the Sunday talk; a switch turns them off for the tools):
   decides anything; the day log just says "you dragged yourself through it".
 - **Stress** (*Calm / Busy / Stressed / Overwhelmed*; user: yes, a third mood): the visible face of the life load (school stage, exam
   weeks, study effort, free time, late nights, clashes); drags motivation and sleep.
-The middle (OK / OK / Calm) = today's game.
+The middle (OK / OK / Calm) = today's game. *Built in M1 (all but competitiveness in races, moved to the race-controls session):
+see "Built (step M1)" below.*
 
 **Mental attributes that grow, as they really do:** consistency from **racing experience** (each race a little, varied ones more;
 Hopkins & Hewson 2001), pre-race routines, mental training; composure from **big-meet experience**, imagery and relaxation, the coach's
@@ -3177,6 +3178,139 @@ gender), `ladder(a, year)` lists what is there for them from the easiest.
 meets session); real coaches' own goal habits (D1); goals for other events (the game plays the 800 m only); a way to change goals once
 set (a talk with the coach could, later); suggestions for a camp or a test day (S2 / B1); `race_check` and `commentary_check` were not
 changed (the engine is bit-for-bit the same, see the fingerprint).
+
+#### Built (step M1, 2026-10-17): the mind (confidence, motivation, stress), mental growth, the mental plan
+
+**Before building:** `run_all_checks` gave 17 / 18 PASS; the failure was `coach_check`, which still expected the race-advice
+accuracy from before C5 (a race reading of 10 = 0.80): the career's test coach is a tactician and C5 gives tacticians +0.04 on
+purpose (`advice.json race.shouts.accuracy_bonus`). The check now adds the voice's bonus; the game was right.
+
+**Decisions with the user (asked 2026-10-17, before building; every one the recommended option but competitiveness):**
+1. **How the moods move: news + a Sunday drift.** Big news moves a mood at once (a race's result, an injury's diagnosis, a goal, a
+   new phase, a moment's answer); every Sunday night each mood drifts part of the way to where its situation pulls it: confidence
+   slowly (15 % of the way a week, faster back up with a good mental coach), motivation 25 %, stress 40 %.
+2. **Effects: the GDD sizes with a calm middle.** Nothing changes while confidence and motivation say OK and stress says Calm.
+   Motivation: every training session's effect × 0.92 (Flat, 0) … × 1.05 (Fired up, 100), straight lines from the edges of the
+   middle word. Confidence: up to ±0.3 % of race time at Low / Flying, full at national, international and elite meets, half at
+   district, a third at local meets. Stress has no effect of its own: it pulls motivation down.
+3. **Monotony = the same repeating week, or the same season phase, for more than 8 weeks:** then motivation's pull drops 1.5 a
+   week (at most 15). A changed week or a new phase starts the count again; a new phase is also news (+3).
+4. **The mood rows: a MIND panel under the Today card** (beside the goals on a wide screen): three rows, a word in its colour and
+   an arrow (▲ ▼ since a week ago); a tap shows what it does now, the recent news, what pulls it and what helps.
+5. **The coach in the Sunday talk: a line + a topic when low.** One line in his voice about the mood furthest from its middle (or
+   moved most this week); a coach of few words (communication ≤ 7) skips it. With motivation Low / Flat, confidence Low or
+   stress Stressed / Overwhelmed, the talk's first topic is his "how are you?" (three storylets, each with replies that matter:
+   "bored" → he suggests changing the week; "just tired" → a lighter week through C4's proposal; "I'm fine").
+6. **Competitiveness in races: LATER, with the race-controls design session** (the user chose it over the recommended "now, small"):
+   the race engine stays untouched in M1, so `quick_fingerprint` keeps its hash. The idea is kept in the ROADMAP's race-controls
+   item.
+7. **The weekly mental plan and the cue word: now.**
+8. **Stress now, with today's causes** (school adds the rest in S1).
+
+**Claude's defaults (not asked; say if you want them changed):** each mood is a hidden 0–100 (starts 50 / 50 / 20); the words are
+confidence Low < 20 ≤ Shaky < 40 ≤ OK ≤ 60 < Confident ≤ 80 < Flying, motivation the same with Flat / Low / OK / Keen / Fired up,
+stress Calm < 35 ≤ Busy < 60 ≤ Stressed < 80 ≤ Overwhelmed (Calm was < 40 at first: stress then never left Calm in a season, see
+"Measured"); the arrow compares with the value after the Sunday before last (at least 3 points); the mental plan is the three kinds
+on / off, one short session of each a week (so 0–3 sessions), not a count per kind; the cue words are a list of eight (Smooth,
+Relax, Strong, Tall, Fast feet, Now, Patience, Fight); a big meet is news on the Sunday night before its week (+20 stress, less with
+composure, halved by relaxation training) rather than a slow pull, so nerves show in the week they belong to; consistency and
+composure grow on top of what training already gives them; no save-version change (an older save loads with the moods in the
+middle).
+
+**What was built:**
+- **`data/mind.json`** (new; its note explains every number): `moods` (words, colours, start, middle), `effects`, `big_levels`,
+  `news` (race: PB +10 confidence and +4 motivation, SB +5, a bit below your level (> 2 % slower than your season best) −4, well
+  below (> 4 %) −7, a win +4, last of 4+ −5, DNF −8, DQ −6, each runner beaten who went in with a faster season best +2 up to +6;
+  injury by tier: niggle −1 / +2 stress, injury −5 / +6, serious −10 / +12, illness 0 / +2; goals: met +6 confidence and +4
+  motivation, missed −2 confidence each, set +4 motivation + 2 × (ambition / 10) per level above (−) / below his pick; a new
+  phase +3; a moment's point = 5, from the coach × his Motivating (1 + (m − 10) × 0.04) × trust (New 0.9, Good 1, Strong 1.25,
+  Strained 0.6); big meet +20 stress × (1 − (composure − 10) × 0.04), × 0.5 with relaxation), `drift` (the pulls: confidence
+  injured −10; motivation fit click +6 / friction −6, style ±1.5 a step (controlling not for the fiery temperaments), trust Strong
+  +4 / Strained −8, his Motivating (m − 10) × 0.8, monotony, no running for 14+ days −8, stress above 55 × −0.5, held back (a Steady
+  plan with ambition above 12) −1 a point; stress injured +15, a strained coach +10, load vs normal above 130 % × 0.3 up to +20,
+  relaxation −6; self-talk +2 on confidence), `growth`, `mental_plan`, `causes` / `pulls` (the lines of a tapped row), `ui`, and the
+  coach's lines per voice. `coaching.json effects.mental_coaching.confidence_back_per_point` 0.03 (new) and the note: mental
+  coaching and motivating are now built.
+- **`MindSystem`** (`scripts/core/mind_system.gd`, GameSystem id `mind`, after the coach and before the moments in `Game.systems`):
+  the moods, their news (`add`, `from_moment`, `goal_met` / `goal_missed` / `goals_set`, `_race_news` on the race's evening from
+  `ctx.race_note`, which now carries the rounds and the number of runners beaten (`Game._beaten_above`), `_diagnoses` from the
+  day's health events, `_big_meet_nerves`), the Sunday drift (`target` = base + `pulls`), monotony (`template_of(monday)`:
+  `phase:<year>:<phase>` or the repeating week as text; `same_weeks`), the effects (`training_quality()` → `WeekSim.quality`,
+  `race_term(meet)` → `RaceDay.mind`), the growth (consistency per race 0.05 × 1.5 when the level or indoor / outdoor differs from
+  the last race; composure 0.1 per big race × the coach's mental coaching × (1 + (confidence − 50) / 50 × 0.2); both × the
+  headroom (20 − value) / 10), the weekly mental plan (`plan`, `cue`, `toggle_kind`, `set_cue`, `cue_word`; composure per week:
+  imagery 0.004 (× 2 with a target in the coming week), relaxation 0.003, self-talk 0.003, × headroom × mental coaching), the coach's
+  line (`talk_mood`, `coach_line`), `is_low`. No dice of its own: the same days give the same moods, and a loaded game goes on as
+  without saving. Switches: `model_enabled` (off = nothing at all) and `neutral` (the moods never move; the balance tools set it).
+- **Hooked in:** `WeekSim.quality` (× every training session's stimulus; races not), `RaceDay._player_entrant` (time × (1 +
+  slowdown − form − mind), only for the career's athlete), `StoryletSystem._apply` (the mood effects are real now; moved from
+  `moments.json effects.prepared` to `known`), `_changes_of` (the result card: "Confidence ▲ a little"), the condition `mood`, the
+  topic `mood` put first in the Sunday talk, the coach's line added to the talk's text; `SeasonGoals._met`, `_close_if_over`,
+  `_check_places`, `apply`; the day log's `dragged` (Report: "You dragged yourself through it.").
+- **UI:** `MindUI` (the MIND panel; the confidence line on the race-day form card, `FormUI.race_card(meet)`, in the day editor and on
+  the race screen; the cue word on every decision card), `MentalPlanUI` (Training tab, above Standing orders: three 44 px
+  toggles with what each does, the cue word ◀ ▶). Help: `overview` v8 ("Mind"), `training_season` v6 and `training_repeat` v5
+  ("Mental training"; the repeating week also "The same week for months"), `race_running` v11 ("Your word"), new topics `moods`
+  and `mental_training`.
+- **Tools:** `tools/mind_check.gd` (new, in `run_all_checks`), `tools/mind_season.gd` (new: seasons by plan and policy, the moods week
+  by week and a summary), `training_balance` part 2g, the moods pinned in `day_engine_check`, `season_check`, `coach_check`,
+  `storylet_check`, `verdict_check` and `career_check` (unless `mind=free`), `storylet_check` knows the `mood` condition and topic,
+  `layout_check` `_mind_views`, the tour `_mind_tour` (49…49c; the race card's cue word in shot 10).
+
+**Measured:**
+- *Neutral = identical:* `training_balance -- 0`: every part, the new 2g (the mind OFF) included, gives 206.798298350 /
+  14.102831594 / 1226.006524079 for the coach row (the moods pinned in the middle in parts 1–2f); the same year with the moods FREE:
+  206.661147597 (52 weeks on the same repeating week: motivation Low 35, training quality 0.98 for the last months).
+  `quick_fingerprint` keeps its hash (73182f4eb6c496760b24bc0d3b3780c2): the race engine is untouched (the confidence term sits in
+  `RaceDay._player_entrant` and is 0 in the middle). `mind_check` (12 parts, ALL CHECKS PASSED): the numbers of every effect, the
+  mind off = the moods pinned = the fingerprint, each kind of news, the drift (15 / 40 % of the way; from Low a mental coach of 18
+  brings confidence back to 25.6 in a week, one of 4 to 23.7), monotony (no pull after 8 weeks, −6 after 12, a changed week starts
+  again), a new phase is news, the coach's fit and style (a calm supportive coach for an overthinker pulls motivation to 59, a
+  controlling drill coach to 41), training quality through the game (aerobic gain over 4 weeks 0.247 at motivation 10, 0.261 at 50,
+  0.269 at 90), the race-day term (Flying at the Nuorten SM-hallit: +0.3 %), consistency +0.075 for a first race and +0.050 ×
+  headroom for one like the last, composure +0.1 at a national race, the mental plan +0.51 composure a year (all three kinds,
+  composure 10), the moments' points (×5, ×0.9 for New trust; a coach of Motivating 18 lands +5.9), the result card's mood lines,
+  the Sunday talk's line and mood topic, save / load bit for bit (no races), an older save, the off switch.
+- *Seasons (`mind_season`, 4 random 14-year-olds per row, 52 weeks from 2 Nov 2026, health on, quick races with the pack plan, the
+  real club coach; the share of weeks in each word):*
+
+  | plan / policy | confidence | motivation | stress | training quality |
+  |---|---|---|---|---|
+  | steady / sensible | OK 84, Confident 16 | Low 3, OK 80, Keen 17 | Calm 100 | 1.0004 |
+  | steady / passive | OK 92, Confident 8 | Low 1, OK 82, Keen 17 | Calm 91, Busy 9 | 1.0005 |
+  | steady / racer (72 races) | Shaky 9, OK 79, Confident 13 | OK 83, Keen 16 | Calm 100 | 1.0005 |
+  | balanced / sensible | Shaky 3, OK 88, Confident 9 | Low 3, OK 85, Keen 12 | Calm 98, Busy 2 | 1.0002 |
+  | balanced / passive | Shaky 2, OK 88, Confident 9 | Low 2, OK 80, Keen 17 | Calm 90, Busy 10 | 1.0005 |
+  | balanced / racer (71 races) | Shaky 2, OK 86, Confident 12 | Low 1, OK 80, Keen 19 | Calm 100 | 1.0006 |
+  | ambitious / sensible | OK 86, Confident 13 | Low 4, OK 78, Keen 18 | Calm 97, Busy 3 | 1.0003 |
+  | ambitious / passive | Shaky 7, OK 86, Confident 8 | OK 88, Keen 12 | Calm 84, Busy 15, Stressed 1 | 1.0005 |
+  | ambitious / racer (71 races) | Shaky 3, OK 78, Confident 18 | Low 1, OK 80, Keen 19 | Calm 100 | 1.0006 |
+  | ambitious / no races but the targets | OK 100 | Low 1, OK 86, Keen 13 | Calm 95, Busy 5 | 1.0003 |
+  | repeat week / sensible | OK 92, Confident 7 | Low 42, OK 58 | Calm 100 | 0.9941 |
+  | repeat week / passive | Shaky 1, OK 92, Confident 7 | Low 44, OK 56 | Calm 91, Busy 9 | 0.9940 |
+  | repeat week / racer (70 races) | Shaky 9, OK 85, Confident 6 | Low 46, OK 54 | Calm 98, Busy 2 | 0.9942 |
+  | repeat week / no races | OK 100 | Low 50, OK 50 | Calm 100 | 0.9932 |
+
+  (sensible / racer = all three mental sessions, so relaxation halves the nerves before a big meet; passive = none; a season-plan
+  career is always entered in its two targets.) Against GDD 4.9.7: motivation OK or better in most weeks and **Flat in none** on the
+  coach's plans; the never-changed repeating week wears it to Low in ~43 % of weeks (−0.6 % of training): the monotony rule working
+  as meant. Confidence follows results: up after PBs and wins, down after last places and races below the athlete's level (a
+  racer meets more of both). Stress before school is Busy only in big-meet weeks (2–15 % of weeks; Calm was below 40 at first and
+  then stress never left Calm, so Calm now ends at 35). The moods' effects are small on purpose: a confidence term reached the race
+  in 4–18 races of ~40–70 a season (mean ±0.005 % of time). The B1 balance session can make the words livelier (bigger news or a
+  narrower middle) if the playtest asks for it.
+- *Save / load and races:* every race rolls fresh dice, so a race run after a load is another race (as before M1). Since M1 a
+  race's result moves the moods and, outside the middle, the training, so `goals_check`'s save / load part now pins the moods; the
+  mind's own save / load is proved without races in `mind_check`.
+- *Screens:* `layout_check` at 1280×720, 720×1280, 390×844, 1000×900, 844×390 with the new `_mind_views` (the MIND panel with every
+  row open, beside the goals and alone, the mental plan): no OVERFLOW / SQUEEZED / WRONG; `help_check` 740 checks on the phone layout
+  (was 697) and 749 on the PC layout (was 706); `run_all_checks` 19 / 19 PASS (mind_check new); the tour's new shots 49…49c (the Overview, the open rows, the mental plan with ✓ toggles, the Sunday talk's stress
+  line and "how are you?" topic) and the race card's "Your word: Strong" (shot 10).
+
+**Not in M1:** competitiveness in races (the race-controls session, by the user's choice) and its group-session side (P1, with the
+training group's pull); stress from school, exam weeks, sleep and life load (S1); the pre-race routine and video review as mental
+training (G2 / G3); a coach who ends it after weeks of Strained trust (later); the balance of the mood sizes over many seasons (B1:
+the GDD 4.9.7 targets).
 
 ### Other systems (to be designed)
 

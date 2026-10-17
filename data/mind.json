@@ -1,0 +1,214 @@
+{
+ "_note": "The mind (GDD 4.9.4; session M1, read by MindSystem, scripts/core/mind_system.gd). Three moods, each a hidden value 0-100 shown as a word: confidence and motivation have the middle word OK (`middle` = [low, high], both included), stress the bottom word Calm. NEWS moves a mood at once (`news`: a PB, a last place, an injury, a goal met, a moment's answer; numbers are points on the 0-100 scale). Every SUNDAY NIGHT each mood drifts `rate` of the way to its target (`drift`): the target is `base` plus the pulls of your situation (fit with the coach, trust, monotony, a long layoff, stress, the mental plan...). EFFECTS (user 2026-10-17: the GDD sizes with a calm middle): nothing changes while confidence and motivation are in their middle word, so the neutral game is exactly the old one. Motivation sets the quality of training (every session's training effect x quality: `effects.motivation` at 0 and 100, 1.0 across the middle, straight lines between); confidence a race-day term (a share of race time, + = faster) at its ends (`effects.confidence`), times the meet level's `level_scale`; stress has no effect of its own: it pulls motivation down (drift.motivation.stress). Mental attributes that grow (`growth`): consistency from every race (more when the race is different from the last one: Hopkins & Hewson 2001), composure from big meets (national / international), each times a headroom (20 - value) / headroom_span (between headroom_min and 1); composure also from the weekly mental plan (`mental_plan`, at best about +0.5 a year: the 2023 meta-analysis). Ambition (hidden): how much a goal level above or below the coach's pick moves motivation, and the 'held back' pull on a Steady plan. All UI and coach texts are here too.",
+ "moods": {
+  "confidence": {
+   "name": "Confidence", "start": 50, "middle": [40, 60],
+   "words": [
+    {"id": "low", "name": "Low", "below": 20, "color": "#f0883e"},
+    {"id": "shaky", "name": "Shaky", "below": 40, "color": "#e0b252"},
+    {"id": "ok", "name": "OK", "below": 60.0001, "color": "#9aa1b2"},
+    {"id": "confident", "name": "Confident", "below": 80, "color": "#8fd16a"},
+    {"id": "flying", "name": "Flying", "below": 1000, "color": "#4cc38a"}
+   ]
+  },
+  "motivation": {
+   "name": "Motivation", "start": 50, "middle": [40, 60],
+   "words": [
+    {"id": "flat", "name": "Flat", "below": 20, "color": "#f0883e"},
+    {"id": "low", "name": "Low", "below": 40, "color": "#e0b252"},
+    {"id": "ok", "name": "OK", "below": 60.0001, "color": "#9aa1b2"},
+    {"id": "keen", "name": "Keen", "below": 80, "color": "#8fd16a"},
+    {"id": "fired_up", "name": "Fired up", "below": 1000, "color": "#4cc38a"}
+   ]
+  },
+  "stress": {
+   "name": "Stress", "start": 20, "middle": [0, 35],
+   "words": [
+    {"id": "calm", "name": "Calm", "below": 35, "color": "#9aa1b2"},
+    {"id": "busy", "name": "Busy", "below": 60, "color": "#e0b252"},
+    {"id": "stressed", "name": "Stressed", "below": 80, "color": "#f0883e"},
+    {"id": "overwhelmed", "name": "Overwhelmed", "below": 1000, "color": "#e5534b"}
+   ]
+  }
+ },
+ "arrow_min": 3,
+ "keep_causes": 8,
+ "effects": {
+  "_note": "motivation: training quality at value 0 and 100 (1.0 across the middle). confidence: race-day share of time at value 0 and 100 (0 across the middle), times level_scale of the meet's level.",
+  "motivation": {"at_0": 0.92, "at_100": 1.05},
+  "confidence": {"at_0": -0.003, "at_100": 0.003, "level_scale": {"local": 0.33, "district": 0.5, "national": 1.0, "international": 1.0, "elite": 1.0}},
+  "dragged_below": 40
+ },
+ "big_levels": ["national", "international", "elite"],
+ "news": {
+  "_note": "Points added at once. Race news (the evening of the race day, from the last round run and the meet's best time): pb, sb (not a PB), well_below (slower than the season best going in by more than well_below_pct; else below by more than below_pct: below), win, last (field of at least last_min_field), dnf, dq, beat_above = each runner who went in with a faster season best (else personal best) than yours and finished behind you, up to beat_above_max. motivation_pb: motivation for a PB. Injury news by tier at the diagnosis (confidence, stress). Goals: met (confidence, motivation), missed (confidence, each missed goal at the season's review or a missed place), set (motivation, the novelty of new goals) + per level above / below the coach's pick: ambition_step x (ambition / 10). New phase: motivation (novelty; season-plan careers). Moments: a reply's confidence / motivation / stress points x moment_point; from the coach also x his lift (1 + (motivating - 10) x coaching.json effects.motivating.lift_per_point) x the trust factor.",
+  "race": {"pb": 10, "sb": 5, "below": -4, "below_pct": 2.0, "well_below": -7, "well_below_pct": 4.0, "win": 4, "last": -5, "last_min_field": 4, "dnf": -8, "dq": -6, "beat_above": 2, "beat_above_max": 6, "motivation_pb": 4},
+  "injury": {
+   "niggle": {"confidence": -1, "stress": 2},
+   "injury": {"confidence": -5, "stress": 6},
+   "serious": {"confidence": -10, "stress": 12},
+   "illness": {"confidence": 0, "stress": 2}
+  },
+  "goal": {"met_confidence": 6, "met_motivation": 4, "missed_confidence": -2, "set_motivation": 4, "ambition_step": 2.0},
+  "new_phase_motivation": 3,
+  "big_meet": {"_note": "Sunday night before a week with a big meet (big_levels): stress + stress x (1 - (composure - 10) x composure_per_point), x relaxation_share with relaxation training in the mental plan. The next Sunday's drift takes it back down.", "stress": 20, "composure_per_point": 0.04, "relaxation_share": 0.5},
+  "moment_point": 5,
+  "trust_factor": {"new": 0.9, "good": 1.0, "strong": 1.25, "strained": 0.6}
+ },
+ "drift": {
+  "_note": "Sunday night: value += (target - value) x rate. confidence: base 50, an active injury (tier injury / serious) pulls it down; rate is faster while below the target with a good mental coach: x (1 + (mental_coaching - 10) x back_per_point). motivation: base 50 + the coach's fit (click / friction), his style (per step: + supportive, - controlling, but not for the temperaments in coaching.json fit.no_controlling_penalty), trust, his Motivating ((motivating - 10) x motivating_per_point), monotony (the same repeating week or season phase for more than monotony.grace weeks: per_week each week after, at most `max`), a layoff (no running for layoff_days or more), stress (above stress_from: per point), held back (a Steady plan with ambition above held_back.ambition_above: per point of ambition above it). stress: base 20 + an active injury, a strained coach, a week far above your normal load (load vs normal above load_from %: per point, at most load_max), relaxation training in the mental plan. (A big meet in the coming week is news: news.big_meet.)",
+  "confidence": {"base": 50, "rate": 0.15, "back_per_point": 0.03, "injured": -10},
+  "motivation": {"base": 50, "rate": 0.25,
+   "fit": {"click": 6, "fine": 0, "friction": -6},
+   "style_per_step": 1.5,
+   "trust": {"new": 0, "good": 0, "strong": 4, "strained": -8},
+   "motivating_per_point": 0.8,
+   "monotony": {"grace": 8, "per_week": 1.5, "max": 15},
+   "layoff": {"days": 14, "pull": -8},
+   "stress": {"from": 55, "per_point": -0.5},
+   "held_back": {"ambition_above": 12, "per_point": -1.0}
+  },
+  "stress": {"base": 20, "rate": 0.4, "injured": 15, "strained": 10,
+   "load": {"from": 130, "per_point": 0.3, "max": 20},
+   "relaxation": -6}
+ },
+ "growth": {
+  "_note": "Mental attributes that grow outside training (training sessions and races already grow them through their effects in training.json / competitions.json). Applied on the evening of a race day. consistency: per_race x headroom, x varied when the meet's level or indoor/outdoor differs from the last race's. composure: per_big_race (national / international meets) x headroom x the coach's mental coaching (coaching.json effects.mental_coaching.composure_per_point) x the confidence factor (1 + (confidence - 50) / 50 x confidence_share).",
+  "headroom_span": 10, "headroom_min": 0.1,
+  "consistency": {"per_race": 0.05, "varied": 1.5},
+  "composure": {"per_big_race": 0.1, "confidence_share": 0.2}
+ },
+ "mental_plan": {
+  "_note": "The weekly mental plan (GDD 4.9.4; Training tab): none, one, two or all three kinds, one short session of each a week (so 0-3 sessions). Sunday night each session grows composure by `composure` x headroom x the coach's mental coaching (imagery x target_week when a target is in the coming week); relaxation lowers the stress target (drift.stress.relaxation); self-talk lifts the confidence target by `confidence`. All three at a composure of 10: about +0.5 a year (the 2023 meta-analysis: moderate effects at best). No body strain. The cue word (self-talk) is shown on the race cards. Life load (school) comes with S1.",
+  "max_sessions": 3,
+  "kinds": {
+   "imagery": {"name": "Imagery", "composure": 0.004, "target_week": 2.0, "text": "Picture the race before it happens: the start, the bell, the kick. Strongest the week before a target."},
+   "relaxation": {"name": "Relaxation and breathing", "composure": 0.003, "text": "Slow breathing and letting go of tension. Lowers stress a little."},
+   "self_talk": {"name": "Self-talk", "composure": 0.003, "confidence": 2, "text": "What you say to yourself when it hurts, with a cue word you pick. Your word shows on the race cards."}
+  },
+  "cue_words": ["Smooth", "Relax", "Strong", "Tall", "Fast feet", "Now", "Patience", "Fight"],
+  "default_cue": "Smooth"
+ },
+ "causes": {
+  "_note": "The lines of the recent causes (tap a mood row). {meet} {who} {goal} {injury} are filled in.",
+  "pb": "A personal best at {meet}",
+  "sb": "A season's best at {meet}",
+  "below": "Slower than your level at {meet}",
+  "well_below": "Well below your level at {meet}",
+  "win": "You won at {meet}",
+  "last": "Last at {meet}",
+  "dnf": "Didn't finish at {meet}",
+  "dq": "Disqualified at {meet}",
+  "beat_above": "Beat runners ranked above you at {meet}",
+  "injury": "{injury}",
+  "goal_met": "A season goal met",
+  "goal_missed": "A season goal missed",
+  "goals_set": "New season goals",
+  "new_phase": "A new phase of training",
+  "big_meet": "Nerves: {meet} this week",
+  "moment": "{who}",
+  "week": "The week"
+ },
+ "pulls": {
+  "_note": "The ongoing pulls shown under a mood (what the Sunday drift heads for). {coach} = his first name, {weeks}.",
+  "injured": "Injured",
+  "fit_click": "You click with {coach}",
+  "fit_friction": "Friction with {coach}",
+  "style_plus": "{coach} is supportive",
+  "style_minus": "{coach} is controlling",
+  "trust_strong": "Strong trust in {coach}",
+  "trust_strained": "Trust in {coach} is strained",
+  "motivating_plus": "{coach} is good at lifting you",
+  "motivating_minus": "{coach} rarely lifts you",
+  "monotony": "The same training for {weeks} weeks",
+  "layoff": "No running for weeks",
+  "stress": "Stress",
+  "held_back": "You want more than a Steady plan",
+  "strained": "Things are strained with {coach}",
+  "load": "Training far above your normal",
+  "relaxation": "Relaxation training",
+  "self_talk": "Self-talk"
+ },
+ "ui": {
+  "head": "MIND",
+  "hint": "Tap a mood to see why it is where it is.",
+  "now": "NOW",
+  "recent": "RECENT",
+  "pulls": "PULLING IT",
+  "helps": "WHAT HELPS",
+  "no_causes": "Nothing has moved it lately.",
+  "no_pulls": "Nothing in particular: it settles back towards the middle.",
+  "arrow_up": "▲",
+  "arrow_down": "▼",
+  "ambition_high": "You dream big: big goals lift you more, being held back hurts more.",
+  "ambition_low": "You're content: goals and plans move you less either way.",
+  "ambition_mid": "",
+  "ambition_high_from": 13, "ambition_low_below": 8,
+  "race_line": "CONFIDENCE {word}: {effect}",
+  "race_faster": "you race a little faster at a meet like this.",
+  "race_slower": "you race a little slower at a meet like this.",
+  "dragged": "You dragged yourself through it.",
+  "cue_line": "Your word: {word}",
+  "plan_head": "MENTAL TRAINING",
+  "plan_text": "Short sessions without body strain. Small on purpose: over a year they make you a little calmer under pressure.",
+  "plan_none": "None",
+  "plan_session": "Session {n}",
+  "plan_cue": "Cue word",
+  "plan_off": "No mental training this week.",
+  "effects": {
+   "confidence": {
+    "low": "Low confidence costs you a little time on race day, most at big meets.",
+    "high": "High confidence gives you a little time on race day, most at big meets.",
+    "middle": "No effect on your races now."
+   },
+   "motivation": {
+    "low": "Low motivation: your sessions train you less than they could.",
+    "high": "High motivation: your sessions train you a bit more.",
+    "middle": "Your sessions train you as normal."
+   },
+   "stress": {
+    "low": "Calm: no effect.",
+    "high": "Stress drags your motivation down."
+   }
+  },
+  "helps_text": {
+   "confidence": "Good races (PBs, beating runners ranked above you), goals met and a coach whose praise lands. A good mental coach brings it back faster after a bad race. Self-talk helps a little.",
+   "motivation": "A coach you click with, new things (a new phase, new goals), variety in your training and staying healthy. The same week for months wears it down, and so does stress.",
+   "stress": "Relaxation training, a normal training load and time. School adds to it later."
+  }
+ },
+ "coach": {
+  "_note": "The Sunday talk's mood line (CoachTalk detail normal or full; a coach with communication <= 7 skips it): the mood furthest out of its middle (or moved at least moved_min this week) picks a line: <mood>_<low|high>. {first} = the athlete's first name.",
+  "moved_min": 10,
+  "lines": {
+   "calm": {
+    "confidence_low": "I can see the last results have knocked you. They don't define you.",
+    "confidence_high": "You're believing in yourself. Good. Keep it quiet and keep working.",
+    "motivation_low": "You look a bit flat lately. That happens. Tell me if something's wrong.",
+    "motivation_high": "You've been keen this week. I like that.",
+    "stress_high": "You seem tense. Let's keep things simple this week."
+   },
+   "drill": {
+    "confidence_low": "Stop doubting. Doubt is slow.",
+    "confidence_high": "Confident is good. Cocky isn't. Stay hungry.",
+    "motivation_low": "You've been dragging your feet. Wake up.",
+    "motivation_high": "That's the fire I want to see.",
+    "stress_high": "You're wound up. Breathe, then work."
+   },
+   "warm": {
+    "confidence_low": "Hey, {first}. A bad patch is not who you are. I'm proud of you anyway.",
+    "confidence_high": "You're glowing lately, {first}. Enjoy it, you earned it.",
+    "motivation_low": "You seem a bit low, {first}. Want to talk about it?",
+    "motivation_high": "It's lovely to see you this keen.",
+    "stress_high": "You seem stressed, {first}. Look after yourself first."
+   },
+   "tactician": {
+    "confidence_low": "Your belief has dropped more than your form has. The numbers say you're fine.",
+    "confidence_high": "Confidence is up. Use it in the races that matter.",
+    "motivation_low": "Your sessions have lost some edge. Let's find out why.",
+    "motivation_high": "Good intent in training this week. It shows in the splits.",
+    "stress_high": "Stress is up. We'll keep the week predictable."
+   }
+  }
+ }
+}

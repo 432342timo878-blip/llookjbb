@@ -37,6 +37,7 @@ var current: Race
 var kick_plan := 0.0             # a quick result: the metres to go at which the athlete kicks (0 = their natural point), set on the race screen
 var slowdown := 0.0               # share slower because of a niggle or illness (HealthSystem.race_slowdown)
 var form := 0.0                   # share faster (+) or slower (-) from race-day form (FormSystem.race_form)
+var mind := 0.0                   # share faster (+) or slower (-) from confidence at its ends (MindSystem.race_term, session M1)
 
 var _rng := RandomNumberGenerator.new()
 var _gender := "male"
@@ -606,8 +607,10 @@ func _player_entrant() -> Dictionary:
 	slowdown = health.race_slowdown() if health else 0.0
 	var form_system := Game.get_system("form") as FormSystem
 	form = form_system.race_form(athlete.fatigue) if form_system else 0.0
-	if slowdown > 0.0 or form != 0.0:
-		var time := RacePerformance.time_for(e.ability, athlete.gender) * (1.0 + slowdown - form)
+	var mind_system := Game.get_system("mind") as MindSystem
+	mind = mind_system.race_term(meet) if mind_system and athlete == Game.athlete else 0.0   # (0 in the middle word)
+	if slowdown > 0.0 or form != 0.0 or mind != 0.0:
+		var time := RacePerformance.time_for(e.ability, athlete.gender) * (1.0 + slowdown - form - mind)
 		e.ability = RacePerformance.ability_for_time(time, athlete.gender)
 	e.name = athlete.full_name()
 	e.club = Data.get_club(athlete.club_id).get("name", "")

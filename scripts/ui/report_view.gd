@@ -124,6 +124,8 @@ func _day_row(e: Dictionary) -> Control:
 			meta.append(DayInfo.intensity_name(e.intensity))
 	meta.append("load %d" % roundi(e.load))
 	box.add_child(UIKit.wrapped(" · ".join(meta), "MutedLabel"))
+	if e.get("dragged", false):   # trained at Low or Flat motivation (session M1): the sessions trained you a little less
+		box.add_child(UIKit.wrapped(str(Data.mind.ui.dragged), "MutedLabel"))
 	for line in _health_lines(e):
 		var l := UIKit.wrapped(line.text, "")
 		l.add_theme_color_override("font_color", line.color)
