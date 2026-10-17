@@ -71,6 +71,8 @@ static func _apply_answer(a: Athlete, answer: Dictionary) -> void:
 		a.maturation = answer.maturation
 	if answer.has("school"):
 		a.school_level = answer.school
+	if answer.has("school_answer"):
+		a.school_answer = answer.school_answer
 	if answer.has("training_base"):
 		a.training_base = answer.training_base
 	if answer.has("temperament"):

@@ -2583,6 +2583,8 @@ service incl. the Defence Forces' sports school): a later design with money (M4)
   effect) and the moods (4.9.4: Stress is its visible face). **Normal / Normal in a normal school week = today's game.**
 - **Double days on school days (user: yes):** a second session on a school day costs extra life load; free on holidays and in the
   urheilulukio's morning-practice slots (matches the plans' double days from 16).
+*The model (calendar, subjects, grades, tests, report cards, the two settings, the life load and its effects) was built headless
+in S1 (user: holidays = relief, no yläkoulu exam weeks, free time = motivation vs rest, a mild load): see "Built (step S1)".*
 
 **Calendar (`data/school.json`):** real 2026–27 dates, later years by rule and marked `estimated`: term from ~12 Aug to the first
 Saturday of June; autumn break week 42 (12–16 Oct 2026); Christmas ~19 Dec – 7 Jan; Easter; **winter break week 8 / 9 / 10 by region**
@@ -3505,6 +3507,106 @@ row 206.98 → 207.15 from his town's shift); `quick_fingerprint` 73182f4e… un
 specialists, money beyond the budget (M4: with the tighter budget no family can afford a national real personal coach, 90, or the
 international ones, 150, until then), the coach's own wish to end it for other reasons, family reactions to a change (P1), a
 coach's group as a training pull (P1), re-reading the real coaches' pages before release.
+
+#### Built (step S1, 2026-10-17): the school model, headless
+
+**Before building:** `run_all_checks` gave 20 / 20 PASS (nothing to fix).
+
+**Decisions with the user (asked 2026-10-17, before building):**
+1. **Holidays = relief** (recommended): a normal school week at Normal / Normal is today's game; a weekday off school (a break,
+   a public holiday, the summer) is a little lighter (fatigue recovers a bit faster, slightly fewer colds, stress drifts down);
+   the settings, double days, busy test weeks and exam weeks are heavier. A free career is therefore a little different from the
+   game before school (the summer race season a little fresher); the tools prove neutrality with a switch.
+2. **Yläkoulu has NO exam weeks, only single tests** (the user's choice over the recommended 3 a year). Tests cluster by
+   themselves into busy test weeks (3+ tests), which are the stress weeks of grades 8–9. The exam-week machinery is built and
+   checked (with exam weeks forced into the data) for S3's lukio periods.
+3. **Free time = motivation vs rest** (recommended, the GDD's words): Lots = time with friends, motivation pulls up but the
+   late nights add life load on school days; Little = more rest, motivation pulls down. Grades follow study effort only.
+4. **A mild life load** (recommended): an exam day (2 points) ≈ 4 % more fatigue built up over a week, colds ×1.15, injuries
+   ×1.15; Heavy effort + exams can reach Stressed.
+
+**Claude's defaults (not asked; say if you want them changed):**
+- **A double day = two separate practices**: two sessions that are not add-ons. Drills, strides, start practice, mobility,
+  strength and upper-body core ride along in the same practice (`life_load.add_ons`). Forced by the neutral rule: the coach's
+  normal Monday is "easy run + drills". The plans for 14–19 have no double days, so only player-made ones and the adults' plans
+  pay the extra.
+- **The five answers:** start / natural average Top 9.0 / 9.0, Hard work 8.5 / 8.0 (keeping it costs effort: −0.24 a year at
+  Normal), Doing fine 7.5 / 7.5, Struggling 6.8 / 6.8, Couldn't care less 6.3 / 6.6 (unused talent: +0.14 a year at Normal).
+  Older saves map school_level high / medium / low to Hard work / Doing fine / Struggling. The answer is saved as
+  `Athlete.school_answer` (like `family` in C6).
+- **Subjects:** the 17 of the GDD; the 12 academic ones are the application average (S3) and have tests, the 5 practical ones
+  (PE, music, art, crafts, home economics) are graded from the term's work. Aptitude: a roll per subject (sd 0.6, at most ±1.5),
+  re-centred per kind so the academic average is the answer's level exactly; PE +1 for an athlete (+0.5 more in a sports class).
+- **Drift:** every school day each grade moves towards natural + effort shift (Light −1, Heavy +1) + focus (+1 for a focus subject,
+  −0.1 for every other academic subject per focus subject), half the way in 190 school days (≈ a school year). No drift on
+  holidays.
+- **Tests:** 2 per academic subject a term (48 a year), at even points of the term plus a roll (sd 6 school days), never in
+  the first 10 school days; the score = the level + a roll (sd 0.6) − stress above 60 (up to −0.6), written the Finnish way (8, 8+,
+  8½, 9−). A week with more than 2 tests is a busy test week: each test that day +0.75 life load, and +4 stress news on the Sunday
+  before.
+- **Report cards:** the last school day before the Christmas break and the last day of the year (grade 9: the final certificate);
+  academic subjects = half the term's test average + half the level, practical ones the level; whole grades 4–10; the card keeps
+  the average and the academic average.
+- **Life load numbers** (points, school days only unless said): holiday weekday −1; effort Light −0.5 / Heavy +1; free time
+  Little −0.5 / Lots +0.75; a double day +1.5; a busy-test-week test +0.75 each; an exam day +2 (S3); grade 9 ×1.1 on the
+  positive parts; weekends 0. Effects per point: keep +0.005, colds ×(1 + 0.075 per point, at least ×0.5), injuries ×(1 + 0.075 per
+  point, positive only); stress: the coming week's life load / 7 × 12 as a Sunday pull, one line per cause; motivation: free
+  time Lots +4 / Little −4. Exam-week news +14 (raised from 8 so Heavy effort + exams reaches Stressed, as promised for "Mild").
+- **The calendar:** 2026–27 from the 20 towns' own dates in `school.json municipal` (start, autumn break, Christmas, winter
+  break); every other town and every later year by `rules` and marked `estimated`; towns of the table keep their published
+  autumn and winter week numbers in later years (Kotka week 43). Easter by the Gregorian computus; 6 Dec, 6 Jan, 1 May and
+  Ascension Thursday + Friday are free. A school year runs 1 Aug – 31 Jul; outside its term = summer.
+- **Dice:** every roll comes from a seed of the career (name + birth date) and what is rolled (the aptitudes, a year's test
+  days, one test): nothing depends on when it is asked, the global dice are untouched, and no dice state is saved.
+
+**What was built:**
+- **Data:** `data/school_life.json` (new: stages, subjects, answers, aptitude, grades, tests, report cards, the settings with
+  their texts, the life load, its effects, the lines of the stress / motivation rows and the news; its note explains every
+  number); `background_questions.json` (each school answer has a `school_answer` id); `mind.json` (the stress "what helps" text);
+  `help.json` (`moods` v2: school raises stress, holidays ease it). `Data` loads `school.json` and `school_life.json`.
+- **`SchoolCalendar`** (`scripts/core/school_calendar.gd`, static, cached per town and year): `year_of`, `day(town, date)` →
+  {kind school / weekend / holiday / summer, break, year, estimated}, `is_school_day`, `year_for` (start, end, breaks, the
+  Christmas card day, the terms), `school_days`, `winter_week / winter_group`, `iso_monday / iso_week`, `easter`.
+- **`SchoolSystem`** (`scripts/core/school_system.gd`, GameSystem id `school`, after the coach and before the mind; switches
+  `model_enabled` and `neutral`): `stage_of`, `day_info`, `life_load / load_parts`, `is_double`, `keep_shift / illness_mult /
+  injury_mult`, `stress_pulls(monday) / motivation_pulls / week_news`, the subjects (`level`, `target`, `average(academic)`),
+  `tests_on / tests_in_week`, `score_text`, `report_cards / latest_report`, `set_effort / set_free_time / set_focus`; the day loop
+  (`on_day_end`: drift, tests, report cards, the day log's `school` / `life` / `tests` fields unless neutral); save / load (the
+  state is `{}` until the first played day; no save-version change).
+- **Hooked in:** `WeekSim.school` (set by `Game.current_week()`; the day's keep + `keep_shift`), `HealthSystem.on_health` (the
+  day's `_ill_mult` / `_inj_mult` on the colds, overuse and bad-luck rolls), `MindSystem.pulls` (school's stress lines for the
+  coming week on Sunday night, free time's motivation line) and `_school_news` (busy test week / exam week ahead).
+  Every hook multiplies or adds only when the life load is not 0.
+- **Tools:** `tools/school_check.gd` (new, in `run_all_checks`, ~25 s); `training_balance` part 2h; `SchoolSystem.neutral` set in
+  `training_balance`, `day_engine_check`, `season_check`, `coach_check`, `storylet_check`, `verdict_check` and `career_check`
+  (unless `school=free`).
+
+**Measured:**
+- *Neutral = identical:* `training_balance -- 0`: every part, the new 2h (the school OFF) included, gives 206.798298350 /
+  14.102831594 / 1226.006524079 for the coach row. The same year with the school FREE: attributes 206.798298350 (unchanged:
+  the coach week never gets tired enough for fatigue to cut the training effect), fatigue-sum 1222.95 at Normal / Normal (−0.25 %:
+  the holidays) and 1240.99 at Heavy / Lots (+1.2 %). `school_check` part 6: six normal school weeks (2 Nov – 13 Dec 2026, no
+  tests) with the school ON at Normal / Normal and the health model on and the moods free = the school OFF, bit for bit
+  (athlete, health state, moods, every day's fatigue); the first Christmas-break week then gives fatigue 14.44 vs 14.60 and
+  stress 14.5 vs 20.0. `quick_fingerprint` keeps its hash (the race engine is untouched).
+- *Grades over a year (2 Nov 2026 – 1 Nov 2027, 10 athletes per answer):* Top 0.00 / −0.48 / +0.36 (Normal / Light / Heavy;
+  grades stop at 10), Hard work −0.24 / −0.72 / +0.23, Doing fine 0.00 / −0.48 / +0.48, Struggling 0.00 / −0.48 / +0.48,
+  Couldn't care less +0.14 / −0.34 / +0.63: Normal holds ±0.3, Heavy ≈ +0.5 and Light ≈ −0.5 over Normal (GDD 4.9.7). A
+  maths focus for a year: maths +0.48, history −0.05.
+- *Tests and cards (Tampere 2026-27):* 48 tests in 19 weeks, 7 busy weeks (at most 6 tests in a week); the Christmas card on
+  Fri 18 Dec 2026 and the spring card on Sat 5 Jun 2027 (the test athlete: 9.00 / 8.92 and 9.18 / 9.17, average / academic).
+- *Stress (a year of the coach week, moods free; the word for the week ahead):* Normal / Normal: school weeks 20.5 (all Calm),
+  busy test weeks 26.6, holiday weeks 14.4; Heavy / Lots: 33.3 (a third Busy), busy test weeks 39.8 (Busy); Light / Little:
+  13.4. With three exam weeks forced into the data (S3's machinery): exam weeks 48.0 (Busy) at Normal / Normal, 62.3 at Heavy /
+  Lots (2 of 3 Stressed, and both Stressed weeks of the year are exam weeks). Against GDD 4.9.7 ("Stressed mostly in exam
+  weeks"): in yläkoulu, with no exam weeks, Stressed needs heavy settings plus a big meet or an injury.
+
+**Not in S1:** the UI and the decisions (S2: the School page, the report card, the settings, focus per period, exam vs meet,
+camps vs school, strip shading, Calendar bands, the day as blocks); the coach's view of school (his proposals and verdicts
+simulate weeks without the life load; S2 can let him see busy test weeks); the grade-9 application, lukio periods and exam
+weeks, the matriculation exams, moving town (S3; the placeholder stage from Aug 2028 keeps the calendar and the life load and
+freezes the grades); sleep and the family's reactions to report cards (P1); the sports class's own school week (S3 with the
+morning slots); the balance over many seasons (B1).
 
 ### Other systems (to be designed)
 

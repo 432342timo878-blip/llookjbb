@@ -21,6 +21,7 @@ var height_cm := 0.0
 var weight_kg := 0.0
 var maturation := "average"     # "early" | "average" | "late"
 var school_level := "medium"    # "high" | "medium" | "low"
+var school_answer := ""         # the creation answer about school (background_questions.json `school_answer`: the starting grades, S1); "" = not known (older saves: from school_level)
 var training_base := "outdoor_track"   # where they train; ids from background_questions.json
 var experience := -1            # years of organised training behind the creation answers (AthleteFactory); -1 = not known (older saves)
 var weeks_trained := 0          # weeks of progression since the career started (novice gains fade with it, Training.novice_bonus)
@@ -58,7 +59,7 @@ func to_dict() -> Dictionary:
 		"first_name": first_name, "last_name": last_name, "gender": gender,
 		"birth_date": birth_date, "hometown": hometown, "club_id": club_id,
 		"main_event": main_event, "coach_id": coach_id, "temperament": temperament, "family": family, "height_cm": height_cm, "weight_kg": weight_kg,
-		"maturation": maturation, "school_level": school_level, "training_base": training_base,
+		"maturation": maturation, "school_level": school_level, "school_answer": school_answer, "training_base": training_base,
 		"experience": experience, "weeks_trained": weeks_trained, "attributes": attributes, "personal_bests": personal_bests,
 		"fatigue": fatigue, "recent_change": recent_change, "results": results,
 	}

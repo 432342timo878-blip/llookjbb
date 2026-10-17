@@ -1,0 +1,126 @@
+{
+ "_note": "The school model (GDD 4.9.3, session S1; scripts/core/school_system.gd). The calendar itself (real 2026-27 dates and the rules for later years) is data/school.json; this file holds the model: the stages, the subjects, the starting grades by the creation answer, the two weekly life settings, how grades drift, the tests, the report cards and the life load. NEUTRAL = IDENTICAL: a normal school day at Normal / Normal has a life load of exactly 0, and at 0 the game is today's game to the last digit (the code does not even run). Life load is a number per day in 'points': positive = a heavier day (fatigue recovers slower, colds a little more likely, injuries a little more likely), negative = a lighter one (holidays). All numbers here are Claude's first guesses (estimated), to be tuned in B1; the user's decisions of 2026-10-17 are in GDD 4.9.3 'Built (step S1)'.",
+ "stages": {
+  "_note": "The school year that starts in the autumn of year Y is grade Y - birth year - grade_offset (born 2012: grade 8 in 2026-27). Grades 8 and 9 are yläkoulu; after grade 9 the placeholder 'secondary' runs (the calendar and the life load go on, the grades are frozen) until S3 builds lukio / urheilulukio / vocational school. `scale` multiplies every positive part of the life load (grade 9 has more homework); `exam_weeks` = the stage's big exam weeks (user 2026-10-17: none in yläkoulu, only single tests; the rule format is ready for S3: each item {before: christmas | winter | end, weeks: n} = the Mon-Fri school week n weeks before that break's first free day).",
+  "grade_offset": 6,
+  "list": [
+   {"id": "grade_8", "grade": 8, "name": "Grade 8", "kind": "ylakoulu", "subjects": true, "scale": 1.0, "exam_weeks": []},
+   {"id": "grade_9", "grade": 9, "name": "Grade 9", "kind": "ylakoulu", "subjects": true, "scale": 1.1, "exam_weeks": [], "final": true},
+   {"id": "secondary", "grade": 10, "name": "Upper secondary (from S3)", "kind": "secondary", "subjects": false, "scale": 1.0, "exam_weeks": []}
+  ]
+ },
+ "subjects": {
+  "_note": "The yläkoulu subjects of the report card (GDD 4.9.3). academic = the subjects of the application average (lukuaineet, S3); practical subjects are graded from the term's work without tests. In real schools music, art, crafts and home economics are partly electives in grades 8-9; S1 keeps them all on the card as the GDD lists them.",
+  "list": [
+   {"id": "finnish", "name": "Finnish", "fi": "äidinkieli ja kirjallisuus", "kind": "academic"},
+   {"id": "swedish", "name": "Swedish", "fi": "ruotsi", "kind": "academic"},
+   {"id": "english", "name": "English", "fi": "englanti", "kind": "academic"},
+   {"id": "maths", "name": "Maths", "fi": "matematiikka", "kind": "academic"},
+   {"id": "biology", "name": "Biology", "fi": "biologia", "kind": "academic"},
+   {"id": "geography", "name": "Geography", "fi": "maantieto", "kind": "academic"},
+   {"id": "physics", "name": "Physics", "fi": "fysiikka", "kind": "academic"},
+   {"id": "chemistry", "name": "Chemistry", "fi": "kemia", "kind": "academic"},
+   {"id": "health_ed", "name": "Health education", "fi": "terveystieto", "kind": "academic"},
+   {"id": "religion_ethics", "name": "Religion / ethics", "fi": "uskonto / elämänkatsomustieto", "kind": "academic"},
+   {"id": "history", "name": "History", "fi": "historia", "kind": "academic"},
+   {"id": "social_studies", "name": "Social studies", "fi": "yhteiskuntaoppi", "kind": "academic"},
+   {"id": "pe", "name": "PE", "fi": "liikunta", "kind": "practical"},
+   {"id": "music", "name": "Music", "fi": "musiikki", "kind": "practical"},
+   {"id": "art", "name": "Art", "fi": "kuvataide", "kind": "practical"},
+   {"id": "crafts", "name": "Crafts", "fi": "käsityö", "kind": "practical"},
+   {"id": "home_ec", "name": "Home economics", "fi": "kotitalous", "kind": "practical"}
+  ]
+ },
+ "answers": {
+  "_note": "The creation answer 'How do you do at school?' (background_questions.json school_answer): `start` = the starting grade average (GDD 4.9.3: ~9.0 / 8.5 / 7.5 / 6.8 / 6.3), `natural` = the average the grades drift to at Normal effort. 'Good grades through hard work' starts above its natural level (keeping it costs more effort); 'Couldn't care less' a little below (unused talent). Older saves have only school_level: `from_level` maps it.",
+  "top": {"start": 9.0, "natural": 9.0},
+  "hard_work": {"start": 8.5, "natural": 8.0},
+  "fine": {"start": 7.5, "natural": 7.5},
+  "struggling": {"start": 6.8, "natural": 6.8},
+  "dont_care": {"start": 6.3, "natural": 6.6},
+  "from_level": {"high": "hard_work", "medium": "fine", "low": "struggling"}
+ },
+ "aptitude": {
+  "_note": "Each subject has a hidden aptitude: the subject's natural level = the answer's natural average + a roll (normal, sd, at most max away), re-centred so the academic subjects (and the practical ones) average the answer's level exactly. PE: + pe_bonus (an athlete), + sports_class with the 'A sports class at school' answer. Rolled once from the career's own dice (name + birth date; the global dice untouched).",
+  "sd": 0.6, "max": 1.5, "pe_bonus": 1.0, "sports_class": 0.5
+ },
+ "grades": {
+  "_note": "Every school day each subject's level drifts towards its target: level += (target - level) x (1 - 0.5^(1 / half_life_days)), so half the way in half_life_days school days (~a school year). target = natural + effort shift + focus shift, kept inside min..max. GDD 4.9.7 targets: Normal holds the average +-0.3 a year, Heavy +0.5, Light -0.5 (= half of the shift in a year). Focus subjects (at most focus_max): + focus_shift each; every other academic subject - focus_others per focus subject (the study time moves).",
+  "min": 4.0, "max": 10.0,
+  "half_life_days": 190,
+  "effort_shift": {"light": -1.0, "normal": 0.0, "heavy": 1.0},
+  "focus_shift": 1.0, "focus_others": 0.1, "focus_max": 2
+ },
+ "tests": {
+  "_note": "Single tests (kokeet): each academic subject has per_term tests a term (autumn: the start to the Christmas break; spring: after Christmas to the end), placed at even points of the term's school days plus a roll (jitter_sd school days), never in the first skip_days school days. Tests cluster naturally around the same points (like period ends). With an exam week in the term (S3), each subject's last test moves into it. A test's score = level + a roll (noise_sd) - stress (from stress_from: up to stress_penalty at 100), kept inside 4..10, rounded to round_to (8+ = 8.25, 8½, 9- = 8.75). The week's tests: more than normal_per_week tests in a Mon-Sun week make it a busy test week (life load on its test days, stress).",
+  "per_term": 2,
+  "jitter_sd": 6.0,
+  "skip_days": 10,
+  "noise_sd": 0.6,
+  "stress_from": 60, "stress_penalty": 0.6,
+  "round_to": 0.25,
+  "normal_per_week": 2
+ },
+ "report_cards": {
+  "_note": "A report card on the last school day before the Christmas break (`christmas`) and on the last day of the school year (`spring`; in grade 9 the final certificate, `final`). Academic subjects: round(tests_weight x the term's test average + (1 - tests_weight) x the level), practical subjects: round(level); whole grades 4-10. The card keeps `average` (every subject) and `academic_average` (the application average of S3).",
+  "tests_weight": 0.5,
+  "names": {"christmas": "Christmas report card", "spring": "Spring report card", "final": "Final certificate"}
+ },
+ "settings": {
+  "_note": "The two weekly life settings (GDD 4.9.3; the player sets them in S2's School page). Study effort = the grades (grades.effort_shift) and the life load of school days; free time (user 2026-10-17: motivation vs rest) = Lots: time with friends, motivation pulls up but later nights add life load; Little: more rest, motivation pulls down. Neither changes what is trained.",
+  "effort": [
+   {"id": "light", "name": "Light", "text": "The minimum: grades slide, school takes less out of you."},
+   {"id": "normal", "name": "Normal", "text": "Homework done, grades hold."},
+   {"id": "heavy", "name": "Heavy", "text": "Extra study every evening: grades rise, but school days get heavier."}
+  ],
+  "free_time": [
+   {"id": "little", "name": "Little", "text": "Home early, to bed early: more rest, but it gets dull."},
+   {"id": "normal", "name": "Normal", "text": "Some time with friends, some rest."},
+   {"id": "lots", "name": "Lots", "text": "Out with friends a lot: good for motivation, but late nights on school days."}
+  ],
+  "default_effort": "normal",
+  "default_free_time": "normal"
+ },
+ "life_load": {
+  "_note": "The day's life load, in points (0 = a normal school day at Normal / Normal = today's game). Parts: a weekday off school in a break or the summer (holiday_weekday; user 2026-10-17: holidays = relief), and on SCHOOL days only: study effort, free time, a double day = two separate practices (two sessions that are not add-ons; drills, strides and the like ride along in the same practice, so the coach's Monday 'easy run + drills' is no double day), each test on a day of a busy test week, a day of an exam week (S3). Weekends are 0. Positive parts x the stage's scale. Double days are free on holidays and weekends (and in S3 in the urheilulukio's morning-practice slots).",
+  "holiday_weekday": -1.0,
+  "effort": {"light": -0.5, "normal": 0.0, "heavy": 1.0},
+  "free_time": {"little": -0.5, "normal": 0.0, "lots": 0.75},
+  "double_day": 1.5,
+  "add_ons": ["drills", "speed_strides", "start_practice", "mobility", "strength", "gym_core"],
+  "busy_test": 0.75,
+  "exam_day": 2.0
+ },
+ "effects": {
+  "_note": "What the life load does (user 2026-10-17: mild). Fatigue: the day's keep (the share of fatigue carried to tomorrow, Training.daily_keep) + keep_per_point x load (an exam day of 2 points: ~4 % more fatigue built up over a week). Colds: the day's chance x (1 + illness_per_point x load), never below illness_min. Injuries (overuse and bad-luck): x (1 + injury_per_point x load) for a positive load only (Mann 2016, Hamlin 2019: more injuries in academic-stress weeks; older athletes than ours, so mild). Stress: the Sunday drift's pull = the coming week's life load summed over its days / 7 x stress_per_point; holidays pull it down. Busy test week ahead: stress news busy_week_news on the Sunday before (exam week ahead: exam_week_news). Motivation: free time Lots pulls + motivation_lots, Little - motivation_little.",
+  "keep_per_point": 0.005,
+  "illness_per_point": 0.075, "illness_min": 0.5,
+  "injury_per_point": 0.075,
+  "stress_per_point": 12.0,
+  "busy_week_news": 4.0,
+  "exam_week_news": 14.0,
+  "motivation_lots": 4.0,
+  "motivation_little": 4.0
+ },
+ "texts": {
+  "_note": "Lines of the stress / motivation rows (MindSystem.pulls, the MIND panel) and of the news. {n} = a count.",
+  "pulls": {
+   "holiday": "School holiday: time to rest",
+   "effort_heavy": "Heavy study effort",
+   "effort_light": "Light study effort",
+   "free_lots": "Lots of free time: late nights",
+   "free_little": "Little free time: early nights",
+   "double_day": "Double days on school days",
+   "busy_test": "A busy test week ({n} tests)",
+   "exam": "Exam week",
+   "motivation_lots": "Lots of free time with friends",
+   "motivation_little": "Little free time"
+  },
+  "news": {
+   "busy_week": "{n} tests this week",
+   "exam_week": "Exam week ahead"
+  },
+  "day_kinds": {"school": "School day", "weekend": "Weekend", "holiday": "Holiday", "summer": "Summer holiday"},
+  "breaks": {"autumn": "Autumn break", "christmas": "Christmas break", "winter": "Winter break", "easter": "Easter", "public": "Public holiday", "summer": "Summer holiday"}
+ }
+}

@@ -31,6 +31,8 @@ var mind: Dictionary = {}              # data/mind.json: the moods confidence / 
 var market: Dictionary = {}            # data/market.json: the coach market (who you can get, scouting, distance, budget, the coaches' messages; session C6)
 var towns: Dictionary = {}             # data/towns.json: the towns (population, region, SUL centre, winter-break group; session D1)
 var urheilulukiot: Dictionary = {}     # data/urheilulukiot.json: sports schools and SUL's athletics centres (session D1)
+var school: Dictionary = {}            # data/school.json: the school calendar (the real 2026-27 year, rules for later years; session D1)
+var school_life: Dictionary = {}       # data/school_life.json: the school model (subjects, grades, tests, settings, life load; session S1)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -71,6 +73,8 @@ func _ready() -> void:
 	market = _load("res://data/market.json")
 	towns = _load("res://data/towns.json")
 	urheilulukiot = _load("res://data/urheilulukiot.json")
+	school = _load("res://data/school.json")
+	school_life = _load("res://data/school_life.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()

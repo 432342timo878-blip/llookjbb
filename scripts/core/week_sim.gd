@@ -27,6 +27,9 @@ var coach_effect := {}
 ## Motivation's training quality (MindSystem.training_quality, session M1): every training session's training effect x this
 ## (races not). Exactly 1.0 across the middle word, so the M1 balance is unchanged. Set by Game.current_week(), not saved.
 var quality := 1.0
+## The school (SchoolSystem, session S1) or null: each played day's life load slows the fatigue recovery (0 on a normal school
+## day at Normal / Normal: nothing changes). Set by Game.current_week(), not saved; weeks made by tools and previews have none.
+var school = null
 
 var _month := 1
 var _stimulus := {}
@@ -329,6 +332,10 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 			done.append(s.id)
 	if not trained:
 		keep -= Training.REST_DAY_EXTRA
+	if school != null:
+		var life: float = school.life_load(Game.add_days(monday, day), done)
+		if life != 0.0:
+			keep += SchoolSystem.keep_shift(life)
 	_load += day_load
 	a.fatigue = clampf(a.fatigue * keep + day_load - extra_recovery, 0.0, 100.0)
 	_fatigue_peak = maxf(_fatigue_peak, a.fatigue)

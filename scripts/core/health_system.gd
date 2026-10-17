@@ -40,6 +40,8 @@ var days_without_running := 0
 var run_detrain_days := 0    # days this week beyond the running-detraining limit (cross-training doesn't count)
 var last_race_no := -1000    # day_no of the last race
 var counters := {"days_injured": 0, "days_ill": 0, "days_out": 0}
+var _ill_mult := 1.0         # today's colds multiplier from the life load (SchoolSystem.illness_mult; not saved)
+var _inj_mult := 1.0         # today's injury multiplier from the life load (SchoolSystem.injury_mult; not saved)
 
 
 func _init() -> void:
@@ -111,6 +113,12 @@ func on_health(ctx: Dictionary) -> void:
 	if is_race:
 		last_race_no = day_no
 	var news := []   # injuries and illnesses that started (or got worse) today
+	# The day's life load (school, session S1): a heavier school day makes colds and injuries a little more likely, a holiday
+	# colds a little less. Exactly 1.0 at a load of 0 (a normal school day at Normal / Normal), so nothing changes then.
+	var school := SchoolSystem.sys()
+	var life := school.life_load(date, rec.get("sessions", [])) if school else 0.0
+	_ill_mult = SchoolSystem.illness_mult(life)
+	_inj_mult = SchoolSystem.injury_mult(life)
 	_progress(a, sessions, is_race, date, news)
 	_roll_acute(a, sessions, is_race, date, news)
 	_roll_race_incidents(rec, date, news)
@@ -448,7 +456,10 @@ func _roll_acute(a: Athlete, sessions: Array, is_race: bool, date: Dictionary, n
 			var data := Data.get_injury(injury_id)
 			if data.is_empty() or _injured(data.area):
 				continue
-			if rng.randf() < float(risks[injury_id]) * tired * prone:
+			var chance := float(risks[injury_id]) * tired * prone
+			if _inj_mult != 1.0:
+				chance *= _inj_mult
+			if rng.randf() < chance:
 				_start(data, date, news)
 
 
@@ -482,6 +493,8 @@ func _roll_overuse(a: Athlete, date: Dictionary, news: Array) -> void:
 		if _injured(area.id):
 			continue
 		var h := hazard(a, area)
+		if _inj_mult != 1.0:
+			h *= _inj_mult
 		if h > 0.0 and rng.randf() < h:
 			var data := _pick_overuse(a, area.id, date)
 			if not data.is_empty():
@@ -535,6 +548,8 @@ func _roll_illness(a: Athlete, news: Array) -> void:
 	if day_no - last_race_no <= int(cfg.after_race_days):
 		p *= float(cfg.after_race)
 	p *= lerpf(float(cfg.professionalism[0]), float(cfg.professionalism[1]), (a.get_attr("professionalism") - 1.0) / 19.0)
+	if _ill_mult != 1.0:
+		p *= _ill_mult
 	if rng.randf() >= p:
 		return
 	var list := Data.injuries.filter(func(d): return d.cause == "illness")

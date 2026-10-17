@@ -31,6 +31,7 @@ func _run() -> void:
 	F = load("res://scripts/core/athlete_factory.gd")
 	C = load("res://scripts/core/coach_system.gd")
 	load("res://scripts/core/mind_system.gd").neutral = true   # (session M1: the moods in the middle = the game before the mind)
+	load("res://scripts/core/school_system.gd").neutral = true   # (session S1: no life load = the game before school)
 	H = load("res://scripts/core/health_system.gd")
 	SS = load("res://scripts/core/season_system.gd")
 	saves = load("res://scripts/core/save_game.gd")

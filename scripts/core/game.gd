@@ -96,7 +96,8 @@ func _make_systems() -> Array:
 	# (The coach market (C6) last: a change of coach happens on Sunday night after the old coach's week is counted.)
 	# (The mind (M1) after the coach and before the moments: the day's diagnoses and race are news for the moods before an evening
 	# moment or the Sunday talk reads them.)
-	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), MindSystem.new(),
+	# (School (S1) before the mind: the day's tests and the life load are in the day log before the mind reads the day.)
+	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), SchoolSystem.new(), MindSystem.new(),
 			StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
@@ -256,6 +257,7 @@ func current_week() -> WeekSim:
 	_week.coach_effect = coach.training_effect() if coach else {}
 	var mind := get_system("mind") as MindSystem
 	_week.quality = mind.training_quality() if mind else 1.0   # motivation (GDD 4.9.4): exactly 1.0 in the middle
+	_week.school = SchoolSystem.sys()   # the life load (GDD 4.9.3, S1): 0 on a normal school day at Normal / Normal
 	if created:
 		for s in systems:
 			s.on_week_start(_week)

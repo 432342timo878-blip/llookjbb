@@ -33,6 +33,7 @@ var last_race := {}       # {level, indoor} of the last race (consistency grows 
 var plan := []            # the weekly mental plan: up to max_sessions kind ids
 var cue := ""             # the cue word for self-talk ("" = the default)
 var started := false      # false until the first played day (state saved from then on)
+var _ahead := {}          # the Monday of the coming week while Sunday night's drift runs (school's pulls, S1; not saved)
 
 
 func _init() -> void:
@@ -336,6 +337,7 @@ func on_week_end(ctx: Dictionary) -> void:
 	var monday: Dictionary = ctx.week.monday if ctx.get("week") != null else Game.week_monday()
 	_track_template(monday)
 	_plan_growth(monday)
+	_ahead = Game.add_days(monday, 7)   # school's pulls look at the coming week (S1)
 	if not neutral:
 		for m in MOODS:
 			var t := target(m, ctx.get("week"))
@@ -346,6 +348,8 @@ func on_week_end(ctx: Dictionary) -> void:
 					rate *= cs.effect("mental_coaching", "confidence_back_per_point")
 			values[m] = clampf(value(m) + (t - value(m)) * clampf(rate, 0.0, 1.0), 0.0, 100.0)
 	_big_meet_nerves(Game.add_days(monday, 7))
+	_school_news(Game.add_days(monday, 7))
+	_ahead = {}
 	before = snap.duplicate()
 	snap = values.duplicate()
 
@@ -462,6 +466,10 @@ func pulls(mood: String, week = null) -> Array:
 			if amb > float(hb.ambition_above) and Game.season != null and Game.season.mode == SeasonPlan.PHASES \
 					and Game.season.variant(Game.season.plan_year(Game.week_monday())) == "steady":
 				out.append({"text": str(pt.held_back), "delta": (amb - float(hb.ambition_above)) * float(hb.per_point)})
+			# School's free time (S1): time with friends lifts it, little free time drags it.
+			var school_m := SchoolSystem.sys()
+			if school_m != null:
+				out.append_array(school_m.motivation_pulls())
 		"stress":
 			if injured:
 				out.append({"text": str(pt.injured), "delta": float(d.injured)})
@@ -476,7 +484,20 @@ func pulls(mood: String, week = null) -> Array:
 					out.append({"text": str(pt.load), "delta": minf((pct - float(d.load.from)) * float(d.load.per_point), float(d.load.max))})
 			if "relaxation" in plan:
 				out.append({"text": str(pt.relaxation), "delta": float(d.relaxation)})
+			# School's life load (S1): the coming week on Sunday night, else the week in progress; one line per cause.
+			var school := SchoolSystem.sys()
+			if school != null:
+				out.append_array(school.stress_pulls(_ahead if not _ahead.is_empty() else Game.week_monday()))
 	return out
+
+
+## Sunday night before a week with many tests (or an exam week, S3): stress news.
+func _school_news(next_monday: Dictionary) -> void:
+	var school := SchoolSystem.sys()
+	if school == null:
+		return
+	for n in school.week_news(next_monday):
+		add("stress", float(n.delta), str(n.text))
 
 
 ## The first big meet (data big_levels) entered for the week starting `monday`, or {}.

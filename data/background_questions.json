@@ -359,6 +359,7 @@
      "text": "Top of the class",
      "detail": "Good grades come easily, but school takes time.",
      "school": "high",
+     "school_answer": "top",
      "experience": 0,
      "effects": {"professionalism": 1, "race_tactics": 0.5}
     },
@@ -366,6 +367,7 @@
      "text": "Good grades through hard work",
      "detail": "You put the hours in, in class and out of it.",
      "school": "high",
+     "school_answer": "hard_work",
      "experience": 0,
      "effects": {"determination": 1, "professionalism": 0.5, "recovery_rate": -0.5}
     },
@@ -373,6 +375,7 @@
      "text": "Doing fine",
      "detail": "Average grades, no stress.",
      "school": "medium",
+     "school_answer": "fine",
      "experience": 0,
      "effects": {}
     },
@@ -380,6 +383,7 @@
      "text": "Struggling a bit",
      "detail": "Sport matters more to you than school right now.",
      "school": "low",
+     "school_answer": "struggling",
      "experience": 0,
      "effects": {"ambition": 1.5, "professionalism": -1}
     },
@@ -387,6 +391,7 @@
      "text": "Couldn't care less",
      "detail": "Often late, homework rarely done.",
      "school": "low",
+     "school_answer": "dont_care",
      "experience": 0,
      "effects": {"ambition": 1, "professionalism": -1.5, "consistency": -0.5, "composure": 0.5}
     }

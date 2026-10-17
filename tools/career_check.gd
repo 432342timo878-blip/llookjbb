@@ -94,6 +94,7 @@ func _run() -> void:
 	load("res://scripts/core/coach_system.gd").neutral_club = not "coach=club" in args
 	# Session M1: the moods stay in the middle (= the game before the mind), unless "mind=free" lets them move.
 	load("res://scripts/core/mind_system.gd").neutral = not "mind=free" in args
+	load("res://scripts/core/school_system.gd").neutral = not "school=free" in args   # (S1: no life load unless asked)
 	if plan == "best":
 		_make_best_plan()
 	for arg in args:   # what-ifs: training.progression.novice.bonus=1.1 (a data path = a number)

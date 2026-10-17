@@ -12,6 +12,8 @@ extends SceneTree
 ##    Part 2f: the coach's suggestions and the season goals ON (session C5), every suggestion declined: same.
 ##    The moods are pinned in the middle in every part (MindSystem.neutral, session M1); part 2g plays the rows with the mind OFF
 ##    (same fingerprints) and shows the coach row with the moods free.
+##    School's life load is 0 in every part (SchoolSystem.neutral, session S1); part 2h plays the rows with the school OFF (same
+##    fingerprints) and shows the coach row with the school free.
 ## 3. Health (GDD 4.6): 200 athletes per row (random backgrounds, boys and girls), 1 year from age 14
 ##    through the game's day loop with the health model on, entering the coach's recommended meets.
 ##    Policies: neutral = follows injury limits, ignores soreness; careful = takes it easy when sore
@@ -29,6 +31,7 @@ extends SceneTree
 ## Each row also prints a second line with boys vs girls, colds per month and how often the game would stop.
 
 var start_age := 14
+var _school_setting := []   # part 2h: [effort, free time] for the career's school ([] = as it starts: Normal / Normal)
 var game
 var data
 var Cal
@@ -61,6 +64,10 @@ func _run() -> void:
 	# The moods stay in the middle (session M1: OK / OK / Calm = the game before the mind); part 2g checks the mind switched off.
 	var MI = load("res://scripts/core/mind_system.gd")
 	MI.neutral = true
+	# School's life load is 0 (session S1: a normal school day at Normal / Normal = the game before school); part 2h checks the
+	# school switched off.
+	var SC = load("res://scripts/core/school_system.gd")
+	SC.neutral = true
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
@@ -190,6 +197,30 @@ func _run() -> void:
 	MI.neutral = true
 	H.model_enabled = true
 
+	# Session S1: every part above ran with the school ON and its life load neutral (0 every day). The school switched OFF must
+	# give the same. Then, for information, the coach row with the school FREE at Normal / Normal (holidays lighter, busy test
+	# weeks heavier: a real year is not all normal school weeks), and with Heavy effort + Lots of free time.
+	print("\n== 2h. School (session S1): the life load neutral (every part above) = the school OFF: same fingerprints")
+	H.model_enabled = false
+	SC.model_enabled = false
+	var same_school := true
+	for i in runs.size():
+		same_school = same_school and _m1_row(runs[i], plans, true) == fingerprints[i]
+	SC.model_enabled = true
+	print("   fingerprints identical to part 1: %s" % ("YES" if same_school else "NO  <-- the school's off switch or its neutral setting leaks!"))
+	print("   For information, the coach row with the school FREE (not a check): Normal / Normal, then Heavy effort + Lots of free time:")
+	SC.neutral = false
+	_m1_row(runs[0], plans, true)
+	var school = game.get_system("school")
+	print("   (after the year: grade average %.2f, %d report cards)" % [school.average(), school.reports.size()])
+	_school_setting = ["heavy", "lots"]
+	_m1_row(runs[0], plans, true)
+	school = game.get_system("school")
+	print("   (after the year: grade average %.2f)" % school.average())
+	_school_setting = []
+	SC.neutral = true
+	H.model_enabled = true
+
 	var n := 200
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():
@@ -282,6 +313,9 @@ func _m1_row(run: Array, plans: Dictionary, through_game: bool, plan_level := fa
 			game.get_system("moments").set_stop_mode(moments)
 		if proposals != "":
 			game.get_system("proposals").set_setting(proposals)
+		if not _school_setting.is_empty():
+			game.get_system("school").set_effort(_school_setting[0])
+			game.get_system("school").set_free_time(_school_setting[1])
 	for w in 52:
 		var r: Dictionary
 		if through_game:

@@ -334,12 +334,12 @@
   },
   "moods": {
    "title": "Confidence, motivation and stress",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Moods, not abilities", "text": "They change week to week. Big news moves them at once: a personal best, a last place, an injury, a goal met, what you answer someone. Every Sunday night each one also settles a little towards where your situation pulls it."},
     {"heading": "Confidence", "text": "Low, Shaky, OK, Confident, Flying. Good races and goals met raise it; races well below your level and last places lower it. At its ends it changes your race time a little, most at big meets."},
     {"heading": "Motivation", "text": "Flat, Low, OK, Keen, Fired up. A coach you click with, new things and staying healthy lift it; the same training for months, a long layoff and stress wear it down. It changes how much your sessions train you, never what you do."},
-    {"heading": "Stress", "text": "Calm, Busy, Stressed, Overwhelmed. A big meet coming, a long injury, training far above your normal and a strained coach raise it. It drags motivation down. School adds to it later."},
+    {"heading": "Stress", "text": "Calm, Busy, Stressed, Overwhelmed. A big meet coming, a long injury, training far above your normal and a strained coach raise it, and so does school: a week full of tests, heavy study, late nights and two practices on a school day. Holidays ease it. It drags motivation down."},
     {"heading": "The middle does nothing", "text": "While confidence and motivation say OK and stress says Calm, nothing changes: you train and race as normal. Only the words around them matter."},
     {"heading": "Your coach", "text": "In the Sunday talk your coach may mention a mood, and when one is low he asks how you are. A coach good at motivating lifts you more; a good mental coach brings confidence back faster."}
    ]

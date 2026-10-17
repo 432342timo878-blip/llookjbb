@@ -386,9 +386,16 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         Check: a 14-year-old in a small town sees 1–3 coaches, in a centre town more; ranges narrow as designed; tour + layout check.
         Left for later: moving town (S3), camp coaches as people (G3), money (M4: a national real coach is over every budget until
         then), family reactions to a change (P1).
-  - [ ] **S1. School model (headless):** `SchoolSystem`, real subjects with aptitudes, grades, study effort / free time, focus
-        subjects, life load (neutral at Normal / Normal), tests and exam weeks, report cards, stress feed. *(Opus, high)*
+  - [x] **S1. School model (headless)** *(done 2026-10-17, GDD 4.9.3 "Built (step S1)"; user: holidays = relief (a normal school
+        week at Normal / Normal is today's game), NO exam weeks in yläkoulu (only single tests, which cluster into busy test
+        weeks; the exam-week machinery is ready for S3), free time = motivation vs rest, a mild life load)*: `SchoolSystem`
+        + `SchoolCalendar` + `data/school_life.json`: the stage by date, the real 2026-27 calendar of 20 towns and the estimated
+        rules, 17 real subjects with aptitudes, grades, study effort / free time, focus subjects, tests, report cards, the life
+        load (fatigue recovery, colds, injuries, stress with its causes, free time's motivation), double days = two separate
+        practices. `tools/school_check.gd` (in `run_all_checks`), `training_balance` part 2h. *(Opus, high)*
         Check: fingerprints identical at Normal / Normal in a normal week; grade drift per setting as in GDD 4.9.7.
+        Left for later: the UI and the decisions (S2), the coach seeing school in his proposals (S2), lukio / urheilulukio /
+        the application / exams / moving (S3), sleep and the family (P1), the balance (B1).
   - [ ] **S2. School UI + decisions:** School page, report card, the settings, exam vs meet, camps vs school, strip shading, Calendar
         bands, the day as blocks in the day editor. *(Sonnet, high)*
         Check: tour + layout check, help entries.
