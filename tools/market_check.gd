@@ -143,7 +143,21 @@ func _data_checks() -> void:
 	var mk: Dictionary = data.market
 	var voices: Array = data.coaches.coaches.keys()
 	var missing := []
-	for key in ["yes", "not_yet", "no_time", "full", "offer", "offer_seen", "farewell", "welcome", "warn1", "warn2", "end"]:
+	var p: Dictionary = mk.lines.pitch
+	for reason in p.open:
+		for v in voices + ([] if reason == "strained" else ["real"]):
+			if not p.open[reason].has(v):
+				missing.append("pitch.open.%s.%s" % [reason, v])
+		if not p.see.has(reason):
+			missing.append("pitch.see." + reason)
+	for part in ["plan_intro", "promise", "close"]:
+		for v in voices + ["real"]:
+			if not p[part].has(v):
+				missing.append("pitch.%s.%s" % [part, v])
+	for at in data.coaching.attributes:
+		if not p.plan.has(at.id):
+			missing.append("pitch.plan." + at.id)
+	for key in ["yes", "not_yet", "no_time", "full", "farewell", "welcome", "warn1", "warn2", "end"]:
 		for v in voices + ["real"]:
 			if not mk.lines[key].has(v):
 				missing.append("%s.%s" % [key, v])
@@ -352,7 +366,7 @@ func _real_coaches() -> void:
 	var mk = _mk()
 	var raj: Dictionary = mk.coach("real_mikko_rajaniemi")
 	var words_ok := true
-	for key in ["yes", "full", "farewell", "welcome", "warn1", "warn2", "end", "offer"]:
+	for key in ["yes", "full", "farewell", "welcome", "warn1", "warn2", "end"]:
 		words_ok = words_ok and mk.line(raj, key) == str(data.market.lines[key].real).format({"name": game.athlete.first_name,
 				"coach": raj.name, "coach_first": "Mikko", "new": "{new}", "old": "{old}", "time": "{time}"})
 	_ok("a real coach always uses the neutral 'real' words", words_ok)
@@ -516,11 +530,14 @@ func _week_stops(reply: String) -> Array:
 	return out
 
 
-# --- 8. Offers -----------------------------------------------------------------------------------------------------------------
+# --- 8. Coaches offer themselves -----------------------------------------------------------------------------------------------
 
 func _offers() -> void:
-	print("== 8. Offers after a breakthrough; the TF-juniorit standard")
+	print("== 8. Coaches offer themselves (whenever they see a reason; the switch; detailed messages)")
 	M.enabled = true
+	var o: Dictionary = data.market.offers
+	var cpp: float = float(o.chance_per_point)
+	var cmax: float = float(o.chance_max)
 	_career("tap", 1400, 2010, 1)   # 16, 'A parent was a top athlete in another sport': 80 a month
 	var mk = _mk()
 	mk.ensure_pool()
@@ -529,16 +546,140 @@ func _offers() -> void:
 	mk.seen_pb = 150.0
 	a.personal_bests["800m"] = 123.0
 	mk.on_day_end({})
+	_ok("a best of 2:03 is remembered by the coaches whose bar it cleared (%d)" % mk.crossed.size(), mk.crossed.size() > 0)
+	o.chance_per_point = 100.0
+	o.chance_max = 1.0
+	var att: Dictionary = o.attention.duplicate()
+	for k in o.attention:
+		o.attention[k] = 1.0
+	mk._weekly_offers()
 	var offered: Array = mk.offers.keys()
-	_ok("a personal best of 2:03 clears a coach's bar for the first time: one offer (%s)" % [offered.map(func(i): return mk.coach(i).name)],
-			offered.size() == 1)
+	_ok("that Sunday one coach writes (%s), never two at once" % [offered.map(func(i): return mk.coach(i).name)], offered.size() == 1)
 	if offered.size() == 1:
 		var c: Dictionary = mk.coach(offered[0])
-		_ok("the offer is a message in 'Other coaches' and the coach has a place for you", game.get_system("moments").thread("coaches").size() > 0
+		var msgs: Array = game.get_system("moments").thread("coaches")
+		var text: String = str(msgs.back().text) if not msgs.is_empty() else ""
+		print("    --- the message ---\n" + text.indent("    | ") + "\n    -------------------")
+		_ok("the message has the facts (cost, the place kept, the estimate is the coach's own) and the coach has a place for you",
+				text.contains(str(data.market.lines.pitch.facts_head)) and text.contains(str(data.market.lines.pitch.estimate_note))
 				and mk.status(c).id == "offer" and mk.may_start(c))
-	a.personal_bests["800m"] = 118.0
+		_ok("his estimate for next summer is faster than the best (%s)" % CAL.format_time(float(mk.offers[offered[0]].promise)),
+				float(mk.offers[offered[0]].promise) > 0.0 and float(mk.offers[offered[0]].promise) < 123.0)
+		_ok("an offer is never accepted by itself: the head coach stays", game.athlete.coach_id != offered[0] and mk.pending.is_empty())
+		# The same coach does not write again soon (his offer ran out, no new reason).
+		mk.offers[offered[0]].until = SL.day_no(game.date) - 1
+		mk.crossed.erase(offered[0])
+		mk._weekly_offers()
+		_ok("the same coach does not write again within %d days without a new reason" % int(o.again_days), not mk.offer_open(offered[0]))
+		# "Not now".
+		mk.offers.clear()
+		mk.on_reply("offer:" + str(offered[0]), "no")
+		_ok("'Not now' keeps that coach quiet for %d days" % int(o.declined_days), not mk.may_offer(c))
+	# The switch.
+	_career("tap", 1402, 2010, 1)
+	mk = _mk()
+	mk.ensure_pool()
+	game.athlete.personal_bests["800m"] = 150.0
+	mk.seen_pb = 150.0
+	game.athlete.personal_bests["800m"] = 123.0
 	mk.on_day_end({})
-	_ok("no second offer within %d days" % int(data.market.offers.gap_days), mk.offers.size() == offered.size())
+	mk.open_offers = false
+	mk._weekly_offers()
+	_ok("'Open to offers: No' = no coach writes", mk.offers.is_empty())
+	mk.open_offers = true
+	# A slump and progress, as the coaches see them.
+	_career("tap", 1403, 2009, 1)   # 17
+	mk = _mk()
+	a = game.athlete
+	_results(a, [[-400, 140.0, false], [-300, 131.0, true], [-60, 134.5, false], [-30, 135.0, false], [-10, 134.0, false]])
+	a.personal_bests["800m"] = 131.0
+	_ok("slower races than the best and no best for 300 days = a slump", mk.is_slumping())
+	_results(a, [[-400, 140.0, false], [-300, 131.0, true], [-60, 131.5, false], [-30, 132.0, false], [-10, 131.2, false]])
+	_ok("races close to the best = no slump", not mk.is_slumping())
+	_ok("the best 9 s faster than a year ago = progress (%.1f s)" % mk.progress_s(), mk.progress_s() >= float(o.progress_s))
+	_results(a, [[-400, 140.0, false], [-300, 131.0, true], [-60, 134.5, false], [-30, 135.0, false], [-10, 134.0, false]])
+	# A good and a poor judge looking at the same slump.
+	var base := {}
+	for c in mk.coaches():
+		if str(c.get("market", {}).get("tier", "")) == "regional":
+			base = c
+			break
+	var good: Dictionary = base.duplicate(true)
+	good.id = "judge_good"
+	good.attributes.judging_ability = 18
+	var poor: Dictionary = base.duplicate(true)
+	poor.id = "judge_poor"
+	poor.attributes.judging_ability = 4
+	var seen_good := 0
+	var seen_poor := 0
+	var prom_good := []
+	var prom_poor := []
+	for i in 400:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 9000 + i
+		if mk.reasons_of(good, rng).has("slump"):
+			seen_good += 1
+		rng.seed = 9000 + i
+		if mk.reasons_of(poor, rng).has("slump"):
+			seen_poor += 1
+		rng.seed = 7000 + i
+		prom_good.append(mk.promise_of(good, rng))
+		rng.seed = 7000 + i
+		prom_poor.append(mk.promise_of(poor, rng))
+	print("    the slump noticed: judging 18 %d of 400, judging 4 %d of 400; estimates' spread %.2f s vs %.2f s" % [seen_good, seen_poor, _sd(prom_good), _sd(prom_poor)])
+	_ok("a good judge notices the slump more often than a poor one", seen_good > seen_poor)
+	_ok("a poor judge's estimates scatter more widely", _sd(prom_poor) > _sd(prom_good))
+	# Short and detailed messages.
+	var short: Dictionary = base.duplicate(true)
+	short.attributes.communication = 5
+	var full: Dictionary = base.duplicate(true)
+	full.attributes.communication = 16
+	var reasons := {"slump": 2.0, "talent": 1.5}
+	var t_short: String = mk.offer_text(short, reasons, 128.0)
+	var t_full: String = mk.offer_text(full, reasons, 128.0)
+	var intro: String = str(data.market.lines.pitch.plan_intro.get(str(full.voice), ""))
+	_ok("a coach of few words writes a short offer, a good communicator explains the plan (%d vs %d characters)" % [t_short.length(), t_full.length()],
+			t_full.length() > t_short.length() + 60 and t_full.contains(intro) and not t_short.contains(intro))
+	# A real coach never writes about trouble with your coach.
+	mk.chain = {"weeks": 10, "stage": 0, "at": 0}
+	var rng2 := RandomNumberGenerator.new()
+	rng2.seed = 1
+	var real_c: Dictionary = mk.coach("real_jarmo_viskari")
+	_ok("a fictional coach may mention trouble with your coach, a real coach never", mk.reasons_of(base, rng2).has("strained")
+			and not mk.reasons_of(real_c, rng2).has("strained"))
+	mk.chain = {}
+	# How many offers a year (the data's chance), week by week without playing, in Tampere (a centre: many coaches).
+	o.chance_per_point = cpp
+	o.chance_max = cmax
+	o.attention = att
+	var rows := {"talented and slumping": [17.0, [[-400, 140.0, false], [-300, 131.0, true], [-60, 134.5, false], [-30, 135.0, false], [-10, 134.0, false]]],
+			"ordinary, steady": [-1.0, [[-400, 131.5, false], [-300, 131.0, true], [-60, 131.8, false], [-30, 132.2, false], [-10, 131.5, false]]]}
+	var counts := {}
+	for row in rows:
+		counts[row] = []
+		for career_seed in [1404, 1405, 1406, 1407]:
+			_career("tap", career_seed, 2009, 1)
+			mk = _mk()
+			mk.ensure_pool()
+			a = game.athlete
+			var n := 0
+			var start: Dictionary = game.date.duplicate()
+			for w in 52:
+				game.date = game.add_days(start, 7 * w)
+				_results(a, rows[row][1])
+				a.personal_bests["800m"] = 131.0
+				# (ordinary: a talent just above what the best shows)
+				a.attributes["potential"] = float(rows[row][0]) if float(rows[row][0]) > 0.0 else M.shown_ability() + 1.0
+				var had: Dictionary = mk.offers.duplicate()
+				mk._weekly_offers()
+				for k in mk.offers:
+					if not had.has(k):
+						n += 1
+			game.date = start
+			counts[row].append(n)
+		print("    offers in a year, %s 17-year-old in Tampere: %s" % [row, counts[row]])
+	_ok("coaches write now and then: a talented slumping athlete gets more offers than an ordinary one, neither every week",
+			_sum(counts["talented and slumping"]) > _sum(counts["ordinary, steady"]) and counts["talented and slumping"].all(func(x): return x <= 12))
 	# The TF-juniorit standard at 14 opens the regional and national coaches.
 	_career("tap", 1401, 2012)
 	mk = _mk()
@@ -549,6 +690,34 @@ func _offers() -> void:
 	mk.on_day_end({})
 	_ok("at 14, the TF-juniorit standard (%s) opens the regional and national coaches (%d -> %d listed)" % [CAL.format_time(tf), shown_before, _total(mk.listing())],
 			mk.seen_tf and mk.listing().has("national") and _total(mk.listing()) > shown_before)
+
+
+## Sets the athlete's 800 m results: [[days from today, time, pb], ...].
+func _results(a, rows: Array) -> void:
+	a.results = []
+	for r in rows:
+		var d: Dictionary = game.add_days(game.date, int(r[0]))
+		a.results.append({"date": d, "meet": "x", "meet_key": "x", "event": "800m", "round": "Final", "place": 3, "field": 8,
+				"time": float(r[1]), "pb": bool(r[2])})
+
+
+func _sum(xs: Array) -> int:
+	var s := 0
+	for x in xs:
+		s += int(x)
+	return s
+
+
+func _sd(xs: Array) -> float:
+	var m := 0.0
+	for x in xs:
+		m += float(x)
+	m /= maxf(1.0, xs.size())
+	var v := 0.0
+	for x in xs:
+		v += (float(x) - m) * (float(x) - m)
+	return sqrt(v / maxf(1.0, xs.size()))
+
 
 
 # --- 9. Distance, the parent -------------------------------------------------------------------------------------------------

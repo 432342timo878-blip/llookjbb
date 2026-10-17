@@ -61,7 +61,35 @@
   "_note": "A real coach with cost_month 0 and no published fee (personal or remote) costs the estimate of his reputation (user 2026-10-17); the screen says it is an estimate. Academy fees stay as in D1 (from the published notes, 0 = free).",
   "estimate": {"local": 40, "regional": 60, "national": 90, "international": 150}
  },
- "offers": {"_note": "After a personal best that clears a coach's bar for the first time (or the TF-juniorit standard), one coach with a place may write to you: at most one every gap_days and max_per_season a season; the offer holds for valid_days (his place is kept for you).", "gap_days": 90, "valid_days": 30, "max_per_season": 2},
+ "offers": {
+  "_note": "Coaches offer themselves (user 2026-10-17: 'whenever they deem it fit, if I'm slumping and they see I could do better etc.'; no ceiling, but a switch 'Open to offers'; never accepted from the message; the message as detailed as the coach is). Every Sunday night each coach who could take the athlete now (status ok: a place, the time, the budget; not the head coach, not a coach who ended it) weighs what HE sees, in points: `reasons` (talent = his read of the hidden potential minus the ability the athlete's best shows, x talent_per_point, only up to talent_max_age; slump = recent races clearly slower than the best and no best for a while, noticed with notice chance; progress = the best improved by progress_s in a year; crossed = a best that cleared his bar for the first time in the last crossed_days; seen = the TF-juniorit standard just reached; strained = trust Strained with the head coach for strained_weeks, FICTIONAL coaches only), plus better_per_point x (his average - the head coach's average, capped at better_cap) and minus fit_per_level x the gap between his group's level and the athlete's beyond fit_free. A score above `threshold` makes him write that week with chance (score - threshold) x chance_per_point (at most chance_max): the more he wants the athlete, the sooner he writes; a coach barely interested rarely bothers. At most one offer a week (the highest score), a coach writes again only after again_days (a new crossed or seen reason excepted), 'Not now' holds declined_days. His read has noise: sd = noise.floor + noise.per_point x (20 - judging ability) on every point he sees, so a poor judge writes for the wrong reasons and misses the right ones. His promise ('with me I think you could run X by next summer') = the time of (the ability the best shows + yearly_gain[age] x (1 + (his average - the head's) x self_belief_per_point + demands[his demands]) + his noise), so a poor judge or an ambitious coach overpromises; never more than promise_max_years years' gain, never slower than the best. The offer holds valid_days (his place is kept).",
+  "look": "sunday",
+  "valid_days": 30,
+  "again_days": 180,
+  "declined_days": 180,
+  "threshold": 3.0,
+  "chance_per_point": 0.04,
+  "chance_max": 0.25,
+  "attention_note": "How much of the athlete a coach sees, by where he is listed (his weekly chance x this): the club's and the town's coaches see you at the track, the others only at meets now and then.",
+  "attention": {"club": 0.6, "parent": 0.0, "town": 0.5, "region": 0.25, "academy": 0.3, "national": 0.2, "remote": 0.15, "elite": 0.5},
+  "reasons": {"talent_per_point": 0.4, "talent_cap": 2.0, "talent_max_age": 21, "slump": 2.0, "progress": 1.5, "crossed": 2.5, "seen": 2.5, "strained": 1.5},
+  "notice": {"base": 0.4, "per_point": 0.03},
+  "slump": {"recent": 3, "recent_days": 120, "over_pb": 0.02, "no_pb_days": 240},
+  "progress_s": 2.0,
+  "crossed_days": 21,
+  "strained_weeks": 3,
+  "better_per_point": 0.3,
+  "better_cap": 1.0,
+  "fit_free": 1.5,
+  "fit_per_level": 0.3,
+  "noise": {"floor": 0.3, "per_point": 0.15},
+  "yearly_gain": [[14, 1.4], [15, 1.2], [16, 1.0], [17, 0.8], [18, 0.6], [20, 0.4], [23, 0.25], [26, 0.1]],
+  "self_belief_per_point": 0.08,
+  "demands": {"steady": -0.1, "balanced": 0.0, "ambitious": 0.25},
+  "promise_noise": {"floor": 0.1, "per_point": 0.04},
+  "promise_max_years": 2.5,
+  "communication": {"short_max": 7, "full_min": 14}
+ },
  "ending": {
   "_note": "User 2026-10-17: Strained for strained_weeks weeks in a row -> warning talk 1 (a stop); still Strained second_after weeks later -> warning talk 2; still Strained end_after weeks later -> he ends it (a stop: pick the next coach from those who would take you now, max_choices; no answer = the first). Trust back above Strained at any time resets the chain. The replies to a warning add trust.",
   "strained_weeks": 6, "second_after": 4, "end_after": 4, "max_choices": 3,
@@ -73,6 +101,11 @@
   "find_head": "FIND A COACH",
   "situation": "Age {age} · {town} ({size}) · Family budget €{budget} / month · club fees always fit",
   "sections": {"club": "YOUR CLUB", "parent": "AT HOME", "town": "YOUR TOWN", "region": "YOUR REGION", "national": "NATIONAL COACHES", "remote": "REMOTE COACHES", "academy": "ATHLETICS CENTRE", "elite": "WORLD LEVEL"},
+  "open_head": "Open to offers from other coaches",
+  "open_yes": "Yes",
+  "open_no": "No",
+  "open_note_yes": "Coaches who think they could help you may write to you in Other coaches.",
+  "open_note_no": "No coach will write to you with an offer. You can still ask any coach yourself.",
   "more_later": "More coaches open up at 16, or as soon as you reach the TF-juniorit standard.",
   "more_seen": "You reached the TF-juniorit standard: the regional and national coaches can see you now.",
   "status": {
@@ -179,31 +212,51 @@
    "speed": "Full this season.",
    "real": "Thank you for asking. My group is full this season."
   },
-  "offer": {
-   "calm": "{name}, I saw your result. If you ever want a new coach, I have a place for you. Think about it.",
-   "drill": "I saw your time. I have a place in my group if you want to work. Think about it.",
-   "warm": "{name}, I saw your race and I was so impressed! If you'd like, there's a place for you in my group.",
-   "tactician": "Your last race caught my eye. I have a place if you're interested.",
-   "analyst": "Your recent times caught my attention. I have a place in my group if you want it.",
-   "mentor": "I've seen you run. There's a place for you, if you want it.",
-   "motivator": "WOW, that race! I'd love to coach you. There's a place for you if you want it!",
-   "speed": "Saw your race. You've got speed. I have a place.",
-   "real": "I followed your recent results. If you are looking for a coach, I could take you on this season."
-  },
-  "offer_seen": {
-   "calm": "I saw your name on the TF-juniorit list, {name}. If you're ever looking for a coach, I have a place.",
-   "drill": "TF-juniorit level. Good. I have a place if you want to work.",
-   "warm": "Congratulations on the TF-juniorit standard! If you'd like a new coach, I'd be happy to have you.",
-   "tactician": "TF-juniorit level. I have a place if you're interested.",
-   "analyst": "You're at the TF-juniorit standard now. I have a place in my group if you want it.",
-   "mentor": "I saw you made the TF-juniorit list. There's a place here, if you want it.",
-   "motivator": "TF-juniorit standard! Amazing! I'd love to coach you. Interested?",
-   "speed": "TF-juniorit level. I have a place.",
-   "real": "Congratulations on the TF-juniorit standard. If you are looking for a coach, I could take you on."
+  "pitch": {
+   "_note": "An offer (C6, user 2026-10-17: as detailed as possible, and only as good as the coach). Built from: open[his main reason][voice], see[each reason he sees] (normal and full communication), plan_intro[voice] + plan[his two best attributes] (full communication only), promise[voice] ({time} = his estimate for next summer), close[voice]; communication <= offers.communication.short_max = open + promise + close only. Under it the game's facts: facts (cost, distance, the group, how long the place is kept). Real coaches use `real` and never the strained reason. Placeholders: {name}, {pb} (the athlete's best), {time}, {group}, {coach_first}.",
+   "open": {
+    "talent": {"calm": "{name}, I have been watching you race this season.", "drill": "{name}. I've watched you race. Listen.", "warm": "Hi {name}! I've been watching your races and I wanted to write to you.", "tactician": "{name}, I've studied your races this season.", "analyst": "{name}, I've looked at your results this season.", "mentor": "{name}. I've seen you run a few times now.", "motivator": "Hey {name}! I've seen you race and I HAD to write!", "speed": "{name}. Saw you race.", "real": "Hello {name}. I have followed your results this season."},
+    "slump": {"calm": "{name}, I've noticed your times have stood still for a while.", "drill": "{name}. Your times have stalled. That bothers me.", "warm": "Hi {name}, I've noticed things haven't been going your way lately, and I wanted to reach out.", "tactician": "{name}, your results have flattened out. I think I see why.", "analyst": "{name}, your recent times sit clearly above your best. The trend has stopped.", "mentor": "{name}. You've been stuck for a while. It happens.", "motivator": "Hey {name}! You've hit a rough patch, I can see it, and I think I can help!", "speed": "{name}. You've gone flat.", "real": "Hello {name}. I have followed your results; they have not moved for a while."},
+    "progress": {"calm": "{name}, you have come a long way this year.", "drill": "{name}. You've got faster. Good.", "warm": "Hi {name}! Look how much you've improved this year!", "tactician": "{name}, your progress this year caught my eye.", "analyst": "{name}, your curve this year is steep.", "mentor": "{name}. Good progress this year.", "motivator": "{name}!! What a year you're having!", "speed": "{name}. You've got quicker. A lot.", "real": "Hello {name}. Your progress this year caught my attention."},
+    "crossed": {"calm": "{name}, I saw your new best.", "drill": "{name}. That best time. Now you're at my group's level.", "warm": "{name}, your new best! I was so happy to see it.", "tactician": "{name}, your new best puts you at my group's level.", "analyst": "{name}, your new best crosses my group's line.", "mentor": "{name}. A fine new best.", "motivator": "{name}! That new best! WOW!", "speed": "{name}. Saw the new best. Fast.", "real": "Hello {name}. Congratulations on your new best."},
+    "seen": {"calm": "{name}, I saw your name on the TF-juniorit list.", "drill": "{name}. TF-juniorit level. Good.", "warm": "Congratulations on the TF-juniorit standard, {name}!", "tactician": "{name}, the TF-juniorit standard: noted.", "analyst": "{name}, you've reached the TF-juniorit standard.", "mentor": "{name}. The TF-juniorit list. Well done.", "motivator": "TF-JUNIORIT, {name}! Amazing!", "speed": "{name}. TF-juniorit. Nice.", "real": "Hello {name}. Congratulations on the TF-juniorit standard."},
+    "strained": {"calm": "{name}, I hear it hasn't been easy with your coach lately.", "drill": "{name}. Word is things aren't working with your coach.", "warm": "Hi {name}, I've heard things have been hard with your coach. I'm sorry.", "tactician": "{name}, I understand your current set-up isn't working.", "analyst": "{name}, I'm told your current coaching isn't working out.", "mentor": "{name}. I hear it's not going well with your coach.", "motivator": "Hey {name}, I heard things are rough with your coach. That's tough!", "speed": "{name}. Heard it's not working with your coach."},
+    "better": {"calm": "{name}, I've been thinking about your training.", "drill": "{name}. You're training below what you could.", "warm": "Hi {name}! I've been thinking about you and your running.", "tactician": "{name}, I think your training could be organised better.", "analyst": "{name}, I think there is more efficiency in your training.", "mentor": "{name}. I've been thinking about your training.", "motivator": "Hey {name}! I think I could help you fly!", "speed": "{name}. I think you could be faster.", "real": "Hello {name}. I would like to offer my coaching."}
+   },
+   "see": {
+    "talent": "I think there is a lot more in you than your {pb} shows.",
+    "slump": "When a runner stalls like this, it is usually the training, not the runner.",
+    "progress": "Progress like that deserves a coach who can take it further.",
+    "crossed": "With {pb} you would fit right into my group.",
+    "seen": "At that level, every detail of the training starts to matter.",
+    "strained": "A runner needs a coach they trust. If that is missing, everything is harder.",
+    "better": "I believe I could get more out of your training."
+   },
+   "plan_intro": {"calm": "With me, you would", "drill": "With me you'd", "warm": "With me, we would", "tactician": "With me, the plan would", "analyst": "With me, the training would", "mentor": "With me, you'd", "motivator": "With me, we'd", "speed": "With me you'd", "real": "In my group, the training would"},
+   "plan": {
+    "endurance_knowledge": "build your aerobic base properly, with well-planned long runs and tempo work",
+    "speed_strength_knowledge": "add real speed and strength work, done right",
+    "technique": "clean up your running technique with drills every week",
+    "periodization": "plan the season round the meets that matter, so you peak on the day",
+    "youth_development": "keep you healthy through the growth years and make the most of them",
+    "load_management": "watch your load closely, so a niggle never becomes an injury",
+    "race_reading": "work on how you race: where to run, when to move, when to kick",
+    "mental_coaching": "work on your nerves and your race-day mind",
+    "motivating": "keep you hungry, every week",
+    "communication": "always explain why we do what we do",
+    "judging_ability": "set goals that are right for you, not too low and not too high"
+   },
+   "promise": {"calm": "I think you could run {time} by next summer.", "drill": "You'd run {time} next summer. At least.", "warm": "I really believe you could run {time} next summer!", "tactician": "My estimate: {time} next summer.", "analyst": "My projection for next summer: {time}.", "mentor": "In a year, perhaps {time}. No hurry.", "motivator": "I see you running {time} next summer! Easily!", "speed": "{time} next summer. I'm sure.", "real": "My estimate for next summer is about {time}."},
+   "close": {"calm": "Think about it calmly. There's no hurry.", "drill": "Think about it. Not for too long.", "warm": "Take your time, and write to me if you have questions!", "tactician": "Consider it. The details are on my page.", "analyst": "The details are below. Take your time.", "mentor": "Think it over.", "motivator": "Think about it! I'd love to have you!", "speed": "Think about it.", "real": "Please take your time to consider it."},
+   "facts_head": "THE OFFER",
+   "fact_cost": "Cost: {cost}.",
+   "fact_group": "Training group: {n} athletes, {level}.",
+   "fact_kept": "{coach_first} keeps the place for you until {date}. You can see everything in Find a coach.",
+   "estimate_note": "(The estimate is the coach's own.)"
   },
   "offer_replies": [
-   {"id": "more", "label": "Tell me more", "hint": "The place is kept for 30 days: see the coach in Find a coach"},
-   {"id": "no", "label": "Not now, thanks", "hint": "No more offers from this coach this season"}
+   {"id": "more", "label": "Thanks, I'll think about it", "hint": "The place is kept for 30 days: see the coach in Find a coach"},
+   {"id": "no", "label": "Not now, thanks", "hint": "No more offers from this coach for half a year"}
   ],
   "offer_answer": {
    "more": {"calm": "Good. Look at my group and decide calmly.", "drill": "Good. Decide quickly.", "warm": "Lovely! Take your time.", "tactician": "Good. You'll find the details on my page.", "analyst": "Good. Everything is on my page.", "mentor": "Take your time.", "motivator": "Yay! Take a look!", "speed": "Good.", "real": "Thank you. The place is kept for you for a month."},

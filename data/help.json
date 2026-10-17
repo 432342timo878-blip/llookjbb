@@ -114,10 +114,11 @@
   },
   "market": {
    "title": "Find a coach",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Who you can get", "text": "At 14 and 15: your club's coaches, a parent who competed in athletics, and remote coaches. From 16, or once you reach the TF-juniorit standard: other clubs in your town, coaches in your region and national coaches. An athletics-centre town has more."},
-    {"heading": "Coaches choose too", "text": "A coach may want a time from you first, or have no place this season. Club fees always fit; a personal coach must fit your family's monthly budget. After a big personal best a coach may write to you with an offer."},
+    {"heading": "Coaches choose too", "text": "A coach may want a time from you first, or have no place this season. Club fees always fit; a personal coach must fit your family's monthly budget."},
+    {"heading": "Offers", "text": "Coaches also write to you themselves, when they see a reason: a talent they think is wasted, a slump, fast progress, a best that reaches their group. An offer is only as good as the coach: a poor judge can misread you or promise too much. Nothing changes unless you start with the coach. Switch offers off on this page."},
     {"heading": "Finding out more", "text": "Skills show as ranges. Look at the athletes' results, ask around (a teammate answers) or visit a session (that day becomes an easy run, or a rest day if it means travel). Eight weeks together make every skill exact.", "see": ["coach_distance"]},
     {"heading": "Changing coach", "text": "Ask to be coached; if the answer is yes, start on the next Monday. Your old coach, the group and the club will notice. A new coach starts as New trust, with a new group."},
     {"heading": "When a coach ends it", "text": "Only after weeks of Strained trust and two warning talks. Answering them well brings trust back. If it still ends, you choose your next coach from those who would take you."}

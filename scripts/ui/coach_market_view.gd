@@ -34,6 +34,8 @@ func _build() -> void:
 	add_child(UIKit.wrapped(str(ui.situation).format({"age": CoachMarket.age(), "town": town, "size": size_name,
 			"budget": mk.budget()}), "MutedLabel"))
 
+	add_child(_open_switch(mk))
+
 	if not mk.pending.is_empty():
 		var box := UIKit.vbox(8)
 		var newc: Dictionary = cs.coaches.get(str(mk.pending.coach), {})
@@ -59,6 +61,27 @@ func _build() -> void:
 			col.add_child(_card(mk, c))
 		add_child(col)
 	add_child(UIKit.wrapped(str(ui.more_seen if mk.seen_tf else ui.more_later), "CaptionLabel"))
+
+
+## "Open to offers from other coaches: Yes / No" (user 2026-10-17): two 44 px toggles and what it means.
+func _open_switch(mk: CoachMarket) -> Control:
+	var ui: Dictionary = Data.market.ui
+	var col := UIKit.vbox(6)
+	col.add_child(UIKit.label(str(ui.open_head), "CaptionLabel"))
+	var row := UIKit.hbox(8)
+	var group := ButtonGroup.new()
+	for v in [true, false]:
+		var b := UIKit.toggle(str(ui.open_yes if v else ui.open_no), group)
+		b.custom_minimum_size = Vector2(110, 44)
+		b.button_pressed = mk.open_offers == v
+		b.pressed.connect(func():
+			mk.open_offers = v
+			_build()
+			changed.emit())
+		row.add_child(b)
+	col.add_child(row)
+	col.add_child(UIKit.wrapped(str(ui.open_note_yes if mk.open_offers else ui.open_note_no), "CaptionLabel"))
+	return UIKit.panel(col, 12)
 
 
 ## A coach as a card: tap = the coach's page.

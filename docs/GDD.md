@@ -3435,9 +3435,24 @@ and the winter groups; S3 uses `urheilulukiot.json`. A later research session (a
   (a teammate writes in the group thread: the coach's best and worst side and style): motivating and communication −3, mental
   coaching and youth development −2, the rest −1; shows style and demands. A visit: technique −3, endurance, speed & strength
   and load management −2, the rest −1; shows style. Working together: the width falls in a straight line to 0 over 8 weeks.
-- **Offers:** after a personal best that clears a coach's bar for the first time (or the TF-juniorit standard), the best-known
-  coach with a place who fits the budget writes in a new thread **Other coaches**; at most one every 90 days and 2 a season, kept
-  30 days. The world-level coaches (spots 0) only ever approach the athlete this way.
+- **Offers: coaches offer themselves (follow-up, user 2026-10-17: "whenever they deem it fit, if I'm slumping and they see I
+  could do better"; no ceiling but a switch to be unavailable; never accepted from the message; "the coach's message should be as
+  detailed as possible, the offer is of course as good / bad as the coach is").** Every Sunday night each coach who could take
+  the athlete (a place, the time, the budget; not a coach who ended it, no open offer, no "Not now" in the last 180 days) weighs
+  what HE sees in points: talent (his read of the hidden potential against the ability the best shows, up to 21, capped), a slump
+  (recent races ≥ 2 % slower than the best and no best for 240 days; noticed more often by a good judge), progress (the best
+  2+ s faster than a year ago), a best that cleared his bar in the last 3 weeks, the TF-juniorit standard, trouble with the
+  head coach (Strained 3+ weeks, FICTIONAL coaches only), how much better he thinks he is than the head coach, minus a group far
+  from the athlete's level; all through his judging noise. Above a threshold he writes that week with a chance that grows with his
+  score × his attention (his club and town see you at the track, region / national / remote coaches only now and then); at most
+  one offer a week; the same coach again only after 180 days unless a new best clears his bar. The message, in his voice (the
+  neutral words for a real coach): his opening by the main reason, what he sees (unless his communication is ≤ 7), his plan from
+  his two best skills (communication ≥ 14), his estimate for next summer (a year's gain at this age × his self-belief and demands
+  + his judging noise, never more than 2.5 years' gain, never slower than the best: a poor judge or an ambitious coach
+  overpromises), his closing line; under it the game's facts: cost, distance and what it would change, the group, how long the
+  place is kept (30 days), and "the estimate is the coach's own". Replies: "Thanks, I'll think about it" / "Not now, thanks";
+  starting is always on the coach's page. **Find a coach** has the switch **Open to offers from other coaches: Yes / No**.
+  The world-level coaches (spots 0) only ever approach the athlete this way.
 - **The parent coach:** average 9, strong in technique and motivating, weak in periodization and judging, a fit bonus of +1
   (`coaching.json fit.kind_bonus`) and a stress pull of +6 ("training comes home with you", `mind.json drift.stress.parent_coach`).
 - **Profile words without gender:** the profile's headings no longer say "him" (SKILLS, ABOUT, TRAINING GROUP); market texts
@@ -3460,7 +3475,9 @@ and the winter groups; S3 uses `urheilulukiot.json`. A later research session (a
   / `make_rest_day` by the player, also in a later week via `on_week_start`), `ask / may_start / start / cancel_pending /
   switch_to` (on Sunday night: a new relation or the old one, a training group generated for the coach, the threads' lines),
   offers (`on_day_end`), the ending chain (`on_week_end`), `on_reply` for the market's moments (offer, farewell, warn, end),
-  `history` of the athlete's coaches. Its state is `{}` until something happens, so untouched careers save as before.
+  `history` of the athlete's coaches; offers: `_note_pb` (crossed bars, `seen_tf`), `_weekly_offers` (Sunday night),
+  `may_offer`, `reasons_of`, `is_slumping`, `progress_s`, `promise_of`, `offer_text`, `post_offer`, `open_offers`. Its state is
+  `{}` until something happens, so untouched careers save as before.
 - **`CoachSystem`:** `town_shift`, `athlete_level`, `distance_of / home_town / attends`, distance penalties in `attr()`, race
   reading at skipped meets in `race_accuracy(meet)` (`RaceDay` passes the meet; the race engine untouched), `pronoun`,
   `_make_group(a, rng, size, level)`, the fit bonus by kind. `MindSystem`: the parent coach's stress pull. `StoryletSystem`:
@@ -3471,10 +3488,13 @@ and the winter groups; S3 uses `urheilulukiot.json`. A later research session (a
   senior athletes and sources, the character words once known, the skills as ranges, the coach history), the People tab's
   **Find a coach** row and pages `market` / `coach:<id>`, the header "?" → `market`. 44 px, phone pages, no hover.
 
-**Measured (`tools/market_check.gd`, 61 checks, ALL CHECKS PASSED; in `run_all_checks`):** coaches of the club for
+**Measured (`tools/market_check.gd`, 75 checks, ALL CHECKS PASSED; in `run_all_checks`):** coaches of the club for
 14-year-olds (20 careers each): Karkkila (small municipality) 1, Vihti (small town) 1–2, Kerava (town) 2–3, Kuopio (city) 3–5,
 Tampere and Helsinki (centres) 5–8; all visible at 14 incl. the 2 remote coaches: 3 / 3–4 / 4–5 / 5–7. A Tampere career has 37
-coaches. The TF-juniorit standard at 14 (2:06.03) opens 7 → 21 coaches. A remote coach: technique 8 → 4; race advice right
+coaches. The TF-juniorit standard at 14 (2:06.03) opens 7 → 21 coaches. Offers (a year of Sundays, a 17-year-old in Tampere, a centre
+with ~37 coaches): a big talent (ceiling 17) who is slumping after a 9 s year gets 7–9 offers; an ordinary steady athlete 0 (a
+best that clears a coach's bar brings one). A slump is noticed 381 / 400 times by a judge of 18, 164 / 400 by a judge of 4;
+the spread of their estimates 0.87 s vs 2.88 s. A coach of few words writes ~500 characters, a good communicator ~750. A remote coach: technique 8 → 4; race advice right
 0.840 at a meet he skips vs 0.915 at a national meet. The ending chain: warnings in weeks 6 and 10, the end in week 14; trust back
 in weeks 6–7 moves the first warning to week 13. With a 15-euro budget all 21 paid coaches are over it. Six weeks with the
 market off and on (pool made) are identical bit for bit. `coach_check`: Tampere club coaches now average 10.90 (+1.0 shift, the

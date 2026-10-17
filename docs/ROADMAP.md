@@ -379,7 +379,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   - [x] **C6. Coach market** *(done 2026-10-17, GDD 4.9 "Built (step C6)"; user: town size moves the club coach a moderate
         step, the market grows with age (TF-juniorit opens it early), 4 new coach personalities, real coaches the same chain with
         neutral words, the tighter family budget, missing fees estimated by reputation, distance in three steps, ending after
-        6 + 4 + 4 Strained weeks)*: availability (town size, remote, parent, coaches choose, spots), scouting ranges and how they
+        6 + 4 + 4 Strained weeks; follow-up: coaches offer themselves whenever they see a reason, no ceiling but an "Open to
+        offers" switch, never accepted from the message, the message as detailed and as good as the coach)*: availability (town size, remote, parent, coaches choose, spots), scouting ranges and how they
         narrow, the profile page, Find a coach, changing coach (moments), the family budget. `CoachMarket`, `data/market.json`,
         `tools/market_check.gd` (in `run_all_checks`). *(Opus, high)*
         Check: a 14-year-old in a small town sees 1–3 coaches, in a centre town more; ranges narrow as designed; tour + layout check.

@@ -26,16 +26,18 @@ var scout := {}              # coach id -> {width: {attr: points}, asked, visite
 var spots := {}              # coach id -> {year, n}: his places this season (fictional coaches; drawn every season)
 var pending := {}            # {coach, date (the Monday), why ("player" / "offer" / "ended")}: the next head coach
 var visit := {}              # {coach, date, far, done}: the planned visit to a session
-var offers := {}             # coach id -> {until (day number), why ("pb" / "seen")}
-var declined := {}           # coach id -> season year: "Not now" to an offer
+var offers := {}             # coach id -> {until (day number), why (his main reason), promise (seconds)}
+var declined := {}           # coach id -> day number: "Not now" to an offer
 var answers := {}            # coach id -> {day, status}: the last answer to "Ask to be coached"
 var ended := {}              # coach id -> day number: he ended the coaching
 var history := []            # [{coach, from, to (date or {})}]: the athlete's coaches
 var chain := {}              # the ending chain: {weeks (Strained in a row), stage 0-3, at (weeks at the last warning)}
 var seen_pb := 0.0           # the 800 m best the market has already reacted to
 var seen_tf := false         # the TF-juniorit standard is reached: the camp coaches have seen the athlete
-var last_offer_day := -9999
-var offers_by_season := {}   # season year -> offers made
+var seen_day := -9999        # the day it was reached
+var crossed := {}            # coach id -> day number: a best cleared his bar for the first time
+var last_offer := {}         # coach id -> day number of his last offer
+var open_offers := true      # the player's switch "Open to offers from other coaches" (user 2026-10-17)
 var _next := 1
 
 
@@ -755,7 +757,7 @@ func on_day_end(_ctx: Dictionary) -> void:
 		var old := seen_pb
 		seen_pb = pb
 		ensure_pool()
-		_check_offers(old, pb)
+		_note_pb(old, pb)
 
 
 func _visit_done() -> void:
@@ -782,60 +784,264 @@ func _visit_done() -> void:
 		ms.say("coaches", "system", str(v.line).format({"coach": c.name, "day": Calendar.format_day(Game.date), "good": good, "bad": bad}).strip_edges())
 
 
-## A personal best: has it cleared a coach's bar for the first time (or reached the TF-juniorit standard)? One coach may
-## write to the athlete (at most one every gap_days, max_per_season a season).
-func _check_offers(old_pb: float, pb: float) -> void:
-	var a := Game.athlete
-	var why := "pb"
-	var tf := Standards.time(str(cfg().seen.standard), a, int(Game.date.year))
+## A personal best: the coaches whose bar it cleared for the first time remember it (a reason to write, data offers.crossed),
+## and the TF-juniorit standard opens the regional and national coaches (`seen`).
+func _note_pb(old_pb: float, pb: float) -> void:
+	var tf := Standards.time(str(cfg().seen.standard), Game.athlete, int(Game.date.year))
 	if not seen_tf and tf > 0.0 and pb <= tf:
 		seen_tf = true
-		why = "seen"
-	var o: Dictionary = cfg().offers
-	var year := season_of(Game.date)
-	if today_no() - last_offer_day < int(o.gap_days) or int(offers_by_season.get(str(year), 0)) >= int(o.max_per_season):
+		seen_day = today_no()
+	for c in coaches():
+		var req := required_time(c)
+		if req > 0.0 and pb <= req and (old_pb <= 0.0 or old_pb > req):
+			crossed[str(c.id)] = today_no()
+
+
+# --- Coaches offer themselves (user 2026-10-17: whenever they deem it fit) -------------------------------------------------
+
+## Every Sunday night: each coach who could take the athlete weighs what he sees; above data offers.threshold he writes with
+## a chance that grows with his score (his own dice for the week). At most one offer a week: the highest score.
+func _weekly_offers() -> void:
+	if not open_offers or Game.athlete == null:
 		return
-	var rank: Dictionary = cfg().reputation_rank
-	var head_rank := int(rank.get(str(_cs().head().get("facts", {}).get("reputation", "local")), 0))
+	var o: Dictionary = cfg().offers
+	var today := today_no()
 	var best := {}
+	var best_score := -INF
+	var best_reasons := {}
 	for c in coaches():
 		var cid := str(c.id)
-		if cid == a.coach_id or cid == str(pending.get("coach", "")) or ended.has(cid) or int(declined.get(cid, -1)) == year:
+		if not may_offer(c):
 			continue
-		if not section(c) in ["region", "national", "remote", "elite", "academy"] or not fits_budget(c):
+		var rng := _dice(c, today)
+		var reasons := reasons_of(c, rng)
+		var last := int(last_offer.get(cid, -9999))
+		var fresh := int(crossed.get(cid, -9999)) > last or (reasons.has("seen") and seen_day > last)
+		if today - last < int(o.again_days) and not fresh:
 			continue
-		var req := required_time(c)
-		if req <= 0.0 or pb > req:
+		var score := 0.0
+		for k in reasons:
+			score += float(reasons[k])
+		var p := minf(float(o.chance_max), (score - float(o.threshold)) * float(o.chance_per_point)) \
+				* float(o.attention.get(section(c), 0.3))
+		if p <= 0.0 or rng.randf() >= p:
 			continue
-		var crossed := old_pb <= 0.0 or old_pb > req
-		if not crossed and why != "seen":
-			continue
-		if section(c) == "elite":
-			if age() < int(cfg().ages.elite):
-				continue
-		elif not visible(c) or spots_now(c) <= 0:
-			continue
-		var r := int(rank.get(str(c.facts.get("reputation", "local")), 0))
-		if r < head_rank:
-			continue
-		if best.is_empty() or r > int(rank.get(str(best.facts.get("reputation", "local")), 0)) \
-				or (r == int(rank.get(str(best.facts.get("reputation", "local")), 0)) and CoachSystem.average(c) > CoachSystem.average(best)):
+		if score > best_score:
 			best = c
-	if best.is_empty():
-		return
-	last_offer_day = today_no()
-	offers_by_season[str(year)] = int(offers_by_season.get(str(year), 0)) + 1
-	offers[str(best.id)] = {"until": today_no() + int(o.valid_days), "why": why}
+			best_score = score
+			best_reasons = reasons
+	if not best.is_empty():
+		post_offer(best, best_reasons, _dice(best, today))
+
+
+## Could this coach write to the athlete at all: not the head, no change waiting, he didn't end it, no open offer, "Not now"
+## not too recent, and he could take the athlete now (a place, the time, the budget; a world-level coach: the athlete has
+## reached his level).
+func may_offer(c: Dictionary) -> bool:
+	var cid := str(c.id)
+	if cid == Game.athlete.coach_id or cid == str(pending.get("coach", "")) or ended.has(cid) or offer_open(cid):
+		return false
+	if today_no() - int(declined.get(cid, -9999)) < int(cfg().offers.declined_days):
+		return false
+	if section(c) == "elite":
+		return age() >= int(cfg().ages.elite) and fits_budget(c) and shown_ability() >= float(c.facts.min_level)
+	return visible(c) and can_take(c)
+
+
+func _dice(c: Dictionary, day: int) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("offer|%s|%d|%s" % [str(c.id), day, Game.athlete.full_name()]).hash()
+	return rng
+
+
+## What the coach sees, as points per reason (data offers.reasons), each through his judging ability's noise; `fit` (minus)
+## for a group far from the athlete's level. A real coach never sees "strained" (no talk about real people's relations).
+func reasons_of(c: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
+	var o: Dictionary = cfg().offers
+	var r: Dictionary = o.reasons
+	var a := Game.athlete
+	var today := today_no()
+	var j := float(c.attributes.get("judging_ability", 10))
+	var sd := float(o.noise.floor) + float(o.noise.per_point) * (20.0 - j)
+	var out := {}
+	var shown := shown_ability()
+	if shown > 0.0 and age() <= int(r.talent_max_age):
+		var gap := a.get_attr("potential") + rng.randfn(0.0, sd * 2.0) - shown
+		if gap > 0.0:
+			out.talent = minf(gap * float(r.talent_per_point), float(r.talent_cap))
+	if is_slumping() and rng.randf() < float(o.notice.base) + float(o.notice.per_point) * j:
+		out.slump = float(r.slump) + rng.randfn(0.0, sd)
+	if progress_s() >= float(o.progress_s):
+		out.progress = float(r.progress) + rng.randfn(0.0, sd)
+	if today - int(crossed.get(str(c.id), -9999)) <= int(o.crossed_days):
+		out.crossed = float(r.crossed)
+	if seen_tf and today - seen_day <= int(o.crossed_days) and section(c) in cfg().seen.opens:
+		out.seen = float(r.seen)
+	if not bool(c.get("real", false)) and int(chain.get("weeks", 0)) >= int(o.strained_weeks):
+		out.strained = float(r.strained)
+	var head := _cs().head()
+	if not head.is_empty():
+		var better := clampf((CoachSystem.average(c) - CoachSystem.average(head)) * float(o.better_per_point), -float(o.better_cap), float(o.better_cap))
+		better += rng.randfn(0.0, sd * 0.5)
+		if better != 0.0:
+			out.better = better
+	var gl := float(c.get("market", {}).get("group_level", -1.0))
+	if gl > 0.0:
+		var off := absf(gl - CoachSystem.athlete_level(a)) - float(o.fit_free)
+		if off > 0.0:
+			out.fit = -off * float(o.fit_per_level)
+	for k in out.keys():
+		if k != "fit" and k != "better" and float(out[k]) <= 0.0:
+			out.erase(k)
+	return out
+
+
+## Recent races clearly slower than the best, and no best for a while (data offers.slump).
+func is_slumping() -> bool:
+	var s: Dictionary = cfg().offers.slump
+	var pb := float(Game.athlete.personal_bests.get("800m", 0.0))
+	if pb <= 0.0:
+		return false
+	var today := today_no()
+	var recent := []
+	var last_pb := -9999
+	for res in Game.athlete.results:
+		if str(res.get("status", "")) != "" or float(res.get("time", 0.0)) <= 0.0:
+			continue
+		var d := StoryletSystem.day_no(Game.int_date(res.date))
+		if bool(res.get("pb", false)):
+			last_pb = maxi(last_pb, d)
+		if today - d <= int(s.recent_days):
+			recent.append(float(res.time))
+	if recent.size() < int(s.recent) or today - last_pb < int(s.no_pb_days):
+		return false
+	recent = recent.slice(recent.size() - int(s.recent))
+	var mean := 0.0
+	for t in recent:
+		mean += float(t)
+	mean /= recent.size()
+	return mean > pb * (1.0 + float(s.over_pb))
+
+
+## How much faster the best is than the best a year ago (seconds; 0 without races a year ago).
+func progress_s() -> float:
+	var pb := float(Game.athlete.personal_bests.get("800m", 0.0))
+	var today := today_no()
+	var old_best := 0.0
+	for res in Game.athlete.results:
+		if str(res.get("status", "")) != "" or float(res.get("time", 0.0)) <= 0.0:
+			continue
+		if today - StoryletSystem.day_no(Game.int_date(res.date)) >= 365:
+			old_best = float(res.time) if old_best <= 0.0 else minf(old_best, float(res.time))
+	return old_best - pb if old_best > 0.0 and pb > 0.0 else 0.0
+
+
+## His estimate for next summer (seconds): the ability the best shows + a year's gain at this age x his self-belief (how much
+## better he thinks he is than the head coach, his demands) + his judging noise. Never slower than the best.
+func promise_of(c: Dictionary, rng: RandomNumberGenerator) -> float:
+	var o: Dictionary = cfg().offers
+	var pb := float(Game.athlete.personal_bests.get("800m", 0.0))
+	if pb <= 0.0:
+		return 0.0
+	var gain := _yearly_gain(age())
+	var head := _cs().head()
+	var belief := 1.0 + float(o.demands.get(str(c.get("demands", "balanced")), 0.0))
+	if not head.is_empty():
+		belief += (CoachSystem.average(c) - CoachSystem.average(head)) * float(o.self_belief_per_point)
+	var j := float(c.attributes.get("judging_ability", 10))
+	var noise := rng.randfn(0.0, float(o.promise_noise.floor) + float(o.promise_noise.per_point) * (20.0 - j))
+	var step := clampf(gain * maxf(0.2, belief) + noise, 0.0, gain * float(o.promise_max_years))
+	var t := RacePerformance.time_for(shown_ability() + step, Game.athlete.gender)
+	return snappedf(minf(t, pb - 0.2), 0.1)
+
+
+func _yearly_gain(years: int) -> float:
+	var table: Array = cfg().offers.yearly_gain
+	var out := float(table[0][1])
+	for row in table:
+		if years >= int(row[0]):
+			out = float(row[1])
+	return out
+
+
+## The offer: his message (as detailed as his communication allows, in his voice; the neutral words for a real coach) with the
+## game's facts under it, in the "coaches" thread; the place is kept for offers.valid_days.
+func post_offer(c: Dictionary, reasons: Dictionary, rng: RandomNumberGenerator) -> void:
+	var o: Dictionary = cfg().offers
+	var cid := str(c.id)
+	var promise := promise_of(c, rng)
+	var main := main_reason(reasons)
+	offers[cid] = {"until": today_no() + int(o.valid_days), "why": main, "promise": promise}
+	last_offer[cid] = today_no()
 	var ms := Game.get_system("moments") as StoryletSystem
 	if ms == null:
 		return
-	var pid := ms.market_person(best)
+	var pid := ms.market_person(c)
 	var replies := []
 	for r in cfg().lines.offer_replies:
 		replies.append({"id": r.id, "label": r.label, "hint": r.hint})
-	ms.post_custom("market", "offer:" + str(best.id), line(best, "offer_seen" if why == "seen" else "offer"), replies, false,
+	ms.post_custom("market", "offer:" + cid, offer_text(c, reasons, promise), replies, false,
 			{"from": pid, "thread": "coaches", "expires_days": int(o.valid_days),
-			"title": str(cfg().lines.offer_title).format({"coach": best.name})})
+			"title": str(cfg().lines.offer_title).format({"coach": c.name})})
+
+
+## The reason he writes first about: the biggest one he sees ("better" when nothing else).
+static func main_reason(reasons: Dictionary) -> String:
+	var main := "better"
+	var top := 0.0
+	for k in reasons:
+		if k in ["fit", "better"]:
+			continue
+		if float(reasons[k]) > top:
+			top = float(reasons[k])
+			main = str(k)
+	return main
+
+
+func offer_text(c: Dictionary, reasons: Dictionary, promise: float) -> String:
+	var p: Dictionary = cfg().lines.pitch
+	var o: Dictionary = cfg().offers
+	var voice := "real" if bool(c.get("real", false)) else str(c.get("voice", "calm"))
+	var comm := int(c.attributes.get("communication", 10))
+	var fill := {"name": Game.athlete.first_name, "pb": Calendar.format_time(float(Game.athlete.personal_bests.get("800m", 0.0))),
+			"time": Calendar.format_time(promise), "coach_first": str(c.name).split(" ")[0]}
+	var main := main_reason(reasons)
+	var parts := [str(p.open[main].get(voice, p.open[main].get("calm", ""))).format(fill)]
+	if comm > int(o.communication.short_max):
+		var keys := reasons.keys().filter(func(k): return k != "fit" and float(reasons[k]) >= 1.0)
+		keys.sort_custom(func(x, y): return float(reasons[x]) > float(reasons[y]))
+		var seen_lines := []
+		for k in keys.slice(0, 2):
+			seen_lines.append(str(p.see[k]).format(fill))
+		if not seen_lines.is_empty():
+			parts.append(" ".join(seen_lines))
+	if comm >= int(o.communication.full_min):
+		var best := []
+		for at in Data.coaching.attributes:
+			best.append(str(at.id))
+		best.sort_custom(func(x, y): return int(c.attributes[x]) > int(c.attributes[y]))
+		parts.append("%s %s, and %s." % [str(p.plan_intro.get(voice, p.plan_intro.calm)), str(p.plan[best[0]]), str(p.plan[best[1]])])
+	if promise > 0.0:
+		parts.append(str(p.promise.get(voice, p.promise.calm)).format(fill))
+	parts.append(str(p.close.get(voice, p.close.calm)).format(fill))
+	# The game's facts under his words.
+	var ui: Dictionary = cfg().ui
+	var co := cost_of(c)
+	var facts := [str(p.facts_head), str(p.fact_cost).format({"cost": str(ui.cost[str(co.kind)]).format({"cost": co.cost})})]
+	var dist := CoachSystem.distance_of(c, Game.athlete)
+	var dist_key := "home" if str(c.kind) == "parent" else ("remote" if str(c.kind) == "remote" else dist)
+	facts.append(str(ui.distance[dist_key]).format({"town": str(c.facts.get("town", "")), "days": int(cfg().distance.region.days_with),
+			"he": CoachSystem.pronoun(c, "he"), "him": CoachSystem.pronoun(c, "him"), "his": CoachSystem.pronoun(c, "his")}))
+	var m: Dictionary = c.get("market", {})
+	if int(m.get("group_size", 0)) > 0:
+		var gl := float(m.get("group_level", -1.0))
+		var mine := CoachSystem.athlete_level(Game.athlete)
+		var lvl := "same" if gl < 0.0 or absf(gl - mine) <= 1.0 else ("stronger" if gl > mine else "weaker")
+		facts.append(str(p.fact_group).format({"n": int(m.group_size), "level": str(ui.group_level[lvl])}))
+	facts.append(str(p.fact_kept).format({"coach_first": fill.coach_first, "date": Calendar.format_day(_date_of(today_no() + int(o.valid_days)))}))
+	if promise > 0.0:
+		facts.append(str(p.estimate_note))
+	return "\n\n".join(parts) + "\n\n" + "\n".join(facts)
 
 
 func on_week_end(_ctx: Dictionary) -> void:
@@ -846,6 +1052,8 @@ func on_week_end(_ctx: Dictionary) -> void:
 		switch_to(str(pending.coach), str(pending.get("why", "player")))
 		return
 	_chain_week()
+	ensure_pool()
+	_weekly_offers()
 
 
 ## The ending chain (user 2026-10-17: 6 + 4 + 4 weeks): Strained weeks in a row, two warnings, then he ends it.
@@ -930,7 +1138,7 @@ func on_reply(ref: String, reply_id: String) -> Dictionary:
 		"offer":
 			var c := coach(parts[1])
 			if reply_id == "no":
-				declined[parts[1]] = season_of(Game.date)
+				declined[parts[1]] = today_no()
 				offers.erase(parts[1])
 			if c.is_empty() or reply_id == StoryletSystem.NONE:
 				return {}
@@ -983,8 +1191,8 @@ func to_dict() -> Dictionary:
 		return {}
 	return {"made": made, "scout": scout, "spots": spots, "pending": pending, "visit": visit, "offers": offers,
 			"declined": declined, "answers": answers, "ended": ended, "history": history, "chain": chain,
-			"seen_pb": seen_pb, "seen_tf": seen_tf, "last_offer_day": last_offer_day, "offers_by_season": offers_by_season,
-			"next": _next}
+			"seen_pb": seen_pb, "seen_tf": seen_tf, "seen_day": seen_day, "crossed": crossed, "last_offer": last_offer,
+			"open_offers": open_offers, "next": _next}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -1022,6 +1230,12 @@ func from_dict(d: Dictionary) -> void:
 		chain[k] = int(chain[k])
 	seen_pb = float(d.get("seen_pb", 0.0))
 	seen_tf = bool(d.get("seen_tf", false))
-	last_offer_day = int(d.get("last_offer_day", -9999))
-	offers_by_season = d.get("offers_by_season", {})
+	seen_day = int(d.get("seen_day", -9999))
+	crossed = d.get("crossed", {})
+	for k in crossed:
+		crossed[k] = int(crossed[k])
+	last_offer = d.get("last_offer", {})
+	for k in last_offer:
+		last_offer[k] = int(last_offer[k])
+	open_offers = bool(d.get("open_offers", true))
 	_next = int(d.get("next", 1))
