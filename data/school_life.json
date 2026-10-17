@@ -115,7 +115,7 @@
    "text": "You still have {tests} to write ({list}), and you are racing at {meet} {when}. You can't give both everything. What do you do?",
    "when_today": "today",
    "when_day": "on {day}",
-   "min_left_busy": 2,
+   "min_left_busy": 4,
    "test_on_race_day": true,
    "test_day_before": false,
    "default": "race",

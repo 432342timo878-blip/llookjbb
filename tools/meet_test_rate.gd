@@ -30,6 +30,9 @@ func _run() -> void:
 		_n = args[0].to_int()
 	var cfg: Dictionary = data.school_life.decisions.meet_test
 	var results := {}
+	var orig_before: bool = cfg.test_day_before
+	var orig_race_day: bool = cfg.test_on_race_day
+	var orig_left: int = int(cfg.min_left_busy)
 	var variants := [
 		{"name": "as S2 (day before on, race day on, busy week with >= 2 tests left)", "before": true, "race_day": true, "left": 2},
 		{"name": "S3a (day before off)", "before": false, "race_day": true, "left": 2},
@@ -67,9 +70,9 @@ func _run() -> void:
 		results[flag] = {"meets": meets, "clashes": clashes}
 		print("%s: %d meets in school terms, %d clash weeks = %.0f %% (per athlete: %s)" % [flag, meets, clashes,
 				100.0 * clashes / maxf(1.0, meets), per_athlete])
-	cfg.test_day_before = false
-	cfg.test_on_race_day = true
-	cfg.min_left_busy = 2
+	cfg.test_day_before = orig_before
+	cfg.test_on_race_day = orig_race_day
+	cfg.min_left_busy = orig_left
 	quit()
 
 

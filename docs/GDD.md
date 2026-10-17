@@ -3725,7 +3725,8 @@ random careers), not a regression: no code had changed since S2. Left as it is; 
 9. **The meet-and-tests decision: drop the "test the day before" rule** (recommended). **Measured afterwards: this changes the
    rate only from 36 % to 30 % of term meets, not "most of it" as S2 said.** The rule that fires is the busy test week (7 of ~19 school
    weeks a term, 29 % on its own); a test on the race day itself is 3 %. With the busy rule at "at least 4 tests still to write" it
-   would be 17 %. Left at 30 % pending the user's word (`tools/meet_test_rate.gd`).
+   would be 17 %. **User, after seeing this: 17 % ("17?")**, so `decisions.meet_test.min_left_busy` is now **4** (the stop asks only
+   when at least 4 tests are still to write up to the race day, or a test falls on the race day itself; `tools/meet_test_rate.gd`).
 
 **Claude's defaults (not asked; say if you want them changed):**
 - **Dates (estimated, `data/application.json window`):** the entrance-test day is the 2nd Tuesday of May (one day for all schools;
