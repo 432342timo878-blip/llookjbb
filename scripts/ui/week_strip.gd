@@ -180,16 +180,21 @@ func _school_marks(info: Dictionary) -> Control:
 		return null
 	var tests := int(st.tests)
 	var u: Dictionary = SchoolUI.ui().strip
-	if tests == 0 and not bool(st.exam) and (Layout.compact or str(st.caption) == ""):
+	var matric := bool(st.get("matric", false))
+	if tests == 0 and not bool(st.exam) and not matric and (Layout.compact or str(st.caption) == ""):
 		return null
 	var row := UIKit.hbox(3)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if bool(st.exam):
+	if matric:   # a matriculation exam (S3b): "YO" in a pill (two letters need the width)
+		var yo := UIKit.badge(str(Data.lukio.ui.strip.matric_badge), Palette.SCHOOL_TEST, 16)
+		yo.custom_minimum_size.x = 26
+		row.add_child(yo)
+	elif bool(st.exam):
 		row.add_child(UIKit.badge("E", Palette.SCHOOL_TEST, 16))
 	elif tests > 0:
 		row.add_child(UIKit.badge(str(u.test_badge) if tests == 1 else str(tests), Palette.SCHOOL_TEST, 16))
 	if not Layout.compact:
-		var text: String = st.test_text if tests > 0 else str(st.caption)
+		var text: String = st.test_text if tests > 0 or matric else str(st.caption)
 		if text != "":
 			var l := UIKit.label(text, "CaptionLabel")
 			l.add_theme_font_size_override("font_size", 12)

@@ -75,7 +75,7 @@ func _check_research_data() -> int:
 				if not (v is float or v is int) or v < 1 or v > 20 or v != floor(v):
 					bad += 1
 					print("ERROR coaching.json real %s: attribute %s must be a whole number 1-20" % [who, id])
-	for f in ["urheilulukiot.json", "school.json"]:
+	for f in ["urheilulukiot.json", "school.json", "lukio.json"]:   # (lukio.json: session S3b)
 		var data = _load_json(f)
 		if not data is Dictionary:
 			continue
@@ -97,7 +97,7 @@ func _check_src(f: String, node: Variant, ids: Dictionary, path: String) -> int:
 	var bad := 0
 	if node is Dictionary:
 		for k in node:
-			if str(k) == "src" and (node[k] is float or node[k] is int or node[k] is Array):
+			if (str(k) == "src" or str(k).ends_with("_src")) and (node[k] is float or node[k] is int or node[k] is Array):
 				for n in (node[k] if node[k] is Array else [node[k]]):
 					if not ids.has(int(n)):
 						bad += 1

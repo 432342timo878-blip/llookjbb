@@ -2590,7 +2590,8 @@ in S1 (user: holidays = relief, no yläkoulu exam weeks, free time = motivation 
 Saturday of June; autumn break week 42 (12–16 Oct 2026); Christmas ~19 Dec – 7 Jan; Easter; **winter break week 8 / 9 / 10 by region**
 (south / middle / north, from the hometown); lukio 5–6 periods a year, each ending with an **exam week** (e.g. Helsinki: 7 school days);
 yläkoulu single tests and a few big ones; matriculation exams spring (mid-March – early April) and autumn (mid–late September; autumn
-2026: 14–28 Sep), usually over 2–3 sessions (4 in a 4-year urheilulukio). Week strip: holidays shaded, exam days marked; Calendar:
+2026: 14–28 Sep), usually over 2–3 sessions (**at most three in a row, also in a 4-year lukio: the board's rule, read in S3b; the
+earlier "4 in a 4-year urheilulukio" was wrong**). Week strip: holidays shaded, exam days marked; Calendar:
 school bands beside the meets.
 
 **Decisions (stop events or moments):** exam vs meet (race and risk the grade / study and scratch / race and study on the bus);
@@ -3815,6 +3816,126 @@ reserve places (varasija); one test day for all schools; the general lukio / voc
 (you can only list those of your own town); homesickness, family and friends when moving (P1); what comes after school (M4); the
 camps (the camp-week session); the balance over many seasons (B1). **Unverified:** the athletics federation's 0-5 scale (my rule),
 the continuing application's real dates, Sotkamo's and Kuortane's size and region.
+
+#### Built (step S3b, 2026-10-17): lukio courses, the matriculation exams, a 3- or 4-year lukio
+
+**Step 0:** `run_all_checks` **21 / 21** at the start (no flaky failure this time). The two S3a commits were not pushed yet.
+
+**Research first (read 2026-10-17; every fact is in `data/lukio.json` with its source):**
+- **The decree 810/2018, Annex 1 (Finlex):** compulsory credits per subject (Finnish 12, A-language 12, B1 10, maths 2 + short 10 /
+  long 18, biology 4, geography 2, physics 2, chemistry 2, philosophy 4, psychology 2, history 6, social studies 6, religion / ethics 4,
+  health education 2, PE 4, music + art 6, study counselling 4) = **94 / 102**; national optional at least 20; total at least **150**
+  credits. National optional studies must be available as 2-credit units, so a game **course = a 2-credit study unit** and lukio =
+  **75 courses** (OPH's brochure: "150 credits instead of the former 75 courses").
+- **The Matriculation Examination Board's page:** at least five exams; mother tongue for all; four more from at least three of
+  maths / second national language / foreign language / realia; at least one long-syllabus exam; two syllabuses of a subject count once;
+  **the required exams within at most three consecutive sessions, also in a 4-year lukio** (our data note "4 sessions in a 4-year
+  urheilulukio" was wrong, corrected in school.json and 4.9.3); a failed exam retaken three times in the next three sessions; a passed
+  one freely; a no-show is failed and cannot be compensated.
+- **Mäkelänrinne's guide 2026-27** (a sports lukio): lukio in 2-4 years, the plan made for three, at least 60 credits in year 1, the
+  subject grade = the average of its compulsory + national optional course grades, the fail allowances, 24 credits of sports
+  coaching, and with them **16 credits of compulsory courses may be left out** (at least half of each subject, never in an exam
+  subject). Lahden lyseo: 12 coaching courses = 24 credits.
+- **Registration deadlines** (two schools' pages, search summaries): 20 Nov / 20 May (Oulu), 1 Dec / 25 May (Alavus); binding.
+- **Grade shares** (a secondary source): L 5, E 15, M 20, C 24, B 20, A 11, I 5 %; points 7-0.
+
+**Decisions with the user (asked before building, 2026-10-17):**
+1. **Courses: a stop at the start of every period** (the user's pick; I recommended a plan editable on the School page without
+   stops). The counsellor makes the whole plan; the period's stop shows its courses with Later / Drop and the optional courses to Add.
+2. **Results and courses as two separate stops** (the user's pick; I recommended one stop for both): the results on the last day of
+   the exam week, the courses on the next period's first school day. So **10 lukio stops a year** besides the choices and the exams.
+3. **4 years in any lukio** (the user's pick; I recommended sports lukio only): chosen in the first stop, changeable on the School page
+   until year 3 starts (the plan is rebuilt).
+4. **Exams: a stop per session** (the user's pick; I recommended one plan stop + the deadlines only): the first "Plan your exams"
+   stop (from the school year of the first deadline) and a stop 14 days before each session's deadline; each session is locked at
+   its deadline.
+5. **Lukio results stop every period** (the user's pick; I recommended a stop only at the year end): no Christmas or spring cards in
+   a lukio, the final certificate as before.
+6. **Leaving out compulsory courses in a sports lukio: the player chooses** in the period stop, by the real rule (the user's pick; I
+   recommended the counsellor plans it).
+7. **Skip on an exam day = a no-show** (recommended): failed, no compensation, retaken at a later session.
+8. **The meet-and-tests stop:** already decided after S3a (17 %, `min_left_busy` 4); the question in the session prompt was answered.
+
+**Claude's defaults (not asked):**
+- **The counsellor's choices:** long maths when the maths level is at least 8.5 at the start, no extra language, 3 years (the path's).
+  The choices are three stops on the first school day (maths, a new language German / French / Spanish (8 optional courses, a
+  short-syllabus exam), 3 or 4 years). Long -> short maths any time before the maths exam is registered (the long courses done count
+  for the short syllabus); never back.
+- **Levels:** lukio grades run lower: every subject **-0.6** at the start and long maths another -0.6 (estimates, no source);
+  philosophy, psychology and the new language start from their relatives' levels + a roll. Grades keep drifting with the study effort.
+- **The plan:** 75 courses (coaching included); year shares 40 / 36 / 24 % (4 years: 31 / 27 / 24 / 18 %); the last year's
+  periods 1 / 1 / 1 / 0.6 / 0 (the abi spring is kept for the exams); optional courses first in the exam subjects (to their sessions),
+  then the best subjects, PE, the thematic studies; at most two courses of a subject a period; each subject's last course before its
+  exam session. **Measured (Helsinki, born 2010):** 6, 6, 6, 6, 6 | 6, 6, 5, 5, 5 | 5, 5, 5, 3, 0 courses a period (30 / 27 / 18).
+- **A course's grade:** its exam in the period's exam week (one exam a course, the week's days dealt out), the grade =
+  round(0.5 x the exam + 0.5 x the level), 4-10; practical courses round(level); counselling, thematic studies and coaching passed.
+  A 4 is retaken once in the next exam week (the better counts). The subject grade = the average of its courses.
+- **Life load:** each classroom course above (below) five in a period weighs +0.25 (-0.25) a school day (coaching courses are training
+  and don't count); the exam week keeps its +2 and no longer adds the busy-test part on top; a matriculation exam day **+3**; the
+  Sunday before an exam week with a matriculation exam +12 stress news.
+- **Exams:** the counsellor's suggestion = English (long) in the first session, Swedish and your best realia subject in the autumn,
+  Finnish and maths in the last spring; the coach's line in the plan stop: put the heavy ones in the autumn (after the summer's
+  meets). The score = the subject's level + 0.12 a done optional course of it (at most 0.45) + a roll (sd 0.6) - stress - the
+  week's meet-and-tests answer; Finnish = the average of its two parts. **The grade thresholds were fitted** (`school_check` part 16)
+  so the game's lukio students (the five school answers equally) get the board's shares: [9.39, 8.37, 7.56, 6.76, 6.04, 5.35]
+  -> L 5.0, E 15.0, M 19.8, C 24.0, B 20.2, A 10.9, I 5.0 %. Results 64 days after a session's first exam (spring 2027: the real
+  19 May). A failed required exam goes into the next session's plan (while retakes remain). The certificate when the passed exams
+  meet the rules and the lukio's final card is out: a stop with the grades and the points, +8 confidence. **Compensation is not built.**
+- **Sessions:** the three before graduation (spring of the second-last year, the autumn and spring of the last); once an exam is
+  registered they count from that session; three more after them for retakes and better grades.
+- **The meet-and-tests stop** also asks when a registered matriculation exam is still to come in the race's week (and its "race"
+  answer costs the exam half a grade, as it costs the tests). On an exam day with a race: "Sit the exam" withdraws the race.
+
+**What was built:**
+- **Data:** `data/lukio.json` (new, `Data.lukio`: the decree table, the rules, the subjects with their courses, the languages, the
+  levels, the plan, the course grades, the matriculation rules / exams / grades / score / registration / results, the stops' texts,
+  the UI texts, `not_verified`, seven sources); `school_life.json` (`texts.pulls` courses / courses_light / matric, the stages note);
+  `school.json` (the corrected session note); `help.json` (`school` v3, `calendar` v6, `moods` v4, new topics `lukio`, `matriculation`).
+- **`Lukio`** (`scripts/core/lukio.gd`, static): the subjects and their course counts, `year_periods / period_at / period_info /
+  deadline_period`, `ensure_units / fill_optional / spread` (the counsellor), `courses_in / class_count / exam_schedule`,
+  `subject_grade / credits / can_drop_comp`.
+- **`Matriculation`** (`scripts/core/matriculation.gd`, static): session keys `s2030` / `a2030`, `sessions_for`, `days` (verified or by
+  rule), `exam_dates / deadline / stop_date / results_date`, the exams, `check` (the rules as ✓ / ✗ lines), `suggest`, `grade_for`.
+- **`SchoolSystem`:** `lukio` (saved as `lukio` only once a lukio starts), `lukio_active`, the lukio subject list, the course exams in
+  `tests_on`, `_start_lukio` (also in the middle of a year: earlier periods graded by the levels), the editing API (`editable_period /
+  course_later / course_add / course_drop / course_put_back / add_candidates`), the choices (`set_lukio_years / to_short_maths`), the
+  period end (`_finish_period`, the period report), the exam API (`matric_main_sessions / matric_sessions / matric_open /
+  matric_allowed / set_matric / matric_fill_suggestion / matric_on / matric_best`), the deadlines, exam days, results and the
+  certificate; new stop kinds `lukio_choice`, `lukio_courses`, `lukio_results`, `matric_plan`, `matric_exam`, `matric_results`,
+  `matric_cert`, all only with `decisions_enabled` (main.gd): every tool gets the counsellor's defaults and sits every exam.
+- **UI:** `LukioUI` (School page: THIS PERIOD, YOUR CHOICES, LUKIO CARD, STUDY PLAN), `MatricPlanView` (the exam plan editor, on the page
+  and in the stops), `LukioCoursesEditor` and `LukioEventPanel` (the courses, results and exam-plan stops; 620 px wide on PC), the week
+  strip's YO badge, the day editor's exam line, the Report tab's exam lines, the Calendar's exam weeks / sessions / deadlines.
+- **Tools:** `school_check` parts 15 (courses) and 16 (exams), `tools/school_fingerprint.gd` (a whole grade 8-9 career hashed),
+  `layout_check` `_lukio_views`, the tour `_lukio_tour` (shots 53...), `json_check` reads lukio.json's sources.
+
+**Measured:**
+- *Grades 8-9 exactly as after S3a:* `school_fingerprint` on the S3a commit and on S3b: the same four hashes (the tools' way and the
+  real game's way, two school answers: 42fd3635..., 01dd20d7...); now a check in `run_all_checks` ("all: 55076d77..."), which
+  passes **22 / 22** at the end of the session.
+- *Neutral = identical:* `training_balance -- 0` gives 206.798298350 / 14.102831594 / 1226.006524079 for the coach row in every part.
+- *`school_check` parts 15-16 (all pass):* the game's compulsory courses = the decree's 94 / 102 credits subject by subject; a lukio
+  starting mid-year has 75 courses (47 compulsory + 28 optional for short maths) with period 1 graded; every academic course of a
+  period has one exam in its exam week; course grades sit around the levels (period 2: mean 8.00 against levels 7.78); 4 years =
+  20 periods, still 75 courses, fewer classroom courses a period (6 -> 5); long -> short maths keeps 75; Later / Add / Drop / Put back
+  keep 75; a sports lukio leaves out at most half of a subject (history: 1 of 3) and never an exam subject; the real game's way: three
+  choice stops, then the courses stop, a results stop at a period's end and a courses stop at the next start; save / load in a lukio
+  continues bit for bit. Exams: the spring 2027 dates and results day are the board's; later sessions by the rule; the rules reject
+  missing Finnish, four exams, one group only, no long syllabus and two realia subjects on one day; through the game a born-2009
+  athlete registers English for spring 2027 at the deadline, sits it (+3 life load, the strip's YO), gets a grade on 19 May, and
+  finishes with the certificate in June 2028 (five exams graded); skipping an exam = I (absent) and a retake in the next session.
+- *Speed:* a played lukio day 3.4 ms against a grade 8 day's 2.0 ms (health off).
+- *UI:* `layout_check` at all five sizes: no OVERFLOW / SQUEEZED / WRONG with the new views (the lukio page and its sections, the
+  courses, results, choice, exam-plan, exam-day and results stops); the first look showed every retake-only session as a greyed
+  button for every exam: now a later session shows only when a retake or a better grade is possible. The tour's shots 53... looked at.
+  `help_check` passes (phone layout 862 checks; PC layout in `run_all_checks`).
+
+**Not in S3b:** compensation of a failed exam by the other exams' points (a failed required exam is retaken); school-specific
+optional courses (folded into the national optional ones), lukio diplomas, the supporting coaching studies; the real fail allowance
+per subject (a failed course is just retaken once); the academy services' effects; what the grades and the exams open after school
+(M4); the family's reaction to grades (P1); the balance over whole careers (B1: the lukio grade shift, the plan's year shares, the
+course load's weight and the exam thresholds are all estimates). **Unverified:** the lukio grade shift, one school's rules used for
+all, two schools' registration deadlines, the grade shares from a secondary source.
 
 ### Other systems (to be designed)
 

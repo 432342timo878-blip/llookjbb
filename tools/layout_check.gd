@@ -136,6 +136,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _application_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _lukio_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -1413,6 +1415,112 @@ func _application_views(main: Node, game, tag: String) -> void:
 	SC.decisions_enabled = saved_dec
 	game.date = saved_date
 	game.athlete.results.resize(results_before)
+	game.events = game.events.filter(func(x): return str(x.source) != "school")
+	hub._people_page = ""
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(3)
+
+
+## Lukio (session S3b): a sports lukio in Tampere from 2028, seen on 6 Dec 2028 (period 3 starts): the School page (this period,
+## the choices, the lukio card, the exam plan, the study plan), the period's courses stop, its results stop, a lukio choice, the
+## exam plan stop, an exam day, a session's results.
+func _lukio_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var SC = load("res://scripts/core/school_system.gd")
+	var MPV = load("res://scripts/ui/matric_plan_view.gd")
+	var ss = game.get_system("school")
+	ss._ensure_started()
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_dec: bool = SC.decisions_enabled
+	var saved_subjects: Dictionary = ss.subjects.duplicate(true)
+	var saved_reports: Array = ss.reports.duplicate(true)
+	SC.decisions_enabled = true
+	ss.paths = [{"kind": "urheilulukio", "school": "sammon_keskuslukio", "town": "Tampere", "start_year": 2028, "years": 3, "arrived": true}]
+	ss._stage_cache = {}
+	ss._exam_days = {}
+	ss._schedules = {}
+	game.date = {"year": 2028, "month": 12, "day": 6}
+	ss.lukio = {}
+	ss._start_lukio(ss.segment_for(2028), game.date)
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_lukio_page" % tag)
+	_check_overflow(hub, "%s lukio_page" % tag)
+	for head in ["LUKIO CARD", "MATRICULATION EXAMS", "STUDY PLAN"]:
+		var l = _find_label(hub, head)
+		if l == null:
+			print("WRONG: no %s on the lukio School page at %s" % [head, tag])
+			continue
+		hub._scroll.ensure_control_visible(l)
+		await _frames(4)
+		await _shot("%s_lukio_%s" % [tag, head.to_lower().replace(" ", "_")])
+	# The period's courses (an optional course added first, so the editor shows Drop too).
+	var cands: Array = ss.add_candidates(2)
+	if not cands.is_empty():
+		ss.course_add(str(cands[0].id))
+	ss._post_courses(2)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_lukio_courses" % tag)
+	_check_overflow(hub, "%s lukio_courses" % tag)
+	hub._on_event_answer(game.pending_event().id, "done")
+	# The period's results.
+	ss._finish_period(2, true)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_lukio_results" % tag)
+	_check_overflow(hub, "%s lukio_results" % tag)
+	hub._on_event_answer(game.pending_event().id, "continue")
+	# A lukio choice (the generic panel).
+	ss._post_choice("years")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_lukio_choice" % tag)
+	_check_overflow(hub, "%s lukio_choice" % tag)
+	ss.lukio.chosen = true
+	game.answer_event(game.pending_event().id, "keep")   # (an answer that is no option: nothing changes, no courses stop)
+	game.events = game.events.filter(func(x): return not (str(x.source) == "school" and str(x.get("kind", "")) == "lukio_courses" and x.answer == ""))
+	# The exam plan stop, every subject listed.
+	MPV.show_all = true
+	ss._post_matric_plan("")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_matric_plan" % tag)
+	_check_overflow(hub, "%s matric_plan" % tag)
+	hub._on_event_answer(game.pending_event().id, "done")
+	MPV.show_all = false
+	# An exam day and a session's results.
+	game.date = {"year": 2030, "month": 3, "day": 18}
+	ss._stage_cache = {}
+	ss.lukio.matric.locked = ["s2030"]
+	ss.lukio.matric.registered = {"s2030": ["english"]}
+	ss._post_matric_exam("s2030", "english", 0, 1)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_matric_exam" % tag)
+	_check_overflow(hub, "%s matric_exam" % tag)
+	hub._on_event_answer(game.pending_event().id, "sit")
+	ss.lukio.matric.sat["s2030|english"] = {"parts": [8.4], "absent": false}
+	game.date = {"year": 2030, "month": 5, "day": 15}
+	ss._matric_results("s2030", true)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_matric_results" % tag)
+	_check_overflow(hub, "%s matric_results" % tag)
+	hub._on_event_answer(game.pending_event().id, "continue")
+	# Put everything back.
+	ss.lukio = {}
+	ss.paths = []
+	ss.subjects = saved_subjects
+	ss.reports = saved_reports
+	ss._stage_cache = {}
+	ss._exam_days = {}
+	ss._schedules = {}
+	ss._lukio_exams = {}
+	SC.decisions_enabled = saved_dec
+	game.date = saved_date
 	game.events = game.events.filter(func(x): return str(x.source) != "school")
 	hub._people_page = ""
 	hub._show("overview")

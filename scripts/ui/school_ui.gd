@@ -99,7 +99,12 @@ static func strip_of(info: Dictionary) -> Dictionary:
 		text = str(u.test_one).format({"subject": system().subject_name(str(sch.tests[0]))})
 	elif n > 1:
 		text = str(u.test_many).format({"n": n})
-	return {"off": str(sch["break"]) != "", "caption": "" if str(sch["break"]) == "summer" else break_name(str(sch["break"])), "tests": n, "test_text": text, "exam": bool(sch.get("exam", false))}
+	var out := {"off": str(sch["break"]) != "", "caption": "" if str(sch["break"]) == "summer" else break_name(str(sch["break"])), "tests": n, "test_text": text, "exam": bool(sch.get("exam", false))}
+	var m: Array = sch.get("matric", [])
+	if not m.is_empty():   # a matriculation exam day (S3b): "YO" and the exam's name
+		out.matric = true
+		out.test_text = str(Data.lukio.ui.strip.matric_text).format({"exam": Matriculation.exam_name(str(m[0]), system().lukio)})
+	return out
 
 
 # --- The day editor: the day as blocks ---------------------------------------------------------------------------------------
@@ -123,6 +128,8 @@ static func day_panel(info: Dictionary) -> Control:
 			var tests := _test_names(ss, sch.tests)
 			if tests != "":
 				school_text += " " + str(u.school_tests).format({"tests": tests})
+			for ex in sch.get("matric", []):   # a matriculation exam (S3b)
+				school_text += " " + str(Data.lukio.ui.blocks.matric).format({"exam": Matriculation.exam_name(str(ex), ss.lukio)})
 		"holiday", "summer":
 			school_text = str(u.school_off).format({"break": break_name(str(sch["break"]))})
 		_:
@@ -220,6 +227,9 @@ static func report_lines(e: Dictionary) -> Array:
 					score = float(t.score)
 			list.append("%s %s" % [ss.subject_name(str(sid)), SchoolSystem.score_text(score) if score >= 0.0 else "?"])
 		out.append(str(r.tests).format({"list": ", ".join(list)}))
+	for m in e.get("matric", []):   # the day's matriculation exams (S3b)
+		var lr: Dictionary = Data.lukio.ui.report
+		out.append(str(lr.matric_skip if bool(m.get("absent", false)) else lr.matric).format({"exam": Matriculation.exam_name(str(m.exam), ss.lukio)}))
 	if e.has("life"):
 		out.append(str(r.life).format({"word": SchoolSystem.life_word(float(e.life))}))
 	return out
@@ -243,6 +253,8 @@ static func bands(from: Dictionary, to: Dictionary) -> Array:
 	for w in ss.busy_weeks(from, to):
 		if Calendar.date_key(Game.add_days(w.monday, 6)) < lo:
 			continue
+		if ss.lukio_active(w.monday) or ss.lukio_active(Game.add_days(w.monday, 4)):   # (a lukio's exam weeks have their own band, S3b)
+			continue
 		out.append({"date": w.monday, "control": _band(str(c.busy_week).format({"n": int(w.n)}),
 				"%s - %s" % [DayInfo.short_day(w.monday), DayInfo.short_day(Game.add_days(w.monday, 4))], Palette.SCHOOL_TEST)})
 	# The joint application (S3a): the window, the test day and the results of the spring after a grade-9 / 10th-grade school year.
@@ -259,12 +271,50 @@ static func bands(from: Dictionary, to: Dictionary) -> Array:
 				continue
 			var range_text := DayInfo.short_day(a) if Calendar.date_key(a) == Calendar.date_key(b) else "%s - %s" % [DayInfo.short_day(a), DayInfo.short_day(b)]
 			out.append({"date": a, "control": _band(str(ac[str(spec[0])]), range_text, Palette.SCHOOL_TEST)})
+	out.append_array(_lukio_bands(ss, from, to))
 	for camp in Data.school.verified.camps.list:
 		var s := Calendar.parse_date(str(camp.start))
 		if Calendar.date_key(Calendar.parse_date(str(camp["end"]))) < lo or Calendar.date_key(s) > Calendar.date_key(to):
 			continue
 		out.append({"date": s, "control": _band(str(c.camp), "%s - %s" % [DayInfo.short_day(s), DayInfo.short_day(Calendar.parse_date(str(camp["end"])))],
 				Palette.SCHOOL_BAND, str(c.camp_note))})
+	return out
+
+
+## The lukio's bands (S3b): each period's exam week, each matriculation session with exams in the plan, and its registration deadline.
+static func _lukio_bands(ss: SchoolSystem, from: Dictionary, to: Dictionary) -> Array:
+	var out := []
+	var L: Dictionary = ss.lukio
+	if L.is_empty():
+		return out
+	var lo := Calendar.date_key(from)
+	var hi := Calendar.date_key(to)
+	var c: Dictionary = Data.lukio.ui.calendar
+	for p in Lukio.period_count(L):
+		var per := Lukio.period_info(ss, L, p)
+		if per.exam.is_empty():
+			continue
+		var a: Dictionary = per.exam[0]
+		var b: Dictionary = per.exam.back()
+		if Calendar.date_key(b) < lo or Calendar.date_key(a) > hi:
+			continue
+		out.append({"date": a, "control": _band(str(c.exam_week).format({"n": int(per.i) + 1}), "%s - %s" % [DayInfo.short_day(a), DayInfo.short_day(b)], Palette.SCHOOL_TEST)})
+	for k in ss.matric_sessions():
+		var sk := str(k)
+		var exams: Array = L.matric.registered.get(sk, []) if sk in L.matric.locked else ss._plan_in(sk)
+		if exams.is_empty():
+			continue
+		var a := Matriculation.first_day(sk)
+		var b := Matriculation.last_day(sk)
+		var names := []
+		for ex in exams:
+			names.append(Matriculation.exam_name(str(ex), L))
+		var title := str(c.matric).format({"session": Matriculation.session_name(sk)})
+		if Calendar.date_key(b) >= lo and Calendar.date_key(a) <= hi:
+			out.append({"date": a, "control": _band(title, "%s - %s" % [DayInfo.short_day(a), DayInfo.short_day(b)], Palette.SCHOOL_TEST, ", ".join(names))})
+		var dl := Matriculation.deadline(sk)
+		if not sk in L.matric.locked and Calendar.date_key(dl) >= lo and Calendar.date_key(dl) <= hi:
+			out.append({"date": dl, "control": _band(str(c.register).format({"session": Matriculation.session_name(sk)}), DayInfo.short_day(dl), Palette.SCHOOL_TEST)})
 	return out
 
 

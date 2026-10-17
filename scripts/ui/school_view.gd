@@ -35,10 +35,18 @@ func _build() -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(_week(ss))
 	left.add_child(SchoolApplyView.new())   # the joint application in grade 9, the school you go to after it (S3a)
+	var in_lukio := ss.lukio_active(Game.date)
+	if in_lukio:   # the lukio's period and choices (S3b)
+		left.add_child(LukioUI.period_panel(ss))
+		left.add_child(LukioUI.choices_panel(ss, _build))
 	left.add_child(SchoolUI.settings_panel())
 	if bool(stage.get("subjects", false)):
 		left.add_child(_focus(ss))
-		right.add_child(_grades(ss))
+		right.add_child(LukioUI.card_panel(ss) if in_lukio else _grades(ss))
+	if not ss.lukio.is_empty():   # the matriculation exams (also after the lukio, for retakes) and the plan of courses
+		right.add_child(LukioUI.matric_panel())
+		if in_lukio:
+			right.add_child(LukioUI.plan_panel(ss))
 	right.add_child(_cards(ss))
 	var cols := BoxContainer.new()
 	cols.vertical = Layout.stacked()
@@ -75,7 +83,7 @@ func _week(ss: SchoolSystem) -> Control:
 	var next: Dictionary = y.christmas_card
 	if Calendar.date_key(next) < Calendar.date_key(Game.date):
 		next = y.end
-	if bool(ss.stage_of(Game.date).get("subjects", false)):
+	if bool(ss.stage_of(Game.date).get("subjects", false)) and not ss.lukio_active(Game.date):   # (a lukio: its periods instead, S3b)
 		box.add_child(UIKit.wrapped(str(u.next_card).format({"date": Calendar.format_day(next)}), "MutedLabel"))
 	return UIKit.panel(box, 14)
 
@@ -224,15 +232,15 @@ func _card_row(ss: SchoolSystem, cards: Array, i: int) -> Control:
 	var u := SchoolUI.ui()
 	var r: Dictionary = cards[i]
 	var head := UIKit.hbox(8)
-	var name_label := UIKit.wrapped(str(u.card_line).format({"name": str(Data.school_life.report_cards.names[str(r.kind)]),
-			"date": Calendar.format_day(r.date)}), "SubheadingLabel")
+	var card_name := str(r.get("label", Data.school_life.report_cards.names.get(str(r.kind), str(r.kind))))
+	var name_label := UIKit.wrapped(str(u.card_line).format({"name": card_name, "date": Calendar.format_day(r.date)}), "SubheadingLabel")
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_label)
 	var detail := UIKit.vbox(2)
 	detail.add_child(UIKit.wrapped(str(u.card_avg).format({"avg": "%.2f" % float(r.average), "acad": "%.2f" % float(r.academic_average)}), ""))
 	var lines := []
-	for s in ss.subject_list():
-		lines.append("%s %d" % [str(s.name), int(r.grades.get(str(s.id), 0))])
+	for sid in r.grades:   # (the card's own subjects: a grade 9 card and a lukio card list different ones)
+		lines.append("%s %d" % [ss.any_subject_name(str(sid)), int(r.grades[sid])])
 	detail.add_child(UIKit.wrapped(" · ".join(lines), "MutedLabel"))
 	var key := "card%d" % i
 	return HealthUI.expandable(head, null, detail, SchoolUI.grade_color(float(r.average)), bool(open.get(key, false)),

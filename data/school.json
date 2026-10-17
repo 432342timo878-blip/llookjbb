@@ -139,7 +139,7 @@
    "spring_offsets": {"start_day_is": "Tuesday", "exams": [[0, "mother_tongue_reading"], [2, "foreign_short"], [3, "mother_tongue_writing"], [6, "foreign_long"], [8, "mathematics"], [14, "realia_a"], [15, "second_national"], [17, "realia_b"], [20, "sami"]]},
    "autumn_start": {"rule": "the first Monday on or after 12 September", "check": "2026: Mon 14 Sep"},
    "autumn_offsets": {"start_day_is": "Monday", "exams": [[0, "mother_tongue_reading"], [2, "realia_b"], [4, "foreign_long"], [7, "second_national"], [8, "realia_a"], [10, "mathematics"], [11, "mother_tongue_writing"], [14, "foreign_short"], [16, "sami"]]},
-   "note": "The board rotates the order of the subject groups from year to year; the offsets are the 2027 (spring) and 2026 (autumn) patterns used for every later year. A session is usually spread over 3 weeks, so a student takes the exams over 2-3 sessions (4 in a 4-year urheilulukio)."
+   "note": "The board rotates the order of the subject groups from year to year; the offsets are the 2027 (spring) and 2026 (autumn) patterns used for every later year. A session is usually spread over 3 weeks; a student takes the required exams over at most THREE consecutive sessions, also in a 4-year lukio (the board's page, read 2026-10-17 in session S3b: data/lukio.json src 2; the earlier note '4 in a 4-year urheilulukio' was wrong: a 4th session only retakes)."
   }
  },
  "not_verified": [

@@ -421,14 +421,21 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         `training_balance -- 0` fingerprints identical.
         Left for later: S3b (below), the effects of academy services and TF-nuoret, open days, reserve places, listing schools of
         other towns than your own for the general lukio / vocational school, homesickness and family at the move (P1).
-  - [ ] **S3b. Lukio courses + the matriculation exams** *(next)*: individual courses per period with a grade per course (the user's
-        choice; the number of compulsory courses per subject to be read from the national curriculum before building), the lukio
-        card, choosing long / short maths and the languages, the matriculation exams (Finnish + at least 4 subjects, the real exam
-        days of spring / autumn from `school.json`, grades L-I over 2-3 sessions, 4 in a 4-year urheilulukio), exam vs meet in an exam
-        week (reuse `meet_test`), the choice of subjects as a stop. *(Opus, high)*
-        Check: `school_check` (courses, exam days, certificate), layout, tour, help.
+  - [x] **S3b. Lukio courses + the matriculation exams** *(done 2026-10-17, GDD 4.9.3 "Built (step S3b)"; read first: the decree
+        810/2018 Annex 1 (94 / 102 compulsory credits, 150 in all = 75 two-credit courses), the exam board's rules (five exams, three
+        groups, a long syllabus, at most THREE sessions in a row also in a 4-year lukio: the "4 sessions" plan was wrong), Mäkelänrinne's
+        guide; user: a stop at the start of every period AND a results stop at its end (separate), 4 years in any lukio, a stop per
+        exam session, the player leaves out compulsory courses in a sports lukio, a skipped exam = a no-show and a retake)*: `Lukio`,
+        `Matriculation`, `data/lukio.json`, the counsellor's plan and choices (long / short maths, a new language, 3 or 4 years), course
+        exams in the period's exam week, the period results, the exam plan with its rules, real exam days, grades L-I fitted to the
+        board's shares, the certificate, the meet-and-tests stop with exam days, the School page's lukio panels, the stop panels, the
+        strip's YO, the Calendar. *(Opus, high)*
+        Check: `school_check` parts 15-16, `school_fingerprint` (grades 8-9 identical to S3a), layout check (5 sizes), tour (53...),
+        `help_check` both layouts, `run_all_checks`, `training_balance -- 0` fingerprints identical.
+        Left for later: compensation of a failed exam, the academy services' effects, school-specific optional courses (folded into the national ones), the lukio diploma courses,
+        what the matriculation grades open after school (M4), the family's reaction to grades (P1), the balance (B1).
   - [ ] **P1. The cast + first moments (ages 14–15):** family, friends, training group, teachers, rivals; Finnish life events;
-        ~100–150 storylets. *(Opus, high)*
+        ~100–150 storylets. *(Opus, high)* *(next)*
         Check: `storylet_check` (rate, repeats, coverage per age).
   - [ ] **P2. Moments part 2 (ages 16–17, school chains, milestones), standing-order rules.** *(Opus, high)*
   - [ ] **G1. Test days + Rep by rep** (one shared played-session screen, Auto, training PBs). *(Opus, high)*

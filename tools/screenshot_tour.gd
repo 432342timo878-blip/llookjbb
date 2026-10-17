@@ -293,8 +293,130 @@ func _run() -> void:
 	await _school_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _application_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _lukio_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- Lukio and the matriculation exams (session S3b): a sports lukio in Tampere from 2028 seen in period 3 (the School page, the
+# --- card, the exam plan, the study plan), the period's courses and results stops, the Calendar, the week strip of an exam week,
+# --- the exam plan stop, an exam day, a session's results, the certificate (shots 53...) --------------------------------------------
+
+func _lukio_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var hub: Control = hub_in
+	_answer_pending(game)
+	hub._show_pending_event()
+	var SC = load("res://scripts/core/school_system.gd")
+	var MPV = load("res://scripts/ui/matric_plan_view.gd")
+	var ss = game.get_system("school")
+	var saved_date: Dictionary = game.date.duplicate()
+	var saved_subjects: Dictionary = ss.subjects.duplicate(true)
+	var saved_reports: Array = ss.reports.duplicate(true)
+	var dec_before: bool = SC.decisions_enabled
+	SC.decisions_enabled = true
+	ss.paths = [{"kind": "urheilulukio", "school": "sammon_keskuslukio", "town": "Tampere", "start_year": 2028, "years": 3, "arrived": true}]
+	ss._stage_cache = {}
+	ss._exam_days = {}
+	ss._schedules = {}
+	game.date = {"year": 2028, "month": 12, "day": 6}
+	ss.lukio = {}
+	ss._start_lukio(ss.segment_for(2028), game.date)
+	var cands: Array = ss.add_candidates(2)
+	if not cands.is_empty():
+		ss.course_add(str(cands[0].id))
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	await _shot("53_lukio_page")
+	var shots := {"LUKIO CARD": "53a_lukio_card", "MATRICULATION EXAMS": "53b_matric_plan", "STUDY PLAN": "53c_study_plan"}
+	for head in shots:
+		var l = _find_label(hub, head)
+		if l != null:
+			hub._scroll.scroll_vertical += int(l.global_position.y - hub._scroll.global_position.y) - 24
+		await _frames(4)
+		await _shot(str(shots[head]))
+	ss._post_courses(2)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53d_courses_stop")
+	hub._on_event_answer(game.pending_event().id, "done")
+	ss._finish_period(2, true)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53e_results_stop")
+	hub._on_event_answer(game.pending_event().id, "continue")
+	hub._people_page = ""
+	game.date = {"year": 2029, "month": 2, "day": 5}   # (period 3's exam week: the strip's T marks, the Calendar's exam weeks)
+	var saved_week = game._week
+	game._week = null   # (the week of the new date; the career's own week is put back at the end)
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(5)
+	await _shot("53f_exam_week_strip")
+	hub._show("calendar")
+	await _frames(5)
+	await _shot("53g_lukio_calendar")
+	ss._post_choice("maths")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53h_choice_stop")
+	game.answer_event(game.pending_event().id, "keep")
+	game.answer_event(game.pending_event().id, "none")
+	game.answer_event(game.pending_event().id, "3")
+	game.events = game.events.filter(func(x): return not (str(x.source) == "school" and x.answer == ""))
+	MPV.show_all = false
+	ss._post_matric_plan("")
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53i_matric_plan_stop")
+	hub._on_event_answer(game.pending_event().id, "done")
+	game.date = {"year": 2030, "month": 3, "day": 18}
+	ss._stage_cache = {}
+	ss.lukio.matric.locked = ["s2030"]
+	ss.lukio.matric.registered = {"s2030": ["english"]}
+	game._week = null
+	game.date = {"year": 2030, "month": 3, "day": 18}
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(5)
+	await _shot("53j_matric_strip")
+	ss._post_matric_exam("s2030", "english", 0, 1)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53k_exam_day")
+	hub._on_event_answer(game.pending_event().id, "sit")
+	ss.lukio.matric.sat["s2030|english"] = {"parts": [8.4], "absent": false}
+	game.date = {"year": 2030, "month": 5, "day": 15}
+	ss._matric_results("s2030", true)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53l_matric_results")
+	hub._on_event_answer(game.pending_event().id, "continue")
+	# The certificate: every exam of the plan passed and the courses done.
+	for ex in ["swedish", "finnish", "maths", ss.lukio.matric.plan.keys().filter(func(x): return not str(x) in ["english", "swedish", "finnish", "maths"]).front()]:
+		ss.lukio.matric.results.append({"session": "s2031", "exam": str(ex), "grade": "M", "points": 5, "absent": false})
+	ss.lukio.done = true
+	ss._check_certificate()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("53m_certificate")
+	if not game.pending_event().is_empty():
+		hub._on_event_answer(game.pending_event().id, "continue")
+	ss.lukio = {}
+	ss.paths = []
+	ss.subjects = saved_subjects
+	ss.reports = saved_reports
+	ss._stage_cache = {}
+	ss._exam_days = {}
+	ss._schedules = {}
+	ss._lukio_exams = {}
+	SC.decisions_enabled = dec_before
+	game.date = saved_date
+	game._week = saved_week
+	game.events = game.events.filter(func(x): return str(x.source) != "school")
+	hub._show("overview")
 
 
 # --- School (session S2): the School page with the career's real grades and tests, the settings in the Training tab, the

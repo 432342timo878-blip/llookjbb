@@ -505,6 +505,8 @@ func _show_pending_event() -> void:
 		widest = SeasonEventPanel.max_width(e)
 	elif GoalsEventPanel.handles(e):
 		widest = GoalsEventPanel.max_width(e)
+	elif LukioEventPanel.handles(e):
+		widest = LukioEventPanel.MAX_WIDTH
 	var width := minf(widest, Layout.logical_width - 32.0 - 36.0 - 12.0)
 	var box: Control
 	if showing_result:   # what the answer changed (GDD 4.9.5 "Consequences shown"): the reply, ▲ / ▼ lines, Continue
@@ -519,6 +521,8 @@ func _show_pending_event() -> void:
 		box = panel
 	elif SchoolEventPanel.handles(e):   # the report card day (session S2)
 		box = SchoolEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice))
+	elif LukioEventPanel.handles(e):   # a lukio period's courses / results, the matriculation plan (session S3b)
+		box = LukioEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice))
 	elif GoalsEventPanel.handles(e):   # the coach's offer of the season's goals (session C5)
 		box = GoalsEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, str(Data.goals.ui.help_entry)))
@@ -549,7 +553,7 @@ func _show_pending_event() -> void:
 	_event_overlay.visible = true
 	_raise_overlays()
 	_fit_event_card(scroll, box)
-	if box is SeasonEventPanel or box is GoalsEventPanel:   # its content changes (a plan card chosen, a level stepped): fit the card again
+	if box is SeasonEventPanel or box is GoalsEventPanel or box is LukioEventPanel:   # its content changes (a plan card chosen, a level stepped, a course moved): fit the card again
 		box.rebuilt.connect(func(): _fit_event_card(scroll, box))
 
 

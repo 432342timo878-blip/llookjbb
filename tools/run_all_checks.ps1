@@ -63,7 +63,10 @@ $checks = @(
 	@{ name = "load_check (every script loads)"; args = "--headless -s res://tools/load_check.gd"; marker = "LOAD OK"; limit = 180 },
 	# The races: 60 fixed races (quick and watched, every plan, mix and voice) must give the same hash as before session C5. An
 	# engine change that is MEANT to change the races changes it: run tools/quick_fingerprint.gd and put the new hash here.
-	@{ name = "quick_fingerprint (the races are unchanged)"; args = "--headless -s res://tools/quick_fingerprint.gd"; marker = "races fingerprint: 73182f4eb6c496760b24bc0d3b3780c2"; limit = 300 }
+	@{ name = "quick_fingerprint (the races are unchanged)"; args = "--headless -s res://tools/quick_fingerprint.gd"; marker = "races fingerprint: 73182f4eb6c496760b24bc0d3b3780c2"; limit = 300 },
+	# Grades 8-9 at school (session S3b): a whole grade 8-9 career must give the same hash as after session S3a. A change that is MEANT
+	# to change grades 8-9 changes it: run tools/school_fingerprint.gd and put the new hash here.
+	@{ name = "school_fingerprint (grades 8-9 are unchanged)"; args = "--headless -s res://tools/school_fingerprint.gd"; marker = "school fingerprint all: 55076d77225663517cd25057f72fb55c"; limit = 600 }
 )
 if ($Only -ne "") {
 	$parts = $Only.Split(",") | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ -ne "" }

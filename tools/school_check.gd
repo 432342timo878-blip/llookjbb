@@ -59,6 +59,8 @@ func _run() -> void:
 	_check_switches()
 	_check_decisions()
 	_check_application()
+	_check_lukio()
+	_check_matric()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -1074,6 +1076,340 @@ func _check_application_targets(SA) -> void:
 	print("    TF-juniorit result + a middling test (3.3): Doing fine/Normal %.1f, Struggling/Normal %.1f, Struggling/Heavy %.1f; the lowest limit is %.2f" % [p_fine, p_str_n, p_str_h, low_cut])
 	_ok("a 'Doing fine' athlete with Normal effort and a TF-juniorit result reaches the lowest limit (Espoo 12.77): %.1f" % p_fine, p_fine >= low_cut)
 	_ok("a 'Struggling' athlete with Normal effort does not (%.1f), with a Heavy grade 9 it does (%.1f)" % [p_str_n, p_str_h], p_str_n < low_cut and p_str_h >= low_cut)
+
+
+# --- 15. Lukio courses (session S3b) ----------------------------------------------------------------------------------------------
+
+## A career whose athlete is born in `year` (2010: lukio year 1 in 2026-27, 2009: year 2), in Helsinki (the verified lukio calendar).
+func _lukio_career(year: int, sports := false):
+	var a = _athlete(1)
+	a.birth_date = {"year": year, "month": 5, "day": 1}
+	a.hometown = "Helsinki"
+	game.start_career(a, "repeat")
+	var ss = game.get_system("school")
+	ss._ensure_started()
+	if sports:
+		ss.paths = [{"kind": "urheilulukio", "school": "makelanrinteen_lukio", "town": "Helsinki", "start_year": year + 16, "years": 3, "arrived": true}]
+		ss._stage_cache = {}
+	return ss
+
+
+func _plan_counts(L: Dictionary) -> Dictionary:
+	var out := {"plan": 0, "done": 0, "comp": 0, "opt": 0, "coach": 0, "drop": 0}
+	for u in L.units:
+		if str(u.st) in ["plan", "done"]:
+			out[str(u.st)] += 1
+			out[str(u.k)] += 1
+		elif str(u.st) == "drop":
+			out.drop += 1
+	return out
+
+
+func _check_lukio() -> void:
+	print("-- 15. lukio courses (session S3b)")
+	var LK = load("res://scripts/core/lukio.gd")
+	var lk: Dictionary = data.lukio
+	# Data: the decree's compulsory credits are the courses of the game.
+	var short := {"maths": "short", "b3": "none", "music_art": "music", "sports": false, "years": 3}
+	var long := short.duplicate()
+	long.maths = "long"
+	var sum_short := 0
+	var sum_long := 0
+	for s in lk.subjects.list:
+		sum_short += LK.comp_count(str(s.id), short)
+		sum_long += LK.comp_count(str(s.id), long)
+	print("    compulsory courses: short maths %d (%d credits), long maths %d (%d credits)" % [sum_short, sum_short * 2, sum_long, sum_long * 2])
+	_ok("the game's compulsory courses are the decree's 94 / 102 credits (810/2018 Annex 1)", sum_short * 2 == int(lk.decree.compulsory_total[0]) and sum_long * 2 == int(lk.decree.compulsory_total[1]))
+	var dec: Dictionary = lk.decree.rows
+	_ok("per subject as in the decree (Finnish 12 + 6, English 12 + 4, Swedish 10 + 4, physics 2 + 12, long maths 18 + 6 ...)",
+			LK.comp_count("finnish", short) * 2 == int(dec.finnish.compulsory) and LK.opt_count("finnish", short) * 2 == int(dec.finnish.optional)
+			and LK.comp_count("english", short) * 2 == int(dec.a_language.compulsory) and LK.opt_count("swedish", short) * 2 == int(dec.b1_language.optional)
+			and LK.opt_count("physics", short) * 2 == int(dec.physics.optional) and (LK.comp_count("maths", long) - 1) * 2 == int(dec.maths_long.compulsory)
+			and LK.opt_count("maths", long) * 2 == int(dec.maths_long.optional) and LK.comp_count("health_ed", short) * 2 == int(dec.health_ed.compulsory))
+
+	# A. The tools' way: a lukio that starts in the middle of its first year (born 2010, Helsinki, from 2 Nov 2026).
+	var ss = _lukio_career(2010)
+	_play_to("2026-11-04")
+	var L: Dictionary = ss.lukio
+	var c := _plan_counts(L)
+	print("    started: maths %s, %d years, %d courses (%d compulsory, %d optional), %d done" % [L.maths, int(L.years), c.plan + c.done, c.comp, c.opt, c.done])
+	_ok("a lukio starts by itself in a lukio stage (tools: the counsellor's choices, no stop) with 75 courses, every compulsory one, at least 10 optional",
+			not L.is_empty() and bool(L.chosen) and c.plan + c.done == 75 and c.comp == sum_short + (4 if str(L.maths) == "long" else 0) and c.opt >= 10)
+	_ok("... started in period 2: period 1's courses are done with grades 4-10 (or passed), the subject list is the lukio's",
+			L.units.filter(func(u): return int(u.p) == 0).all(func(u): return str(u.st) == "done" and (int(u.g) >= 4 or int(u.g) == -1))
+			and ss.subject_list().any(func(s): return str(s.id) == "philosophy") and not ss.subject_list().any(func(s): return str(s.id) == "crafts"))
+	var per_year := [0, 0, 0]
+	var per_period := []
+	for p in 15:
+		var n: int = LK.courses_in(L, p).size()
+		per_period.append(n)
+		per_year[p / 5] += n
+	print("    courses per period: %s (years %s)" % [str(per_period), str(per_year)])
+	_ok("the plan: year 1 at least 30 courses (the 60 credits of Mäkelänrinne's rule), the last year lightest, no courses in the abi's last period",
+			per_year[0] >= 30 and per_year[2] < per_year[1] and per_period[14] == 0)
+	# The exam week: each academic course of a period has one exam in its exam week.
+	var p2: Dictionary = LK.period_info(ss, L, 1)
+	var sched: Dictionary = LK.exam_schedule(ss, L, 1)
+	var n_exams := 0
+	var in_week := true
+	for k in sched:
+		n_exams += (sched[k] as Array).size()
+		in_week = in_week and p2.exam.any(func(d): return Cal.date_key(d) == int(k))
+	var n_academic: int = LK.courses_in(L, 1).filter(func(u): return LK.kind_of(str(u.s)) == "academic").size()
+	_ok("period 2's %d academic courses have one exam each, all in its exam week (%s - %s)" % [n_academic, Cal.format_day(p2.exam[0]), Cal.format_day(p2.exam.back())],
+			n_exams == n_academic and in_week and n_academic > 0)
+	_play_to("2026-12-03")
+	var graded: Array = L.units.filter(func(u): return int(u.p) == 1 and str(u.st) == "done")
+	_ok("after period 2's exam week every course of it is graded (a failed one goes to the next exam week once)",
+			LK.courses_in(L, 1).all(func(u): return str(u.st) == "done" or bool(u.r)) and graded.size() > 0)
+	_ok("... a period report was kept with the subject grades (the average of the courses)", str(ss.reports.back().kind) == "period"
+			and int(ss.reports.back().grades.get("finnish", 0)) == LK.subject_grade(L, "finnish"))
+	_ok("no Christmas report card in a lukio", not ss.reports.any(func(r): return str(r.kind) == "christmas"))
+	# The life load: classroom courses above five weigh, fewer weigh less; the exam week keeps its own +2.
+	var p3: Dictionary = LK.period_info(ss, L, 2)
+	var day3: Dictionary = p3.start
+	while not SCal.is_school_day("Helsinki", day3) or ss.is_exam_day(day3):
+		day3 = game.add_days(day3, 1)
+	var n3: int = LK.class_count(L, 2)
+	var want := float(n3 - 5) * 0.25
+	var got := 0.0
+	for part in ss.load_parts(day3, []):
+		if str(part.id).begins_with("courses"):
+			got = float(part.value)
+	_ok("a school day of period 3 (%d classroom courses) weighs %+.2f (= (n - 5) x 0.25)" % [n3, got], absf(got - want) < 0.0001)
+	# Grades through the game: the course grades sit around the levels.
+	var gsum := 0.0
+	var lsum := 0.0
+	var gn := 0
+	for u in graded:
+		if int(u.g) >= 4:
+			gsum += int(u.g)
+			lsum += ss.level(str(u.s))
+			gn += 1
+	print("    period 2 grades: mean %.2f against the levels' %.2f (%d courses)" % [gsum / maxf(1, gn), lsum / maxf(1, gn), gn])
+	_ok("course grades follow the levels (mean within 0.6)", gn > 0 and absf(gsum / gn - lsum / gn) < 0.6)
+
+	# B. Four years and long -> short maths.
+	var ss4 = _lukio_career(2010)
+	_play_to("2026-11-04")
+	var before4 := _plan_counts(ss4.lukio)
+	var class_before: int = LK.class_count(ss4.lukio, 3)
+	_ok("3 -> 4 years is allowed in year 1", ss4.can_change_years() and ss4.set_lukio_years(4))
+	var c4 := _plan_counts(ss4.lukio)
+	_ok("4 years: the path is 4 years, the 2029-30 school year is the final one, still 75 courses, 20 periods",
+			int(ss4.lukio.years) == 4 and bool(ss4.stage_of(_d("2029-09-01")).get("final", false)) and not bool(ss4.stage_of(_d("2028-09-01")).get("final", false))
+			and c4.plan + c4.done == 75 and LK.period_count(ss4.lukio) == 20 and before4.done == c4.done)
+	print("    period 4 classroom courses: 3 years %d, 4 years %d" % [class_before, LK.class_count(ss4.lukio, 3)])
+	_ok("... with fewer classroom courses a period (lighter school days)", LK.class_count(ss4.lukio, 3) < class_before)
+	ss4.lukio.maths = "long"   # (force the long syllabus to try the switch)
+	ss4._replan(2)
+	var long_units: int = ss4.lukio.units.filter(func(u): return str(u.s) == "maths" and str(u.st) in ["plan", "done"]).size()
+	_ok("long maths -> short maths: allowed, the maths courses become the short syllabus's and the plan is 75 courses again",
+			ss4.can_short_maths() and ss4.to_short_maths() and str(ss4.lukio.maths) == "short"
+			and ss4.lukio.units.filter(func(u): return str(u.s) == "maths" and str(u.st) in ["plan", "done"]).size() < long_units
+			and _plan_counts(ss4.lukio).plan + _plan_counts(ss4.lukio).done == 75 and not ss4.can_short_maths())
+
+	# C. The period's courses: later / add / drop, and leaving out compulsory courses in a sports lukio.
+	var ss5 = _lukio_career(2010, true)
+	_play_to("2026-12-02")   # the first school day of period 3
+	var p := int(ss5.editable_period())
+	_ok("on a period's first day its courses can be changed (period 3: %d)" % p, p == 2)
+	var L5: Dictionary = ss5.lukio
+	_ok("a sports lukio has its 12 coaching courses", _plan_counts(L5).coach == 12)
+	var cur: Array = LK.courses_in(L5, p)
+	var a_comp: Dictionary = cur.filter(func(u): return str(u.k) == "comp")[0]
+	_ok("Later: a course moves out of the period, the whole stays 75", ss5.course_later(str(a_comp.id)) and int(a_comp.p) > p
+			and _plan_counts(L5).plan + _plan_counts(L5).done == 75)
+	var cands: Array = ss5.add_candidates(p)
+	var add: Dictionary = cands[0]
+	_ok("Add: an optional course comes into the period (by the player), still 75 in all", ss5.course_add(str(add.id)) and int(add.p) == p and str(add.by) == "player"
+			and _plan_counts(L5).plan + _plan_counts(L5).done == 75)
+	_ok("Drop: the added optional course goes out and the counsellor does not add it back", ss5.course_drop(str(add.id)) and str(add.st) == "pool"
+			and str(add.by) == "player_out")
+	# Leaving out: not in an exam subject (Finnish), yes in history (not in the plan's exams), at most half of a subject.
+	var fin: Dictionary = L5.units.filter(func(u): return str(u.s) == "finnish" and str(u.k) == "comp" and str(u.st) == "plan")[0]
+	var subj := ""
+	for s in ["history", "social_studies", "geography", "chemistry", "physics", "biology"]:
+		if not L5.matric.plan.keys().any(func(ex): return str(data.lukio.matric.exams.filter(func(e): return str(e.id) == str(ex))[0].subject) == s):
+			subj = s
+			break
+	var hist: Array = L5.units.filter(func(u): return str(u.s) == subj and str(u.k) == "comp" and str(u.st) == "plan")
+	for u in hist:
+		u.p = p
+	_ok("leaving out a compulsory course: never in an exam subject (Finnish)", not LK.can_drop_comp(L5, fin))
+	var dropped := 0
+	for u in hist:
+		if ss5.course_drop(str(u.id)):
+			dropped += 1
+	var comp_n: int = LK.comp_count(subj, L5)
+	print("    %s: %d compulsory, %d left out" % [subj, comp_n, dropped])
+	_ok("... in %s at most half of its compulsory courses (%d of %d), and 75 courses in all again" % [subj, dropped, comp_n],
+			dropped == comp_n - ceili(comp_n / 2.0) and _plan_counts(L5).plan + _plan_counts(L5).done == 75)
+	var back: Dictionary = L5.units.filter(func(u): return str(u.st) == "drop")[0]
+	_ok("Put back: a left-out course comes back into the period", ss5.course_put_back(str(back.id)) and str(back.st) == "plan" and int(back.p) == p)
+	var general = _lukio_career(2010)
+	_play_to("2026-12-02")
+	var g_fin: Dictionary = general.lukio.units.filter(func(u): return str(u.s) == "history" and str(u.k) == "comp" and str(u.st) == "plan")[0]
+	_ok("a general lukio cannot leave out compulsory courses", not LK.can_drop_comp(general.lukio, g_fin))
+
+	# D. The real game's way: the choices, a courses stop at each period's start and a results stop at its end.
+	SC.decisions_enabled = true
+	var ss6 = _lukio_career(2011)   # lukio from August 2027
+	var seen := _play_to("2027-10-13", {"lukio_choice": "german"})
+	var kinds := seen.filter(func(k): return str(k).begins_with("lukio"))
+	print("    stops from the first lukio day to 13 Oct 2027: %s" % ", ".join(kinds))
+	_ok("the first lukio day: three choice stops (maths, a language, the years), then period 1's courses", _count(seen, "lukio_choice") == 3
+			and kinds.find("lukio_courses") > kinds.rfind("lukio_choice"))
+	_ok("... period 1 ends with a results stop and period 2 starts with a courses stop (two separate stops, user)",
+			_count(seen, "lukio_results") == 1 and _count(seen, "lukio_courses") == 2)
+	_ok("an answer that is no option keeps the counsellor's pick (maths, 3 years); German was taken and its courses are in",
+			str(ss6.lukio.maths) in ["long", "short"] and str(ss6.lukio.b3) == "german" and int(ss6.lukio.years) == 3 and ss6.lukio.units.any(func(u): return str(u.s) == "b3")
+			and ss6.subject_list().any(func(s): return str(s.name) == "German"))
+	SC.decisions_enabled = false
+
+	# Speed: a lukio day against a grade 8 day (the long tools play thousands of days).
+	_lukio_career(2012)
+	var t0 := Time.get_ticks_usec()
+	_play_to("2027-01-31")
+	var ms8 := (Time.get_ticks_usec() - t0) / 1000.0 / 90.0
+	_lukio_career(2010)
+	t0 = Time.get_ticks_usec()
+	_play_to("2027-01-31")
+	var ms_l := (Time.get_ticks_usec() - t0) / 1000.0 / 90.0
+	print("    time per played day (health off): grade 8 %.2f ms, lukio %.2f ms" % [ms8, ms_l])
+	_ok("a lukio day costs at most a few ms more than a grade 8 day", ms_l < ms8 + 5.0)
+
+	# E. Save / load in a lukio: the game goes on exactly as without saving.
+	var ss7 = _lukio_career(2010)
+	_play_to("2026-11-20")
+	var snap := _json(game.to_dict())
+	_play_to("2027-02-15")
+	var end1 := _json(game.get_system("school").to_dict()) + _json(game.athlete.to_dict())
+	game.from_dict(_parse(snap))
+	_play_to("2027-02-15")
+	var end2 := _json(game.get_system("school").to_dict()) + _json(game.athlete.to_dict())
+	if end1 != end2:
+		var i := 0
+		while i < mini(end1.length(), end2.length()) and end1[i] == end2[i]:
+			i += 1
+		print("    first difference at %d:\n      %s\n      %s" % [i, end1.substr(maxi(0, i - 160), 240).replace("\n", " "), end2.substr(maxi(0, i - 160), 240).replace("\n", " ")])
+	_ok("a loaded lukio goes on exactly as without saving (courses, exams, grades)", end1 == end2 and snap.contains("\"lukio\"") and not ss7.lukio.is_empty())
+
+
+# --- 16. The matriculation exams (session S3b) -----------------------------------------------------------------------------------
+
+func _check_matric() -> void:
+	print("-- 16. the matriculation exams (session S3b)")
+	var M = load("res://scripts/core/matriculation.gd")
+	# Dates.
+	_ok("spring 2027 from the board's list: Finnish reading 16 Mar, English (long) 22 Mar, maths 24 Mar, results 19 May",
+			Cal.date_key(M.exam_dates("s2027", "finnish")[0]) == 20270316 and Cal.date_key(M.exam_dates("s2027", "finnish")[1]) == 20270319
+			and Cal.date_key(M.exam_dates("s2027", "english")[0]) == 20270322 and Cal.date_key(M.exam_dates("s2027", "maths")[0]) == 20270324
+			and Cal.date_key(M.results_date("s2027")) == 20270519 and M.verified("s2027"))
+	_ok("later sessions by the rule (estimated): spring 2030 starts Tue 12 Mar, autumn 2030 Mon 16 Sep; deadlines 20 Nov 2029 / 20 May 2030",
+			Cal.date_key(M.first_day("s2030")) == 20300312 and Cal.date_key(M.first_day("a2030")) == 20300916
+			and Cal.date_key(M.deadline("s2030")) == 20291120 and Cal.date_key(M.deadline("a2030")) == 20300520 and not M.verified("s2030"))
+	_ok("the three sessions of a lukio from 2028: spring 2030, autumn 2030, spring 2031 (4 years: spring 2031, autumn 2031, spring 2032)",
+			M.sessions_for(2028, 3) == ["s2030", "a2030", "s2031"] and M.sessions_for(2028, 4) == ["s2031", "a2031", "s2032"])
+	# The rules.
+	var L := {"maths": "short", "b3": "none"}
+	_ok("the board's rules: Finnish + English + maths + Swedish + history pass", bool(M.check(["finnish", "english", "maths", "swedish", "history"], L).ok))
+	_ok("... without Finnish no; with four exams no", not bool(M.check(["english", "maths", "swedish", "history", "biology"], L).ok)
+			and not bool(M.check(["finnish", "english", "maths", "swedish"], L).ok))
+	_ok("... Finnish + four realia subjects: only one group, no", not bool(M.check(["finnish", "history", "biology", "chemistry", "geography"], L).ok))
+	_ok("... no long-syllabus exam (short maths, Swedish, two realia) no; with long maths yes",
+			not bool(M.check(["finnish", "maths", "swedish", "history", "chemistry"], L).ok) and bool(M.check(["finnish", "maths", "swedish", "history", "chemistry"], {"maths": "long"}).ok))
+	_ok("... two realia subjects of the same day in one session no", not bool(M.check(["finnish", "english", "maths", "history", "biology"], L, {"history": "s2030", "biology": "s2030"}).ok))
+	_calibrate_matric(M)
+
+	# Through the game, the tools' way: born 2009 (lukio year 2 in 2026-27): the spring 2027 session is the first.
+	var ss = _lukio_career(2009)
+	_play_to("2026-11-22")
+	var Lm: Dictionary = ss.lukio
+	print("    the counsellor's plan: %s" % str(Lm.matric.plan))
+	_ok("the counsellor's plan passes the rules and uses the three sessions spring 2027 / autumn 2027 / spring 2028",
+			bool(M.check(ss.matric_set(), Lm, Lm.matric.plan).ok) and ss.matric_main_sessions() == ["s2027", "a2027", "s2028"])
+	_ok("the spring 2027 session was registered at its deadline (20 Nov): English", "s2027" in Lm.matric.locked and Lm.matric.registered.s2027 == ["english"]
+			and not ss.set_matric("history", "s2027"))
+	var mon := _d("2027-03-22")
+	var parts: Array = ss.load_parts(mon, [])
+	_ok("the exam day weighs +3 (a matriculation exam) and is marked for the week strip", parts.any(func(x): return str(x.id) == "matric" and float(x.value) == 3.0)
+			and ss.day_info(mon).get("matric", []) == ["english"])
+	_play_to("2027-05-20")
+	_ok("results on 19 May 2027: English got a grade L-I", Lm.matric.results.size() == 1 and str(Lm.matric.results[0].exam) == "english"
+			and str(Lm.matric.results[0].grade) in ["L", "E", "M", "C", "B", "A", "I"])
+	print("    English (long): %s; the level was %.2f" % [str(Lm.matric.results[0].grade), ss.level("english")])
+	# The meet-and-tests decision sees a matriculation exam (a race in the week of the autumn session).
+	_play_to("2027-09-12")
+	var monday := _d("2027-09-13")
+	var meet: Dictionary = _add_test_meet(monday)
+	var old_entries: Array = game.entries.duplicate()
+	game.entries = [str(meet.key)]
+	var clash: Dictionary = ss.meet_test_clash(monday)
+	game.entries = old_entries
+	var reg_a: Array = Lm.matric.registered.get("a2027", [])
+	_ok("a race in a week with a matriculation exam asks (the exam is in the list): %s" % ", ".join(clash.get("list", [])),
+			reg_a.is_empty() or (not clash.is_empty() and ", ".join(clash.list).contains("on ")))
+	_drop_test_meet()
+	# To the end: the certificate after the last spring and the final card (or a retake).
+	_play_to("2028-06-10")
+	var best: Dictionary = ss.matric_best()
+	print("    results: %s; certificate %s" % [str(Lm.matric.results.map(func(r): return "%s %s %s" % [r.session, r.exam, r.grade])), str(Lm.matric.cert)])
+	var failed := best.values().any(func(g): return str(g) == "I")
+	_ok("lukio done (the final card) and the certificate when every required exam passed (or a failed one is planned again)",
+			bool(Lm.done) and (bool(Lm.matric.cert) or (failed and not Lm.matric.plan.is_empty())))
+
+	# The real game's way: the plan stop, a stop per session, the exam days, the results; skipping = a failed exam and a retake.
+	SC.decisions_enabled = true
+	var ss2 = _lukio_career(2009)
+	var seen := _play_to("2027-05-20", {"matric_exam": "skip"})
+	var mk := seen.filter(func(k): return str(k).begins_with("matric"))
+	print("    stops: %s" % ", ".join(mk))
+	_ok("one plan stop, a registration stop for spring 2027 and for autumn 2027, one exam-day stop, one results stop", _count(seen, "matric_plan") == 3 and _count(seen, "matric_exam") == 1
+			and _count(seen, "matric_results") == 1)
+	var r0: Dictionary = ss2.lukio.matric.results[0]
+	_ok("a skipped exam is a failed one (absent) and goes into the next session's plan as a retake", str(r0.grade) == "I" and bool(r0.absent)
+			and str(ss2.lukio.matric.plan.get("english", "")) == "a2027")
+	_ok("the retake is allowed after the main sessions too; a new exam only in the main three",
+			ss2.matric_allowed("english", "a2027") and not ss2.matric_allowed("geography", "a2028"))
+	SC.decisions_enabled = false
+
+
+## The score thresholds against the board's shares: the game's lukio students (the five school answers equally, a level of
+## natural + a typical bonus at Normal effort) and the grade each would get.
+func _calibrate_matric(M) -> void:
+	var lk: Dictionary = data.lukio
+	var sc: Dictionary = lk.matric.score
+	var scores := []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var answers := ["top", "hard_work", "fine", "struggling", "dont_care"]
+	var apt: Dictionary = data.school_life.aptitude
+	for i in 4000:
+		var nat := float(data.school_life.answers[answers[i % 5]].natural)
+		var lv := nat + clampf(rng.randfn(0.0, float(apt.sd)), -float(apt.max), float(apt.max)) + float(lk.levels.lukio_shift)
+		var bonus := minf(float(sc.bonus_max), rng.randi_range(1, 4) * float(sc.bonus_per_optional))
+		scores.append(lv + bonus + rng.randfn(0.0, float(sc.sd)))
+	scores.sort()
+	scores.reverse()
+	var counts := {}
+	for s in scores:
+		var g: String = M.grade_for(float(s))
+		counts[g] = int(counts.get(g, 0)) + 1
+	var line := []
+	var cum := 0.0
+	var fitted := []
+	var ok := true
+	for g in lk.matric.grades:
+		var share := float(counts.get(str(g.id), 0)) / scores.size()
+		line.append("%s %.1f %% (board %.0f %%)" % [str(g.id), share * 100.0, float(g.share) * 100.0])
+		ok = ok and absf(share - float(g.share)) < 0.04
+		cum += float(g.share)
+		if str(g.id) != "I":
+			fitted.append("%.2f" % float(scores[mini(scores.size() - 1, int(cum * scores.size()))]))
+	print("    grade shares of the game's lukio students: " + ", ".join(line))
+	print("    thresholds that would fit exactly: [%s]" % ", ".join(fitted))
+	_ok("the score thresholds give about the board's shares (each within 4 points)", ok)
 
 
 # --- Helpers ---------------------------------------------------------------------------------------------------------------------
