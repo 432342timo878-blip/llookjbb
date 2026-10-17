@@ -1,0 +1,156 @@
+{
+ "_note": "The Finnish school calendar (GDD 4.9.3; research session D1, 2026-10-17; read by the school model S1). Dates are ISO (YYYY-MM-DD). `verified` blocks are copied from the pages in `sources` (read 2026-10-17); `rules` make the later school years and are ALL `estimated` (the dates of a year that is not published yet are our rule, never a promise). Municipalities decide their own breaks, so the table `municipal` holds what 20 of the game's towns published for 2026-27 and the rest of the 84 towns (data/towns.json) fall back on `rules.winter_break` by region and `rules.autumn_break` week 42. Lukio calendars differ by school: `lukio_example` is ONE real school (Helsingin kielilukio, 5 periods); other schools have 6 periods (Muurame and Kauhava per GDD 4.9.8), so S1 uses the example's shape as the rule. The game starts Monday 2 Nov 2026 (period 2 of the example).",
+ "verified": {
+  "school_year": "2026-27",
+  "national": {
+   "src": 1,
+   "peruskoulu_start_common": ["2026-08-12", "2026-08-13"],
+   "end": "2027-06-05",
+   "work_days": 189,
+   "common_holidays": ["2027-01-06", "2027-05-01", "2027-05-06"],
+   "autumn_break_weeks": [42, 43],
+   "winter_break_period": ["2027-02-22", "2027-03-12"],
+   "note": "The agency says the list is indicative and that each municipality publishes its own dates. Easter is not mentioned on its page. Page of 2026-04-10."
+  },
+  "municipal": [
+   {"town": "Helsinki", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-02-22", "2027-02-26"]},
+   {"town": "Espoo", "start": "2026-08-13", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-02-22", "2027-02-26"], "typo_fixed": "the page wrote the end of the Christmas break as 6.1.2026"},
+   {"town": "Vantaa", "start": "2026-08-13", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-02-22", "2027-02-26"]},
+   {"town": "Hämeenlinna", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Joensuu", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-08", "2027-03-12"]},
+   {"town": "Jyväskylä", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Kajaani", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-08", "2027-03-12"]},
+   {"town": "Kotka", "start": "2026-08-12", "autumn": ["2026-10-19", "2026-10-23"], "christmas": ["2026-12-20", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Kouvola", "start": "2026-08-12", "autumn": ["2026-10-19", "2026-10-25"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Kuopio", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-08", "2027-03-12"]},
+   {"town": "Lahti", "start": "2026-08-12", "autumn": ["2026-10-19", "2026-10-23"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Lappeenranta", "start": "2026-08-13", "autumn": ["2026-10-19", "2026-10-23"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"], "typo_fixed": "the page wrote the last school day as 5.6.207"},
+   {"town": "Mikkeli", "start": "2026-08-12", "autumn": ["2026-10-19", "2026-10-23"], "christmas": ["2026-12-21", "2027-01-03"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Oulu", "start": "2026-08-12", "autumn": ["2026-10-19", "2026-10-23"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-08", "2027-03-12"]},
+   {"town": "Pori", "start": "2026-08-11", "autumn": ["2026-10-19", "2026-10-23"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-02-22", "2027-02-26"]},
+   {"town": "Rovaniemi", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-23", "2027-01-06"], "winter": ["2027-03-08", "2027-03-12"]},
+   {"town": "Seinäjoki", "start": "2026-08-11", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"], "typo_fixed": "the page wrote the end of the Christmas break as 6.1.202"},
+   {"town": "Tampere", "start": "2026-08-06", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-21", "2027-01-10"], "winter": ["2027-03-01", "2027-03-05"]},
+   {"town": "Turku", "start": "2026-08-11", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-21", "2027-01-06"], "winter": ["2027-02-22", "2027-02-26"]},
+   {"town": "Vaasa", "start": "2026-08-12", "autumn": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-22", "2027-01-06"], "winter": ["2027-03-01", "2027-03-05"]}
+  ],
+  "municipal_note": "All end on Saturday 2027-06-05. Kokkola is in the agency's table but not in the game. Kerava and Porvoo (hometowns) are NOT listed by the agency and their own pages were not found: they use the rules (Uusimaa = south).",
+  "lukio_example": {
+   "school": "Helsingin kielilukio",
+   "src": 2,
+   "terms": {"autumn": ["2026-08-12", "2026-12-19"], "spring": ["2027-01-07", "2027-06-05"]},
+   "periods": [
+    {"id": 1, "start": "2026-08-12", "end": "2026-10-02", "exam_week": ["2026-09-24", "2026-10-02"]},
+    {"id": 2, "start": "2026-10-05", "end": "2026-12-01", "exam_week": ["2026-11-23", "2026-12-01"]},
+    {"id": 3, "start": "2026-12-02", "end": "2027-02-09", "exam_week": ["2027-02-01", "2027-02-09"]},
+    {"id": 4, "start": "2027-02-10", "end": "2027-04-13", "exam_week": ["2027-04-05", "2027-04-13"]},
+    {"id": 5, "start": "2027-04-14", "end": "2027-06-05", "exam_week": ["2027-05-26", "2027-06-03"]}
+   ],
+   "exam_week_note": "The school calls the last week of a period 'päättöviikko'; each runs seven school days (weekends skipped) and ends on the last day of its period (period 5: on 3 June, two days before the end). Single tests of the lukio courses are not published.",
+   "holidays": {"autumn_break": ["2026-10-12", "2026-10-16"], "christmas": ["2026-12-21", "2027-01-06"], "winter_break": ["2027-02-22", "2027-02-26"], "easter": ["2027-03-26", "2027-03-29"], "ascension": ["2027-05-06", "2027-05-07"]},
+   "saturday_workday": "2026-09-05",
+   "graduation_party": "2027-06-05",
+   "school_days": 189
+  },
+  "matriculation": {
+   "note": "Dates of the Matriculation Examination Board (YTL). The board marks both sessions provisional ('alustavia'); exams start at 9:00 at every upper secondary school. The groups use the board's subject groups.",
+   "autumn_2026": {
+    "src": 4,
+    "days": [
+     {"date": "2026-09-14", "exams": ["mother_tongue_reading"]},
+     {"date": "2026-09-16", "exams": ["realia_b"]},
+     {"date": "2026-09-18", "exams": ["foreign_long"]},
+     {"date": "2026-09-21", "exams": ["second_national"]},
+     {"date": "2026-09-22", "exams": ["realia_a"]},
+     {"date": "2026-09-24", "exams": ["mathematics"]},
+     {"date": "2026-09-25", "exams": ["mother_tongue_writing", "finnish_as_second_language"]},
+     {"date": "2026-09-28", "exams": ["foreign_short"]},
+     {"date": "2026-09-30", "exams": ["sami"]}
+    ]
+   },
+   "spring_2027": {
+    "src": 3,
+    "results_to_schools": "2027-05-18",
+    "results_to_students": "2027-05-19",
+    "days": [
+     {"date": "2027-03-16", "exams": ["mother_tongue_reading", "finnish_as_second_language_reading"]},
+     {"date": "2027-03-18", "exams": ["foreign_short"]},
+     {"date": "2027-03-19", "exams": ["mother_tongue_writing", "finnish_as_second_language_writing"]},
+     {"date": "2027-03-22", "exams": ["foreign_long"]},
+     {"date": "2027-03-24", "exams": ["mathematics"]},
+     {"date": "2027-03-30", "exams": ["realia_a"]},
+     {"date": "2027-03-31", "exams": ["second_national"]},
+     {"date": "2027-04-02", "exams": ["realia_b"]},
+     {"date": "2027-04-05", "exams": ["sami"]}
+    ]
+   },
+   "groups": {
+    "mother_tongue_reading": "Finnish / Swedish mother tongue and literature: reading skills test",
+    "mother_tongue_writing": "Finnish / Swedish mother tongue and literature: writing skills test",
+    "finnish_as_second_language": "Finnish or Swedish as a second language and literature",
+    "finnish_as_second_language_reading": "Finnish as a second language: reading and listening comprehension part",
+    "finnish_as_second_language_writing": "Finnish as a second language: writing skills part",
+    "foreign_long": "Foreign language, long syllabus (English, French, Spanish, German, Russian)",
+    "foreign_short": "Foreign language, short syllabus (English, French, Spanish, German, Russian, Italian, Portuguese, Latin, Sami)",
+    "second_national": "Second national language, long and intermediate syllabus",
+    "mathematics": "Mathematics, long and short syllabus",
+    "realia_a": "Realia: psychology, philosophy, history, physics, biology",
+    "realia_b": "Realia: religion, ethics, social studies, chemistry, geography, health education",
+    "sami": "Sami mother tongue and literature"
+   }
+  },
+  "camps": {
+   "note": "SUL's Pajulahti camps for grades 7-9 in 2026-27 (Mon-Fri, in school weeks; 355 EUR each; apply by 2026-08-31). Taken from the GDD 4.9.8 research notes of 2026-10-11; the page URL was not recorded then and was NOT re-read in D1: treat as unverified until S2 checks it. The weekdays match (all Mondays).",
+   "list": [
+    {"start": "2026-10-05", "end": "2026-10-09"},
+    {"start": "2026-12-07", "end": "2026-12-11"},
+    {"start": "2027-04-19", "end": "2027-04-23"}
+   ],
+   "price_eur": 355,
+   "apply_by": "2026-08-31"
+  }
+ },
+ "rules": {
+  "status": "estimated",
+  "note": "How S1 makes a school year that is not published. Each rule was fitted to 2026-27 (the examples show it reproduces the real dates) and is marked `estimated` for every later year. Public holidays outside the term (Midsummer) are not needed.",
+  "school_start": {"rule": "Wednesday of ISO week 33", "check": "2026: Wednesday 12 Aug (the agency: week 33, usually 12 or 13 Aug)"},
+  "school_end": {"rule": "the first Saturday of June", "check": "2027: Saturday 5 June"},
+  "autumn_break": {"rule": "ISO week 42 (Monday to Friday); towns in the municipal table keep their published week (43 in Kotka, Kouvola, Lahti, Lappeenranta, Mikkeli, Oulu and Pori in 2026)", "default_week": 42},
+  "christmas_break": {"rule": "22 December to 6 January (Saturdays and Sundays inside count as free)", "from": "12-22", "to": "01-06", "note": "In 2026-27 the first free day was 20-23 Dec by town; the agency says the break is most often 22 Dec - 6 Jan."},
+  "winter_break": {"rule": "Monday to Friday of ISO week 8 (south), 9 (middle) or 10 (north and east) by the group of the town's maakunta (data/towns.json winter_groups)", "check": "2027: weeks 8 / 9 / 10 = 22 Feb / 1 Mar / 8 Mar"},
+  "easter": {"rule": "Good Friday to Easter Monday (Easter Sunday by the usual church calculation)", "check": "2027: Friday 26 Mar to Monday 29 Mar"},
+  "other_holidays": [
+   {"rule": "6 January (Epiphany)"},
+   {"rule": "1 May"},
+   {"rule": "Ascension Thursday (39 days after Easter Sunday) and the Friday after it as a free day", "check": "2027: 6-7 May"},
+   {"rule": "6 December (Independence Day, always a holiday; Sunday in 2026)"}
+  ],
+  "lukio_periods": {
+   "count": 5,
+   "start_offsets_days": [0, 54, 112, 182, 245],
+   "end_offset_days": 297,
+   "exam_week_school_days": 7,
+   "note": "Offsets from the first school day, fitted to the Helsingin kielilukio calendar of 2026-27 (periods 12 Aug, 5 Oct, 2 Dec, 10 Feb, 14 Apr; end 5 Jun). Other lukio have 6 periods: S1 decides how to treat them."
+  },
+  "matriculation": {
+   "spring_start": {"rule": "the first Tuesday on or after 10 March", "check": "2026: Tue 10 Mar, 2027: Tue 16 Mar (a 2026 date from a 2026 search summary, not from the board's page)"},
+   "spring_offsets": {"start_day_is": "Tuesday", "exams": [[0, "mother_tongue_reading"], [2, "foreign_short"], [3, "mother_tongue_writing"], [6, "foreign_long"], [8, "mathematics"], [14, "realia_a"], [15, "second_national"], [17, "realia_b"], [20, "sami"]]},
+   "autumn_start": {"rule": "the first Monday on or after 12 September", "check": "2026: Mon 14 Sep"},
+   "autumn_offsets": {"start_day_is": "Monday", "exams": [[0, "mother_tongue_reading"], [2, "realia_b"], [4, "foreign_long"], [7, "second_national"], [8, "realia_a"], [10, "mathematics"], [11, "mother_tongue_writing"], [14, "foreign_short"], [16, "sami"]]},
+   "note": "The board rotates the order of the subject groups from year to year; the offsets are the 2027 (spring) and 2026 (autumn) patterns used for every later year. A session is usually spread over 3 weeks, so a student takes the exams over 2-3 sessions (4 in a 4-year urheilulukio)."
+  }
+ },
+ "not_verified": [
+  "Kerava's and Porvoo's own 2026-27 breaks (not in the agency's table; their pages were not found).",
+  "Single tests (kokeet) of yläkoulu and lukio courses: no national or school-wide dates are published; S1 makes them by rule.",
+  "The lukio calendar of any school but Helsingin kielilukio (6-period schools such as Muurame and Kauhava are only known from GDD 4.9.8).",
+  "The Pajulahti camp dates and price (see camps).",
+  "The rule values for 2027-28 and later years (everything under `rules`)."
+ ],
+ "sources": [
+  {"id": 1, "url": "https://www.oph.fi/fi/uutiset/2026/koulujen-tyo-ja-loma-ajat-lukuvuonna-2026-2027", "read": "2026-10-17", "how": "page", "facts": "Finnish National Agency for Education, news of 2026-04-10: school year 2026-27, 189 working days, end Saturday 5 June 2027, autumn break weeks 42-43, winter break 22 Feb - 12 Mar 2027 staggered, and the table of 21 cities"},
+  {"id": 2, "url": "https://www.hel.fi/fi/kasvatus-ja-koulutus/helsingin-kielilukio/opiskelu/kalenteri", "read": "2026-10-17", "how": "page", "facts": "Helsingin kielilukio calendar 2026-27: 5 periods with their päättöviikko, terms, holidays, Saturday workday, matriculation days"},
+  {"id": 3, "url": "https://www.ylioppilastutkinto.fi/fi/tutkinnon-suorittaminen/koepaivat/kevaan-2027-koepaivat", "read": "2026-10-17", "how": "page", "facts": "Matriculation Examination Board: spring 2027 exam days 16 Mar - 5 Apr and results dates (all provisional)"},
+  {"id": 4, "url": "https://www.ylioppilastutkinto.fi/fi/tutkinnon-suorittaminen/koepaivat/syksyn-2026-koepaivat", "read": "2026-10-17", "how": "page", "facts": "Matriculation Examination Board: autumn 2026 exam days 14-30 Sep (preliminary)"}
+ ]
+}

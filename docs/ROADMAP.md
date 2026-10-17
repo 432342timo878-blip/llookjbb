@@ -367,10 +367,15 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         a season by plan and policy.
         Left for later: competitiveness in races (race controls), the training group's pull (P1), stress from school + sleep
         (S1), a pre-race routine and video review (G2 / G3), the balance of the mood sizes (B1).
-  - [ ] **D1. Research + data (may run beside the others):** real coaches (Finnish + international, public sources only, neutral
-        voice), urheilulukiot with athletics and their cut-offs, hometown sizes and regions, `data/school.json` calendar (2026–27 real,
-        later years by rule, `estimated`). *(Sonnet, high)*
-        Check: `json_check`; every real coach has a `source`.
+  - [x] **D1. Research + data** *(done 2026-10-17, GDD 4.9 "Built (step D1)"; user: about 12 real coaches now, all four kinds,
+        as many as possible once the career reaches adult level)*: 12 real coaches (4 Finnish elite / club, 4 SUL centre managers,
+        4 international; each with url + date-read sources, senior athletes only), `data/urheilulukiot.json` (15 sports lukiot,
+        the 20-point application, cut-offs found, SUL's five centres), `data/towns.json` (84 towns: population 2025, maakunta,
+        winter-break group), `data/school.json` (the real 2026–27 year + matriculation days, later years by `estimated` rules).
+        `tools/json_check.gd` checks the sources. *(Sonnet, high)*
+        Left for later: **the adult-level research session** (many more real senior coaches), the federation's 0–5 scale for
+        athletics (needed by S3), the unverified items listed in the files' `not_verified`, re-reading every real coach's page
+        before release.
   - [ ] **C6. Coach market:** availability (town size, remote, parent, coaches choose, spots), scouting ranges and how they narrow,
         the profile page, Find a coach, changing coach (moments), the family budget. *(Opus, high)*
         Check: a 14-year-old in a small town sees 1–3 coaches, in a centre town more; ranges narrow as designed; tour + layout check.

@@ -2512,7 +2512,8 @@ character words, his group, his athletes, cost, and what working with him would 
 
 **Who you can get, and when:**
 - **At 14:** your own club's coaches: a small-town club 1–2, a big-town club 3–6, one of SUL's five athletics-centre towns (capital
-  region, Tampere, Jyväskylä, Lahti-Pajulahti, Kuortane) more. Hometowns get a size and a region in the data.
+  region, Tampere, Turku, Jyväskylä, Lahti-Pajulahti: corrected in D1, Kuortane is a partner, not a centre) more. Hometowns get a
+  size and a region in the data (`data/towns.json`, D1).
 - **A parent as coach** (only with "A parent competed in athletics"; user: yes): strong fit and motivation, some family friction.
 - **A remote coach** (another town; user: yes): plan by message, monthly visits and the meets he comes to; weaker at what he must see
   (technique, load management, race reading at meets he skips).
@@ -2753,7 +2754,9 @@ a bad one loses); at most ~1 a week on average; each type can be switched off; p
   (7 769 players: autonomy support → needs → enjoyment → lower dropout intentions); controlling coaching → disaffection; Hopkins &
   Hewson 2001 (consistency from competitive experience).
 - **Not verified:** a single SUL source on club vs personal coach roles (the staff by stage is general knowledge), the spring 2027
-  matriculation dates, the full list of urheilulukiot with athletics (research session D1).
+  matriculation dates, the full list of urheilulukiot with athletics (research session D1). **D1 (2026-10-17) answered these:** the
+  spring 2027 dates and the list of 15 sports lukiot are now in `data/school.json` / `data/urheilulukiot.json`; SUL's centres are
+  five but not the ones listed above (see "Built (step D1)").
 
 #### Built (step C1, 2026-10-11): the coach model, headless
 
@@ -3311,6 +3314,80 @@ middle).
 training group's pull); stress from school, exam weeks, sleep and life load (S1); the pre-race routine and video review as mental
 training (G2 / G3); a coach who ends it after weeks of Strained trust (later); the balance of the mood sizes over many seasons (B1:
 the GDD 4.9.7 targets).
+
+#### Built (step D1, 2026-10-17): research and data (no game code)
+
+**Before building:** `run_all_checks` gave 19 / 19 PASS (nothing to fix). This session wrote data only; the one tool change is a
+content check in `tools/json_check.gd` (below). All sources were read on 2026-10-17; every file records the URL, the date read
+and whether the page was opened (`page`) or only seen in a search-result summary (`search-summary`: check those before relying
+on them).
+
+**Decisions with the user (asked 2026-10-17, before building):**
+1. **How many real coaches: about 12 now** (the recommended number), and **"when we get to adult level, as many as possible"**:
+   a later research session adds many more senior-level coaches (clubs' senior groups, national teams, world level). 12 are in.
+2. **Which kinds: all four** the user ticked: Finnish elite / national (4: Suhonen, Rajaniemi, Dreißigacker, Viskari), Finnish club /
+   youth (Rajaniemi doubles as the Lahden Ahkera youth-milers coach), SUL / academy / camp (4: the training managers of the Turku,
+   capital-region, Tampere and Lahti centres) and international middle-distance / endurance (4: Sang, Berardelli, Meadows,
+   Painter). Only SENIOR athletes are named next to them (Team Finland -huiput / -haastajat or world level).
+
+**Claude's defaults (not asked; say if you want them changed):**
+- **Who was left out, and why.** Real people get a higher bar than fictional ones. Three candidates were held back: (a) every coach
+  of the Espoo club whose coach was reported on 2026-09-29 as suspected by the police of offences against a young athlete (the
+  news names nobody; this is NOT an accusation against anyone at the club, only a precaution until it is clear); (b) a coach who is
+  the subject of a charge filed in news (2025–26; an allegation, no verdict); (c) the Jyväskylä centre's manager, whose post was
+  advertised in July 2026 (his role may have changed). Re-check every coach again before the game is published.
+- **Neutral voice, no invented stories.** The game voice (`personality`) is chosen from the published approach and is not a claim
+  about anyone's character; style 0, demands Balanced for everyone; `gender: unknown` where no source states it (the game then says
+  they / them, never a guess from a name).
+- **Attribute estimates** follow a documented rule: a baseline of 12 (national) or 15 (international) lifts or falls only by a
+  published fact (`basis` names it; no attribute below 10). `evidence` high / medium / low (the width of the scouting range in
+  C6: role-only managers are `low`). The market facts `spots`, `min_level`, `cost_month`, `open` are OUR guesses, listed per coach
+  in `facts_estimated`; `min_level` is on the scale of the training group's `level` (the mean of the athlete's physical and
+  technical attributes).
+- **Towns: the maakunta of each town comes from general knowledge, not from a page** (`maakunta_source` says so); the winter-break
+  groups are our generalisation of the agency's 21-city table.
+
+**What was built (data):**
+- **`data/coaching.json` → `real`** (12 coaches in the C1 record format, plus `sources` [url, date read, the facts taken],
+  `athletes_coached`, `basis`, `evidence`, `facts_estimated`, `cost_note`, `town_note`) and the keys `real_note` (the rules above)
+  and `real_baseline`. The training group of a real coach is generated fictional teammates at hire time (`group: []`).
+- **`data/urheilulukiot.json`** (new): the joint application (the 2026 and 2027 windows, the 20-point structure: grades 10 +
+  federation 0–5 + school 0–5, thresholds some schools publish), SUL's five athletics centres 2026, 15 sports lukiot with their
+  town, programme, places, morning practice, dorm and the cut-offs found, 18 sports vocational schools, `not_verified`, and 24
+  numbered sources. Cut-offs found (lowest accepted, of 20): Mäkelänrinne 16.09 (2025), Leppävaara 12.77 (2025, 75 places),
+  Lahden lyseo about 15 ("recent years"), Kuopion klassillinen 15.66 (2023), Kerttuli 14.95 / 15.36 / 14.9 (2024 / 25 / 26),
+  Schildt 13.81 (2026, preliminary, 60 places), Kastelli 15.72 (2026-27 brochure, 40 places), Sammo five unlabelled years 14.33–16.05
+  (80 places); minima: Kuopio 7.00, Schildt 7.5, Sotkamo 7.3. Morning practice: Sammo Tue / Wed / Fri, Leppävaara Tue–Thu about
+  8:00–9:30 (90–100 mornings a year). Kuortane: athletics with event coaches, a coaching fee of 359 EUR in 2026-27, housing
+  160–290 EUR a month (a 2016 figure).
+- **`data/towns.json`** (new): the 84 towns (the 20 of `hometowns.json` plus every club town): population on 31 Dec 2025
+  (Statistics Finland), maakunta, number of clubs, SUL centre, five size classes (first guess for C6), and the three winter-break
+  groups south / middle / north (ISO weeks 8 / 9 / 10).
+- **`data/school.json`** (new): the verified 2026-27 year (the agency's table of 20 game towns: school start, autumn break week 42 or
+  43, Christmas, winter break; Helsingin kielilukio's five periods with their exam weeks; the matriculation exam days of autumn 2026
+  and spring 2027 from the exam board, both marked provisional by the board), the Pajulahti camps (unverified this session), and
+  `rules` for later years (all `estimated`: school start the Wednesday of ISO week 33, end the first Saturday of June, autumn break
+  week 42, Christmas 22 Dec – 6 Jan, winter break week 8 / 9 / 10, Easter, lukio period offsets, the matriculation sessions by
+  offsets).
+- **`tools/json_check.gd`** now also checks the research data: every real coach has `source`, `sources` (a URL and a date) and 11
+  whole-number attributes 1–20, and every `src` in `urheilulukiot.json` and `school.json` points at an existing source (proved by
+  breaking one on purpose). Not game code.
+
+**Corrections to the notes above (found by the research):**
+- **SUL's athletics centres are Lahti, Jyväskylä, the capital region, Tampere and Turku** (SUL's page lists a training manager in each
+  and says so for the 2025 strategy period). Kuortane, Pajulahti and Vierumäki are partners for camps and coach education, not
+  centres. 4.9.1 / 4.9.3 said "capital region, Tampere, Jyväskylä, Lahti-Pajulahti, Kuortane": S3 and C6 use the data.
+- **The autumn break is not always week 42**: Kotka, Kouvola, Lahti, Lappeenranta, Mikkeli, Oulu and Pori have week 43 in 2026.
+- **The spring 2027 matriculation dates are known** (16 Mar – 5 Apr 2027): 4.9.8's "Not verified" is resolved.
+- The agency's table gave three typos (Espoo's, Lappeenranta's and Seinäjoki's end dates); `school.json` marks them `typo_fixed`.
+
+**Not verified (kept in the files' `not_verified`):** the Finnish Athletics Federation's own 0–5 scale for the federation points
+(S3 needs a rule; the first guess comes from `data/standards.json`); cut-offs for Kuortane and eight other schools; whether six of
+the sports lukiot run athletics groups at all; dorms (all but Kuortane and Sotkamo); Kerava's and Porvoo's own school breaks; the
+Pajulahti camp dates; every `search-summary` source; the maakunta of each town.
+
+**Next:** C6 (the coach market) uses `real`, `towns.json` and `urheilulukiot.json` `centres`; S1 (school) uses `school.json`
+and the winter groups; S3 uses `urheilulukiot.json`. A later research session (adult level) adds the senior-level real coaches.
 
 ### Other systems (to be designed)
 
