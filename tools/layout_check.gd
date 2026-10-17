@@ -132,6 +132,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _market_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _school_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		# The stop-event panel (a test event with three choices).
 		var e: Dictionary = game.post_event("dev", "Test: heavy legs",
 				"Your legs feel heavy after today's training. What do you do tomorrow?", [
@@ -1168,6 +1170,149 @@ func _mind_views(main: Node, game, tag: String) -> void:
 	ms.causes = {"confidence": [], "motivation": [], "stress": []}
 	ms.same_weeks = 0
 	hub._show("overview")
+	await _frames(3)
+
+
+# --- School (session S2) at this window size -------------------------------------------------------------------------------------
+
+## The week with tests (a busy Tuesday, Thursday) and a break (Thu, Fri made autumn break for the shot), a focus, a decision answer,
+## two report cards: the week strip's shading and T marks, the School page (settings, focus, grades with the tests opened, the cards),
+## the Training tab's settings, the Calendar's bands, the day editor on a test day / a break day / a played day, the Report tab's
+## school lines, the report card as a stop and the meet-and-tests decision as a stop. Everything is put back afterwards.
+func _school_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var cal = load("res://scripts/core/calendar.gd")
+	var SCal = load("res://scripts/core/school_calendar.gd")
+	var SV = load("res://scripts/ui/school_view.gd")
+	var ss = game.get_system("school")
+	ss._ensure_started()
+	var town: String = game.athlete.hometown
+	var monday: Dictionary = game.week_monday()
+	var saved_schedule: Dictionary = ss._schedules.duplicate(true)
+	var year_data: Dictionary = SCal.year_for(town, 2026)
+	var tue: int = cal.date_key(game.add_days(monday, 1))
+	var thu: int = cal.date_key(game.add_days(monday, 3))
+	var fri: int = cal.date_key(game.add_days(monday, 4))
+	ss._schedules[2026] = {tue: ["maths", "english", "history"], thu: ["biology", "geography"]}
+	year_data.free[fri] = "autumn"   # (a pretend break day: the strip shades it)
+	ss.set_focus(["maths", "english"])
+	ss.set_effort("heavy")
+	ss.set_free_time("lots")
+	ss.term_tests = {"maths": [8.5, 9.0], "english": [7.75]}
+	ss.tests_log = [{"date": game.add_days(monday, -9), "subject": "maths", "score": 8.5}, {"date": game.add_days(monday, -6), "subject": "english", "score": 7.75},
+			{"date": game.add_days(monday, -2), "subject": "maths", "score": 9.0}]
+	var reports_before: Array = ss.reports.duplicate(true)
+	ss.reports.append(ss._report(game.add_days(monday, -40), "christmas"))
+	ss.reports.append(ss._report(game.add_days(monday, -3), "spring"))
+	ss.week_choices[str(cal.date_key(monday))] = "bus"
+	var log_before: Array = game.day_log.duplicate(true)
+	for i in game.day_log.size():   # (the played days of this week read the day log)
+		game.day_log[i]["tests"] = ["maths", "english", "history"] if i == 1 else []
+		game.day_log[i]["life"] = 1.75
+		game.day_log[i]["school"] = "school"
+	hub._refresh_week_ui()
+	SV.open = {"maths": true, "card1": true}
+
+	hub._show("overview")
+	await _frames(5)
+	await _shot("%s_school_strip" % tag)
+	_check_overflow(hub, "%s school_strip" % tag)
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_school_page" % tag)
+	_check_overflow(hub, "%s school_page" % tag)
+	var focus = _find_button_prefix(hub, "★ Maths")
+	if focus == null:
+		print("WRONG: no focus toggle for a chosen subject at ", tag)
+	else:
+		hub._scroll.ensure_control_visible(focus)
+	await _frames(4)
+	await _shot("%s_school_page_focus" % tag)
+	var cards = _find_label(hub, "REPORT CARDS")
+	if cards != null:
+		hub._scroll.ensure_control_visible(cards)
+	await _frames(4)
+	await _shot("%s_school_page_cards" % tag)
+	hub._people_page = ""
+	hub._show("people")
+	await _frames(4)
+	await _shot("%s_school_in_list" % tag)
+	_check_overflow(hub, "%s school_in_list" % tag)
+	hub._show("training")
+	await _frames(5)
+	var settings = _find_label(hub, "SCHOOL LIFE")
+	if settings == null:
+		print("WRONG: no school settings in the Training tab at ", tag)
+	await _frames(2)
+	if settings != null:   # (the panel's top at the top of the page)
+		hub._scroll.scroll_vertical += int(settings.global_position.y - hub._scroll.global_position.y) - 24
+	await _frames(4)
+	await _shot("%s_school_training" % tag)
+	_check_overflow(hub, "%s school_training" % tag)
+	hub._show("calendar")
+	await _frames(5)
+	await _shot("%s_school_calendar" % tag)
+	_check_overflow(hub, "%s school_calendar" % tag)
+	hub._show("report")
+	await _frames(5)
+	await _shot("%s_school_report" % tag)
+	_check_overflow(hub, "%s school_report" % tag)
+	var fold := _find_button_prefix(hub, "▸  Day by day")
+	if fold:
+		fold.pressed.emit()
+		await _frames(4)
+		await _shot("%s_school_report_days" % tag)
+		_check_overflow(hub, "%s school_report_days" % tag)
+	hub._show("overview")
+	for d in [[3, "tests"], [4, "break"], [1, "played"]]:
+		hub._open_day(d[0])
+		await _frames(6)
+		await _shot("%s_school_editor_%s" % [tag, d[1]])
+		_check_overflow(hub, "%s school_editor_%s" % [tag, d[1]])
+	hub._close_day()
+	# The report card as a stop, then the decision.
+	ss._post_card(ss.reports.size() - 1)
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_school_card" % tag)
+	_check_overflow(hub, "%s school_card" % tag)
+	var scroll = _find_class(hub._event_overlay, "ScrollContainer")
+	if scroll != null:
+		scroll.scroll_vertical = 100000
+		await _frames(3)
+		await _shot("%s_school_card_choices" % tag)
+	hub._on_event_answer(game.pending_event().id, "keep")
+	var c: Dictionary = game.get_system("school").cfg().decisions.meet_test
+	var options := []
+	for o in c.options:
+		options.append({"id": str(o.id), "label": str(o.label), "detail": str(o.detail)})
+	var e: Dictionary = game.post_event("school", str(c.title), str(c.text).format({"tests": "3 tests", "list": "Maths on Tue, English on Tue, History on Tue",
+			"meet": "Joulukisat", "when": "on Sat"}), options, true)
+	e.kind = "school_week"
+	e.monday = cal.date_key(monday)
+	e.meet = ""
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_school_decision" % tag)
+	_check_overflow(hub, "%s school_decision" % tag)
+	hub._on_event_answer(e.id, "race")
+	# Put everything back.
+	ss._schedules = saved_schedule
+	year_data.free.erase(fri)
+	ss.set_focus([])
+	ss.set_effort("normal")
+	ss.set_free_time("normal")
+	ss.term_tests = {}
+	ss.tests_log = []
+	ss.reports = reports_before
+	ss.week_choices = {}
+	game.day_log = log_before
+	SV.open = {}
+	game.events = game.events.filter(func(x): return str(x.source) != "school")
+	hub._people_page = ""
+	hub._show("overview")
+	hub._refresh_week_ui()
 	await _frames(3)
 
 

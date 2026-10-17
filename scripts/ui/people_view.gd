@@ -69,6 +69,9 @@ func _list(with_selection: bool) -> Control:
 	for t in StoryletSystem.thread_ids():   # (a thread opened beside the list is marked; stacked pages have no selection)
 		if t == "coaches" and not CoachMarket.enabled and _ms.thread("coaches").is_empty():
 			continue   # (the coach market is off: tools)
+		if t == "school" and SchoolUI.system() != null:   # the School page instead of the empty thread (session S2)
+			col.add_child(_school_row(with_selection and current == "school"))
+			continue
 		col.add_child(_thread_row(str(t), with_selection and (current == t or (current == "profile" and t == "coach"))))
 	if CoachMarket.enabled:   # Find a coach (session C6)
 		col.add_child(_find_row(with_selection and (current == "market" or current.begins_with("coach:"))))
@@ -97,6 +100,38 @@ func _find_row(selected: bool) -> Control:
 	button.theme_type_variation = "CardOverlay"
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.pressed.connect(_go.bind("market"))
+	card.add_child(button)
+	return card
+
+
+## The row that opens the School page (session S2): the stage and the academic average.
+func _school_row(selected: bool) -> Control:
+	var ss := SchoolUI.system()
+	ss._ensure_started()
+	var u := SchoolUI.ui()
+	var stage := ss.stage_of(Game.date)
+	var sub := str(u.row_sub_none).format({"stage": str(stage.name)})
+	if bool(stage.get("subjects", false)):
+		sub = str(u.row_sub).format({"stage": str(stage.name), "avg": "%.2f" % ss.average(true)})
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", ThemeBuilder.card_box(selected))
+	card.custom_minimum_size.y = 64
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 10)
+	var col := UIKit.vbox(2)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for l in [[str(u.row_title), "SubheadingLabel"], [sub, "MutedLabel"]]:
+		var lab := UIKit.wrapped(str(l[0]), str(l[1]))
+		lab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(lab)
+	margin.add_child(col)
+	card.add_child(margin)
+	var button := Button.new()
+	button.theme_type_variation = "CardOverlay"
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(_go.bind("school"))
 	card.add_child(button)
 	return card
 
@@ -163,6 +198,8 @@ func _page(shown: String) -> Control:
 		return _profile("")
 	if shown == "market":
 		return _market()
+	if shown == "school" and SchoolUI.system() != null:
+		return _school()
 	if shown.begins_with("coach:"):
 		return _profile(shown.trim_prefix("coach:"))
 	return _thread(shown)
@@ -191,6 +228,15 @@ func _market() -> Control:
 		_go("profile" if cid == Game.athlete.coach_id else "coach:" + cid))
 	view.changed.connect(func(): changed.emit())
 	col.add_child(view)
+	return col
+
+
+## The School page (session S2).
+func _school() -> Control:
+	var col := UIKit.vbox(12)
+	if Layout.stacked():
+		col.add_child(_back_button())
+	col.add_child(SchoolView.new())
 	return col
 
 

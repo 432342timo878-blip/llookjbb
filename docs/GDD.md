@@ -2594,8 +2594,9 @@ yläkoulu single tests and a few big ones; matriculation exams spring (mid-March
 school bands beside the meets.
 
 **Decisions (stop events or moments):** exam vs meet (race and risk the grade / study and scratch / race and study on the bus);
-camps vs school (the Pajulahti grade 7–9 camps and the TF camps are Mon–Fri in school weeks: absence costs grades unless you study
-ahead); report cards (Dec, June; the family reacts by its attitude); **the application chain** (autumn of grade 9: open days, up to 7
+camps vs school (the Pajulahti grade 7–9 camps and the TF camps are Mon–Fri in school weeks; **S2 read the brochure: camp days
+include supervised study (≥ 3 × 45 min) and tests in the camp week can be taken at the camp, so a camp is hardly a conflict with
+school: the camp feature waits for the camp-week session**); report cards (Dec, June; the family reacts by its attitude); **the application chain** (autumn of grade 9: open days, up to 7
 wishes as in the real joint application; the urheilulukio score = grade average 4–10 + sport points 0–5 (PB vs standards, a TF-juniorit
 selection, the club's statement) + the school's own points 0–5 (motivation, test) against each school's cut-off in the data, e.g.
 Mäkelänrinne 2025: 16.09 of 20; the Olympic Committee: usually a grade average of at least 7–7.5): **a top talent with poor grades can
@@ -2693,8 +2694,8 @@ a bad one loses); at most ~1 a week on average; each type can be switched off; p
    (position, kick plan, whom to cover), **which is also what a Quick result follows**. Right read: a small composure and confidence edge
    and "you prepared for this" on that rival's cards; wrong: nothing lost. Race reading decides how true the clues are (a weak coach can
    mislead).
-4. **Camp week:** holidays (autumn break, winter break, Easter, summer), the Pajulahti grade 7–9 camps (3 a year, Mon–Fri, €355 each in
-   2026–27), the TF camps, later abroad: a special week with its own plan (double days, facilities), small daily choices (an extra
+4. **Camp week:** holidays (autumn break, winter break, Easter, summer), the Pajulahti grade 7–9 camps (4 a year, Mon–Fri, €355 each in
+   2026–27, verified in S2; applied for by 31 Aug for the whole season), the TF camps, later abroad: a special week with its own plan (double days, facilities), small daily choices (an extra
    session or rest, roommates, a 1-on-1 with a camp coach who might become yours) and a summary; more effect, a load-spike risk,
    motivation up.
 5. **Video review:** after a race, its replay as dots with 3–4 key moments marked by the coach; pick what to work on ("first 200 too
@@ -2737,7 +2738,8 @@ a bad one loses); at most ~1 a week on average; each type can be switched off; p
   points 0–5 + school points 0–5, cut-off 16.09 (2025); Olympic Committee guide: usually a grade average ≥ 7–7.5; the joint application
   in Feb–Mar (Opintopolku).
 - **Yläkoulu:** Tuusula's sports programme (grade 7: 2 h club coaching a week; 8–9: + a 2 h "Growing into an athlete" course; total
-  movement ~20 h a week); SUL's grade 7–9 camps at Pajulahti 2026–27 (5–9 Oct, 7–11 Dec, 19–23 Apr; €355 each; apply by 31 Aug);
+  movement ~20 h a week); SUL's grade 7–9 camps at Pajulahti 2026–27 (5–9 Oct, 7–11 Dec, 15–19 Mar, 19–23 Apr; €355 each; apply by 31 Aug; the March camp was
+missing here until S2 read the brochure);
   a JYU study on sports-class pupils' tiredness.
 - **School calendar 2026–27:** start 6–12 Aug, autumn break week 42, winter break week 8 / 9 / 10, end 5 Jun (Helsingin kielilukio:
   5 periods, each ending with a 7-school-day exam week; Muurame and Kauhava: 6 periods); matriculation exams autumn 2026 14–28 Sep
@@ -3607,6 +3609,91 @@ simulate weeks without the life load; S2 can let him see busy test weeks); the g
 weeks, the matriculation exams, moving town (S3; the placeholder stage from Aug 2028 keeps the calendar and the life load and
 freezes the grades); sleep and the family's reactions to report cards (P1); the sports class's own school week (S3 with the
 morning slots); the balance over many seasons (B1).
+
+#### Built (step S2, 2026-10-17): the school UI + decisions
+
+**Before building:** the full `run_all_checks` was started; its first 14 checks gave PASS. The run was then polluted by my own
+edits made while it ran (a half-edited file broke the later ones), so I stopped it, built, and ran all 21 at the end with the
+new code: **21 / 21 PASS** (`school_check` now has part 13).
+
+**Camps, read from the source (the brochure, `data/school.json` source 5):** Kolmen kampuksen urheiluopisto's "Yläkoululeiritys,
+Yleisurheilu" for grades 7–9 (SUL's athletics coaching centre at Pajulahti): **four** camps, Mon–Fri: 5–9 Oct 2026, 7–11 Dec 2026,
+15–19 Mar 2027, 19–23 Apr 2027 (the old data and the GDD research note had three: the March camp was missing). €355 a camp, full
+board; the night before €58; a materials pack €10 a season; **apply by 31 Aug 2026 and the athlete and family commit to every camp
+of the season**; SUL's sport officials choose. On full camp days the pupils study under supervision (≥ 3 × 45 min) and **tests and
+work-experience periods in the camp week can be taken at the camp**. Consequences: the 2026-27 camps were applied for before the
+career starts (2 Nov), and a camp is hardly a conflict with school, so the design line "absence costs grades" was wrong.
+
+**Decisions with the user (asked 2026-10-17, before building; every answer was my recommendation):**
+1. **Focus subjects: free, any time** (not once a term, not only after a report card): grades move slowly (half the way in a school
+   year), so switching back and forth gains nothing, and the page needs no "locked" state.
+2. **The report card day: a result card + the choice for the next term** (keep going / study harder = Heavy / ease off = Light),
+   not just a card and not just a message.
+3. **A race in a busy test week: a Monday stop with three answers**: race and risk the grades / study and scratch the race / race
+   and study on the bus.
+4. **Camps: the verified data + Calendar bands now, the camps themselves later** with the camp-week session (GDD 4.9.6 no. 4),
+   because a camp is a training feature (applying in August, being picked, double days, the camp's own study and tests).
+5. **The coach sees the life load** in his verdicts and proposals (busy test weeks, double days on school days).
+
+**Claude's defaults (not asked; say if you want them changed):**
+- **When the decision fires** (`data/school_life.json decisions.meet_test`): on any morning, for a race you entered in today's
+  Mon–Sun week, when (a) the week is busy (> 2 tests) and at least 2 tests are still to write up to the race day, or (b) there is a
+  test on the race day, or (c) there is a test on the day before the race (a Friday test before a Saturday race). Once a week; the
+  answer is kept for the week. Measured below: this is more often than "only meets on school days" would be.
+- **The three answers:** *race and risk*: that week's tests score 0.5 lower (the scores are written in quarter grades); *study and
+  scratch*: the race is withdrawn (`Game.scratch_race`), stress −4 ("Skipped a race to study"); *race and study on the bus*: tests
+  0.15 lower, +1 life load on every school day of that week, stress +4. An answer that is no option (a tool's "ok") = race and risk.
+  First guesses, to be tuned in B1.
+- **The report card choice** offers only what changes something (not "study harder" when already Heavy); the final certificate
+  just has Continue. No mood news from a card (the family's reaction and the moods' reaction come with P1).
+- **The School page** is a row in the People tab's list that replaces the old empty school thread (page `"school"`). The two
+  settings take effect at once. Every subject can be a focus subject (also PE, music...), at most two.
+- **Grades are shown as where you stand** (the level rounded to a quarter: 8, 8+, 8½, 9-), with an arrow against the last card;
+  a tap opens "the report card would give: 8", the last card's grade and the latest tests.
+- **Week strip:** a day inside a break (also its weekend, and the whole summer) has a teal cell; a violet T (or the number) on a
+  test day, with the test's name on PC; the break's name on PC (not in summer). **Calendar:** breaks (not single public
+  holidays), busy test weeks (violet) and the four Pajulahti camp weeks of 2026-27 ("by application", with why you can't go),
+  sorted in among the meets. **Day editor:** the day as blocks (morning, school, training, evening) and "School life today" in
+  words with its causes (▲ / ▼), above the sessions, for editable, played and race days.
+- **Report tab:** per played day the break, the tests with their scores and the life word; "Tests written" in the week's facts.
+- **No "?" on the two school stops** (the event panels): the School page's help explains them.
+
+**What was built:**
+- **Data:** `data/school_life.json` `decisions`, `card`, `ui` (every text: the page, the settings, the strip, the blocks, the
+  calendar, the report, the card panel), `texts.pulls.decision_bus`; `data/school.json` camps (four, source 5, `not_verified`
+  updated); `data/help.json` (new `school`; `overview` v9, `training_season` v7, `training_repeat` v6, `calendar` v4,
+  `day_editor` v5, `report` v3, `people` v3).
+- **`SchoolSystem`:** `decisions_enabled` (static, OFF unless `main.gd` switches it on), `week_choices` (saved as `choices`, only when
+  asked), `meet_test_clash`, `_ask_meet_test`, `_post_card`, `on_answer`, the bus part in `load_parts`, the test penalty in
+  `_write_test`, reading helpers for the UI (`standing`, `tests_of`, `term_average`, `last_grade`, `card_grade`, `week_summary`,
+  `settings_load`, `life_word`, `breaks_between`, `busy_weeks`, `subject_name`, `setting_name`); `_report` uses `card_grade`.
+- **`CoachVerdict`:** `_week_of` and `simulate` use the school (`w.school`, and the expected overuse hazard × `injury_mult`).
+- **UI:** `SchoolUI`, `SchoolView`, `SchoolEventPanel` (new); `PeopleView` (School row + page), `WeekStrip`, `DayEditor`, `DayInfo`
+  (`school`), `ReportView`, `career_hub.gd` (Training tab panel, Calendar bands, the card panel, help entry), `main.gd`, `Palette`
+  (`SCHOOL_OFF / TEST / BAND`).
+- **Tools:** `school_check` part 13 (a test meet is put into the meets cache; the decision with each answer, the penalty, the bus
+  load part, save / load, off and neutral; the Christmas card as a stop, "harder", an unknown answer, the final certificate; the coach's
+  simulation at Normal / Normal = without the school to the last digit, and a more tiring week at Heavy / Lots), `layout_check`
+  `_school_views`, the tour `_school_tour` (shots 51…), `help_check` (the School page's "?").
+
+**Measured:**
+- *Neutral = identical:* `training_balance -- 0`: every part gives 206.798298350 / 14.102831594 / 1226.006524079 for the coach row
+  (the school-free rows 2h: 1222.95 / 1240.99 as in S1); `quick_fingerprint` keeps its hash (the race engine is untouched);
+  `run_all_checks` 21 / 21.
+- *The decision in `school_check`:* the week of Mon 16 Nov 2026 (5 tests): a maths test that week is 7.25 without an answer, 6.75
+  after "race and risk", 7.00 after "the bus" (rounding to quarters). The coach's simulated week ends at fatigue 13.637 at Normal /
+  Normal and 13.861 at Heavy / Lots (he sees the heavier week).
+- *How often it fires* (12 athletes, every meet a 14–15-year-old could enter in 2026-27 and 2027-28, entered one at a time): 216 meets
+  in school terms, **71 clash weeks = 33 %** (5.9 per athlete over two years, about 3 a year when entering every meet; the
+  "test the day before" rule is most of it). A player who enters fewer meets sees it less. If it is too often, set
+  `test_day_before` to false in the data (B1).
+- *Layout:* `layout_check` at all five sizes (1280x720, 720x1280, 390x844, 1000x900, 844x390): no OVERFLOW / SQUEEZED / WRONG; the
+  report card grid is one column on a phone (long subject names were cut in two columns). `help_check` in both layouts passes.
+
+**Not in S2:** the camps as a feature (applying in August, being picked, the camp week with its own plan, its study and tests; the
+camp-week session); exam days and weeks of lukio, the grade-9 application, urheilulukio, moving, the matriculation exams (S3); the
+family's and the moods' reaction to a report card, sleep (P1); the balance of the numbers over many seasons (B1); mood news from a
+test or a card; a class teacher or study counsellor writing in the School thread.
 
 ### Other systems (to be designed)
 

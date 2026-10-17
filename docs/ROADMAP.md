@@ -396,9 +396,18 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         Check: fingerprints identical at Normal / Normal in a normal week; grade drift per setting as in GDD 4.9.7.
         Left for later: the UI and the decisions (S2), the coach seeing school in his proposals (S2), lukio / urheilulukio /
         the application / exams / moving (S3), sleep and the family (P1), the balance (B1).
-  - [ ] **S2. School UI + decisions:** School page, report card, the settings, exam vs meet, camps vs school, strip shading, Calendar
-        bands, the day as blocks in the day editor. *(Sonnet, high)*
-        Check: tour + layout check, help entries.
+  - [x] **S2. School UI + decisions** *(done 2026-10-17, GDD 4.9.3 "Built (step S2)"; user: focus subjects free any time, the report
+        card day = a result card + a choice for the next term (keep / study harder / ease off), a Monday stop with three answers for a
+        race in a busy test week (race and risk / study and scratch / race and study on the bus), the camps themselves later (the
+        camp-week session; only the verified data + Calendar bands now), the coach sees the life load)*: the School page in the
+        People tab (this week, settings, focus, grades in Finnish notation, report cards), study effort + free time also in the
+        Training tab, week strip shading + test marks, the day as blocks + the life load in words in the day editor, Calendar bands,
+        Report lines, the report card as a stop, the meet-and-tests decision, the coach's simulation with the school, the four
+        verified Pajulahti camps (the old data had three). *(Sonnet, high)*
+        Check: tour + layout check (5 sizes), help_check both layouts, `school_check` part 13, `run_all_checks` 21 / 21,
+        `training_balance -- 0` fingerprints identical.
+        Left for later: the camps as a feature (applying in August, being picked, the camp week: the camp-week session, GDD 4.9.6 no. 4),
+        exam days of lukio (S3), the family's reaction to a report card and sleep (P1), mood news from a report card (P1), the balance (B1).
   - [ ] **S3. Grade-9 application + urheilulukio + matriculation exams:** the application chain with real scoring and cut-offs,
         urheilulukio (morning slots, academy services, TF-nuoret), moving, lukio periods, the matriculation exams. *(Opus, high)*
         Check: a tool runs the application for many athletes by school answer and talent (targets in GDD 4.9.7).

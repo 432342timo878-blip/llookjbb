@@ -100,10 +100,12 @@
    }
   },
   "camps": {
-   "note": "SUL's Pajulahti camps for grades 7-9 in 2026-27 (Mon-Fri, in school weeks; 355 EUR each; apply by 2026-08-31). Taken from the GDD 4.9.8 research notes of 2026-10-11; the page URL was not recorded then and was NOT re-read in D1: treat as unverified until S2 checks it. The weekdays match (all Mondays).",
+   "note": "VERIFIED in session S2 (2026-10-17) from the brochure itself: the Pajulahti campus's 'Yläkoululeiritys, Yleisurheilu' for grades 7-9 (SUL's athletics coaching centre; the Kolmen kampuksen urheiluopisto). FOUR camps, Mon-Fri, in school weeks (the GDD 4.9.8 note of 2026-10-11 had three: the March camp was missing). 355 EUR a camp, full board, 2-6 bed rooms; the night before (Sun-Mon) 58 EUR extra; a materials pack 10 EUR a season; apply by 2026-08-31, SUL's sport officials choose from the applications; the athlete and the family commit to EVERY camp of the season. On full camp days the pupils study under supervision (at least 3 x 45 min) and tests and work-experience periods that fall in the camp week can be taken at the camp. The 2026-27 camps were applied for before the career starts (2 Nov 2026), so S2 shows them on the Calendar as information only; the camps as a feature (applying, being picked, the camp week) wait for the camp-week session (GDD 4.9.6 no. 4). Later years' dates are NOT published: never invent them.",
+   "src": 5,
    "list": [
     {"start": "2026-10-05", "end": "2026-10-09"},
     {"start": "2026-12-07", "end": "2026-12-11"},
+    {"start": "2027-03-15", "end": "2027-03-19"},
     {"start": "2027-04-19", "end": "2027-04-23"}
    ],
    "price_eur": 355,
@@ -144,13 +146,14 @@
   "Kerava's and Porvoo's own 2026-27 breaks (not in the agency's table; their pages were not found).",
   "Single tests (kokeet) of yläkoulu and lukio courses: no national or school-wide dates are published; S1 makes them by rule.",
   "The lukio calendar of any school but Helsingin kielilukio (6-period schools such as Muurame and Kauhava are only known from GDD 4.9.8).",
-  "The Pajulahti camp dates and price (see camps).",
+  "The Pajulahti camps of 2027-28 and later (the brochure covers 2026-27 only; see camps).",
   "The rule values for 2027-28 and later years (everything under `rules`)."
  ],
  "sources": [
   {"id": 1, "url": "https://www.oph.fi/fi/uutiset/2026/koulujen-tyo-ja-loma-ajat-lukuvuonna-2026-2027", "read": "2026-10-17", "how": "page", "facts": "Finnish National Agency for Education, news of 2026-04-10: school year 2026-27, 189 working days, end Saturday 5 June 2027, autumn break weeks 42-43, winter break 22 Feb - 12 Mar 2027 staggered, and the table of 21 cities"},
   {"id": 2, "url": "https://www.hel.fi/fi/kasvatus-ja-koulutus/helsingin-kielilukio/opiskelu/kalenteri", "read": "2026-10-17", "how": "page", "facts": "Helsingin kielilukio calendar 2026-27: 5 periods with their päättöviikko, terms, holidays, Saturday workday, matriculation days"},
   {"id": 3, "url": "https://www.ylioppilastutkinto.fi/fi/tutkinnon-suorittaminen/koepaivat/kevaan-2027-koepaivat", "read": "2026-10-17", "how": "page", "facts": "Matriculation Examination Board: spring 2027 exam days 16 Mar - 5 Apr and results dates (all provisional)"},
-  {"id": 4, "url": "https://www.ylioppilastutkinto.fi/fi/tutkinnon-suorittaminen/koepaivat/syksyn-2026-koepaivat", "read": "2026-10-17", "how": "page", "facts": "Matriculation Examination Board: autumn 2026 exam days 14-30 Sep (preliminary)"}
+  {"id": 4, "url": "https://www.ylioppilastutkinto.fi/fi/tutkinnon-suorittaminen/koepaivat/syksyn-2026-koepaivat", "read": "2026-10-17", "how": "page", "facts": "Matriculation Examination Board: autumn 2026 exam days 14-30 Sep (preliminary)"},
+  {"id": 5, "url": "https://www.kolmekampusta.fi/sites/default/files/2026-04/ykl_yleisurheilu-26-27.pdf.pdf", "read": "2026-10-17", "how": "page", "facts": "Kolmen kampuksen urheiluopisto, Pajulahti campus: the brochure 'Yläkoululeiritys, Yleisurheilu' 2026-27 for grades 7-9: camps 5-9 Oct 2026, 7-11 Dec 2026, 15-19 Mar 2027, 19-23 Apr 2027 (Mon-Fri), 355 EUR a camp, the night before 58 EUR, materials 10 EUR a season, apply by 31 Aug 2026, supervised study of at least 3 x 45 min on full camp days, tests in the camp week can be taken at the camp"}
  ]
 }

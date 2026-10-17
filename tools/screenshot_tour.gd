@@ -289,8 +289,53 @@ func _run() -> void:
 	await _mind_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _market_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
+	await _school_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- School (session S2): the School page with the career's real grades and tests, the settings in the Training tab, the
+# --- Calendar's bands, the week strip, and the latest report card as a stop (shots 51...) ------------------------------------
+
+func _school_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var hub: Control = hub_in
+	_answer_pending(game)
+	hub._show_pending_event()
+	var ss = game.get_system("school")
+	print("school tour: %s, %d report card(s), %d tests written" % [game.date, ss.reports.size(), ss.tests_log.size()])
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	await _shot("51_school_page")
+	var cards = _find_label(hub, "REPORT CARDS")
+	if cards != null:
+		hub._scroll.ensure_control_visible(cards)
+	await _frames(4)
+	await _shot("51a_school_cards")
+	hub._people_page = ""
+	hub._show("training")
+	await _frames(5)
+	var settings = _find_label(hub, "SCHOOL LIFE")
+	if settings != null:   # (the panel's top at the top of the page)
+		hub._scroll.scroll_vertical += int(settings.global_position.y - hub._scroll.global_position.y) - 24
+	await _frames(4)
+	await _shot("51b_school_settings")
+	hub._show("calendar")
+	await _frames(5)
+	await _shot("51c_school_calendar")
+	hub._show("overview")
+	hub._refresh_week_ui()
+	await _frames(5)
+	await _shot("51d_school_strip")
+	if not ss.reports.is_empty():
+		ss._post_card(ss.reports.size() - 1)
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("51e_report_card")
+		hub._on_event_answer(game.pending_event().id, "keep")
+	hub._show("overview")
 
 
 # --- The coach market (session C6): Find a coach, a coach unknown and then scouted and asked, a change waiting for Monday,

@@ -517,6 +517,8 @@ func _show_pending_event() -> void:
 		var panel := SeasonEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, SeasonEventPanel.help_id(e)))
 		box = panel
+	elif SchoolEventPanel.handles(e):   # the report card day (session S2)
+		box = SchoolEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice))
 	elif GoalsEventPanel.handles(e):   # the coach's offer of the season's goals (session C5)
 		box = GoalsEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, str(Data.goals.ui.help_entry)))
@@ -617,6 +619,8 @@ func _help_entry() -> String:
 		return "phase_editor" if _phase_open != "" else "training_season"
 	if _view == "people" and (_people_page == "market" or _people_page.begins_with("coach:")):
 		return "market"   # Find a coach and a coach's page (session C6)
+	if _view == "people" and _people_page == "school":
+		return "school"   # the School page (session S2)
 	return _view
 
 
@@ -790,6 +794,9 @@ func _build_training() -> void:
 		var mental := MentalPlanUI.build()   # the weekly mental plan and the cue word (session M1)
 		if mental != null:
 			_content.add_child(mental)
+		var school := SchoolUI.settings_panel(func(): _open_people("school"))   # study effort + free time (session S2)
+		if school != null:
+			_content.add_child(school)
 		_content.add_child(StandingOrders.build())
 
 
@@ -980,17 +987,24 @@ func _build_calendar() -> void:
 			"Enter the meets you want to race; a race replaces that day's training. ★ = your coach recommends it."
 			+ (" %s = one of your target meets." % SeasonUI.TARGET_MARK if Game.season.mode == SeasonPlan.PHASES else "")))
 
-	# The rest of this season and the whole next one.
-	var meets := Calendar.meets_between(Game.date, {"year": Game.date.year + 1, "month": 10, "day": 31})
+	# The rest of this season and the whole next one: the meets, with the school's bands (breaks, busy test weeks, the camps)
+	# in between by date (session S2).
+	var last := {"year": Game.date.year + 1, "month": 10, "day": 31}
+	var items := []
+	for m in Calendar.meets_between(Game.date, last):
+		items.append({"date": m.date, "meet": m})
+	for b in SchoolUI.bands(Game.date, last):
+		items.append({"date": b.date, "control": b.control})
+	items.sort_custom(func(x, y): return Calendar.date_key(x.date) < Calendar.date_key(y.date))   # (stable: a meet before a band of the same day)
 	var month := -1
 	var box: VBoxContainer
-	for m in meets:
-		if m.date.month != month:
-			month = m.date.month
-			_content.add_child(UIKit.label("%s %d" % [MONTH_NAMES[month - 1].to_upper(), m.date.year], "CaptionLabel"))
+	for it in items:
+		if it.date.month != month:
+			month = it.date.month
+			_content.add_child(UIKit.label("%s %d" % [MONTH_NAMES[month - 1].to_upper(), it.date.year], "CaptionLabel"))
 			box = UIKit.vbox(18 if Layout.compact else 14)
 			_content.add_child(UIKit.panel(box, 16))
-		box.add_child(_meet_row(a, m))
+		box.add_child(_meet_row(a, it.meet) if it.has("meet") else it.control)
 
 
 ## The mark under a meet the coach suggests (CoachSuggests, session C5): COACH SUGGESTS, his reason and No thanks (he won't suggest it

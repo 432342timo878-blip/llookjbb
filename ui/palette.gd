@@ -48,6 +48,11 @@ const RISK_LOW := Color("#3ddc84")
 const RISK_MODERATE := Color("#e0b252")
 const RISK_HIGH := Color("#e5534b")
 
+# School (week strip shading on a day off school, test marks, calendar bands, session S2)
+const SCHOOL_OFF := Color(0.13, 0.25, 0.31, 0.94)    # a holiday or break day in the week strip (a cool teal tint)
+const SCHOOL_TEST := Color("#b58be0")                # a test day / a busy test week (violet)
+const SCHOOL_BAND := Color("#5fb3c4")                # a break on the Calendar (teal)
+
 # Attribute value colours (1-5 / 6-10 / 11-15 / 16-20)
 const ATTR_POOR := Color("#d9665b")
 const ATTR_AVERAGE := Color("#e0b252")

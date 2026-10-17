@@ -19,6 +19,9 @@ extends GameSystem
 
 static var model_enabled := true
 static var neutral := false
+## The decisions and the report card stop (session S2): OFF unless main.gd switches it on, so every tool that plays days without the
+## real game shell never meets a school stop (like CoachProposals.enabled).
+static var decisions_enabled := false
 
 const EFFORTS := ["light", "normal", "heavy"]
 const FREE_TIMES := ["little", "normal", "lots"]
@@ -31,6 +34,7 @@ var subjects := {}              # subject id -> {"level": float, "natural": floa
 var term_tests := {}            # subject id -> [scores] written this term (the next report card uses them)
 var tests_log: Array = []       # the latest tests, oldest first: [{date, subject, score}]
 var reports: Array = []         # report cards, oldest first: [{date, kind, stage, year, grades {id: int}, average, academic_average}]
+var week_choices := {}          # the Monday's date key (as text) -> the id of the answer to that week's meet-and-tests decision (S2)
 
 var _schedules := {}            # school year -> {date key -> [subject ids]} (made from the career's seed; not saved)
 var _exam_days := {}            # school year -> {date key: true} (from the stage's exam_weeks; not saved)
@@ -153,6 +157,11 @@ func load_parts(d: Dictionary, session_ids: Array) -> Array:
 		out.append({"id": "free_" + free_time, "value": f * (scale if f > 0.0 else 1.0)})
 	if is_double(session_ids):
 		out.append({"id": "double_day", "value": float(ll.double_day) * scale})
+	var chosen := choice_of(Calendar.monday_of(d))   # the week's meet-and-tests answer (S2): "bus" = studying late all week
+	if chosen != "":
+		var dl := float(option_of(chosen).get("load", 0.0))
+		if dl != 0.0:
+			out.append({"id": "decision_" + chosen, "value": dl * scale})
 	var today := tests_on(d).size()
 	if today > 0:
 		var n := tests_in_week(Calendar.monday_of(d))
@@ -421,6 +430,8 @@ func _write_test(sid: String, d: Dictionary) -> float:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _seed("test|%s|%d" % [sid, Calendar.date_key(d)])
 	var score := level(sid) + rng.randfn(0.0, float(t.noise_sd))
+	if not neutral:   # the answer to this week's meet-and-tests decision (S2): less study time, lower tests
+		score -= float(option_of(choice_of(Calendar.monday_of(d))).get("test_penalty", 0.0))
 	var mind := MindSystem.sys()
 	if mind != null and not neutral:
 		var st := mind.value("stress")
@@ -447,21 +458,13 @@ static func score_text(score: float) -> String:
 
 ## The report card: academic subjects from the term's tests and the level, practical subjects from the level; whole grades.
 func _report(d: Dictionary, kind: String) -> Dictionary:
-	var w := float(cfg().report_cards.tests_weight)
 	var grades := {}
 	var total := 0.0
 	var academic := 0.0
 	var n_ac := 0
 	for s in subject_list():
 		var sid := str(s.id)
-		var v := level(sid)
-		var tests: Array = term_tests.get(sid, [])
-		if str(s.kind) == "academic" and not tests.is_empty():
-			var m := 0.0
-			for x in tests:
-				m += float(x)
-			v = w * m / tests.size() + (1.0 - w) * v
-		var g := clampi(floori(v + 0.5), int(cfg().grades.min), int(cfg().grades.max))
+		var g := card_grade(sid)
 		grades[sid] = g
 		total += g
 		if str(s.kind) == "academic":
@@ -506,10 +509,12 @@ func set_focus(ids: Array) -> void:
 
 # --- The day loop ------------------------------------------------------------------------------------------------------------
 
-func on_day_start(_ctx: Dictionary) -> void:
+func on_day_start(ctx: Dictionary) -> void:
 	if not model_enabled:
 		return
 	_ensure_started()
+	if decisions_enabled and not neutral:
+		_ask_meet_test(ctx.date)
 
 
 func on_day_end(ctx: Dictionary) -> void:
@@ -542,6 +547,8 @@ func on_day_end(ctx: Dictionary) -> void:
 		if kind != "":
 			reports.append(_report(d, kind))
 			term_tests = {}
+			if decisions_enabled:
+				_post_card(reports.size() - 1)
 	# The day log (the Report tab, S2): the kind of day, the life load and the tests (not when neutral: the log stays as it was).
 	if not neutral:
 		var extra: Dictionary = ctx.get("log_extra", {})
@@ -555,13 +562,281 @@ func on_day_end(ctx: Dictionary) -> void:
 		ctx.log_extra = extra
 
 
+# --- Decisions and the report card (session S2; only with decisions_enabled, i.e. in the real game) ---------------------------
+
+## One option of the meet-and-tests decision ({} for "" or an unknown id).
+static func option_of(option_id: String) -> Dictionary:
+	if option_id == "":
+		return {}
+	for o in Data.school_life.decisions.meet_test.options:
+		if str(o.id) == option_id:
+			return o
+	return {}
+
+
+## The answer given for the week starting `monday` ("" = none was asked).
+func choice_of(monday: Dictionary) -> String:
+	return str(week_choices.get(str(Calendar.date_key(monday)), ""))
+
+
+## A race you entered in today's week that clashes with tests (data decisions.meet_test: a busy test week with at least
+## min_left_busy tests left up to the race day, or a test on the race day or the day before it): {meet, day, left, list}
+## (list = "Maths on Tue" lines) or {}. Nothing when this week was already answered.
+func meet_test_clash(today: Dictionary) -> Dictionary:
+	var c: Dictionary = cfg().decisions.meet_test
+	var monday := Calendar.monday_of(today)
+	if choice_of(monday) != "":
+		return {}
+	var di := Calendar.days_between(monday, today)
+	var races := Calendar.races_in_week(Game.entries, monday)
+	var days := races.keys()
+	days.sort()
+	for rd in days:
+		if int(rd) < di:
+			continue
+		var list := []
+		var left := 0
+		for i in range(di, int(rd) + 1):
+			for sid in tests_on(Game.add_days(monday, i)):
+				left += 1
+				list.append("%s on %s" % [subject_name(str(sid)), Training.DAY_NAMES[i]])
+		var on_day: bool = bool(c.test_on_race_day) and not tests_on(Game.add_days(monday, int(rd))).is_empty()
+		var before: bool = bool(c.test_day_before) and int(rd) - 1 >= di and not tests_on(Game.add_days(monday, int(rd) - 1)).is_empty()
+		var busy: bool = tests_in_week(monday) > int(cfg().tests.normal_per_week) and left >= int(c.min_left_busy)
+		if on_day or before or busy:
+			return {"meet": races[rd], "day": int(rd), "left": left, "list": list}
+	return {}
+
+
+func _ask_meet_test(today: Dictionary) -> void:
+	if not bool(stage_of(today).get("subjects", false)):
+		return
+	for e in Game.events:   # (one at a time)
+		if str(e.source) == id and str(e.get("kind", "")) == "school_week" and e.answer == "":
+			return
+	var clash := meet_test_clash(today)
+	if clash.is_empty():
+		return
+	var c: Dictionary = cfg().decisions.meet_test
+	var meet: Dictionary = clash.meet
+	var when := str(c.when_today) if int(clash.day) == Calendar.days_between(Calendar.monday_of(today), today) \
+			else str(c.when_day).format({"day": Training.DAY_NAMES[int(clash.day)]})
+	var tests_text := "1 test" if int(clash.left) == 1 else "%d tests" % int(clash.left)
+	var text := str(c.text).format({"tests": tests_text, "list": ", ".join(clash.list), "meet": str(meet.name), "when": when})
+	var choices := []
+	for o in c.options:
+		choices.append({"id": str(o.id), "label": str(o.label), "detail": str(o.detail)})
+	var e := Game.post_event(id, str(c.title), text, choices, true)
+	e.kind = "school_week"
+	e.monday = Calendar.date_key(Calendar.monday_of(today))
+	e.meet = str(meet.key)
+
+
+## The report card day: a stop with the card, then the choice for the next term (the final certificate: just Continue).
+func _post_card(index: int) -> void:
+	var r: Dictionary = reports[index]
+	var c: Dictionary = cfg().card
+	var kind := str(r.kind)
+	var ch: Dictionary = c.choices
+	var choices := []
+	if kind == "final":
+		choices.append({"id": "done", "label": str(ch.done.label), "detail": str(ch.done.detail)})
+	else:
+		choices.append({"id": "keep", "label": str(ch.keep.label), "detail": str(ch.keep.detail).format({"effort": setting_name("effort", effort).to_lower()})})
+		if effort != "heavy":
+			choices.append({"id": "harder", "label": str(ch.harder.label), "detail": str(ch.harder.detail)})
+		if effort != "light":
+			choices.append({"id": "ease", "label": str(ch.ease.label), "detail": str(ch.ease.detail)})
+	var e := Game.post_event(id, str(c.title[kind]), str(c.intro[kind]), choices, true)
+	e.kind = "school_card"
+	e.index = index
+
+
+func on_answer(event: Dictionary, choice: String) -> void:
+	match str(event.get("kind", "")):
+		"school_week":
+			_answer_week(event, choice)
+		"school_card":
+			_answer_card(choice)
+
+
+func _answer_week(e: Dictionary, choice: String) -> void:
+	var c: Dictionary = cfg().decisions.meet_test
+	var o := option_of(choice)
+	if o.is_empty():   # (a tool's "ok", or an old answer: the default = race and risk it)
+		o = option_of(str(c.default))
+	week_choices[str(int(e.monday))] = str(o.id)
+	var keys := week_choices.keys()
+	keys.sort_custom(func(a, b): return int(a) < int(b))
+	while keys.size() > 12:
+		week_choices.erase(keys.pop_front())
+	var meet_name := str(Calendar.get_meet(str(e.meet)).get("name", ""))
+	if bool(o.scratch):
+		Game.scratch_race(str(e.meet))
+	var ms := MindSystem.sys()
+	if ms != null and c.news.has(str(o.id)):
+		ms.add("stress", float(o.stress), str(c.news[str(o.id)]))
+	Game.post_event(id, str(c.title), str(o.note).format({"meet": meet_name}))   # (the line that shows in the day's events)
+
+
+func _answer_card(choice: String) -> void:
+	var next := ""
+	match choice:
+		"harder":
+			next = "heavy"
+		"ease":
+			next = "light"
+	if next != "" and next != effort and set_effort(next):
+		Game.post_event(id, str(cfg().ui.row_title), str(cfg().card.changed).format({"effort": setting_name("effort", next).to_lower()}))
+
+
+# --- Reading the school for the UI (session S2) ------------------------------------------------------------------------------
+
+func subject_name(sid: String) -> String:
+	for s in subject_list():
+		if str(s.id) == sid:
+			return str(s.name)
+	return sid
+
+
+## The name of a setting value ("Heavy"): kind = "effort" / "free_time".
+static func setting_name(kind: String, value: String) -> String:
+	for s in Data.school_life.settings[kind]:
+		if str(s.id) == value:
+			return str(s.name)
+	return value
+
+
+## Where a subject stands now: the level rounded to the nearest quarter grade (written 8, 8+, 8½, 9-).
+func standing(sid: String) -> float:
+	return roundf(level(sid) * 4.0) / 4.0
+
+
+func standing_text(sid: String) -> String:
+	return score_text(standing(sid))
+
+
+## The latest tests of a subject, newest first: [{date, subject, score}].
+func tests_of(sid: String, n := 4) -> Array:
+	var out := []
+	for i in range(tests_log.size() - 1, -1, -1):
+		if str(tests_log[i].subject) == sid:
+			out.append(tests_log[i])
+			if out.size() >= n:
+				break
+	return out
+
+
+## The average of this term's tests in a subject (-1 when there is none yet).
+func term_average(sid: String) -> float:
+	var t: Array = term_tests.get(sid, [])
+	if t.is_empty():
+		return -1.0
+	var total := 0.0
+	for x in t:
+		total += float(x)
+	return total / t.size()
+
+
+## The grade on the latest report card (0 = no card yet).
+func last_grade(sid: String) -> int:
+	if reports.is_empty():
+		return 0
+	return int(reports.back().grades.get(sid, 0))
+
+
+## What the report card would give in a subject now (the same rule as the card).
+func card_grade(sid: String) -> int:
+	var v := level(sid)
+	var tests: Array = term_tests.get(sid, [])
+	if is_academic(sid) and not tests.is_empty():
+		var w := float(cfg().report_cards.tests_weight)
+		var m := 0.0
+		for x in tests:
+			m += float(x)
+		v = w * m / tests.size() + (1.0 - w) * v
+	return clampi(floori(v + 0.5), int(cfg().grades.min), int(cfg().grades.max))
+
+
+## The Mon-Sun week starting `monday` as the School page tells it: {school_days, break (the break's id when the week has a day
+## off in a break or the summer), tests [{day, subject}], busy, choice (the answer of the meet-and-tests decision or "")}.
+func week_summary(monday: Dictionary) -> Dictionary:
+	var school_days := 0
+	var break_id := ""
+	var tests := []
+	for i in 7:
+		var d := Game.add_days(monday, i)
+		var info := SchoolCalendar.day(_town(), d)
+		if info.kind == "school":
+			school_days += 1
+		elif info.kind in ["holiday", "summer"]:
+			break_id = str(info["break"])
+		for sid in tests_on(d):
+			tests.append({"day": i, "subject": str(sid)})
+	return {"school_days": school_days, "break": break_id, "tests": tests,
+			"busy": tests.size() > int(cfg().tests.normal_per_week), "choice": choice_of(monday)}
+
+
+## The life load of a school day with the two settings and nothing else (what the settings alone weigh).
+func settings_load() -> float:
+	var ll: Dictionary = cfg().life_load
+	var scale := float(stage_of(Game.date).get("scale", 1.0))
+	var e := float(ll.effort.get(effort, 0.0))
+	var f := float(ll.free_time.get(free_time, 0.0))
+	return e * (scale if e > 0.0 else 1.0) + f * (scale if f > 0.0 else 1.0)
+
+
+## "lighter than usual" / "normal" / "a little heavier" / "heavy" / "very heavy".
+static func life_word(load: float) -> String:
+	for w in Data.school_life.ui.life_words:
+		if load <= float(w.max):
+			return str(w.word)
+	return str(Data.school_life.ui.life_words.back().word)
+
+
+## The breaks between two dates (inclusive), except the single public holidays: [{id, from, to}] by start. The summer is the
+## stretch between two school years.
+func breaks_between(from: Dictionary, to: Dictionary) -> Array:
+	var out := []
+	var lo := Calendar.date_key(from)
+	var hi := Calendar.date_key(to)
+	for yr in range(SchoolCalendar.year_of(from) - 1, SchoolCalendar.year_of(to) + 1):
+		var y := SchoolCalendar.year_for(_town(), yr)
+		var list := []
+		for b in y.breaks:
+			if str(b.id) != "public":
+				list.append({"id": str(b.id), "from": b.from, "to": b.to})
+		list.append({"id": "summer", "from": Game.add_days(y.end, 1),
+				"to": Game.add_days(SchoolCalendar.year_for(_town(), yr + 1).start, -1)})
+		for b in list:
+			if Calendar.date_key(b.to) >= lo and Calendar.date_key(b.from) <= hi:
+				out.append(b)
+	out.sort_custom(func(a, b): return Calendar.date_key(a.from) < Calendar.date_key(b.from))
+	return out
+
+
+## The busy test weeks between two dates: [{monday, n}].
+func busy_weeks(from: Dictionary, to: Dictionary) -> Array:
+	var out := []
+	var m := Calendar.monday_of(from)
+	while Calendar.date_key(m) <= Calendar.date_key(to):
+		var n := tests_in_week(m)
+		if n > int(cfg().tests.normal_per_week):
+			out.append({"monday": m, "n": n})
+		m = Game.add_days(m, 7)
+	return out
+
+
 # --- Save / load -------------------------------------------------------------------------------------------------------------
 
 func to_dict() -> Dictionary:
 	if not started:
 		return {}
-	return {"started": true, "effort": effort, "free_time": free_time, "focus": focus, "subjects": subjects,
+	var out := {"started": true, "effort": effort, "free_time": free_time, "focus": focus, "subjects": subjects,
 			"term_tests": term_tests, "tests_log": tests_log, "reports": reports}
+	if not week_choices.is_empty():   # (S2: only a career that was asked has the key, so older states stay exactly as they were)
+		out["choices"] = week_choices
+	return out
 
 
 ## An empty state (an older save, or a career that hasn't played a day) starts from the creation answer on the next day.
@@ -574,10 +849,13 @@ func from_dict(d: Dictionary) -> void:
 	term_tests = {}
 	tests_log = []
 	reports = []
+	week_choices = {}
 	_schedules = {}
 	_exam_days = {}
 	if d.is_empty():
 		return
+	for k in d.get("choices", {}):
+		week_choices[str(k)] = str(d.choices[k])
 	started = bool(d.get("started", false))
 	effort = str(d.get("effort", "normal"))
 	free_time = str(d.get("free_time", "normal"))

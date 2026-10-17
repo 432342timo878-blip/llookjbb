@@ -16,6 +16,8 @@ func _ready() -> void:
 	CoachSuggests.enabled = true
 	# The coach market (session C6: offers, the change of coach, a coach ending it after two warnings) likewise.
 	CoachMarket.enabled = true
+	# The school's decisions and the report card day (session S2) likewise.
+	SchoolSystem.decisions_enabled = true
 	Router.screen_requested.connect(_show_screen)
 	Router.screen_changed.connect(_backdrop.show_for)
 	get_window().size_changed.connect(_update_layout)

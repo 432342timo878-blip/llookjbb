@@ -104,6 +104,9 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	var health := _health_box(info)
 	if health != null:
 		add_child(health)
+	var school_day := SchoolUI.day_panel(info)   # the day as blocks + the school life load (session S2)
+	if school_day != null:
+		add_child(school_day)
 
 	var sessions := UIKit.vbox(8)
 	sessions.add_child(UIKit.label("SESSIONS", "CaptionLabel"))
@@ -321,6 +324,9 @@ func _build_played(info: Dictionary) -> void:
 	if info.changed:
 		box.add_child(UIKit.wrapped(DayInfo.changed_text(info), "MutedLabel"))
 	add_child(UIKit.panel(box, 14))
+	var school_day := SchoolUI.day_panel(info)
+	if school_day != null:
+		add_child(school_day)
 
 	if not info.sore_areas.is_empty() or not info.health.is_empty():
 		var body := UIKit.vbox(4)
@@ -372,6 +378,9 @@ func _build_race(info: Dictionary) -> void:
 	if warning != null:
 		add_child(warning)
 	add_child(UIKit.panel(box, 14))
+	var school_day := SchoolUI.day_panel(info)
+	if school_day != null:
+		add_child(school_day)
 	if info.today:
 		var form := FormUI.race_card(meet)   # how you will race today (a later race day: it depends on the days in between)
 		if form != null:

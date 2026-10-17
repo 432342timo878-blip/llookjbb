@@ -230,6 +230,7 @@ static func simulate(start: Dictionary, weeks: Array) -> Dictionary:
 		h._ensure_started()
 		h.injuries = []
 	var a := Athlete.from_dict(start.athlete.to_dict().duplicate(true))
+	var school := SchoolSystem.sys()   # his view of the life load (session S2)
 	var sharp := float(start.sharpness)
 	var expected := 0.0
 	var races := []
@@ -253,8 +254,11 @@ static func simulate(start: Dictionary, weeks: Array) -> Dictionary:
 			if h != null:
 				h._body_day(a, h._done_sessions(rec), rec.intensity, rec.race != "", date, float(rec.fatigue))
 				h.day_no += 1
+				var inj_mult := 1.0   # a heavier school day makes overuse injuries a little more likely (as in HealthSystem.on_health)
+				if school != null:
+					inj_mult = SchoolSystem.injury_mult(school.life_load(date, rec.sessions))
 				for area in HealthSystem.areas():
-					expected += h.hazard(a, area, false)
+					expected += h.hazard(a, area, false) * inj_mult
 			var gain := 0.0
 			if rec.race != "":
 				gain = float(Data.competitions.race_session.get("sharp", 0.0))
@@ -275,6 +279,7 @@ static func _week_of(spec: Dictionary, a: Athlete, start: Dictionary) -> WeekSim
 		var w := WeekSim.from_dict(a, WeekPlan.make(now.plan, now.plan_intensity), now.to_dict().duplicate(true))
 		w.races = now.races.duplicate()
 		w.coach_effect = now.coach_effect
+		w.school = SchoolSystem.sys()   # he sees the school's life load (S2): busy test weeks, double days on school days
 		for d in spec.get("scratch", []):
 			w.races.erase(int(d))
 		var setd: Dictionary = spec.get("set", {})
@@ -296,6 +301,7 @@ static func _week_of(spec: Dictionary, a: Athlete, start: Dictionary) -> WeekSim
 	var now2: WeekSim = start.get("week")
 	if now2 != null:
 		w2.coach_effect = now2.coach_effect
+	w2.school = SchoolSystem.sys()
 	return w2
 
 

@@ -57,6 +57,7 @@ func _run() -> void:
 	_check_hooks()
 	_check_save_load()
 	_check_switches()
+	_check_decisions()
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -578,6 +579,172 @@ func _check_switches() -> void:
 	_ok("neutral: the grades still drift (Heavy) and the day log has no school fields", ss2.started and ss2.average(true) > 9.0
 			and not game.day_log.any(func(e): return e.has("school")))
 	SC.neutral = false
+
+
+# --- 13. Decisions, the report card, the coach's view (session S2) ---------------------------------------------------------------
+
+## A test meet on the Saturday of `monday`'s week (a copy of a local meet, put into the meets cache; removed again by _drop_test_meet).
+func _add_test_meet(monday: Dictionary) -> Dictionary:
+	Cal.get_meet("none")   # (fills the cache)
+	var meet: Dictionary = {}
+	for m in Cal._meets_cache:
+		if str(m.id) == "kevatkisat":
+			meet = m.duplicate(true)
+			break
+	meet.id = "s2_test_meet"
+	meet.date = game.add_days(monday, 5)
+	meet.key = "s2_test_meet@%d" % int(meet.date.year)
+	Cal._meets_cache.append(meet)
+	Cal._meets_cache.sort_custom(func(x, y): return Cal.date_key(x.date) < Cal.date_key(y.date))
+	return meet
+
+
+func _drop_test_meet() -> void:
+	Cal._meets_cache = []
+	Cal._index_of = []
+
+
+## A new career that plays to the Monday of the clash week with the test meet entered, plays that Monday morning, answers the
+## decision with `answer` (when it is there) and returns what happened.
+func _decision_run(answer: String, meet: Dictionary, monday: Dictionary) -> Dictionary:
+	var ss = _fresh()
+	game.entries = [str(meet.key)]
+	while Cal.date_key(game.date) < Cal.date_key(monday):
+		game.advance_day()
+		while not game.pending_event().is_empty():
+			game.answer_event(game.pending_event().id, "ok")
+	game.advance_day()
+	var e: Dictionary = game.pending_event()
+	var out := {"event": e.duplicate(true), "ss": ss}
+	if str(e.get("kind", "")) == "school_week":
+		game.answer_event(e.id, answer)
+	out.choice = ss.choice_of(monday)
+	out.entries = game.entries.duplicate()
+	return out
+
+
+func _check_decisions() -> void:
+	print("-- 13. the decisions, the report card and the coach's view (S2)")
+	SC.decisions_enabled = true
+	var ss = _fresh()
+	var weeks: Array = ss.busy_weeks(_d("2026-11-02"), _d("2027-06-05"))
+	_ok("2026-27 has busy test weeks (the decision's trigger)", not weeks.is_empty())
+	if weeks.is_empty():
+		SC.decisions_enabled = false
+		return
+	var monday: Dictionary = weeks[0].monday
+	var meet := _add_test_meet(monday)
+	var race := _decision_run("race", meet, monday)
+	var e: Dictionary = race.event
+	print("    the week of %s: %s" % [Cal.format_day(monday), str(e.get("text", "(no event)")).left(160)])
+	var ids: Array = (e.get("choices", []) as Array).map(func(c): return str(c.id))
+	_ok("a race in a busy test week: Monday morning a stop 'school_week' with the three answers", str(e.get("kind", "")) == "school_week"
+			and bool(e.get("stop", false)) and ids == ["race", "study", "bus"])
+	_ok("... 'race': the week is marked, the race stays entered", race.choice == "race" and meet.key in race.entries)
+	var ss1 = race.ss
+	_ok("... and the same week is never asked twice", ss1.meet_test_clash(monday).is_empty())
+	# Tests that week come out lower by the option's penalty (the rolls are the same, only the penalty differs).
+	var d: Dictionary = game.add_days(monday, 2)
+	var key := str(Cal.date_key(monday))
+	var with_race: float = ss1._write_test("maths", d)
+	ss1.week_choices[key] = "bus"
+	var with_bus: float = ss1._write_test("maths", d)
+	ss1.week_choices.erase(key)
+	var without: float = ss1._write_test("maths", d)
+	print("    a maths test that week: %.2f without an answer, %.2f race and risk, %.2f study on the bus" % [without, with_race, with_bus])
+	_ok("race and risk costs about half a grade on a test, the bus about a tenth (scores are rounded to quarters)",
+			without - with_race >= 0.25 - 0.001 and without - with_race <= 0.75 + 0.001 and without - with_bus >= -0.001 and without - with_bus <= 0.25 + 0.001)
+	var study := _decision_run("study", meet, monday)
+	_ok("'study and scratch': the race is withdrawn", study.choice == "study" and not meet.key in study.entries)
+	var bus := _decision_run("bus", meet, monday)
+	var parts: Array = bus.ss.load_parts(game.add_days(monday, 1), [])
+	_ok("'race and study on the bus': the school days of that week weigh more (a decision part in the life load)", bus.choice == "bus"
+			and parts.any(func(p): return str(p.id) == "decision_bus" and float(p.value) > 0.0) and meet.key in bus.entries)
+	_ok("... and the part has a text for the stress row", data.school_life.texts.pulls.has("decision_bus"))
+	var unknown := _decision_run("ok", meet, monday)
+	_ok("an answer that is no option (a tool's 'ok') = the default 'race and risk it'", unknown.choice == "race")
+	# The choices are saved.
+	var saved: Dictionary = bus.ss.to_dict()
+	var back = SC.new()
+	back.from_dict(_parse(_json(saved)))
+	_ok("the week's answer is saved and loaded", back.week_choices == bus.ss.week_choices and saved.has("choices"))
+	_ok("a career never asked saves no 'choices' key (older states stay as they were)", not _fresh().to_dict().has("choices"))
+	# Off: the switches.
+	SC.decisions_enabled = false
+	var quiet := _decision_run("race", meet, monday)
+	_ok("decisions off (every tool that plays days): no stop, no answer", str(quiet.event.get("kind", "")) != "school_week" and quiet.choice == "")
+	SC.decisions_enabled = true
+	SC.neutral = true
+	var neutral := _decision_run("race", meet, monday)
+	_ok("neutral: no stop and no answer either", str(neutral.event.get("kind", "")) != "school_week" and neutral.choice == "")
+	SC.neutral = false
+	_drop_test_meet()
+
+	# The report card day: a stop with the card, then the choice for the next term.
+	var ss2 = _fresh()
+	var card: Dictionary = {}
+	while Cal.date_key(game.date) <= 20261218 and card.is_empty():
+		game.advance_day()
+		var p: Dictionary = game.pending_event()
+		if str(p.get("kind", "")) == "school_card":
+			card = p
+		elif not p.is_empty():
+			game.answer_event(p.id, "ok")
+	var card_ids: Array = (card.get("choices", []) as Array).map(func(c): return str(c.id))
+	_ok("Fri 18 Dec 2026: the Christmas report card is a stop with keep / harder / ease", not card.is_empty() and card_ids == ["keep", "harder", "ease"]
+			and Cal.date_key(game.date) in [20261218, 20261219])
+	var panel = load("res://scripts/ui/school_event_panel.gd")
+	_ok("the card panel handles it, and the report is the one just made", not card.is_empty() and panel.handles(card) and ss2.reports.size() == 1 and int(card.index) == 0)
+	if not card.is_empty():
+		game.answer_event(card.id, "harder")
+		_ok("'Study harder' sets the study effort to Heavy", ss2.effort == "heavy")
+		_ok("... and it says so in the day's events", game.events.any(func(x): return str(x.source) == "school" and str(x.text).contains("heavy")))
+	var ss3 = _fresh()
+	var card2: Dictionary = {}
+	while Cal.date_key(game.date) <= 20261219 and card2.is_empty():
+		game.advance_day()
+		var p: Dictionary = game.pending_event()
+		if str(p.get("kind", "")) == "school_card":
+			card2 = p
+		elif not p.is_empty():
+			game.answer_event(p.id, "ok")
+	if not card2.is_empty():
+		game.answer_event(card2.id, "ok")
+		_ok("an unknown answer = keep going (the effort stays Normal)", ss3.effort == "normal")
+	# The final certificate: Continue only.
+	var a2 = _athlete()
+	a2.birth_date = {"year": 2011, "month": 5, "day": 1}
+	game.start_career(a2, "repeat")
+	var fin: Dictionary = {}
+	while Cal.date_key(game.date) <= 20270606 and fin.is_empty():
+		game.advance_day()
+		var p: Dictionary = game.pending_event()
+		if str(p.get("kind", "")) == "school_card" and str(game.get_system("school").reports.back().kind) == "final":
+			fin = p
+		elif not p.is_empty():
+			game.answer_event(p.id, "ok")
+	_ok("a grade-9 career's June card is the final certificate with Continue only", not fin.is_empty()
+			and (fin.choices as Array).map(func(c): return str(c.id)) == ["done"])
+	SC.decisions_enabled = false
+
+	# The coach's view: his simulation plays the school days' life load. At Normal / Normal in a normal week = without the school.
+	var CV = load("res://scripts/core/coach_verdict.gd")
+	var ss4 = _fresh()
+	ss4._schedules[2026] = {}   # (a school week without tests)
+	var mon: Dictionary = _d("2026-11-09")
+	var spec := [{"plan": WP.of(game.season.week_for(mon)), "monday": mon}]
+	var start: Dictionary = CV.now_start()
+	var with_school: Dictionary = CV.simulate(start, spec)
+	SC.model_enabled = false
+	var without_school: Dictionary = CV.simulate(start, spec)
+	SC.model_enabled = true
+	_ok("the coach's simulation at Normal / Normal in a normal school week = without the school, to the last digit",
+			with_school.athlete.fatigue == without_school.athlete.fatigue and with_school.exp == without_school.exp)
+	ss4.set_effort("heavy")
+	ss4.set_free_time("lots")
+	var heavy: Dictionary = CV.simulate(start, spec)
+	print("    his week's end fatigue: %.3f normal, %.3f at Heavy / Lots" % [with_school.athlete.fatigue, heavy.athlete.fatigue])
+	_ok("... at Heavy / Lots he sees a more tiring week", heavy.athlete.fatigue > with_school.athlete.fatigue)
 
 
 # --- Helpers ---------------------------------------------------------------------------------------------------------------------

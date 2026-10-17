@@ -3,13 +3,14 @@
  "screens": {
   "overview": {
    "title": "Overview",
-   "version": 8,
+   "version": 9,
    "sections": [
     {"heading": "Season goals", "text": "Under the Today card: the three goals you and your coach set for the season, with how you stand. ✓ means met, ✗ missed. With none yet, you can ask your coach for goals.", "see": ["standards"]},
     {"heading": "Mind", "text": "Beside or under the goals: your confidence, motivation and stress, each a word with an arrow when it rose or fell since last week. Tap one to see what it does now, what moved it lately, what is pulling it and what helps.", "see": ["moods"]},
     {"heading": "Playing the days", "text": "Next day plays one day. Play week plays on to Sunday night, but it stops early when something needs you: a race, a new injury, a warning sign or your coach's Sunday talk. The game saves itself after every day."},
     {"heading": "Messages", "text": "A message from your coach or someone else shows at the top of the Today card, with a dot when it is new or waits for your answer. Tap it to open the conversation in the People tab."},
     {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
+    {"heading": "School on the strip", "text": "A day shaded teal is a school break or holiday. A violet T marks a day with a test (a number when there are several). Tap the day to see it as morning, school, training and evening."},
     {"heading": "! and + on a day", "text": "A round ! means you were sore that day; its colour says how sore. A + means an injury or illness limited the day; its colour says how serious it is. A small speech bubble means someone wrote to you that day: filled while it is new."},
     {"heading": "Your coach's initial", "text": "A round letter in your coach's colour means he changed that day. Tap the day to see why, and to veto it if you disagree.", "see": ["coach_changes"]},
     {"heading": "How you feel", "text": "Your fatigue: Fresh, Normal, Tired or Exhausted. Training adds to it and rest takes it away. When you are tired, sessions train you less and races go slower.", "see": ["fatigue"]},
@@ -23,7 +24,7 @@
   },
   "training_season": {
    "title": "Training: season plan",
-   "version": 6,
+   "version": 7,
    "sections": [
     {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
     {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
@@ -38,6 +39,7 @@
     {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."},
     {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what he thinks of the plan from next week on: changed against his, or as it is against an easier week.", "see": ["ask_coach"]},
     {"heading": "Mental training", "text": "Above the standing orders: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
+    {"heading": "School life", "text": "Above the standing orders: your study effort and your free time. They change how heavy your school days are and how your grades go, never what you train. The School page in the People tab has the grades.", "see": ["moods"]},
     {"heading": "Standing orders", "text": "At the bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes"]}
    ]
   },
@@ -56,7 +58,7 @@
   },
   "training_repeat": {
    "title": "Training: one repeating week",
-   "version": 5,
+   "version": 6,
    "sections": [
     {"heading": "Easing back in", "text": "After two weeks or more without running, your coach can put a few easier weeks over your plan. While they run, a box at the top shows them, and you can stop them early.", "see": ["easing_back_in"]},
     {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in the week strip."},
@@ -68,13 +70,15 @@
     {"heading": "Back to the season plan", "text": "The switch at the top takes you back to your coach's season plan, with your earlier changes to it."},
     {"heading": "The same week for months", "text": "A week that never changes wears your motivation down after about two months, and low motivation trains you a little less. Changing the week now and then keeps it fresh.", "see": ["moods"]},
     {"heading": "Mental training", "text": "Above the standing orders: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
+    {"heading": "School life", "text": "Above the standing orders: your study effort and your free time. They change how heavy your school days are and how your grades go, never what you train. The School page in the People tab has the grades.", "see": ["moods"]},
     {"heading": "Standing orders", "text": "At the very bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes"]}
    ]
   },
   "calendar": {
    "title": "Calendar",
-   "version": 3,
+   "version": 4,
    "sections": [
+    {"heading": "School on the Calendar", "text": "Between the meets: school breaks (teal), busy test weeks with three or more tests (violet) and the Pajulahti camp weeks for grades 7-9, which are only information for now. Plan your racing around the busy weeks."},
     {"heading": "Your coach suggests", "text": "A meet marked COACH SUGGESTS is one he thinks worth racing, with his reason. Enter it, or No thanks: he won't suggest it again. He also suggests making a meet a target. He never enters you himself.", "see": ["coach_changes"]},
     {"heading": "Entering a meet", "text": "Tap Enter to race a meet. On race day the race replaces that day's training. Tap Entered ✓ again to withdraw."},
     {"heading": "★ and ◆", "text": "★ means your coach suggests the meet. ◆ marks one of your season's target meets; Make target turns a meet into one (at most three a season).", "see": ["targets"]},
@@ -94,22 +98,37 @@
   },
   "report": {
    "title": "Report",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "This week", "text": "A short summary of the week so far: days played, sessions, training load, how tired you are, races and health. Tap Day by day to open every day: what you did, your fatigue, sore areas, injuries and anything that happened."},
+    {"heading": "This week", "text": "A short summary of the week so far: days played, sessions, training load, how tired you are, races and health. Tap Day by day to open every day: what you did, your fatigue, sore areas, injuries and anything that happened. School days show their tests and scores."},
     {"heading": "Last week", "text": "Sessions, training load and how your fatigue went, plus races, health and the season plan line. Attributes are shown when one moved a whole point: progress is added on Sunday night and builds up slowly. The days of that week are folded under Day by day."}
    ]
   },
   "people": {
    "title": "People",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "The people around you", "text": "Messages from your coach and your training group; family, friends and school will write here in later updates. A number or a dot means something is new or waits for your answer. Tap a person to open the conversation."},
+    {"heading": "The people around you", "text": "Messages from your coach and your training group; family and friends will write here in a later update. A number or a dot means something is new or waits for your answer. Tap a person to open the conversation."},
+    {"heading": "School", "text": "The School row opens your grades, tests and report cards, and the two school settings: study effort and free time.", "see": ["moods"]},
     {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. Find a coach, below the list, shows every coach you can see now."},
     {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"he will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
     {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one: the phase, the hard sessions and why, and one thing to focus on. It always stops Play week. A talk may end with a question. After a race he writes to you that evening."},
     {"heading": "Coach profile", "text": "Who your coach is, the character, how well you fit and how much you trust each other. The skills are a range that narrows week by week and is exact after eight weeks together. Below them is the training group."},
     {"heading": "Settings", "text": "What Play week stops for, and your saved rules, are at the bottom of the Training tab."}
+   ]
+  },
+  "school": {
+   "title": "School",
+   "version": 1,
+   "sections": [
+    {"heading": "What school does", "text": "School changes how heavy your days are and how your grades go. It never changes what you train. A normal school week at Normal study effort and Normal free time is just your normal game."},
+    {"heading": "Study effort", "text": "Light, Normal or Heavy. Heavy lifts your grades but makes school days heavier: more tiredness and more colds. Light does the opposite. The same two settings are in the Training tab."},
+    {"heading": "Free time", "text": "Little, Normal or Lots. Lots of free time with friends lifts your motivation but means late nights on school days. Little means more rest, but life gets dull.", "see": ["moods"]},
+    {"heading": "Focus subjects", "text": "Pick up to two subjects to push. They rise faster while the others slip a little. Change them any time: grades move slowly, so switching back and forth gains nothing."},
+    {"heading": "Grades and tests", "text": "Each subject shows where you stand, written like a test: 8, 8+, 8½, 9-. Tap one for its latest tests. A week with more than two tests is a busy test week: heavier and more stressful."},
+    {"heading": "Report cards", "text": "On the last school day before Christmas and at the end of the school year you get a report card. Play stops to show it, and you choose how to handle the next term. Your family's reaction comes in a later update."},
+    {"heading": "Tests and a race", "text": "When you have a race in a busy test week, or a test on the race day or the day before, play stops once. Race and risk the grades, study and scratch, or race and study on the bus: each has a price."},
+    {"heading": "Holidays", "text": "Breaks and the summer are lighter: you recover a little faster and feel less stressed. The week strip shades those days and the Calendar lists them. Pajulahti camp weeks are shown there too."}
    ]
   },
   "market": {
@@ -147,8 +166,9 @@
   },
   "day_editor": {
    "title": "Changing a day",
-   "version": 4,
+   "version": 5,
    "sections": [
+    {"heading": "The day at school", "text": "At the top: your day in four blocks (morning, school, training, evening) and how heavy the day is for you at school. Holidays are lighter. Tests in a busy week, late nights and two practices on a school day are heavier."},
     {"heading": "This week only", "text": "Changes here are for this one day of this week. Days already played and race days can't be changed. To change every week, use the Training tab."},
     {"heading": "Your coach says", "text": "Under the sessions your coach tells you why you do the day. A coach who explains a lot gives the reason; a quiet one just says what to do. His voice follows his character."},
     {"heading": "Sessions", "text": "Swap a session, remove it, add a second one (two at most) or make the day a rest day. A greyed-out session isn't possible this time of year, or with your injury; the reason is in its name."},

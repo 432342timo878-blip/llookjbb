@@ -110,6 +110,9 @@ func _cell(info: Dictionary) -> Control:
 	var marks := _health_marks(info)
 	if marks != null:
 		col.add_child(marks)
+	var school := _school_marks(info)
+	if school != null:
+		col.add_child(school)
 
 	# Bottom: race badge, or (PC) the fatigue word of a played day.
 	if not info.race.is_empty():
@@ -169,6 +172,34 @@ func _health_marks(info: Dictionary) -> Control:
 	return row
 
 
+## School (session S2): a violet badge on a test day (T, or the number of tests; E on an exam day) with the test's name on PC, and
+## on a day in a break its name (PC; a phone only shades the cell). Null on an ordinary day.
+func _school_marks(info: Dictionary) -> Control:
+	var st := SchoolUI.strip_of(info)
+	if st.is_empty():
+		return null
+	var tests := int(st.tests)
+	var u: Dictionary = SchoolUI.ui().strip
+	if tests == 0 and not bool(st.exam) and (Layout.compact or str(st.caption) == ""):
+		return null
+	var row := UIKit.hbox(3)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if bool(st.exam):
+		row.add_child(UIKit.badge("E", Palette.SCHOOL_TEST, 16))
+	elif tests > 0:
+		row.add_child(UIKit.badge(str(u.test_badge) if tests == 1 else str(tests), Palette.SCHOOL_TEST, 16))
+	if not Layout.compact:
+		var text: String = st.test_text if tests > 0 else str(st.caption)
+		if text != "":
+			var l := UIKit.label(text, "CaptionLabel")
+			l.add_theme_font_size_override("font_size", 12)
+			l.clip_text = true
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(l)
+	return row
+
+
 ## The head coach's full name (his colour comes from it, as on his messages).
 static func _coach_name() -> String:
 	var cs := Game.get_system("coach") as CoachSystem
@@ -178,7 +209,8 @@ static func _coach_name() -> String:
 func _cell_style(info: Dictionary) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	var open: bool = info.day == selected
-	box.bg_color = Palette.SURFACE_3 if open else (Palette.SURFACE_2 if info.today else Palette.SURFACE_PANEL)
+	var off: bool = bool(SchoolUI.strip_of(info).get("off", false))   # a day in a school break: shaded (session S2)
+	box.bg_color = Palette.SURFACE_3 if open else (Palette.SURFACE_2 if info.today else (Palette.SCHOOL_OFF if off else Palette.SURFACE_PANEL))
 	box.set_corner_radius_all(Palette.RADIUS)
 	box.border_color = Palette.BORDER
 	box.set_border_width_all(1)

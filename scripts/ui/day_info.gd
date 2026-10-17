@@ -12,7 +12,8 @@ const WHO := {"player": "you", "coach": "your coach", "injury": "an injury restr
 ##  and the health side (empty with the health model off): sore (highest soreness level 0–3 that day: for a played
 ##  day from the day log, for today now), sore_areas ([{id, name, level}]), health (injury ids active that day:
 ##  the day log for a played day, today's now), limited (the day was changed by an injury), tier (the worst
-##  tier of the problems that touch the day, "" for none), coach (the coach changed the day: CoachProposals, session C4)}
+##  tier of the problems that touch the day, "" for none), coach (the coach changed the day: CoachProposals, session C4),
+##  school (the kind of day: SchoolSystem.day_info, session S2; {} when the school model is off)}
 static func of(w: WeekSim, d: int) -> Dictionary:
 	var date := Game.add_days(w.monday, d)
 	var played := d < w.day
@@ -24,6 +25,10 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 	}
 	info.limited = info.by.values().has("injury")
 	info.coach = info.by.values().has("coach")
+	info["school"] = {}   # the kind of day at school (SchoolSystem.day_info, session S2): {kind, break, exam, tests}; {} without the school model
+	var school := SchoolUI.system()
+	if school != null:
+		info["school"] = school.day_info(date)
 	_add_health(info, log_entry(date) if played else {})
 	if played:
 		var rec := _record(w, d)

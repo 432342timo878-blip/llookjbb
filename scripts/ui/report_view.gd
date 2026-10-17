@@ -61,9 +61,11 @@ func _week_summary(monday: Dictionary, rows: Array) -> Control:
 	var facts := UIKit.vbox(6)
 	var sessions := 0
 	var load := 0.0
+	var tests := 0
 	var races := []
 	for e in rows:
 		load += float(e.load)
+		tests += (e.get("tests", []) as Array).size()
 		if e.race != "":
 			var text: String = Calendar.get_meet(e.race).get("name", e.race)
 			var result := DayInfo.race_result_text(e.race)
@@ -74,6 +76,8 @@ func _week_summary(monday: Dictionary, rows: Array) -> Control:
 	facts.add_child(UIKit.fact_row("Sessions", UIKit.label(str(sessions))))
 	facts.add_child(UIKit.fact_row("Training load", UIKit.label(str(roundi(load)))))
 	facts.add_child(UIKit.fact_row("Fatigue now", UIKit.fatigue_label(rows[-1].fatigue)))
+	if tests > 0 and SchoolUI.system() != null:   # (session S2)
+		facts.add_child(UIKit.fact_row(str(SchoolUI.ui().report.week_tests), UIKit.label(str(tests))))
 	for race in races:
 		facts.add_child(UIKit.wrapped("Race: " + race, ""))
 	var health := _week_health(monday)
@@ -126,6 +130,8 @@ func _day_row(e: Dictionary) -> Control:
 	box.add_child(UIKit.wrapped(" · ".join(meta), "MutedLabel"))
 	if e.get("dragged", false):   # trained at Low or Flat motivation (session M1): the sessions trained you a little less
 		box.add_child(UIKit.wrapped(str(Data.mind.ui.dragged), "MutedLabel"))
+	for line in SchoolUI.report_lines(e):   # the break it was in, the tests and their scores, the school life load (session S2)
+		box.add_child(UIKit.wrapped(line, "MutedLabel"))
 	for line in _health_lines(e):
 		var l := UIKit.wrapped(line.text, "")
 		l.add_theme_color_override("font_color", line.color)
