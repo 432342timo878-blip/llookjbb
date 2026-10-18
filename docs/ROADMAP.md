@@ -447,6 +447,21 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         Left for later: the training group's pull in hard sessions (B1), sleep as its own system (a late night is life load now),
         the family budget's real money (M4), lukio staff's moments, ages 16-17, the move's goodbyes (P2), teammates quitting or
         joining for real (P2).
+  - [x] **Check-in 2026-10-18** (realism audit of C2–P1 + project review, `docs/AUDIT.md` "Check-in (2026-10-18)"): 22 / 22
+        checks; `season_playtest.gd` counts stops by kind (new `player` policy): **3.1–3.2 stops a week, no week without one**
+        (proposals 1.0, the Sunday talk 1.0, the people 0.8); found TUVA (the 10th grade is gone since 2022), offers sent
+        straight to minors, two text bugs; the user has not played anything since playtest 1. Order agreed below.
+  - [ ] **Fix session (after the check-in 2026-10-18; details in `docs/AUDIT.md` "Agreed with the user (2026-10-18)"):**
+        (1) TUVA instead of the 10th grade, a coach's offer to an under-18 through a parent, remote coaches from 16, the two
+        text bugs (a lighter proposal's "more work", "Far away · Far away"); (2) one `GameConfig` with the presets `real` /
+        `lab` replacing the scattered tool switches; (3) `run_all_checks -Quick` (~5 min), fixed careers in `storylet_check`,
+        `school_system.gd` split (fingerprints identical); (4) CLAUDE.md trimmed to ~20–25 KB + `docs/CODEMAP.md`; (5) the
+        standing order "Lukio courses: ask me every period / let the counsellor plan them". Help entries for anything new.
+        *(Sonnet, high)*
+        Check: `run_all_checks` (full), `training_balance -- 0`, `school_fingerprint`, `quick_fingerprint` identical; layout
+        check + tour for the changed screens.
+  - [ ] **Season playtest 2 by the user:** a season of the real game (and the Dev menu's jump for grade 9, the application and
+        lukio); notes into `docs/PLAYTESTS.md`; then decide the number of stops (the user: "decide after my playtest").
   - [ ] **D2. Real schools (research + data, then a short build)** *(user 2026-10-18, after P1: "Upper secondary school
         (Sastamala)" is a placeholder from S3a, not research)*: for every game town the real general lukiot (with their published
         lowest accepted averages, 5 or 6 periods), the real vocational schools (athletics-friendly programmes) and the real
@@ -683,7 +698,7 @@ independent research + data, so it may run beside the design).
   feedback and opinions, and an open dialogue about priorities. Claude's proposed rhythm: after each larger step (next:
   after R4, after step 7, at the end of M2), or whenever the user asks. Output: a dated section in `docs/AUDIT.md`
   + roadmap changes the user agrees to. *(Opus)* First one done 2026-10-10 (`docs/AUDIT.md`); the second after step 7
-  done 2026-10-11; next at the end of M2.
+  done 2026-10-11; the third after P1 done 2026-10-18; next at the end of M2.
 - **Zoom in on the race (user, 2026-10-09; parked → M3, check-in 2026-10-10):** on the race screen the dots sometimes look far away. Let the player zoom
   in on the field (e.g. a camera that follows the pack or the player, zoom buttons / pinch on a phone, 44 px, no
   hover), keeping the whole-track view as an option. Mind `race_perf` (the stadium is drawn once; the dots view is

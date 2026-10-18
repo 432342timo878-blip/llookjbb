@@ -8,8 +8,12 @@ extends SceneTree
 ##   godot --path . --rendering-driver opengl3 -s res://tools/season_playtest.gd -- <out_dir> [plan] [policy] [seed] [days]
 ##   plan: coach (default, the repeating coach week) / hard (a hard repeating week) / season (the coach's season plan on
 ##         the ★, with the coach's offers: they take the ★ plan; easing back in is accepted)
-##   policy: careful (default: easy when sore) / neutral (keeps going when sore)
+##   policy: careful (default: easy when sore) / neutral (keeps going when sore) / player (careful + a real reply to every
+##         moment and school stop, picked at random from the seed, and the coach's goals set: plays like a person who
+##         answers; careful and neutral answer "ok", which a moment counts as no answer)
 ##   seed: another athlete and other luck (default 1); days: how long (default 364).
+## The summary also counts the stops by kind (week talk, proposal, people by thread, school, goals, market...) week by
+## week, and the messages that did not stop (check-in 2026-10-18).
 ## Uses its own save folder (user://tour_saves/), never the player's saves.
 
 const HARD := [["intervals_800", "strength"], ["tempo_run", "drills"], ["long_run"], ["intervals_800", "hill_sprints"],
@@ -80,6 +84,8 @@ func _run() -> void:
 	var end_key: int = _cal.date_key(_game.add_days(_game.START_DATE, days))
 	var stops := {}
 	var stop_weeks := {}
+	var by_week := {}
+	_answer_rng.seed = seed_value * 7919 + 13
 	var advance_ms := []
 	var event_ms := []
 	var presses := 0
@@ -90,7 +96,12 @@ func _run() -> void:
 		if not e.is_empty():
 			var kind: String = e.get("kind", e.source)
 			stops[kind] = int(stops.get(kind, 0)) + 1
-			stop_weeks[_cal.date_key(_game.week_monday())] = true
+			var wk: int = _cal.date_key(_game.week_monday())
+			stop_weeks[wk] = true
+			var cat := _category(e)
+			var row: Dictionary = by_week.get(wk, {})
+			row[cat] = int(row.get(cat, 0)) + 1
+			by_week[wk] = row
 			await _frames(3)
 			if kind == "offer":   # the career-start offer and the autumn offer for next season both get a shot
 				kind += "_first" if e.get("first", false) else "_next"
@@ -133,7 +144,8 @@ func _run() -> void:
 
 	print("\n== Summary")
 	print("Played to %s (%d button presses; Next day while hurt, Play week otherwise)." % [_cal.format_day(_game.date), presses])
-	print("Stop events: %s; weeks with a stop: %d of 52" % [JSON.stringify(stops), stop_weeks.size()])
+	print("Stop events: %s; weeks with a stop: %d of %d" % [JSON.stringify(stops), stop_weeks.size(), int(ceil(days / 7.0))])
+	_print_weeks(by_week, days)
 	print("Hub redraw after Next day / Play week: average %.1f ms, slowest %.1f ms; after answering an event: average %.1f ms, slowest %.1f ms" % [
 			_avg(advance_ms), _max(advance_ms), _avg(event_ms), _max(event_ms)])
 	var t1 := Time.get_ticks_usec()
@@ -154,9 +166,81 @@ func _choice(e: Dictionary, policy: String) -> String:
 	if e.get("kind", "") == "sore":
 		var ids: Array = e.choices.map(func(c): return c.id)
 		if "easy" in ids:
-			return "easy" if policy == "careful" else "keep"
+			return "easy" if policy != "neutral" else "keep"
 		return "keep"
+	if policy == "player":
+		if e.get("kind", "") == "goals":
+			return "set"
+		var choices: Array = e.get("choices", [])
+		if not choices.is_empty():
+			return str(choices[_answer_rng.randi_range(0, choices.size() - 1)].id)
 	return "ok"
+
+
+var _answer_rng := RandomNumberGenerator.new()
+
+
+## What kind of stop it is, in the words of the check-in: the coach's week talk, his proposals, goals, suggestions,
+## the market's messages, the people's moments by thread, school stops, health and season stops.
+func _category(e: Dictionary) -> String:
+	var kind := str(e.get("kind", e.source))
+	if kind != "moment":
+		if kind.begins_with("school") or kind.begins_with("lukio") or kind.begins_with("matric"):
+			return "school:" + kind
+		return kind
+	var moments = _game.get_system("moments")
+	var m: Dictionary = moments.moment(str(e.get("moment", "")))
+	if m.is_empty():
+		return "moment:?"
+	if bool(m.get("talk", false)):
+		return "week_talk"
+	var mk := str(m.get("kind", "moment"))
+	if mk != "moment":
+		return mk   # proposal / goal / suggest / market / rule
+	return "people:" + str(m.get("thread", "?")) if str(m.get("thread", "")) != "coach" else "coach_moment"
+
+
+## Week by week: the stops by kind and the moments that only waited in the threads (no stop).
+func _print_weeks(by_week: Dictionary, days: int) -> void:
+	var moments = _game.get_system("moments")
+	var quiet := {}
+	for f in moments.fired:
+		if not bool(f.get("stop", false)):
+			var t: Dictionary = Time.get_datetime_dict_from_unix_time(int(f.day) * 86400 + 43200)   # (StoryletSystem.day_no)
+			var d := {"year": t.year, "month": t.month, "day": t.day}
+			var wk: int = _cal.date_key(_cal.monday_of(d))
+			quiet[wk] = int(quiet.get(wk, 0)) + 1
+	print("\n== Stops week by week (kind x count; 'quiet' = moments that waited in the threads without stopping)")
+	var totals := {}
+	var hist := {}
+	var monday: Dictionary = _cal.monday_of(_game.START_DATE)
+	var weeks := 0
+	while _cal.date_key(monday) < _cal.date_key(_game.add_days(_game.START_DATE, days)):
+		weeks += 1
+		var wk: int = _cal.date_key(monday)
+		var row: Dictionary = by_week.get(wk, {})
+		var n := 0
+		var parts := []
+		for k in row:
+			n += int(row[k])
+			totals[k] = int(totals.get(k, 0)) + int(row[k])
+			parts.append("%s %d" % [k, row[k]])
+		hist[mini(n, 5)] = int(hist.get(mini(n, 5), 0)) + 1
+		print("%s  stops %d  %s%s" % [_cal.format_day(monday), n, ", ".join(parts), "" if not quiet.has(wk) else "  | quiet %d" % quiet[wk]])
+		monday = _game.add_days(monday, 7)
+	var all := 0
+	for k in totals:
+		all += int(totals[k])
+	var keys := totals.keys()
+	keys.sort_custom(func(x, y): return int(totals[x]) > int(totals[y]))
+	print("Per week on average over %d weeks: all stops %.2f" % [weeks, all / float(maxi(1, weeks))])
+	for k in keys:
+		print("  %-28s %4d  (%.2f a week)" % [k, totals[k], totals[k] / float(maxi(1, weeks))])
+	var q := 0
+	for k in quiet:
+		q += int(quiet[k])
+	print("  quiet moments (no stop)      %4d  (%.2f a week)" % [q, q / float(maxi(1, weeks))])
+	print("Weeks by number of stops: %s (5 = 5 or more)" % JSON.stringify(hist))
 
 
 ## A race day reached from the hub: the race screen, quick mode, through every round, then back to the hub.

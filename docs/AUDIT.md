@@ -342,3 +342,168 @@ throwaway rank-stability tool on the rival pool alone (20 pools of 150 per gende
   listed apart).
 - Our tools: `run_all_checks.bat` (twice), `career_check.gd` (11 seasons), `season_plan_check.gd` alone,
   `training_balance.gd -- 0` and `race_shape.gd -- 30` before / after; a rank-stability scratch tool.
+
+
+# Check-in (2026-10-18): realism audit of C2–P1 + project review
+
+The third regular check-in, at the user's request after session P1 (the roadmap had it at the end of M2). Part 1 audits what was
+built since the last one: C2–C6 (messages, the People tab, proposals and Ask the coach, goals and race advice, the coach
+market), M1 (the mind), D1 (research data), S1–S3b (school, the application, lukio and the matriculation exams) and P1 (the
+cast and ~150 moments). Part 2 is a playtest by tool. Part 3 reviews the project. The user's answers are at the end. Marks
+as before: ✓ matches, ≈ simplification, ✗ gap.
+
+**Checks run first** (stderr read too): `run_all_checks.bat` **ALL 22 CHECKS PASSED in 18 min 41 s** (part of it with two
+playtests running beside it; the slowest: `storylet_check` 305 s, `playtest_fix_check` 285 s, `race_rounds` 128 s). No SCRIPT
+ERROR / Parse Error. One commit (P1) was not pushed yet.
+
+**What was verified on the web this time:** the joint application of spring 2026 (OPH, the City of Helsinki), TUVA (OPH), the
+matriculation retake rule (a lukio's 2019 candidate letter), the share of 15-year-olds at confirmation school (Yle), a sports
+federation's code on approaching minors (Salibandyliitto 2025). Not found: SUL's own rules on club changes for minors, any
+statistic on exam weeks in yläkoulu.
+
+## Part 1: the table
+
+| Area | Item | Verdict | Source / measurement |
+|---|---|---|---|
+| Coach | A weekly personal review talk with a 14-year-old in a club group | ≈ (abstraction) | At 14 a club group coach talks to the group at practice; a personal weekly review is what a personal coach does (GDD 4.9.1 itself: "a personal coach is normal from ~16"). Fine as the game's way of showing the coach, but it is generous |
+| | The coach adjusts single days (proposals) | ✓ | Real coaches change a session at practice when an athlete is sore or tired |
+| | Proposal wording | ✗ (bug) | "Friday: a rest day instead of mobility & stretching. **It's more work**, and your body can take it" (phone playtest, 5 Nov 2026): the reason `work` = "more training effect", true in the model (fresher for the key sessions) but written for a heavier change (`coach_talk.json verdict.reasons.work`) |
+| | Goals: SM / TF / Kalevan standards | ✓ | Read from SUL's 2026 PDFs in C5 (not re-read) |
+| | "Reach the SM limit by 31 Oct" | ≈ | The SM limit counts only until the entry deadline before the meet; after the SM it is a time to reach, nothing more. Also a text bug: "Far away · Far away this year." |
+| | Club coaches by town size, family budget 15–80 € a month | ✓ (plausible) | No source for budgets; club group fees for youth are a few hundred euros a season |
+| | Remote coaches visible at 14 | ≈ / ✗ (small) | Remote (online) personal coaching is a senior / late-junior thing; at 14 the path is the club coach (SUL's youth path) |
+| | **Coaches write offers straight to a 14–17-year-old** | **✗** | Finnish sport's fair-play norm: under-18s are not approached directly about a move; it goes through the guardians and the club (e.g. Salibandyliitto's code for youth transfers 2025: "alle 18-vuotiasta pelaajaa ei lähestytä suoraan"). SUL's own rule not found. Fix: an offer to a minor comes through a parent ("Coach X called me about you") |
+| | A coach of another club without changing club | ≈ | Usually the athlete moves to the coach's club too (club change, representation rules); the game keeps the club. Fine until clubs matter (M4 / club pages) |
+| | Real coaches: neutral voice, sources, no stories | ✓ | D1 rules (re-check before release) |
+| Mind | Three moods, small effects, mental training small | ✓ (design) | M1's research (meta-analysis 2023, autonomy support studies); sizes are ours |
+| School | Born 2012 = grade 8 in 2026–27, grades 4–10, report cards at Christmas and in June | ✓ | Finnish basic education |
+| | 17 subjects graded every term in grades 8–9 | ≈ | Home economics, crafts, music and art are compulsory mostly to grade 7, then optional (valinnaiset) in 8–9; the final certificate still lists them |
+| | No exam weeks in yläkoulu | ≈ (user's choice) | Varies by school; some yläkoulut run periods with exam weeks; no statistic found |
+| | The joint application window, results 11 June, accept by 25 June | ✓ | Spring 2026: 17 Feb – 17 Mar, results from 11 Jun, accept by 25 Jun, reserve places until 14 Aug (the rule "3rd Tuesday of February + 28 days" gives exactly 17.2.–17.3.2026). Reserve places not built |
+| | **"A 10th-grade year" after a rejection** | **✗** | The 10th grade (perusopetuksen lisäopetus), LUVA and VALMA were merged into **TUVA** (tutkintokoulutukseen valmentava koulutus) on 1 Aug 2022: up to a year, applied for in the joint application, can raise basic-education grades. Rename and re-describe (same game mechanics) |
+| | Urheilulukio points of 20 (grades 10 + federation 5 + school 5) | ✓ / ≈ | ✓ structure (D1); the federation's 0–5 scale for athletics is our rule (unverified) |
+| | Lukio: 150 credits = 75 courses of 2, 94 / 102 compulsory | ✓ | Decree 810/2018 (S3b) |
+| | Lukio periods ending in exam weeks | ≈ | Common but not universal (e.g. Helsinki's Konepaja lukio has none) |
+| | Matriculation: ≥ 5 exams, within 3 consecutive sessions, a failed exam retaken 3 times in the next 3 sessions, passed ones freely, grade shares L 5 … I 5 % | ✓ | The 2019 rules (a lukio's candidate letter 2019; S3b read the board's page) |
+| | Lukio grades 0.6 lower than yläkoulu | ≈ | Direction right, size a guess (unverified, S3b says so) |
+| People | Two parents in 75 % of careers | ≈ | Statistics Finland: roughly three in four families with children have two parents (general knowledge, not re-read) |
+| | Confirmation camp at 15, chosen in February, "not at all" possible | ✓ | Yle: over 80 % of the age group went (older figure, lower now but still most) |
+| | Juhannus Fri 19–25 June, vappu, the school year's end | ✓ | Calendar rules |
+| | The moments' tone (parties, gigs, gaming, parents who doubt the sport) | ✓ | Read a sample in `friends.json` / `family.json`: it reads like Finnish 14-year-olds' life. Some replies have no hint (fine: a hint only when there is a cost) |
+| | Every relationship move is up or neutral for the athlete's training | ✗ (balance) | See part 3: the people raise training quality on average (+0.4 %); real friends and late nights cost as well as give |
+| Code | `school_system.gd` 2 165 lines | ✗ (fragile) | Now the largest file (race.gd 1 722); P2 adds more |
+
+## Part 2: playing it like a player (`season_playtest.gd`, new `player` policy)
+
+`season_playtest.gd` now counts every stop by kind week by week and has a `player` policy (a real reply to every moment and
+school stop, chosen at random; the coach's goals set; easy when sore). Both runs are a boy / girl in Tampere on the coach's
+season plan (★), every ★ meet entered, races quick, through the real hub (`main.tscn`, so every system the player has is on).
+
+| Run | Weeks | Stops a week | Weeks with no stop | Most in a week | Quiet messages a week |
+|---|---|---|---|---|---|
+| PC 1280×720, seed 1, a season | 52 | **3.12** | **0** | 5 (×5) | 3.33 |
+| Phone 390×844, seed 2, two seasons (grade 8 → lukio) | 104 | **3.24** | **0** | 7 (the lukio's first week) | 3.38 |
+
+Stops by kind (phone run, a week): coach's proposals **1.04**, the Sunday talk **0.99**, friends 0.36, family 0.32, "Coach
+suggests" 0.11, diagnoses 0.10, school people 0.07, training group 0.06, the school's stops ~0.15 together in grades 8–9 (report
+cards, the application, two meet-and-tests weeks), goals / the season offer 0.07. The PC run: proposals 1.06, talk 0.98, people
+0.81 (above P1's 0.66 because every moment got a real answer). In the lukio's first week (14 Aug 2028) seven stops: the talk,
+three lukio choices, the courses, a friend, a proposal. From then on a lukio adds ~10 course / results stops a year plus the
+matriculation stops (the user's choices in S3b). The coach market sent no offer to a 14–15-year-old in either run (as
+designed: offers need a reason). Speed on the user's laptop GPU (Intel HD 520): the hub redraws in 183 ms on average after Next
+day / Play week (slowest ~1.1 s), 52–59 ms after an answer; the autosave 37–41 ms, 451–527 KB, written every day.
+
+**What the screenshots show:** the Sunday talk reads well (facts, the week ahead, one focus, a question); its reply buttons
+need a scroll on PC. The week strip in a Christmas-break week carries up to five small marks per day (soreness "!", health
+"+", the speech bubble, the coach's initial, the break name): busy (the UI overhaul). The lukio course stop on a phone is a
+long list of "Later" buttons: correct, but admin. The goals offer has the repeated "Far away" text. No layout problems.
+
+**The verdict:** too many stops of the same two kinds. **Play week never plays a whole week:** every week stops at least once
+(the talk) and the median week three times. The proposals are the biggest single source and the least interesting decision
+(C4 measured that 69 % of changes are "Fine" in truth: whether Friday is a rest day or mobility hardly matters). The people's
+moments are the best new content and are already rationed (~0.8 a week). Too little: nothing is wrong with the amount of
+people content; the risk is the coach's routine stops crowding it out.
+
+## Part 3: project review (Claude's honest opinion)
+
+- **Where we are.** M2 part 2: 12 of 17 build sessions done in seven days (C2–C6, M1, D1, S1, S2, S3a, S3b, P1). Left: D2,
+  P2, G1–G3, B1, then the user's playtest and the end-of-M2 check-in. Game code 14 240 → **27 742 lines** since the last
+  check-in, tools 9 980 → 18 311, data 40 files / 760 KB.
+- **Against the user's asks (`docs/PLAYTESTS.md`).** "Bored, wants interaction with coaches and people around me": on paper
+  answered (three stops and three messages a week, every answer with its result shown). "Why I train what I train": the
+  coach's why and the talk. "What makes the coach happy": the goals. "Rivals are random names": partly (the Rivals thread;
+  profiles still backlog). "Race controls": not yet. **But the user has not played any of it:** the last real playtest was
+  eight days and ~13 500 lines ago. This is my biggest worry: we are building blind on the one question that matters (is it
+  fun?), and the tool playtest above cannot answer it.
+- **The stops.** See part 2. My view: keep the talk (the user chose it to always stop, and it is good), but the proposals
+  should be rarer and only for something that matters (a real warning, a race), and a lukio's course stops should have a
+  "let the counsellor plan it" setting.
+- **Fragile: the switch pattern.** 18 static switches; 7 systems are OFF by default and only `main.gd` switches them on
+  (proposals, suggestions, goals, the market, the talk, the people, the school's decisions), and the balance tools pin 4
+  "neutral" switches. So every balance tool measures a game the player never plays; only the playtest, the tour, the layout
+  check and help_check run the real one (and help_check switches the people off). Nobody has measured a whole career with
+  everything on. Proposal: one `GameConfig` with two named presets, `real` (the player's game) and `lab` (the neutral game of
+  the fingerprints), and every tool says which in one line; B1 measures `real`.
+- **Balance risks.** (1) The people's mood points (0.4 of the coach's) raise motivation to Keen in 57 % of weeks (M1 alone
+  ~17 %) and training quality by +0.4 % on average, always upwards: friends and parties should cost as often as they help.
+  (2) Accepted coach proposals change the training about once a week; the coach's season plans were tuned without them.
+  (3) The application margins are thin ("Struggling" + Heavy reaches the lowest limit by 0.1 point). (4) Nothing of this is
+  measured over a career with everything on (above). All B1, but B1 needs the `real` preset first.
+- **Docs weight.** `CLAUDE.md` is **103 KB** (was 51 KB; roughly 26 000 tokens) and is read at the start of every session:
+  it costs credits and attention every time, and most of it is build history the GDD already has. The GDD is 417 KB.
+  Proposal: CLAUDE.md down to ~20–25 KB (rules, how to run, the map of systems in one line each), the per-system detail moved
+  to a `docs/CODEMAP.md` read when needed.
+- **The check run** took ~10 min at the fix session and ~19 min now. Proposal: a `-Quick` run (~5 min, the fast checks) during
+  a session and the full run at its end; fixed careers in `storylet_check` (it failed once by chance in S3a).
+- **Code.** `school_system.gd` (2 165 lines) should be split (the application and the lukio / matriculation parts into their
+  own files) before P2 adds more; `storylet_system.gd` (1 545) next. The hub's redraw (183 ms average on the user's laptop)
+  grows with every system: fine now, watch it.
+- **The races** are what the user liked most and have not changed since R5 apart from the coach's advice; the race-controls
+  design (and competitiveness) is still waiting.
+- **Missing against the vision** (unchanged): D9 money / media / nutrition / sleep, D6 other events, D20 the senior world and
+  real athletes, M3 the stadium, peak age and decline (D19).
+
+## Sources (this check-in)
+
+- Opetushallitus, *Tutkintokoulutukseen valmentavan koulutuksen perusteet julkaistu* (2021),
+  https://www.oph.fi/fi/uutiset/2021/tutkintokoulutukseen-valmentavan-koulutuksen-perusteet-julkaistu; TUVA from 1 Aug 2022.
+- Opetushallitus, *Perusopetuksen jälkeisten koulutusten yhteishaku alkaa 17. helmikuuta* (2026),
+  https://www.oph.fi/fi/uutiset/2026/perusopetuksen-jalkeisten-koulutusten-yhteishaku-alkaa-17-helmikuuta; City of Helsinki,
+  https://www.hel.fi/fi/uutiset/yhteishaun-tulokset-julkaistaan-11-kesakuuta.
+- Kuopion lyseon lukio, candidate letter 2020 (the retake rules from autumn 2019),
+  https://kuopion-lyseo.onedu.fi/web/wp-content/uploads/sites/2/2019/11/kokelaskirjek20.pdf.
+- Salibandyliitto, *Nuorten pelaajasiirtojen eettinen toimintamalli 2025*,
+  https://salibandy.fi/uploads/2025/12/e2433ad6-nuorten-pelaajasiirtojen-eettinen-toimintamalli-2025.pdf (a norm in Finnish sport,
+  not athletics' own rule).
+- Yle, confirmation school "over 80 % of the age group", https://yle.fi/a/3-12015034 (more than five years old).
+- Helsingin kaupunki, Konepajan lukio's study guide 2026–27 (no exam weeks),
+  https://www.hel.fi/fi/kasvatus-ja-koulutus/konepajan-lukio/opiskelu/konepajan-lukion-opinto-opas-2026-2027/arviointi.
+- Our tools: `run_all_checks.bat`; `season_playtest.gd -- <dir> season player 1 364` (PC) and `-- <dir> season player 2 728`
+  (`--resolution 390x844`); the screenshots looked at.
+
+## Agreed with the user (2026-10-18)
+
+- **The stops: decided after the user's playtest.** Nothing changes now (the Sunday talk keeps stopping every week, the
+  proposals stay at up to 2 a week); the user plays first and says how ~3 stops a week feel. Claude's recommendation stays on
+  record: fewer proposals (a real warning or near a race, at most 1 a week), the talk as it is.
+- **Order of work:** (1) a **fix session** (Sonnet, high) with everything below; (2) **the user's season playtest 2** of the real
+  game (Dev menu jump to see grade 9, the application and lukio); notes into `docs/PLAYTESTS.md`, the stops decided then; (3)
+  D2 → P2 → G1–G3 → B1 as planned, adjusted by the playtest.
+- **The fix session (all four groups the user ticked):**
+  1. *Realism + text bugs:* TUVA instead of "a 10th-grade year" (name, texts, help; the mechanics stay); a coach's offer to an
+     athlete under 18 reaches them through a parent (the parent's message in the family thread, the offer itself on the coach's
+     page); remote coaches only from 16; the proposal reason for a lighter change that gives more training effect ("you'll get
+     more out of the week", not "more work"); the goals offer's "Far away · Far away this year."
+  2. *One switch preset:* a `GameConfig` with `real` (the player's game: what `main.gd` switches on) and `lab` (the neutral game
+     of the fingerprints); every tool picks one in one line; the fingerprints and hashes identical in `lab`.
+  3. *Faster checks + split file:* `run_all_checks -Quick` (~5 min) for use during a session, the full run at the end;
+     `storylet_check` with fixed careers; `school_system.gd` split (the application, lukio and matriculation parts in their own
+     files) with `school_fingerprint` identical.
+  4. *Trim CLAUDE.md* from 103 KB to ~20–25 KB (rules, how to run things, a one-line map per system), the details moved to
+     `docs/CODEMAP.md` read when needed.
+  5. *Lukio courses setting (the user's answer):* a standing order "Lukio courses: ask me every period / let the counsellor plan
+     them" (default: ask me); the period results come as a message unless a course failed.
+- **Not now (left for later, as before):** the smaller realism items (grades 8–9 optional arts and crafts subjects, a coach of
+  another club without a club change, the weekly talk's generosity at 14), the people's mood weight and the proposals' effect on
+  the balance (B1, with the `real` preset), the race-controls design.
+- **Next check-in:** at the end of M2, after B1 and the user's playtest of it.
