@@ -99,3 +99,86 @@ week with no quiet week: the Sunday talk about 1.0, the coach's proposals about 
 under 18 coming as a message from a parent (the offer waits on the coach's page; offers are rare and need a reason, so you may not see
 one); remote coaches only from 16; the coach's reason for a lighter day ("you'll get more out of the week"); the goals offer no longer
 says "Far away" twice.
+
+## Season playtest 2 (2026-10-18): the user's notes, sorted, and what the save showed
+
+**Verdict (user):** "a bit tedious micromanagement clicker with a boring, non-immersive racing. Got bored at the start of the year. I
+don't know why things are happening, what is affecting what, does anything really matter. We have somewhat lost the essence of being a
+career simulator." Tried the Dev jump to reach the school choices and could not (the messages always interrupted).
+
+**What the save showed** (`autosave.json`, Nooa Toivonen, 2 Nov 2026 → 9 Sep 2027, 44 weeks; read-only copy):
+- **The year is realistic as a career:** 17 races, PB 2:33.5 (Jan) → 2:20.06 (17 Jun, Youth Athletics Games);
+  places 1-6 at local meets, 15th of 16 at the hall SM and 14th of 15 at the summer SM (time 2:24, the SM limit 2:21 was reached on 17 Jun:
+  goal "met"); one obstruction DQ (Lajikarnevaalit, 23rd of 23). Ability 6.77 → 8.46 (+1.7 in 10 months: an early developer with
+  trainability 12.7 and an athletics parent; playtest 1's +1.2 was a weaker start). Attributes grew 1-3 points in the trained ones, the
+  mental ones and `starts` hardly moved. Health: one foot niggle (14 days), two colds (8 days) = 22 days of 310, a little under real
+  adolescent runners. School: grade average 9.1 (the "top of the class" answer), two report cards.
+- **Not realistic / not working:**
+  1. **Too many moments, from too small a pool:** 240 moments in 36 weeks (6.7 a week counting the talk's "ack" messages: 24) from
+     only 101 different storylets; 25 of them came 3-7 times; the same ones recur (fam_athlete_tips 6, gr_talker_gossip 7, fr_cinema 5);
+     **35 were never answered**. (The user: "the same interactions and chats start popping up".)
+  2. **Coach proposals: 40 in 44 weeks, 38 of them "lighter"**; the coach called every one "Good idea" while the model's own truth said
+     "Fine" for 31 of 40 (the audit's finding, now seen in a real save); 14 vetoed. 16 had the reason "work" on a LIGHTER change.
+  3. **The habit goal is always met:** "92 % of the sessions in your plan: 352 of 352 (100 %)" while the Sunday talk said "8 of 11 done
+     this week". The goal counter counts a day the coach or an injury lightened as done, the talk counts it as missed.
+  4. Content that contradicts the player's own choices (see the table: the rippi question after "I don't want to go"; the phone at one
+     o'clock after "phone off at ten" and a standing rule; a protein-powder question that offers no powder).
+  5. The coach says "he" about Marja (a woman): the texts hard-code "he" in about 300 places.
+
+**Questions the user asked, answered (Claude, from the code and data):**
+- *Can you make new friends / a relationship?* No. The cast is made at the start (parents, 2-3 friends, partners, teachers, rivals who
+  became people); nothing adds a friend or a romance later. P2 / later.
+- *The training group: where is its benefit, can I opt out?* There is none yet: the group is flavour (names, a few messages and the fit
+  calculation of the coach). "The training group's pull in hard sessions" is on the backlog for B1. You cannot opt out.
+- *Are there camps (leirit) at this age?* Yes: SUL's Pajulahti "Yläkoululeiritys, Yleisurheilu" for grades 7-9 (four Monday-Friday camps in
+  2026-27, 355 euros each, you apply by 31 Aug and SUL picks) plus district and club camps; the game shows the four on the Calendar as
+  information only. The camp week itself is session G3.
+- *What is focusing on subjects / grades for?* The final certificate's average decides the lukio application (grade 9); in grade 8-9 it also
+  feeds your life load and the coach's view of you. The School page does not say it clearly.
+- *Does an easy day carry into next week?* No: a day change belongs to that week; every Monday the week is built again from the plan.
+- *"Tell me if your shins are sore on Wednesday": why no event?* It is only a closing line of the Sunday talk. The game itself watches the
+  shins and posts a warning when they get sore; the sentence promises something the player cannot do.
+- *What does it mean when my motivation goes up from the answers?* A small mood point: motivation moves training quality between x0.92
+  and x1.05 (mostly the middle) and nothing else you can see. The same is true for "Eino ▼ a little": a relationship number that changes
+  which moments can come and the mood pulls a little. The UI never shows the effect.
+
+**The notes, sorted** (Verified: B = a bug confirmed in code or data, D = a design gap, F = a feature request, ? = could not reproduce):
+
+| Note | Kind | Verified |
+|---|---|---|
+| "Marja" is not a he (the coach's texts) | bug | B: "he / his / him" hard-coded in the coach's UI and data texts (~300) |
+| "Confidence confident: you race a little faster at a meet like this" | text bug | B: the mood name and the word are glued |
+| Rippikoulu question though "I don't want to go" was answered | bug | B: `fr_rippi_together` has no `!rippi_none` condition |
+| Phone until 1 o'clock though phone off at ten / early sleep | bug | B: `fam_screen` states a fact the game never simulated, repeats 4x after the rule |
+| "It's a bit too much for your shins" after adding mobility & stretching | bug | B: mobility has no strain; his noise (`perceive`) made a risk out of nothing |
+| "Fresh enough" to go from Normal to Easy | bug | B: the reason `work` is used for lighter changes too (my fix of 2026-10-18 only softened the words) |
+| Asked the coach about my edit, she said fine, then proposed a change to that very day | bug | B: proposals do not remember "Ask the coach" |
+| Niggle before the race, skipped it, the coach said nothing before or after | gap | B: `Game.scratch_race` posts no coach reaction |
+| "Tell me if ... on Wednesday", nothing happens | text bug | B: a closing line with no mechanism |
+| 8/11 done this week vs 352 of 352 planned sessions | bug | B: two definitions of "done" (above) |
+| Dev jump cannot pass the school years, messages always interrupt | tool bug | B: `DevTools.jump` stops at every stop event |
+| School test results never pop up (only on the School page) | gap | D |
+| Messages and school grades in one view: cluttered | UI | D |
+| Click-heavy, clutter, "what do my answers change?", repetitive options, texty, not pretty, "the coach's block of text" | the big one | D: consequences are small and invisible; the content pool is small and canned (the save: 101 variants, 240 moments) |
+| Wayyy too many events with "stop for every event" | setting | D: by design (every moment is a stop); the default is Important only |
+| I can't see if I'm too tired; want the whole week block when the coach suggests a change | missing | D / F |
+| "You see it in the day view" breaks the fourth wall | text | D |
+| "Listen to your shins" but I only see a popup | missing | D: the body is only visible in the Overview / day editor |
+| Season goals: what does met / missed mean; more milestone and habit options; a mid-season review | missing | D / F (met: +trust and a message; missed: a talk, no loss; there is no review before the end of the season) |
+| Compare my coach with the offered coaches (like FM) | missing | F |
+| "Mental training" feels rushed, no options | thin | D (M1 was kept small on purpose) |
+| New friends, a relationship | missing | F (P2+) |
+| Training group: benefit visible, opt out | missing | D / F (backlog B1) |
+| Camps at this age (leirit) | question | answered above; G3 |
+| What subject focus means (the lukio application) | unclear | D (School page needs one line) |
+| Race: why "swing wide and go round" here? | unclear | D: the card does not say what each choice costs or why it is offered |
+| Race: "Wait at the back" is called Hold, why not Ease? | naming | D |
+| Race: no way back to the inside line, only out | missing | F |
+| Race: everything slows down when everyone kicks | design | D (R3's "drop to 1x" moments; make it optional or shorter) |
+| Race: 2D blobs on a horrible-looking track; bigger arenas need zoom; realistic graphics (needs research) | big | F: race presentation |
+| Race: effects on me, my attributes, my relationships; pre-race warm-up and post-race cool-down | missing | F |
+| All my race results in one list (the Overview skims it) | missing | F |
+| In race season the Training tab and the day-by-day view differ | ? | to check (the week's changes and the race day replace sessions in the day view) |
+| In People I cannot choose any option in the chats | ? | could not reproduce: waiting moments show their reply buttons on top of the thread; maybe answered ones were meant (needs the user's example) |
+| A deep skill tree; "we have lost the essence of a career simulator"; the training is monotonous | direction | D: for a design session |
+| Wants "see from the save how my year went": done above | | |
