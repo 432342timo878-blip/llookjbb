@@ -437,6 +437,11 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   - [ ] **P1. The cast + first moments (ages 14–15):** family, friends, training group, teachers, rivals; Finnish life events;
         ~100–150 storylets. *(Opus, high)* *(next)*
         Check: `storylet_check` (rate, repeats, coverage per age).
+  - [ ] **D2. Real schools (research + data, then a short build)** *(user 2026-10-18, after P1: "Upper secondary school
+        (Sastamala)" is a placeholder from S3a, not research)*: for every game town the real general lukiot (with their published
+        lowest accepted averages, 5 or 6 periods), the real vocational schools (athletics-friendly programmes) and the real
+        grades 7-9 schools, each fact with its source and read date, unverified ones marked; then the application, the School page
+        and the lukio calendar use them instead of the town-named placeholders. *(Opus, high)*
   - [ ] **P2. Moments part 2 (ages 16–17, school chains, milestones), standing-order rules.** *(Opus, high)*
   - [ ] **G1. Test days + Rep by rep** (one shared played-session screen, Auto, training PBs). *(Opus, high)*
   - [ ] **G2. Race rehearsal + Video review.** *(Sonnet, high)*
@@ -444,6 +449,9 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   - [ ] **B1. Balance session:** every target of GDD 4.9.7 over many seasons (`career_check`, `season_check`, `storylet_check`).
         *(Opus, high)*
   - Then the user's playtest and the **check-in at the end of M2** *(Opus)*. Gym day comes with the specialists (later).
+  - Then the **UI overhaul** *(user 2026-10-18: "things are looking a bit too AI"; after M2 entirely)*: a design session first
+    (reference games and screenshots, a visual direction the user picks, written into the GDD), then the theme and every screen
+    rebuilt, with layout_check, the tour and help_check updated. *(Opus, high)*
 - [x] Coaching (original item; designed above) (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
       over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10).
       From the season playtest (user, 2026-10-10: "small choices; it needs to be more interactive with the coaches and
