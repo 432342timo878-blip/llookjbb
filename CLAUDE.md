@@ -18,8 +18,9 @@ fix session after the third one (TUVA, offers to minors through a parent, `GameC
 courses setting, this trimmed file) is in `docs/GDD.md` "Built (check-in fixes 2026-10-18)". Season playtest 2 (2026-10-18: "a tedious
 micromanagement clicker") led to the redesign **GDD 4.10 "plan → play → see"** (read it before any work on the week, the people or the
 UI: one Sunday planner, mid-week stops only for real decisions, causes visible, people as state + free-time slots). F1 (the 11
-playtest bugs) done (GDD 4.10 "Built (step F1)"; coach texts say `{he}` / `{his}`, never a bare "he"). Next, in `docs/ROADMAP.md`
-order: V1 (the look) → L1–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+playtest bugs) done (GDD 4.10 "Built (step F1)"; coach texts say `{he}` / `{his}`, never a bare "he"). V1 (the look) done: **GDD 5
+"The look (V1)"** is the style guide for every new or restyled screen (dark "Stadium Night", condensed numbers, TV-style race card;
+mock-ups in `docs/v1/`). Next, in `docs/ROADMAP.md` order: L1–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 

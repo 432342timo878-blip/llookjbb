@@ -474,7 +474,10 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         in the day view"); (10) one definition of a "done" session (the habit counter vs the Sunday talk); (11) the Dev jump passes stops
         (answers them with the default) so the school years can be reached. *(Sonnet, high)*
         Done: each bug has a check that fails before and passes after; fingerprints identical; the user's save still loads.
-  - [ ] **V1. The look: visual direction** (research: FM, sports-broadcast graphics, running apps such as Strava / Garmin, mobile sports
+  - [x] **V1. The look: visual direction** *(done 2026-10-18: GDD 5 "The look (V1)"; the user picked **"Stadium Night" with broadcast
+        numbers**: A's dark, calm FM-dense base + B's condensed numbers and a TV-style race card; track orange kept, yellow only for race
+        results; the stadium photo only on big moments; dark only for now; D28 amended; mock-ups in `docs/v1/` (planner and race card,
+        PC + phone; `look.html` has all three directions and the research))* (research: FM, sports-broadcast graphics, running apps such as Strava / Garmin, mobile sports
         managers; three directions as mock-ups; the user picks; written into GDD 5 with colours, type, density and icon style; D28
         revisited). No game code. *(Opus, high)*
         Done: a chosen direction in the GDD, and the week planner shown in it as a mock-up.
@@ -482,7 +485,14 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         when his truth is not "Fine"; Make it easy / Keep mine); proposals are no longer stops; the mid-week stop rule; race weeks shown with
         the plan's own taper; the Training tab becomes the season plan; the 9 free-time slots with standing habits (neutral habit in `lab`);
         built in V1's look; save version 5 (older saves load). *(Opus, high)*
-        Done: a normal week = 2 clicks; `season_playtest` measures ≤ 1 mid-week stop a week on average and weeks that play through.
+        **From V1 (read GDD 5 "The look (V1)" and `docs/v1/planner_pc.png` / `planner_phone.png` first):** start with the **V1 kit**:
+        the new `Palette` values and tokens (`TOP_BAR`, `DAY`, `LEAD`, `PEOPLE`, `BAR_TRACK`, `DAY_REST` …), Barlow Condensed in
+        `assets/fonts` (+ licence), the `ThemeBuilder` variations (`DisplayNumber`, `BigNumber`, `SectionLabel`, `WhyLabel`), the Lucide SVGs
+        in `assets/icons` (+ ISC licence, README) with an `Icons` helper, and the controls `StatBar` (warning tick), `CauseChip`,
+        `CalloutCard`. The old screens pick up the new colours at once (expected; check them with `layout_check` and the tour) and are
+        restyled properly later. Open points for L1's own questions: the tab names (the mock-up shows This week / Season / Calendar /
+        People / Career / Rankings: where Overview and Report go), whether the week strip stays in the header of other tabs, and what Play
+        week does with choices still open ("2 choices waiting"). The mock-up's 32 px in-card buttons become 44 px (the rule stays).
   - [ ] **L2. Causes visible** (decision 2): body bars with % and warning lines, Form with its factors, moods with causes, the week report
         column (one "done"), the "what this race did" card (incl. a scratch), effects as words + what they do with numbers on a tap.
         *(Opus, high)*
@@ -520,7 +530,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         lukiot (with their published lowest accepted averages, 5 or 6 periods), the real vocational schools (athletics-friendly
         programmes) and the real grades 7-9 schools, each fact with its source and read date, unverified ones marked; then the
         application, the School page and the lukio calendar use them instead of the town-named placeholders. *(Opus, high)*
-  - [ ] **Restyle the remaining screens** in V1's look (with layout_check, the tour and help_check updated). *(Sonnet, high)*
+  - [ ] **Restyle the remaining screens** in V1's look (GDD 5 "The look (V1)": the text-cutting rules, the 56 px header, the photo only on
+        big moments, the race card's broadcast shapes; with layout_check, the tour and help_check updated). *(Sonnet, high)*
   - [ ] **B1. Balance session:** every target of GDD 4.9.7 + 4.10 over many seasons in the `real` preset (`career_check`, `season_check`,
         `storylet_check`, the slots' and the group's effect sizes). *(Opus, high)*
   - Then the user's playtest and the **check-in at the end of M2** *(Opus)*. Gym day comes with the specialists (later).

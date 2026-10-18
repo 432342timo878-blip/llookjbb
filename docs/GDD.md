@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.12 — 2026-10-18 (the redesign after season playtest 2, "plan → play → see": 4.10; earlier: the Coaching + School design: 4.9; the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
+Version 0.13 — 2026-10-18 (V1, the look: section 5 "The look (V1)", D28 amended; the redesign after season playtest 2, "plan → play → see": 4.10; earlier: the Coaching + School design: 4.9; the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
 `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; race realism R1–R5, M2 steps 3–6). Living document: updated after
 each design discussion.
 
@@ -44,7 +44,7 @@ and other events happening at the same time around your own event.
 | D25 | Training | Start with ready-made sessions placed into days; later a full custom session editor; a hired coach can build plans from focus areas. |
 | D26 | 800m decisions | Race plan, break from lanes (100m), halfway split, responding to moves, kick timing, home straight. |
 | D27 | Language | English UI for now (text kept translatable for Finnish later). |
-| D28 | Visual style | Dark mode, Football Manager-inspired: dense but clean data screens, panels, tables. |
+| D28 | Visual style | Dark mode, Football Manager-inspired: dense but clean data screens, panels, tables. **Amended by V1 (2026-10-18):** less text (icons, chips, bars, numbers with a word), big numbers in a condensed face, race results in athletics-TV style; dark only for now, the stadium photo only on big moments. Style guide: section 5 "The look (V1)". |
 
 ## 3. M1 proposals (Claude's defaults — change anytime)
 
@@ -4114,7 +4114,8 @@ afterwards; everything else is visible state or a quiet feed, never a question.*
      week). One screen: **last week** on the left (sessions done, what changed and why as short cause chips, the coach's one line: this
      column *is* the week report); **next week's block** in the middle (sessions + intensity per day, the evening and weekend slots, the
      calendar: races, tests, school tests, invitations); **body and mind** on the right (bars and words with causes) and Play week.
-     Mock-up in the design session's chat (2026-10-18); the final look comes from V1.
+     Mock-up in the design session's chat (2026-10-18); **the final look is V1's: `docs/v1/planner_pc.png` / `planner_phone.png`,
+     style guide in section 5 "The look (V1)"**.
    - **The coach's changes become notes on the planner days**, with the reason and the number behind it ("Thursday tempo → easy run?
      Shins at 62 %, warning at 70 %. Cost: a little less aerobic work"), answered *Make it easy / Keep mine* (Keep mine = the Veto, D18).
      **He writes a note only when his judgement is not "Fine"** (his view through his attributes as in C4; a weak coach still errs both
@@ -4199,7 +4200,9 @@ afterwards; everything else is visible state or a quiet feed, never a question.*
 9. **The look: pulled forward** (the user's pick). A research session finds references (FM, sports-broadcast graphics, running apps such
    as Strava / Garmin, mobile sports managers), Claude shows three directions as mock-ups, the user picks; the new screens of the loop
    are built in it from the start and the old ones are restyled after. Sleeker, less text, "informative yet easy to read". D28 (dark,
-   FM-inspired) is revisited there.
+   FM-inspired) is revisited there. **Done (V1, 2026-10-18):** "Stadium Night" (A: dark, calm, FM-dense) with broadcast numbers and a
+   TV-style race card (B), track orange kept, yellow only for race results, the photo only on big moments, dark only for now; D28
+   amended; style guide and mock-ups in section 5 "The look (V1)" and `docs/v1/`.
 10. **The long arc: the career-simulator essence.**
     - **A Career tab:** every race result in one list (filter by season / meet), a **timeline of milestones** (first PB under 2:20, first
       SM final, the TF-juniorit letter, records, coach changes, the urheilulukio), PB progression, rankings history.
@@ -4293,6 +4296,138 @@ Fingerprints identical (`training_balance -- 0` coach row 206.798298350 / 14.102
 
 ## 5. Presentation
 
+### The look (V1, decided 2026-10-18): "Stadium Night" with broadcast numbers
+
+**Why.** Season playtest 2: "a block of text", "not pretty", "informative yet easy to read" (GDD 4.10 decision 9). The tour shots of
+2026-10-18 showed a sound base (dark, one orange accent, coloured 1–20 numbers, a real phone layout) whose problem is that information
+arrives as **sentences** (the Sunday talk, the race's "Key moments") and a busy photo behind every panel. **Research** (sources and what
+was taken: the reference page's "Compare + research" tab): Football Manager 26 (a calendar day = a row of session icons; tile → card;
+its moved navigation was the most criticised part of its launch, so our tabs stay where they are), FM Mobile (one column of rows),
+athletics TV (result straps, position box, PB / SB tags, split boards), Strava (form = fitness vs fatigue), Garmin Connect (a number + a
+colour band + one line), WHOOP (three bands green / yellow / red), Runna (a colour per session type, ticks for done), mobile managers
+(one action per card). **Three directions were drawn** on the same two screens (the Sunday planner and "what this race did", PC 1280×720
+and phone 390×844): A "Stadium Night" (today's dark look done properly), B "Broadcast" (athletics TV graphics), C "Training App" (light,
+Strava / WHOOP-like).
+
+**Decisions (user, 2026-10-18; each the recommended option):** (1) **A as the base with B's numbers**: the screens you read stay dark,
+calm and FM-dense; every big number (times, places, %, countdowns, dates) is set in a condensed face; results and the race card use B's
+broadcast shapes. (2) **The stadium photo only on big moments** (main menu, race intro, career start, the season review); data screens
+get the plain background. (3) **Track orange stays the one accent**; a yellow "leader" highlight exists **only for the race and results**.
+(4) **Dark only for now**; colours are named tokens so a light mode can come later without touching screens. **D28 amended** (section 2).
+
+**Reference (look at these before building a screen):** `docs/v1/planner_pc.png`, `docs/v1/planner_phone.png` (the Sunday planner),
+`docs/v1/race_card_pc.png`, `docs/v1/race_card_phone.png` ("what this race did"); `docs/v1/look.html` (open it in a browser: the chosen
+look, today's screens, all three directions and the research; it needs the internet for its fonts and icons); the published page
+https://claude.ai/artifact/2yCqtVgDpAb8BTDHFbFWu4 (private to the user). Everyone in the mock-ups is fictional. The mock-up's phone frame is
+390 wide; Godot's compact layout is 480 logical px wide, so the compact sizes below are the mock-up's × ~1.23.
+
+**Colours** (dark; hex; `Palette` keeps its names where a token exists and gains the new ones):
+
+| Token | Hex | Use |
+|---|---|---|
+| `BG` | `#0e1117` | screen background (was `#12141a`) |
+| `TOP_BAR` | `#12161d` | header and bottom tab bar |
+| `SURFACE` | `#161a22` | panels (opaque on data screens; `SURFACE_PANEL` translucency only over a photo) |
+| `SURFACE_2` | `#1e232d` | raised things inside a panel: chips, facts, rows, buttons |
+| `DAY` | `#181c25` | a planner day column |
+| `BORDER` | `#262c39` | panel and day borders; `LINE` `#232936` for the header's divider |
+| `TEXT` / `TEXT_MUTED` / `TEXT_FAINT` | `#e9ecf2` / `#8d95a7` / `#5c6476` | faint only for captions, slot markers and dividers, never for information |
+| `ACCENT` | `#ff5a36` (hover `#ff7656`, pressed `#e04a29`) | the one action colour: Play week, the primary button, the selected tab, "new" dots |
+| `LEAD` | `#ffc83d` (text on it `#0a0e19`) | race and results only: the position box, PB / SB tags, the race card's section marks |
+| `GOOD` / `WARN` / `BAD` | `#3ddc84` / `#e9b949` / `#ef5b4f` | bands and deltas: better / near a line / over a line or worse |
+| `DAY_EASY` / `DAY_NORMAL` / `DAY_HARD` / `DAY_REST` | `#5fb0e8` / `#a0a8b9` / `#ef6a5b` / `#3a4152` | intensity: the day's top line, its session icons, the phone row's left edge |
+| `SCHOOL_TEST` | `#c7a4ef` on `rgba(181,139,224,0.14)` | test chips |
+| `PEOPLE` | `#5fd0c4` on `rgba(95,208,196,0.10)` | invitations and slots something landed on |
+| `BAR_TRACK` | `#2a303c` | the empty part of a bar |
+| `COACH` | `#3f8f6a` | the coach's avatar (each person keeps an avatar colour) |
+
+The attribute colours (`ATTR_POOR` … `ATTR_EXCELLENT`) stay. The soreness / tier / risk colours map onto `WARN` / `BAD` / `GOOD`; the
+stadium drawing colours wait for R6. Text contrast: `TEXT_MUTED` on `SURFACE` is about 6:1; `TEXT_FAINT` is about 3:1, hence captions only.
+
+**Type.** Two families, both OFL: **Inter** (have: Regular 400, SemiBold 600, Bold 700) for everything you read; **Barlow Condensed**
+(add SemiBold 600, Bold 700, ExtraBold 800 from Google Fonts to `assets/fonts` with its licence) for numbers only. Digits that line up in
+columns use tabular figures (`FontVariation` OpenType feature `tnum` where the font has it; L1 checks Barlow Condensed). Scale in Godot
+logical px, PC / compact:
+
+| Role | Face | PC | Compact |
+|---|---|---|---|
+| Display number (race card place and time) | Barlow Condensed ExtraBold | 64 | 48 |
+| Big number (bar %, PB time, Form word, countdown, the day's date) | Barlow Condensed Bold | 22 | 26 |
+| Title (the athlete's name, a screen title) | Inter Bold | 20 | 22 |
+| Heading (a card's title: "Thu: tempo → easy run?") | Inter SemiBold | 15 | 18 |
+| Body | Inter Regular | 14 | 17 |
+| Label (a session, a chip's name, a mood) | Inter SemiBold | 13 | 16 |
+| Why line (the cause under a chip, bar or mood) | Inter Regular, muted | 12 | 14 |
+| Section label ("LAST WEEK") | Inter Bold, caps, +1 px letter spacing, muted | 12 | 13 |
+
+Nothing below 11 px on PC or 13 on compact. Caps only for section labels and the race card's broadcast heads, never for sentences. The
+race card's heads and buttons use Barlow Condensed caps (B's look); everywhere else the heads are Inter.
+
+**Spacing and density.** A 4 px grid. Page margin 14 (PC) / 12 (compact); gap 6 inside lists, 10–12 between panels; panel padding 12.
+**The header is one 56 px bar** (avatar, name, one meta line, the tabs, the date, "?" and the menu) instead of today's ~140 px title block.
+The PC planner is three columns, 268 | rest | 290, gap 12. Density is FM's, but **5 items + "+N more"** in any list of causes, and one
+callout per choice.
+
+**Panels and cards** (three levels, never more than two nested):
+- **Panel**: `SURFACE`, 1 px `BORDER`, radius 8, no shadow. A column or a block of the screen.
+- **Raised**: `SURFACE_2`, radius 6, no border. Chips, facts ("Load 104 %"), the race line, rows inside a panel.
+- **Callout**: a panel with a 3 px left edge in its meaning colour: `WARN` = the coach's note, `PEOPLE` = an invitation, `ACCENT` = needs
+  you. The only cards with buttons. Information without a choice is a plain row, not a card.
+- **Buttons**: primary = `ACCENT` fill, white Inter Bold; secondary = `SURFACE_2` with a `BORDER` line; radius 6. **44 px minimum stays**
+  (the mock-up's 32 px buttons inside cards become 44 in Godot). Play week is the biggest button on the screen (52 px, bottom right on PC,
+  sticky above the bottom bar on a phone) and says how many choices are waiting.
+- **Broadcast shapes (race and results only)**: radius 0–2, a 4 px `LEAD` mark before each section head, the position box in `LEAD` with
+  dark text and the PB tag in `LEAD`, the box and Continue slanted −8° (`StyleBoxFlat.skew`).
+
+**Numbers, bars and warnings.**
+- **Every number has its unit and a word**: "62 %, Near the line"; times m:ss.ss; deltas with a sign and a colour (`GOOD` better, `BAD`
+  worse; "−6.51 s" is green); moods with ▲ / ▼.
+- **Bars**: a 7 px track (`BAR_TRACK`, radius 4), the big number right-aligned above it, the fill coloured by band (below the warning
+  line − 15: `GOOD`; up to the line: `WARN`; at or over it: `BAD`), a **2 px light tick at the warning line**, and one why line under it
+  (word · warning at 70 % · cause). Three bands everywhere (WHOOP / Garmin), so colour alone already says "fine / careful / over".
+- **Warnings**: on the day it concerns, an amber "!" dot and an amber day border, and a callout with the choice. Red only at or over a
+  line (injury, over the warning line, a worse result). "New" is an `ACCENT` dot, never red text.
+- **Charts**: small, flat, drawn in `_draw`: the race card's 200 m splits as paired bars (you in `ACCENT`, the winner in `DAY_NORMAL`),
+  a faint grid, values on the bars, an axis note ("lower is faster"). Trend lines (PB progression, form) come with K1 in the same style.
+- The FM 1–20 colours for attributes stay as they are.
+
+**Icons.** **Lucide** (lucide.dev, **ISC licence**: free, keep the licence text; ~1,500 icons on a 24 px grid with a 2 px stroke; the
+mock-up used version 0.460.0): the SVG files Claude picks go to `assets/icons/` with `LICENSE` and a README (source, version), imported as
+textures and tinted with `modulate`. Sizes: 16 in rows and chips, 13 in slots, 20 in the bottom bar; the colour is the meaning (a
+session's icon takes its intensity colour, others are muted). Athletics icons Lucide does not have (a runner, spikes, the track oval) are
+**drawn by Claude** in the same 24 px / 2 px style. No emoji. The set used in the planner: easy run `footprints`, drills / strides `zap`,
+strength `dumbbell`, club group `users`, tempo / intervals `timer`, long run `route`, mobility `person-standing`, rest `moon`, race `flag`,
+test `pencil-line`, study `book-open`, family `house`, a friend `user-round`, an invitation `party-popper`, the coach's note
+`message-circle`, a warning `triangle-alert`, confidence `smile`, race tactics `crosshair`, composure `shield`, aerobic `trending-up`, a
+day slot `sun`, an evening slot `moon` (small, faint), Play week `play`.
+
+**How text is cut down** (the rule for every new screen):
+1. **A session** = icon + 1–3 words ("Tempo 5×1 km"); what it is and does on tap.
+2. **A change** = a chip: icon, name, value ("+0.3", "44 → 62 %", "▲"), one cause line of at most ~6 words ("hard Tuesday + race Saturday").
+3. **A state** (body, Form, load) = big number + bar or band word + one why line; the exact factors on tap (`UIKit.tap_to_explain`).
+4. **A mood or a person** = a word + what it does ("Keen · trains a little better"); the numbers and recent causes on tap.
+5. **The coach** = one line of at most ~25 words on the planner and the race card; **a note on a day** = a title ("Thu: tempo → easy run?"),
+   one line with the number and the cost, two buttons.
+6. **A list** shows 5 items + "+N more"; **a result** is a strap (position, time, tag), not a sentence.
+7. **Help** stays behind the "?" (sections ≤ ~50 words); no paragraphs of explanation on a screen.
+
+**Phone (compact).** One column, scrolling, in this order on the planner: last week (chips wrap, 4 + "+N more", the coach's line) → a
+body strip (two bars + Form) → next week as **rows** (the date as a big number, a 4 px left edge in the intensity colour, the sessions in
+words, the day's test chip, slot icons on the right) → a note or invitation expands **under its day** → **Play week sticky** above the
+**bottom tab bar** (icons + labels). Rows at least 46 px. Never a squeezed PC table. The race card: the result strap, 4 effects, the
+coach's line, Continue sticky at the bottom.
+
+**Backdrop.** The photo and the shader stay, shown on the main menu, the race intro, the career start and the season review only. Data
+screens use plain `BG`.
+
+**In Godot** (what the restyle needs; nothing new in the engine): new `Palette` values and tokens; `ThemeBuilder` label variations
+`DisplayNumber`, `BigNumber`, `SectionLabel`, `WhyLabel` (Title / Heading / Muted / Caption re-sized to the scale); style boxes Panel /
+Raised / Callout(colour) / Strap (`StyleBoxFlat`: radius, border, skew); small controls `StatBar` (track, fill by band, warning tick),
+`CauseChip`, `CalloutCard`, an `Icons` helper (name → texture); charts and rings with `_draw`. No shaders, no blur, no gradients needed.
+
+**Done (V1, 2026-10-18):** research, three directions, the user's pick, this guide and the reference mock-ups (`docs/v1/`). No game
+code or data changed; fingerprints untouched.
+
 ### Help (built 2026-10-07)
 
 Not a tutorial: every screen has a **"?" ("How this works")** that opens a short help for that screen only, when the player
@@ -4331,7 +4466,7 @@ reached by "See also" buttons** (with "◀ Back"). Claude's defaults, accepted:
 
 - 2D stadium view during meets: track, crowd, simultaneous events.
 - Modern, sleek, responsive UI (desktop + mobile).
-- **Idea (user, for later):** the plain dark UI feels generic. Use athlete photos as screen backgrounds, darkened and/or blurred behind the panels so they never hurt readability. Could vary per screen or event (e.g. an 800 m pack on the career hub). Needs a set of good, properly licensed photos (e.g. Wikimedia Commons) or the user's own. **Status (UI polish pass, 2026-10-05):** the backdrop system is built (blurred + darkened photo behind translucent panels, per screen, falls back to a gradient). A deliberately harsh test image stayed readable, but loose text (tabs, captions) is the weak spot, so photos should be calm and dark. Photos added (2026-10-05, user-approved): two Finnish athletes at Kalevan Kisat 2018 and Lahti Stadium, all CC BY-SA 4.0 from Wikimedia Commons; a Credits screen is still to do. See `assets/backgrounds/README.md`.
+- **Idea (user, for later):** the plain dark UI feels generic. Use athlete photos as screen backgrounds, darkened and/or blurred behind the panels so they never hurt readability. Could vary per screen or event (e.g. an 800 m pack on the career hub). Needs a set of good, properly licensed photos (e.g. Wikimedia Commons) or the user's own. **Status (UI polish pass, 2026-10-05):** the backdrop system is built (blurred + darkened photo behind translucent panels, per screen, falls back to a gradient). A deliberately harsh test image stayed readable, but loose text (tabs, captions) is the weak spot, so photos should be calm and dark. Photos added (2026-10-05, user-approved): two Finnish athletes at Kalevan Kisat 2018 and Lahti Stadium, all CC BY-SA 4.0 from Wikimedia Commons; a Credits screen is still to do. See `assets/backgrounds/README.md`. **V1 (2026-10-18):** the photo now belongs to the big moments only (main menu, race intro, career start, season review); data screens get the plain background ("The look (V1)" above).
 
 ## 6. Data
 

@@ -1,0 +1,607 @@
+<title>V1 Look Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Page chrome: a quiet review board around twelve game frames. Each frame carries its own fixed skin. */
+:root{
+  --pg-bg:#f2f3f5; --pg-panel:#ffffff; --pg-line:#dcdfe5; --pg-fg:#1a1f2b; --pg-muted:#5d6577; --pg-accent:#d9441f;
+  --pg-good:#1d8a55; --pg-bad:#c23a2e;
+  --pg-font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --pg-bg:#0c0e12; --pg-panel:#15181e; --pg-line:#272c36; --pg-fg:#e7e9ee; --pg-muted:#9098a8; --pg-accent:#ff6a45;
+  --pg-good:#43c785; --pg-bad:#f06a5e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --pg-bg:#0c0e12; --pg-panel:#15181e; --pg-line:#272c36; --pg-fg:#e7e9ee; --pg-muted:#9098a8; --pg-accent:#ff6a45;
+  --pg-good:#43c785; --pg-bad:#f06a5e; color-scheme:dark}
+body{margin:0;background:var(--pg-bg);color:var(--pg-fg);font-family:var(--pg-font);font-size:15px;line-height:1.5}
+.page{max-width:1240px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:28px;line-height:1.15;margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--pg-muted);max-width:70ch;margin:0}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 18px;border-bottom:1px solid var(--pg-line)}
+.tabs button{font:600 14px var(--pg-font);color:var(--pg-muted);background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;cursor:pointer;min-height:44px}
+.tabs button[aria-selected="true"]{color:var(--pg-fg);border-bottom-color:var(--pg-accent)}
+.tabs button:focus-visible{outline:2px solid var(--pg-accent);outline-offset:2px}
+.intro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.intro div{background:var(--pg-panel);border:1px solid var(--pg-line);border-radius:10px;padding:12px 14px;min-width:0}
+.intro h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--pg-muted)}
+.intro p{margin:0;font-size:14px}
+.dirhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin:6px 0 10px}
+.dirhead h2{margin:0;font-size:22px}
+.dirhead span{color:var(--pg-muted)}
+.cap{font-size:13px;color:var(--pg-muted);margin:18px 0 6px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cap b{color:var(--pg-fg);font-weight:600}
+.fw{position:relative;width:100%;overflow:hidden;border-radius:10px;border:1px solid var(--pg-line)}
+.fw > .frame{position:absolute;left:0;top:0;transform-origin:0 0}
+.phones{display:flex;flex-wrap:wrap;gap:20px}
+.phones .pcol{flex:1 1 300px;max-width:390px;min-width:0}
+.godot{margin-top:14px;background:var(--pg-panel);border:1px solid var(--pg-line);border-radius:10px;padding:12px 14px;font-size:14px}
+.godot b{font-weight:600}
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+table.cmp th,table.cmp td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--pg-line);vertical-align:top}
+table.cmp th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--pg-muted)}
+.scroll{overflow-x:auto}
+.rec{background:var(--pg-panel);border:1px solid var(--pg-line);border-left:4px solid var(--pg-accent);border-radius:10px;padding:14px 16px;margin-top:18px}
+.rec h3{margin:0 0 6px;font-size:17px}
+.rec p,.rec li{max-width:80ch}
+.today{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.today figure{margin:0;background:var(--pg-panel);border:1px solid var(--pg-line);border-radius:10px;overflow:hidden;min-width:0}
+.today img{display:block;width:100%;height:auto}
+.today figcaption{padding:10px 12px;font-size:14px}
+.today .phs{display:flex;gap:10px;padding:10px;justify-content:center;background:var(--pg-bg)}
+.today .phs img{width:48%;max-width:220px;border-radius:6px}
+.ok{color:var(--pg-good);font-weight:600}.no{color:var(--pg-bad);font-weight:600}
+.sources{font-size:13px;color:var(--pg-muted)}
+.sources a{color:inherit}
+@media (max-width:720px){.intro,.today{grid-template-columns:1fr}}
+
+/* ============ GAME FRAMES: shared structure ============ */
+.frame{font-family:var(--ui);color:var(--text);background:var(--bg);overflow:hidden;font-size:13px;line-height:1.35}
+.frame *{box-sizing:border-box}
+.frame svg.lucide{width:15px;height:15px;stroke-width:1.9;flex:none}
+.frame .num{font-family:var(--numf);font-variant-numeric:tabular-nums}
+.pc{width:1280px;height:720px;display:grid;grid-template-rows:56px 1fr}
+.ph{width:390px;height:844px;display:grid;grid-template-rows:auto 1fr auto auto;position:relative}
+.top{display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--topbg);border-bottom:1px solid var(--line)}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.av{width:34px;height:34px;border-radius:var(--avr);display:grid;place-items:center;font-weight:700;font-size:13px;background:var(--raised);color:var(--text);flex:none}
+.who b{display:block;font-size:15px}
+.who small{display:block;color:var(--muted);font-size:12px}
+.navt{display:flex;gap:4px;margin-left:12px}
+.navt > span{padding:17px 12px;color:var(--muted);font-weight:600;font-size:13px;border-bottom:3px solid transparent}
+.navt > span.on{color:var(--text);border-bottom-color:var(--accent)}
+.topr{margin-left:auto;display:flex;align-items:center;gap:10px}
+.date{color:var(--muted);font-weight:600}
+.ib{width:36px;height:36px;border-radius:var(--r2);display:grid;place-items:center;background:var(--raised);color:var(--muted)}
+.plb{display:grid;grid-template-columns:268px minmax(0,1fr) 290px;gap:12px;padding:12px 14px;min-height:0}
+.col{min-width:0;display:flex;flex-direction:column;gap:10px;min-height:0}
+.pan{background:var(--panel);border:1px solid var(--pline);border-radius:var(--r);padding:12px;box-shadow:var(--shadow)}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.sec em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--faint)}
+/* last week */
+.lwst{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.dots{display:flex;gap:3px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--good);display:block}
+.lwst .num{font-weight:700;font-size:15px}
+.raceline{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r2);background:var(--raised);margin-bottom:10px}
+.raceline .t{font-weight:700;font-size:15px}
+.pb{font-size:10px;font-weight:800;padding:2px 5px;border-radius:3px;background:var(--accent);color:var(--accentink);letter-spacing:.04em}
+.chips{display:flex;flex-direction:column;gap:6px}
+.chip{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--r2);background:var(--chipbg);border:1px solid var(--chipline)}
+.chip .w{color:var(--muted);font-size:11.5px;grid-column:2 / 4}
+.chip b{font-weight:600}
+.chip .v{font-weight:700}
+.up{color:var(--good)}.dn{color:var(--bad)}.wa{color:var(--warn)}.ne{color:var(--muted)}
+.coach{display:flex;gap:10px;align-items:flex-start;margin-top:auto}
+.coach .av{background:var(--coachbg);color:#fff;width:30px;height:30px}
+.coach q{quotes:none;font-size:13px}
+.coach small{display:block;color:var(--muted);font-size:11px;margin-bottom:2px}
+/* next week */
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{position:relative;display:flex;flex-direction:column;gap:5px;padding:8px 7px;border-radius:var(--r2);background:var(--daybg);border:1px solid var(--pline);min-height:300px}
+.day .dh{display:flex;align-items:baseline;gap:5px}
+.dname{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.dnum{font-weight:700;font-size:15px}
+.dint{height:4px;border-radius:2px;background:var(--ic)}
+.dint span{display:none}
+.int-easy{--ic:var(--easy)}.int-normal{--ic:var(--normal)}.int-hard{--ic:var(--hard)}.int-rest{--ic:var(--rest)}
+.sess{display:flex;flex-direction:column;gap:4px}
+.se{display:flex;gap:5px;align-items:center;font-size:12px;font-weight:600;line-height:1.2}
+.se svg.lucide{color:var(--ic)}
+.tag{display:flex;gap:4px;align-items:center;font-size:11px;font-weight:600;color:var(--test);background:var(--testbg);padding:3px 5px;border-radius:4px}
+.tag svg.lucide{width:12px;height:12px}
+.fix{font-size:10.5px;color:var(--faint)}
+.slots{margin-top:auto;display:flex;flex-direction:column;gap:4px}
+.slot{display:flex;gap:5px;align-items:center;font-size:11.5px;padding:4px 5px;border-radius:4px;background:var(--slotbg);color:var(--muted)}
+.slot{gap:4px;padding:4px}
+.slot b{display:flex;color:var(--faint)}
+.slot b svg.lucide{width:11px;height:11px}
+.slot span{min-width:0}
+.slot svg.lucide{width:13px;height:13px}
+.slot.inv{background:var(--invbg);color:var(--text);outline:1px solid var(--inv)}
+.slot.inv svg.lucide{color:var(--inv)}
+.flag{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;background:var(--warn);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:12px}
+.day.has-note{border-color:var(--warn)}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.note{padding:10px 12px;border-radius:var(--r2);background:var(--panel);border:1px solid var(--pline);box-shadow:var(--shadow)}
+.note h5{margin:0 0 3px;font-size:13px;display:flex;gap:6px;align-items:center}
+.note p{margin:0 0 8px;color:var(--muted);font-size:12px}
+.note.cn{border-left:3px solid var(--warn)}
+.note.iv{border-left:3px solid var(--inv)}
+.btns{display:flex;gap:6px}
+.btn{height:32px;padding:0 12px;border-radius:var(--r2);display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;background:var(--raised);color:var(--text);border:1px solid var(--pline)}
+.btn.pri{background:var(--accent);color:var(--accentink);border-color:var(--accent)}
+.facts{display:flex;gap:8px;flex-wrap:wrap}
+.fact{flex:1 1 0;min-width:0;padding:8px 10px;border-radius:var(--r2);background:var(--raised)}
+.fact small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700}
+.fact b{font-size:14px}
+.fact span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* body + mind */
+.bar{margin-bottom:9px}
+.bar .bl{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.bar .bl b{font-weight:600}
+.bar .bl .val{font-weight:700;font-size:15px}
+.bar .bw{font-size:11px;color:var(--muted)}
+.trk{position:relative;height:7px;border-radius:4px;background:var(--track);margin:4px 0 2px}
+.trk i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--fc)}
+.trk u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);opacity:.8}
+.seg{display:none}
+.z-ok{--fc:var(--good)}.z-mid{--fc:var(--warn)}.z-bad{--fc:var(--bad)}
+.rings{display:none}
+.form{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r2);background:var(--raised);margin-top:4px}
+.form .fv{font-weight:800;font-size:17px;color:var(--good)}
+.form span{font-size:11.5px;color:var(--muted)}
+.mind{display:flex;flex-direction:column;gap:7px}
+.mr{display:grid;grid-template-columns:1fr auto;gap:0 8px}
+.mr b{font-weight:600}
+.mr .mw{font-weight:700}
+.mr span{grid-column:1 / 3;font-size:11.5px;color:var(--muted)}
+.play{margin-top:auto;height:52px;border-radius:var(--r);background:var(--accent);color:var(--accentink);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:16px;box-shadow:var(--shadow)}
+.play svg.lucide{width:18px;height:18px}
+.play small{font-weight:600;font-size:11px;opacity:.85}
+/* phone planner */
+.ptop{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--topbg);border-bottom:1px solid var(--line)}
+.ptop .date{margin-left:auto;font-size:12px}
+.pscroll{overflow:hidden;padding:10px 12px;display:flex;flex-direction:column;gap:9px}
+.pcard{background:var(--panel);border:1px solid var(--pline);border-radius:var(--r);padding:10px 12px;box-shadow:var(--shadow)}
+.hchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.hc{display:inline-flex;gap:4px;align-items:center;font-size:11.5px;font-weight:600;padding:4px 7px;border-radius:999px;background:var(--chipbg);border:1px solid var(--chipline)}
+.hc svg.lucide{width:12px;height:12px}
+.pbody{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pbody .mini small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}
+.pbody .mini b{font-size:16px}
+.pbody .trk{height:5px}
+.prow{display:grid;grid-template-columns:40px 4px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--pline);min-height:46px}
+.prow:last-child{border-bottom:0}
+.prow .pd b{display:block;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.prow .pd span{font-weight:700;font-size:15px}
+.prow .pi{align-self:stretch;border-radius:2px;background:var(--ic)}
+.prow .ps{display:flex;flex-direction:column;gap:1px;font-weight:600;font-size:12.5px;min-width:0}
+.prow .ps small{font-weight:500;color:var(--muted);font-size:11px}
+.prow .ps .tag{align-self:flex-start;margin-top:2px}
+.prow .psl{display:flex;gap:4px;color:var(--muted)}
+.prow .psl .inv{color:var(--inv)}
+.prow.warn{background:var(--warnbg)}
+.pnote{margin:0 10px 8px;padding:8px 10px;border-radius:var(--r2);background:var(--raised);font-size:12px}
+.pnote p{margin:2px 0 7px;color:var(--muted)}
+.pnote .btns .btn{height:34px;flex:1;justify-content:center}
+.pplay{padding:8px 12px;background:var(--bg);border-top:1px solid var(--line)}
+.pplay .play{height:48px}
+.btab{display:grid;grid-template-columns:repeat(5,1fr);background:var(--topbg);border-top:1px solid var(--line);height:58px}
+.btab span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;color:var(--muted);font-weight:600}
+.btab span.on{color:var(--accent)}
+.btab svg.lucide{width:18px;height:18px}
+/* race card */
+.rcb{display:grid;grid-template-columns:520px minmax(0,1fr);gap:14px;padding:14px 18px;min-height:0}
+.rhead{display:flex;align-items:flex-end;gap:16px}
+.place{font-weight:800;font-size:44px;line-height:1}
+.place small{font-size:16px;color:var(--muted);font-weight:600;margin-left:4px}
+.rtime{font-weight:800;font-size:44px;line-height:1}
+.rdelta{color:var(--good);font-weight:700}
+.rsub{color:var(--muted);margin-top:6px}
+.chart{margin-top:10px}
+.chart svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin-top:4px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.eff{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--pline)}
+.eff:last-child{border-bottom:0}
+.eff .ei{width:28px;height:28px;border-radius:var(--r2);background:var(--raised);display:grid;place-items:center}
+.eff b{font-weight:600}
+.eff .ev{font-weight:700;text-align:right}
+.eff small{grid-column:2 / 4;color:var(--muted);font-size:11.5px}
+.goal{margin-top:8px}
+.goal .trk{height:8px}
+.cont{display:flex;gap:10px;margin-top:auto;align-items:center}
+.cont .btn{height:44px;padding:0 22px;font-size:14px}
+.cont .nx{color:var(--muted);font-size:12px;margin-left:auto;text-align:right}
+.pres{padding:14px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+
+/* ============ A: Stadium Night ============ */
+.dA{--bg:#0e1117;--topbg:#12161d;--panel:#161a22;--raised:#1e232d;--daybg:#181c25;--line:#232936;--pline:#262c39;--text:#e9ecf2;--muted:#8d95a7;--faint:#5c6476;
+  --accent:#ff5a36;--accentink:#ffffff;--good:#3ddc84;--warn:#e9b949;--bad:#ef5b4f;--easy:#5fb0e8;--normal:#a0a8b9;--hard:#ef6a5b;--rest:#3a4152;
+  --test:#c7a4ef;--testbg:rgba(181,139,224,.14);--inv:#5fd0c4;--invbg:rgba(95,208,196,.10);--slotbg:#1f242e;--chipbg:#1b2029;--chipline:#262c39;--track:#2a303c;--warnbg:rgba(233,185,73,.07);
+  --coachbg:#3f8f6a;--ui:"Inter",system-ui,sans-serif;--numf:"Inter",system-ui,sans-serif;--r:8px;--r2:6px;--avr:50%;--shadow:none}
+
+/* ============ B: Broadcast ============ */
+.dB{--bg:#070b16;--topbg:#0b1222;--panel:#0e1629;--raised:#16203a;--daybg:#0e1629;--line:#1b2640;--pline:#1f2b48;--text:#ffffff;--muted:#9eabc8;--faint:#61708f;
+  --accent:#ffc83d;--accentink:#0a0e19;--good:#41e28c;--warn:#ff9f1c;--bad:#ff4d5e;--easy:#4fb3ff;--normal:#c7d0e4;--hard:#ff4d5e;--rest:#2a3655;
+  --test:#d5b4ff;--testbg:rgba(170,120,255,.18);--inv:#33e0d0;--invbg:rgba(51,224,208,.10);--slotbg:#121b31;--chipbg:#101a30;--chipline:#1f2b48;--track:#1a2540;--warnbg:rgba(255,159,28,.08);
+  --coachbg:#2b7de9;--ui:"Barlow",system-ui,sans-serif;--numf:"Barlow Condensed","Arial Narrow",sans-serif;--r:2px;--r2:2px;--avr:2px;--shadow:none}
+.dB .sec{font-family:var(--numf);font-size:15px;letter-spacing:.08em;color:var(--text);font-weight:700;border-left:4px solid var(--accent);padding-left:8px}
+.dB .sec em{font-family:var(--ui);font-size:12px;color:var(--muted)}
+.dB .pan{border:0;border-top:2px solid var(--pline)}
+.dB .who b{font-family:var(--numf);font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+.dB .navt > span{font-family:var(--numf);font-size:15px;text-transform:uppercase;letter-spacing:.06em;padding:15px 14px}
+.dB .navt > span.on{background:var(--accent);color:var(--accentink);border-bottom-color:transparent;transform:skewX(-10deg)}
+.dB .navt > span.on > span{display:inline-block;transform:skewX(10deg);color:var(--accentink)}
+.dB .dnum{font-family:var(--numf);font-size:30px;line-height:.9;font-weight:800}
+.dB .dname{font-family:var(--numf);font-size:14px;color:var(--text)}
+.dB .day .dh{flex-direction:column-reverse;gap:0}
+.dB .dint{height:6px;border-radius:0}
+.dB .se{font-family:var(--numf);font-size:14px;text-transform:uppercase;letter-spacing:.02em;font-weight:600}
+.dB .num,.dB .val,.dB .rtime,.dB .place,.dB .fv,.dB .lwst .num,.dB .raceline .t,.dB .fact b,.dB .mw,.dB .ev{font-family:var(--numf)}
+.dB .bar .bl .val{font-size:24px;line-height:1}
+.dB .bar .bl b{font-family:var(--numf);font-size:15px;text-transform:uppercase;letter-spacing:.04em}
+.dB .trk{display:none}
+.dB .goal .trk{display:block}
+.dB .seg{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin:4px 0 2px;position:relative}
+.dB .seg i{height:9px;background:var(--track)}
+.dB .seg i.f{background:var(--fc)}
+.dB .seg i.w{box-shadow:inset 0 0 0 1px var(--text)}
+.dB .pbody .seg i{height:6px}
+.dB .pb{border-radius:0;background:var(--accent);font-family:var(--numf);font-size:12px;padding:1px 6px}
+.dB .chip{border:0;border-left:3px solid var(--chipline);background:var(--chipbg);border-radius:0}
+.dB .chip.t-up{border-left-color:var(--good)}.dB .chip.t-wa{border-left-color:var(--warn)}.dB .chip.t-ne{border-left-color:var(--muted)}
+.dB .chip .v{font-family:var(--numf);font-size:17px}
+.dB .play{font-family:var(--numf);font-size:22px;text-transform:uppercase;letter-spacing:.06em;transform:skewX(-8deg);border-radius:0}
+.dB .play > *{transform:skewX(8deg)}
+.dB .btn{font-family:var(--numf);font-size:15px;text-transform:uppercase;letter-spacing:.04em;border-radius:0}
+.dB .btn.pri{transform:skewX(-8deg)}
+.dB .place{font-size:72px}
+.dB .rtime{font-size:64px}
+.dB .form .fv{font-size:24px}
+.dB .fact b{font-size:20px}
+.dB .mw{font-size:17px;text-transform:uppercase}
+.dB .ev{font-size:18px}
+.dB .rhead .plbox{background:var(--accent);color:var(--accentink);padding:4px 12px 0;transform:skewX(-8deg)}
+.dB .rhead .plbox > *{display:inline-block;transform:skewX(8deg)}
+.dB .rhead .plbox small{color:var(--accentink)}
+.dB .prow .pd span{font-family:var(--numf);font-size:22px}
+.dB .pbody .mini b{font-family:var(--numf);font-size:22px}
+.dB .note h5,.dB .pnote b{font-family:var(--numf);font-size:15px;text-transform:uppercase;letter-spacing:.03em}
+.dB .eff .ei{border-radius:0}
+
+/* ============ C: Training App ============ */
+.dC{--bg:#eef0f3;--topbg:#ffffff;--panel:#ffffff;--raised:#f3f5f8;--daybg:#ffffff;--line:#e2e5ea;--pline:#e7eaef;--text:#18202e;--muted:#5f687a;--faint:#98a0af;
+  --accent:#f0532d;--accentink:#ffffff;--good:#1f9d61;--warn:#d98a00;--bad:#d63b30;--easy:#3b8fd9;--normal:#7b8597;--hard:#e5533f;--rest:#c4cad3;
+  --test:#7a4fc4;--testbg:#f0e9fb;--inv:#0f9488;--invbg:#e6f6f4;--slotbg:#f3f5f8;--chipbg:#f3f5f8;--chipline:transparent;--track:#e6e9ee;--warnbg:#fff7e8;
+  --coachbg:#3f8f6a;--ui:"Manrope",system-ui,sans-serif;--numf:"Manrope",system-ui,sans-serif;--r:16px;--r2:10px;--avr:50%;--shadow:0 1px 2px rgba(20,30,50,.06),0 4px 14px rgba(20,30,50,.06)}
+.dC{font-size:13.5px}
+.dC .top{border-bottom:0;box-shadow:0 1px 0 var(--line)}
+.dC .pan{border:0}
+.dC .sec{text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:800}
+.dC .day{border:0;box-shadow:var(--shadow);border-radius:14px;padding:10px 8px}
+.dC .day.has-note{box-shadow:0 0 0 2px var(--warn),var(--shadow)}
+.dC .dint{height:auto;background:none}
+.dC .dint span{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--ic) 16%,white);color:color-mix(in srgb,var(--ic) 80%,black)}
+.dC .se{background:color-mix(in srgb,var(--ic) 10%,white);border-radius:8px;padding:5px 6px}
+.dC .chip{border-radius:12px}
+.dC .navt span.on{color:var(--accent)}
+.dC .play{border-radius:14px}
+.dC .note{border:0}
+.dC .btn{border:0;border-radius:10px}
+.dC .trk{height:8px}
+.dC .col.bodyc .bars{display:none}
+.dC .rings{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px;text-align:center}
+.dC .rings svg{width:72px;height:72px;display:block;margin:0 auto}
+.dC .rings small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.dC .rings b{display:block;font-size:12px}
+.dC .pcard{border:0}
+.dC .prow{border-bottom-color:var(--line)}
+.dC .eff .ei{border-radius:50%}
+.dC .place,.dC .rtime{font-weight:800;letter-spacing:-.02em}
+
+/* ============ CHOSEN (V1, 2026-10-18): A's base + B's numbers; race card = B's shapes in A's colours ============ */
+.dF{--bg:#0e1117;--topbg:#12161d;--panel:#161a22;--raised:#1e232d;--daybg:#181c25;--line:#232936;--pline:#262c39;--text:#e9ecf2;--muted:#8d95a7;--faint:#5c6476;
+  --accent:#ff5a36;--accentink:#ffffff;--lead:#ffc83d;--good:#3ddc84;--warn:#e9b949;--bad:#ef5b4f;--easy:#5fb0e8;--normal:#a0a8b9;--hard:#ef6a5b;--rest:#3a4152;
+  --test:#c7a4ef;--testbg:rgba(181,139,224,.14);--inv:#5fd0c4;--invbg:rgba(95,208,196,.10);--slotbg:#1f242e;--chipbg:#1b2029;--chipline:#262c39;--track:#2a303c;--warnbg:rgba(233,185,73,.07);
+  --coachbg:#3f8f6a;--ui:"Inter",system-ui,sans-serif;--numf:"Barlow Condensed","Arial Narrow",sans-serif;--r:8px;--r2:6px;--avr:50%;--shadow:none}
+.dF .num,.dF .val,.dF .fv,.dF .ev{font-family:var(--numf);font-variant-numeric:tabular-nums}
+.dF .dnum{font-size:22px;font-weight:700;line-height:1}
+.dF .lwst .num{font-size:22px}
+.dF .raceline .t{font-size:22px;font-weight:700}
+.dF .fact b{font-size:20px;font-weight:700}
+.dF .bar .bl .val{font-size:22px;line-height:1;font-weight:700}
+.dF .chip .v{font-size:17px}
+.dF .form .fv{font-size:24px}
+.dF .ev{font-size:18px}
+.dF .pb{font-family:var(--numf);font-size:12px;border-radius:2px;background:var(--lead);color:#0a0e19;padding:1px 6px}
+.dF .prow .pd span{font-size:22px}
+.dF .pbody .mini b{font-size:22px}
+.dR{--bg:#0e1117;--topbg:#12161d;--panel:#161a22;--raised:#1e232d;--line:#232936;--pline:#262c39;--text:#ffffff;--muted:#8d95a7;--faint:#5c6476;
+  --accent:#ff5a36;--accentink:#ffffff;--lead:#ffc83d;--good:#3ddc84;--warn:#e9b949;--bad:#ef5b4f;--normal:#a0a8b9;--track:#2a303c;--chipbg:#1b2029;--chipline:#262c39;--coachbg:#3f8f6a}
+.dR .rhead .plbox{background:var(--lead)}
+.dR .rhead .plbox,.dR .rhead .plbox small{color:#0a0e19}
+.dR .pb{background:var(--lead);color:#0a0e19}
+.dR .sec{border-left-color:var(--lead)}
+</style>
+
+<div class="page">
+  <h1>The look: three directions for the career game</h1>
+  <p class="lede">The same two screens in three looks: the Sunday week planner (GDD 4.10 decision 1) and the “what this race did” card, each at PC 1280×720 and phone 390×844. Every frame uses only what Godot draws well: flat or rounded panels, simple shadows, icons, bars, rings and small charts. Aino Virtanen and everyone in the frames are fictional, as all youth athletes in the game are.</p>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" id="t-f" aria-selected="false" data-k="f">★ Chosen: A + B’s numbers</button>
+    <button role="tab" id="t-today" aria-selected="false" data-k="today">Today’s game</button>
+    <button role="tab" id="t-a" aria-selected="true" data-k="a">A · Stadium Night</button>
+    <button role="tab" id="t-b" aria-selected="false" data-k="b">B · Broadcast</button>
+    <button role="tab" id="t-c" aria-selected="false" data-k="c">C · Training App</button>
+    <button role="tab" id="t-cmp" aria-selected="false" data-k="cmp">Compare + research</button>
+  </div>
+
+  <section id="p-today" hidden>
+    <div class="today">
+      <figure><img src="img/today_overview.jpg" alt="Today's Overview tab on PC">
+        <figcaption><span class="ok">Works:</span> dark and calm, the week strip, colour for intensity and freshness, the orange accent, 44 px targets. <span class="no">Doesn’t:</span> the stadium photo competes with the panels; the header takes a fifth of the screen; one card holds six unrelated things; labels like “TAP TO CHANGE TODAY” shout.</figcaption></figure>
+      <figure><img src="img/today_talk.jpg" alt="Today's Sunday talk popup">
+        <figcaption><span class="no">Doesn’t:</span> the Sunday talk is a block of prose in a popup: numbers (7 sessions, 2:57.31, PB) are buried in sentences, and nothing shows what changed or why. This is the screen the planner replaces.</figcaption></figure>
+      <figure><img src="img/today_race.jpg" alt="Today's race screen">
+        <figcaption><span class="ok">Works:</span> the clock, positions with gaps, the action bar. <span class="no">Doesn’t:</span> blobs on a flat orange oval; commentary as a scrolling text log. (The race itself is R6; the look decided here gives it its type and colours.)</figcaption></figure>
+      <figure><img src="img/today_result.jpg" alt="Today's race result screen">
+        <figcaption><span class="ok">Works:</span> splits next to the winner, the coach’s one line. <span class="no">Doesn’t:</span> “Key moments” is six sentences of text; the result card never says what the race did to you.</figcaption></figure>
+      <figure><div class="phs"><img src="img/today_phone_hub.jpg" alt="Today's phone hub"><img src="img/today_phone_talk.jpg" alt="Today's phone Sunday talk"></div>
+        <figcaption><span class="ok">Works:</span> the phone layout is a real layout (bottom tabs, a week strip of 7). <span class="no">Doesn’t:</span> the talk fills the whole phone with text; three buttons, no visible consequence.</figcaption></figure>
+      <figure><figcaption style="padding:14px"><b>In one line:</b> the base is sound (dark, one accent, coloured 1–20 numbers, a responsive shell). What fails is that information arrives as sentences. Every direction below turns sentences into <b>icons, chips, bars and numbers with a word</b>, and keeps the full sentence one tap away.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="p-f" hidden></section>
+  <section id="p-a"></section>
+  <section id="p-b" hidden></section>
+  <section id="p-c" hidden></section>
+
+  <section id="p-cmp" hidden>
+    <div class="scroll"><table class="cmp">
+      <thead><tr><th></th><th>A · Stadium Night</th><th>B · Broadcast</th><th>C · Training App</th></tr></thead>
+      <tbody>
+        <tr><td><b>Reads at a glance</b></td><td>Good: bars, chips, icons; calm</td><td>Very good for numbers, weaker for sentences (caps, condensed)</td><td>Very good: big rings, few things per screen</td></tr>
+        <tr><td><b>Density on PC</b></td><td>High (FM-like)</td><td>Medium-high</td><td>Low-medium: needs more taps</td></tr>
+        <tr><td><b>Phone</b></td><td>Good</td><td>Good; big numbers read well small</td><td>Best: it is a phone look</td></tr>
+        <tr><td><b>Long sessions, evening play</b></td><td>Easy on the eyes</td><td>Easy, but the yellow tires if overused</td><td>Bright; would need a dark twin</td></tr>
+        <tr><td><b>Fits the race screen (R6)</b></td><td>Neutral</td><td>Same language as TV graphics: menus and race feel like one event</td><td>Weakest: races look like a fitness app</td></tr>
+        <tr><td><b>Distance from today / D28</b></td><td>Small: D28 kept</td><td>Medium: D28 kept (dark), type changes</td><td>Large: D28 changed (light)</td></tr>
+        <tr><td><b>Godot work</b></td><td>Lowest (Palette + ThemeBuilder + icons)</td><td>Low + a second font, skewed StyleBoxFlat, segment bars</td><td>Medium: shadows, rings (draw_arc), two themes</td></tr>
+        <tr><td><b>Risk</b></td><td>Can still look like a spreadsheet</td><td>Gimmicky if every screen shouts</td><td>Least like a game</td></tr>
+      </tbody></table></div>
+    <div class="rec"><h3>My recommendation: A as the base, with B’s numbers and race card</h3>
+      <p>Keep dark and FM-calm for the screens you read (planner, people, school, season), because it is easiest on the eyes over a long session and closest to what already works. Take B’s condensed numerals for every big number (times, places, %, countdowns), B’s straps for results, and the whole race result card in B’s broadcast style. Then the race (R6) and the menus speak one language: the career looks like the sport on TV, not like a spreadsheet and not like a fitness app. From C, take one habit: show fewer things, with “more” one tap away.</p></div>
+    <h3 style="margin-top:26px">What I looked at, and what is worth taking</h3>
+    <div class="scroll"><table class="cmp">
+      <thead><tr><th>Source</th><th>A week / plan</th><th>Body, fatigue, progress</th><th>Person, result, style</th></tr></thead>
+      <tbody>
+        <tr><td><b>Football Manager 26</b> (desktop; tiles and cards)</td><td>Calendar: each day shows its training as a row of small icons, matches as coloured chips. Take: <b>icons per session</b>, words on tap.</td><td>Overview tiles that open a detailed card. Take: <b>tile → card</b> = our “tap for why”.</td><td>Deep navy, violet accent, striped attribute tables with coloured 1–20 numbers. Players disliked the new navigation (Steam reviews “Mostly Negative” at launch): keep our tabs predictable.</td></tr>
+        <tr><td><b>FM Mobile / Touch</b></td><td>The same data cut to one column; fewer columns, bigger rows.</td><td>Condition shown as a small heart / %.</td><td>Take: phone = one column of rows, never a squeezed PC table.</td></tr>
+        <tr><td><b>Athletics TV</b> (World Athletics feed by Deltatre, Diamond League, Yle)</td><td>Start lists as straps: lane, flag, name, PB / SB.</td><td>Running clock, split boards, record-pace line.</td><td>Result straps: position box, name, time, PB / SB / NR tags; condensed caps, one bright highlight on dark. Take: <b>straps and tags</b> for results.</td></tr>
+        <tr><td><b>Strava</b></td><td>Weekly summary: distance, time, a bar per day.</td><td>Fitness &amp; Freshness: fitness, fatigue, form over time as lines. Take: <b>form = freshness + sharpness</b>, trend lines in the Career tab.</td><td>White, one orange; PRs as small badges.</td></tr>
+        <tr><td><b>Garmin Connect</b></td><td>Calendar with coloured workout types.</td><td>Training Readiness, Body Battery: a score + a band colour + a one-line message; the home screen’s cards open the detail. Take: <b>number + band + one line</b>.</td><td>Dark mode, coloured gauges.</td></tr>
+        <tr><td><b>Runna</b></td><td>The week as a list of colour-coded workout cards with ticks; weekly total on top; move a run between days.</td><td>Plan progress bar.</td><td>Take: <b>colour per session type</b>, ticks for done.</td></tr>
+        <tr><td><b>WHOOP</b></td><td>No plan.</td><td>Recovery as a ring with green / yellow / red bands; strain 0–21. Take: <b>three bands</b> for body state.</td><td>Black, big rings, few words.</td></tr>
+        <tr><td><b>Mobile managers</b> (Top Eleven, Motorsport Manager Mobile, Club Soccer Director)</td><td>One decision per screen, big buttons.</td><td>Bars for morale / condition.</td><td>Take little: monetised screens; their lesson is big tap targets and one action per card.</td></tr>
+      </tbody></table></div>
+    <p class="sources">Sources (read 2026-10-18): <a href="https://www.footballmanager.com/features/total-football-total-control-fm26s-reimagined-user-interface">FM26’s reimagined UI</a> (screenshots of the player profile, Portal and calendar); <a href="https://frvr.com/blog/news/football-manager-26-is-already-one-of-the-worst-games-ever-rated-on-steam-following-its-truly-disastrous-launch">FM26 launch reception</a>; <a href="https://www.sportsgamersonline.com/games/soccer/fm26-sales-are-up-as-sega-aknowledges-user-dissatifaction/">Sega on UI feedback</a>; <a href="https://www.deltatre.com/sport-innovations/case-studies/world-athletics">Deltatre × World Athletics graphics</a>; <a href="https://www.svgeurope.org/blog/headlines/infront-supports-launch-of-world-athletics-ultimate-championship-with-global-media-distribution-and-broadcast-enhancements/">World Athletics Ultimate Championship graphics</a>; <a href="https://support.strava.com/hc/en-us/articles/216918477-Fitness-Freshness">Strava Fitness &amp; Freshness</a>; <a href="https://www8.garmin.com/manuals/webhelp/GUID-025D75CF-3445-49E1-8D81-1AA74AB4E00F/EN-GB/GUID-C21BE0C8-A08E-4DA1-B6C6-2E0E2DDDB372.html">Garmin Training Readiness</a>; <a href="https://gadgetsandwearables.com/2026/07/21/garmin-connect-essentials-explained/">Garmin Connect Essentials cards</a>; <a href="https://www.techradar.com/health-fitness/fitness-apps/runna-review">Runna review</a>; <a href="https://screensdesign.com/apps/runna-running-training-plans/?vs=124771">Runna screens</a>; <a href="https://developer.whoop.com/docs/whoop-101">WHOOP 101</a>. The TV and mobile-manager notes also draw on what these products look like in general, not on a published spec.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+const I = n => `<i data-lucide="${n}"></i>`;
+const D = {
+  last:{range:"8–14 Feb", done:7, of:7,
+    race:{meet:"Nuorten SM-hallit", place:"27th", time:"2:57.31", d:"−6.51"},
+    chips:[
+      {ic:"trending-up",l:"Aerobic",v:"+0.3",t:"up",w:"3 tempo runs"},
+      {ic:"crosshair",l:"Race tactics",v:"+0.2",t:"up",w:"SM-hallit: stayed in the pack"},
+      {ic:"triangle-alert",l:"Shins",v:"44 → 62 %",t:"wa",w:"hard Tuesday + race Saturday"},
+      {ic:"smile",l:"Confidence",v:"▲",t:"up",w:"a PB at a championship"},
+      {ic:"pencil-line",l:"Biology test",v:"9",t:"ne",w:"two study evenings"},
+      {ic:"user-round",l:"Eino",v:"closer",t:"up",w:"Friday together"}],
+    coach:"A real PB under pressure. Your shins took the load, so I’d keep Thursday easy."},
+  days:[
+    {d:"Mon",n:15,i:"easy",s:[["footprints","Easy run"],["zap","Drills"]],eve:["book-open","Study"]},
+    {d:"Tue",n:16,i:"normal",s:[["users","Club group"]],fix:true,eve:["bed","Rest"]},
+    {d:"Wed",n:17,i:"normal",s:[["dumbbell","Strength"],["zap","Strides"]],tag:"Maths test",eve:["book-open","Study"]},
+    {d:"Thu",n:18,i:"hard",s:[["timer","Tempo 5×1 km"]],note:true,eve:["tv","Free"]},
+    {d:"Fri",n:19,i:"easy",s:[["person-standing","Mobility"]],tag:"Finnish test",eve:["user-round","Eino"]},
+    {d:"Sat",n:20,i:"normal",s:[["route","Long run"]],day:["house","Family"],eve:["party-popper","Venla’s party?"],inv:true},
+    {d:"Sun",n:21,i:"rest",s:[["moon","Rest day"]],day:["users","Friends"],eve:["book-open","Study"]}],
+  ilabel:{easy:"Easy",normal:"Normal",hard:"Hard",rest:"Rest"},
+  body:[{n:"Tiredness",v:38,w:70,word:"Normal",why:"7 sessions + a race"},
+        {n:"Shins",v:62,w:70,word:"Near the line",why:"+18 this week: hard Tue, race Sat"},
+        {n:"Calves",v:30,w:70,word:"Fine",why:"spikes on Saturday"}],
+  mind:[{n:"Confidence",w:"Confident ▲",t:"up",e:"Races a little faster · the PB"},
+        {n:"Motivation",w:"Keen",t:"up",e:"Trains a little better · PB, Friday with Eino"},
+        {n:"Stress",w:"Some",t:"wa",e:"Sleeps a little worse · two tests this week"}]
+};
+const zone = (v,w) => v>=w ? "z-bad" : v>=w-15 ? "z-mid" : "z-ok";
+function bar(b){
+  const segs = Array.from({length:10},(_,k)=>`<i class="${k<Math.round(b.v/10)?'f':''} ${k===b.w/10-1?'w':''}"></i>`).join("");
+  return `<div class="bar ${zone(b.v,b.w)}"><div class="bl"><b>${b.n}</b><span class="val num">${b.v} %</span></div>
+    <div class="trk"><i style="width:${b.v}%"></i><u style="left:${b.w}%"></u></div><div class="seg">${segs}</div>
+    <div class="bw">${b.word} · warning at ${b.w} % · ${b.why}</div></div>`;
+}
+function ring(b){
+  const r=30,c=2*Math.PI*r,f=c*b.v/100,a=(b.w/100)*2*Math.PI-Math.PI/2;
+  const x1=36+(r-7)*Math.cos(a),y1=36+(r-7)*Math.sin(a),x2=36+(r+7)*Math.cos(a),y2=36+(r+7)*Math.sin(a);
+  const col = b.v>=b.w?"var(--bad)":b.v>=b.w-15?"var(--warn)":"var(--good)";
+  return `<div><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--track)" stroke-width="8"/>
+    <circle cx="36" cy="36" r="${r}" fill="none" stroke="${col}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${f} ${c}" transform="rotate(-90 36 36)"/>
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text)" stroke-width="2"/>
+    <text x="36" y="41" text-anchor="middle" font-size="15" font-weight="800" fill="var(--text)" font-family="Manrope,sans-serif">${b.v}%</text></svg>
+    <b>${b.n}</b><small>${b.word}</small></div>`;
+}
+function topPC(tab){
+  return `<div class="top"><div class="who"><div class="av">AV</div><div><b>Aino Virtanen</b><small>800 m · 14 · Vammalan seudun Voima</small></div></div>
+  <div class="navt">${["This week","Season","Calendar","People","Career","Rankings"].map(t=>`<span class="${t===tab?'on':''}"><span>${t}</span></span>`).join("")}</div>
+  <div class="topr"><span class="date">Sun 14 Feb 2027</span><span class="ib">?</span><span class="ib">${I("menu")}</span></div></div>`;
+}
+function lastWeek(){
+  const L=D.last;
+  return `<div class="pan col" style="flex:1"><div class="sec">Last week <em>${L.range}</em></div>
+   <div class="lwst"><span class="num">${L.done}/${L.of}</span><span class="dots">${"<i></i>".repeat(L.done)}</span><span class="ne" style="font-size:12px">sessions done</span></div>
+   <div class="raceline">${I("flag")}<div style="min-width:0"><div class="t num">${L.race.time} <span class="pb">PB</span></div><div class="ne" style="font-size:11.5px">${L.race.meet} · ${L.race.place} · <span class="up">${L.race.d} s</span></div></div></div>
+   <div class="sec" style="margin-top:2px">What changed and why</div>
+   <div class="chips">${L.chips.slice(0,5).map(c=>`<div class="chip t-${c.t}"><span class="${c.t}">${I(c.ic)}</span><b>${c.l}</b><span class="v ${c.t} num">${c.v}</span><span class="w">${c.w}</span></div>`).join("")}<span class="ne" style="font-size:12px;padding-left:4px">+1 more: Eino, closer</span></div>
+   <div class="coach"><div class="av">H</div><div><small>Heikki Laine, coach</small><q>${L.coach}</q></div></div></div>`;
+}
+function days(){
+  return `<div class="days">${D.days.map(x=>`<div class="day int-${x.i} ${x.note?'has-note':''}">
+    <div class="dh"><span class="dname">${x.d}</span><span class="dnum num">${x.n}</span></div>
+    <div class="dint"><span>${D.ilabel[x.i]}</span></div>
+    <div class="sess">${x.s.map(s=>`<div class="se">${I(s[0])}<span>${s[1]}</span></div>`).join("")}</div>
+    ${x.tag?`<div class="tag">${I("pencil-line")}<span>${x.tag}</span></div>`:""}
+    ${x.fix?`<div class="fix">Group day: fixed</div>`:""}
+    <div class="slots">${x.day?`<div class="slot" title="Daytime slot"><b>${I("sun")}</b>${I(x.day[0])}<span>${x.day[1]}</span></div>`:""}
+      <div class="slot ${x.inv?'inv':''}" title="Evening slot"><b>${I("moon")}</b>${I(x.eve[0])}<span>${x.eve[1]}</span></div></div>
+    ${x.note?`<span class="flag">!</span>`:""}</div>`).join("")}</div>`;
+}
+const NOTE = `<div class="note cn"><h5><span class="wa">${I("message-circle")}</span>Thu: tempo → easy run?</h5><p>Shins 62 %, warning at 70 %. Cost: a little less aerobic work.</p><div class="btns"><span class="btn pri">Make it easy</span><span class="btn">Keep mine</span></div></div>`;
+const INV = `<div class="note iv"><h5><span style="color:var(--inv)">${I("party-popper")}</span>Sat eve: Venla’s birthday</h5><p>About 1½ h less sleep. Sunday is rest, so no session pays for it.</p><div class="btns"><span class="btn pri">Go</span><span class="btn">Stay home</span></div></div>`;
+function nextWeek(){
+  return `<div class="pan col" style="flex:1"><div class="sec">Next week <em>15–21 Feb · Indoor specific, week 3 of 5</em></div>
+   ${days()}
+   <div class="notes">${NOTE}${INV}</div>
+   <div class="facts">
+     <div class="fact"><small>Load</small><b class="num">104 %</b><span>of a normal week</span></div>
+     <div class="fact"><small>Plan risk</small><b class="up">Low</b><span>Moderate if Thu stays hard</span></div>
+     <div class="fact"><small>Next race</small><b class="num">27 days</b><span>Tampere Junior Indoor Games</span></div>
+     <div class="fact"><small>Goal</small><b class="num">2:55.00</b><span>by 31 Mar · 2.31 s to go</span></div></div></div>`;
+}
+function bodyMind(){
+  return `<div class="pan"><div class="sec">Body <em>tap a bar for why</em></div>
+     <div class="rings">${D.body.map(ring).join("")}</div>
+     <div class="bars">${D.body.map(bar).join("")}</div>
+     <div class="form"><span class="fv">Sharp</span><span>Race form today<br>freshness 64 % · sharpness 71 %</span></div></div>
+   <div class="pan"><div class="sec">Mind</div><div class="mind">${D.mind.map(m=>`<div class="mr"><b>${m.n}</b><span class="mw ${m.t}">${m.w}</span><span>${m.e}</span></div>`).join("")}</div></div>
+   <div class="play">${I("play")}<span>Play week<br><small>2 choices waiting</small></span></div>`;
+}
+function plannerPC(){
+  return `<div class="pc">${topPC("This week")}<div class="plb"><div class="col">${lastWeek()}</div><div class="col">${nextWeek()}</div><div class="col bodyc">${bodyMind()}</div></div></div>`;
+}
+function ptop(){return `<div class="ptop"><div class="av">AV</div><div class="who"><div><b>Aino Virtanen</b><small>Sun 14 Feb · plan your week</small></div></div><span class="ib" style="margin-left:auto">?</span></div>`;}
+function btab(on){return `<div class="btab">${[["calendar-days","Week"],["chart-no-axes-gantt","Season"],["calendar","Calendar"],["users","People"],["trophy","Career"]].map(t=>`<span class="${t[1]===on?'on':''}">${I(t[0])}${t[1]}</span>`).join("")}</div>`;}
+function plannerPhone(dir){
+  const L=D.last;
+  const mini = D.body.slice(0,2).map(b=>`<div class="mini ${zone(b.v,b.w)}"><small>${b.n}</small><b class="num">${b.v} %</b><div class="trk"><i style="width:${b.v}%"></i><u style="left:${b.w}%"></u></div><div class="seg">${Array.from({length:10},(_,k)=>`<i class="${k<Math.round(b.v/10)?'f':''} ${k===6?'w':''}"></i>`).join("")}</div></div>`).join("")
+    + `<div class="mini"><small>Form</small><b class="up">Sharp</b><div style="font-size:10.5px;color:var(--muted)">Keen · Confident</div></div>`;
+  const rows = D.days.map(x=>{
+    let r = `<div class="prow int-${x.i} ${x.note?'warn':''}"><div class="pd"><b>${x.d}</b><span class="num">${x.n}</span></div><div class="pi"></div>
+     <div class="ps"><span>${x.s.map(s=>s[1]).join(" + ")}</span><small>${D.ilabel[x.i]}${x.fix?" · group day, fixed":""}</small>${x.tag?`<span class="tag">${I("pencil-line")}${x.tag}</span>`:""}</div>
+     <div class="psl">${x.day?I(x.day[0]):""}<span class="${x.inv?'inv':''}">${I(x.eve[0])}</span>${x.note?`<span class="wa">${I("message-circle")}</span>`:""}</div></div>`;
+    if(x.note) r += `<div class="pnote"><b class="wa">Coach: tempo → easy run?</b><p>Shins 62 %, warning at 70 %. Cost: a little less aerobic work.</p><div class="btns"><span class="btn pri">Make it easy</span><span class="btn">Keep mine</span></div></div>`;
+    if(x.inv) r += `<div class="pnote"><b style="color:var(--inv)">Venla’s birthday, Sat evening</b><p>About 1½ h less sleep. Sunday is rest.</p><div class="btns"><span class="btn pri">Go</span><span class="btn">Stay home</span></div></div>`;
+    return r;}).join("");
+  return `<div class="ph">${ptop()}<div class="pscroll">
+    <div class="pcard"><div class="sec" style="margin:0">Last week <em>${L.done}/${L.of} done · ${L.race.time} <span class="pb">PB</span></em></div>
+      <div class="hchips">${L.chips.slice(0,4).map(c=>`<span class="hc"><span class="${c.t}">${I(c.ic)}</span>${c.l} <b class="${c.t}">${c.v}</b></span>`).join("")}<span class="hc ne">+2 more</span></div>
+      <div class="coach" style="margin-top:8px"><div class="av">H</div><q style="font-size:12px">${L.coach}</q></div></div>
+    <div class="pcard"><div class="pbody">${mini}</div></div>
+    <div class="pcard" style="padding:0"><div class="sec" style="padding:10px 12px 0">Next week <em>15–21 Feb · load 104 %</em></div>${rows}</div>
+  </div><div class="pplay"><div class="play">${I("play")}<span>Play week</span></div></div>${btab("Week")}</div>`;
+}
+/* race card */
+const R = {meet:"Nuorten SM-hallit", sub:"800 m N15 · Lappeenranta · Sat 13 Feb 2027 · section 4 of 5", place:"27", of:"38", sec:"3rd in section",
+  time:"2:57.31", delta:"−6.51 s",
+  laps:[41.8,45.1,45.5,44.9], win:[37.9,41.0,41.6,40.7],
+  eff:[{ic:"smile",n:"Confidence",v:"Confident ▲",t:"up",w:"A PB at a championship: you race a little faster at meets like this"},
+       {ic:"crosshair",n:"Race tactics",v:"+0.2",t:"up",w:"You stayed in the pack to 600 m"},
+       {ic:"shield",n:"Composure",v:"+0.1",t:"up",w:"Your first championship start"},
+       {ic:"triangle-alert",n:"Shins",v:"+12 %",t:"wa",w:"Spikes on tight indoor bends · now 62 %"},
+       {ic:"house",n:"Mum watched",v:"proud",t:"up",w:"Family mood up: she asks to come to Tampere"}],
+  form:"OK", formw:"freshness 58 % (the taper) · sharpness 66 %",
+  coach:"You raced your own race. That’s the 2:57 we built in January."};
+function lapChart(){
+  const W=480,H=150,pad=28,top=10,min=34,max=48; const y=v=>top+(H-top-22)*(1-(v-min)/(max-min));
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Your 200 m splits against the winner's">`;
+  [36,40,44,48].forEach(v=>{s+=`<line x1="${pad}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--pline)" stroke-width="1"/><text x="${pad-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v}</text>`;});
+  const gw=(W-pad)/4;
+  R.laps.forEach((v,k)=>{const x=pad+k*gw+gw/2;
+    s+=`<rect x="${x-26}" y="${y(R.win[k])}" width="22" height="${y(min)-y(R.win[k])}" fill="var(--normal)" opacity=".55"/>`;
+    s+=`<rect x="${x+2}" y="${y(v)}" width="22" height="${y(min)-y(v)}" fill="var(--accent)"/>`;
+    s+=`<text x="${x+13}" y="${y(v)-4}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">${v.toFixed(1)}</text>`;
+    s+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${["0–200","200–400","400–600","600–800"][k]}</text>`;});
+  return s+`</svg>`;
+}
+function raceTop(){return `<div class="top"><div class="who"><div class="av">${I("flag")}</div><div><b>${R.meet}</b><small>${R.sub}</small></div></div><div class="topr"><span class="ib">?</span></div></div>`;}
+function effects(n){return R.eff.slice(0,n).map(e=>`<div class="eff"><span class="ei ${e.t}">${I(e.ic)}</span><b>${e.n}</b><span class="ev ${e.t}">${e.v}</span><small>${e.w}</small></div>`).join("");}
+function racePC(){
+  return `<div class="pc">${raceTop()}<div class="rcb">
+   <div class="col"><div class="pan">
+     <div class="rhead"><div class="plbox"><span class="place num">${R.place}<small>/ ${R.of}</small></span></div><div><div class="rtime num">${R.time}</div></div><span class="pb" style="font-size:13px">PB</span><span class="rdelta num">${R.delta}</span></div>
+     <div class="rsub">${R.sec} · your 200 m splits against the heat winner’s (2:41.2)</div>
+     <div class="chart">${lapChart()}</div><div class="legend"><span><i style="background:var(--accent)"></i>You</span><span><i style="background:var(--normal);opacity:.55"></i>Winner of section 4</span><span>seconds per 200 m: lower is faster</span></div></div>
+     <div class="pan"><div class="sec">Form on the day</div><div class="form" style="margin:0"><span class="fv" style="color:var(--warn)">${R.form}</span><span>${R.formw}</span></div></div>
+     <div class="pan"><div class="sec">Who saw it</div><div class="hchips" style="margin:0"><span class="hc">${I("house")}Mum, in the stands</span><span class="hc">${I("message-circle")}Eino texted “2:57!!”</span><span class="hc">${I("users")}Venla and the group</span></div></div></div>
+   <div class="col"><div class="pan" style="flex:1;display:flex;flex-direction:column"><div class="sec">What this race did</div>${effects(5)}
+     <div class="goal"><div class="bl" style="display:flex;justify-content:space-between"><b>Goal: 2:55.00 by 31 Mar</b><span class="num ne">2.31 s to go</span></div><div class="trk"><i style="width:74%;background:var(--accent)"></i></div></div>
+     <div class="coach" style="margin-top:12px"><div class="av">H</div><div><small>Heikki Laine, coach</small><q>${R.coach}</q></div></div>
+     <div class="cont" style="margin-top:12px"><span class="btn pri">Continue</span><span class="btn">Full results</span><span class="nx">Next race: Tampere Junior Indoor Games<br><b class="num">Sat 13 Mar · 27 days</b></span></div></div></div></div></div>`;
+}
+function racePhone(){
+  return `<div class="ph" style="grid-template-rows:auto 1fr auto auto">${raceTop().replace('class="top"','class="ptop"')}<div class="pres">
+   <div class="pcard"><div class="rhead" style="gap:10px"><div class="plbox"><span class="place num" style="font-size:38px">${R.place}<small>/ ${R.of}</small></span></div><div class="rtime num" style="font-size:38px">${R.time}</div><span class="pb">PB</span></div>
+     <div class="rsub" style="font-size:12px">${R.sec} · <span class="rdelta">${R.delta}</span> · form ${R.form}</div></div>
+   <div class="pcard"><div class="sec">What this race did</div>${effects(4)}</div>
+   <div class="pcard"><div class="coach" style="margin:0"><div class="av">H</div><q style="font-size:12.5px">${R.coach}</q></div></div>
+  </div><div class="pplay"><div class="play">Continue</div></div><div class="btab" style="grid-template-columns:1fr;height:34px"><span style="flex-direction:row">Next: Tampere · 27 days</span></div></div>`;
+}
+const DIRS = {
+  a:{cls:"dA",name:"A · Stadium Night",tag:"dark, calm, FM-dense (D28 kept and cleaned up)",
+     mood:"Today’s dark look, done properly: a quiet charcoal, one orange accent, Inter, thin bars with a white warning tick, small chips with a cause line. No photo behind data screens (photos only on the menu and big moments).",
+     from:"FM26’s calendar (icons per day) and tile → card; Garmin’s number + band + one line; FM’s coloured 1–20 numbers (kept).",
+     cost:"The smallest change from today and the least work. Risk: if we are lazy it still reads like a spreadsheet.",
+     godot:"<b>In Godot:</b> new <code>Palette</code> values, <code>ThemeBuilder</code> as today, one icon set (SVG → TextureRect), bars as a <code>ProgressBar</code> or a small <code>draw_rect</code> control with the tick. Nothing new in the engine."},
+  b:{cls:"dB",name:"B · Broadcast",tag:"athletics TV night (D28 kept: dark; type and shapes change)",
+     mood:"The game looks like the TV graphics of a championship: deep navy, condensed caps (Barlow Condensed), huge numbers, square straps, segmented meters, one yellow highlight like a leader strap, a slight slant on the main buttons.",
+     from:"Athletics TV result straps (position box, name, time, PB tag), split boards, Diamond League navy; FM’s density underneath.",
+     cost:"Strongest identity, and the race screen (R6) can use the same parts. Risk: caps and condensed type are tiring for sentences (people, school), and yellow everywhere shouts.",
+     godot:"<b>In Godot:</b> a second OFL font (Barlow + Barlow Condensed), <code>StyleBoxFlat.skew</code> for the slanted strap and buttons, a 10-segment meter control (10 <code>draw_rect</code>s). All flat, no shaders."},
+  c:{cls:"dC",name:"C · Training App",tag:"light, airy, like Strava / Runna / WHOOP (D28 changed)",
+     mood:"A real runner’s phone app: light grey ground, white cards with soft shadows, Manrope, rounded pills per session type, three rings for the body, fewer things per screen.",
+     from:"WHOOP’s recovery ring and three bands, Runna’s colour-coded week list, Strava’s weekly summary and orange PR badges.",
+     cost:"The easiest to read, and the friendliest. Risk: least like a game, the PC screen shows less at once, the race screen does not fit it, and night play needs a dark twin (two themes to keep).",
+     godot:"<b>In Godot:</b> <code>StyleBoxFlat</code> shadows (shadow_size, offset), rings with <code>draw_arc</code>, a light and a dark <code>Palette</code> (two themes to test in every layout check)."}
+};
+DIRS.f = {cls:"dF",rcls:"dB dR",name:"★ Chosen: Stadium Night + Broadcast numbers",tag:"picked by the user 2026-10-18 · GDD 5 “The look (V1)”",
+  mood:"A’s calm charcoal and Inter for everything you read; Barlow Condensed for every big number (times, places, %, days, dates); the race card and results in B’s broadcast shapes (square straps, a yellow position box and PB tag, a slanted Continue).",
+  from:"FM26 (icons per day, tile → card), Garmin (number + band + one line), WHOOP (three bands), Runna (a colour per session type), athletics TV (straps, tags, split boards).",
+  cost:"Track orange stays the one accent; yellow appears only for the race and results. Dark only (tokens ready for a light mode later). The stadium photo only on big moments.",
+  godot:"<b>In Godot:</b> new <code>Palette</code> tokens, Barlow Condensed (OFL) beside Inter, Lucide icons as SVG, a bar control with a warning tick, <code>StyleBoxFlat.skew</code> on the race card’s Continue and position box. The full style guide is GDD section 5 “The look (V1)”."};
+function buildDir(k){
+  const d=DIRS[k], el=document.getElementById("p-"+k), rc=d.rcls||d.cls;
+  el.innerHTML = `<div class="dirhead"><h2>${d.name}</h2><span>${d.tag}</span></div>
+   <div class="intro"><div><h4>Mood</h4><p>${d.mood}</p></div><div><h4>Borrowed from</h4><p>${d.from}</p></div><div><h4>What it costs</h4><p>${d.cost}</p></div></div>
+   <div class="cap"><b>Sunday planner · PC 1280×720</b><span>last week · next week · body and mind · Play week</span></div>
+   <div class="fw" data-w="1280" data-h="720"><div class="frame ${d.cls}">${plannerPC()}</div></div>
+   <div class="cap"><b>Phone 390×844</b><span>left: the planner (first screen; it scrolls) · right: what this race did</span></div>
+   <div class="phones"><div class="pcol"><div class="fw" data-w="390" data-h="844"><div class="frame ${d.cls}">${plannerPhone(k)}</div></div></div>
+     <div class="pcol"><div class="fw" data-w="390" data-h="844"><div class="frame ${rc}">${racePhone()}</div></div></div></div>
+   <div class="cap"><b>What this race did · PC 1280×720</b><span>after Nuorten SM-hallit</span></div>
+   <div class="fw" data-w="1280" data-h="720"><div class="frame ${rc}">${racePC()}</div></div>
+   <div class="godot">${d.godot}</div>`;
+}
+["f","a","b","c"].forEach(buildDir);
+const SHOT = {"shot-planner":["dF",plannerPC],"shot-plannerphone":["dF",plannerPhone],"shot-race":["dB dR",racePC],"shot-racephone":["dB dR",racePhone]};
+const H0=(location.hash||"").slice(1);
+if(SHOT[H0]){document.querySelector(".page").innerHTML=`<div class="frame ${SHOT[H0][0]}">${SHOT[H0][1]()}</div>`;document.querySelector(".page").style.cssText="padding:0;margin:0;max-width:none";}
+function fit(){document.querySelectorAll(".fw").forEach(w=>{const W=+w.dataset.w,H=+w.dataset.h,s=Math.min(1,w.clientWidth/W)||1;const f=w.firstElementChild;f.style.width=W+"px";f.style.height=H+"px";f.style.transform=`scale(${s})`;w.style.height=(H*s)+"px";});}
+function show(k){document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.k===k));
+  ["f","today","a","b","c","cmp"].forEach(x=>{const e=document.getElementById("p-"+x); if(e) e.hidden = x!==k;});fit();
+  try{localStorage.setItem("v1tab",k)}catch(e){}}
+document.getElementById("tabs")?.addEventListener("click",e=>{const b=e.target.closest("button");if(b){show(b.dataset.k);history.replaceState(null,"","#"+b.dataset.k);}});
+try{ if(window.lucide) lucide.createIcons(); }catch(e){}
+const h=H0; let start="f"; try{start=localStorage.getItem("v1tab")||"f"}catch(e){}
+if(!SHOT[h]) show(["f","today","a","b","c","cmp"].includes(h)?h:start);
+window.addEventListener("resize",fit);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+</script>
