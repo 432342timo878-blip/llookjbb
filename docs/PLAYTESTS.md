@@ -66,3 +66,36 @@ stronger"), "Nowhere yet" to train.
 **Follow-up answers (user, 2026-10-10):** best moment of the season: "when the season was over". What would make a
 weekday worth playing: school, coach talk, friends and small choices, all of them: "it needs to be more interactive
 with the coaches and everyone around me". Where the quick fixes go: Claude's call (before step 7).
+
+## Season playtest 2: the guide (written 2026-10-18, after the fix session)
+
+**Why:** the last real playtest was playtest 1; since then ~27 000 lines of coaching, school and people have been built and only
+tools have played it. The question only you can answer: **is it fun, and do the stops feel right?** (Tools measured 3.1-3.2 stops a
+week with no quiet week: the Sunday talk about 1.0, the coach's proposals about 1.0, the people about 0.8.)
+
+**How (about 45-60 minutes for a season; stop whenever you are bored, that is the data):**
+1. Open the project in Godot and press F5 (run). Start a **new career** (an old save was made before the new systems; a new one has them all).
+2. Play a season the way you would really play: Play week, answer what you want, ignore what you don't. The default setting is
+   "Play week stops for: Important only".
+3. To see the school years without waiting: main menu > **Dev menu (test build)** > **Jump the career forward** (targets: 1 Jan, 1 Mar,
+   1 May, 1 Jul, 1 Sep, 1 Nov; it stops at a race or at anything that needs an answer: answer it and jump again). For a born-2012
+   career: jump to **1 Mar 2028** (on the way the joint application opens in mid-February: make your list or ask the counsellor), then
+   **1 May** (the test day comes in mid-May), then **1 Jul** (the results on 11 June; a rejection offers a **TUVA year**), then **1 Sep
+   2028** (the first lukio day: the maths / language / years choices, then the first period's courses).
+4. Things worth trying once: the People tab (read the coach thread, the family, friends; **Find a coach**); say "Ask me first" vs "Always" to
+   the coach's proposals (Training tab, Standing orders); from grade 9 the new standing order **Lukio courses** (ask me every period / let the
+   counsellor plan them) and how a period's results arrive (a message unless a course failed).
+
+**What to write down (a line each is enough, paste them into the chat and I sort them into this file):**
+- The first moment you were **bored**, and the first moment something made you **want to play on**.
+- Every stop you wished had been a message, and any message you wished had been a stop. How many stops a week felt right?
+- Anything that **sounded wrong** (a coach, a parent, a teacher, a friend) or looked wrong on screen. On a phone-sized window too, if you try it.
+- The Sunday talk: useful, too long, too often?
+- The coach's proposals: did you ever say no? Did one ever feel like a real decision?
+- Were the **race** parts still the best part? Did anything outside the races pull you in?
+- Whether you would come back tomorrow, and what would make you.
+
+**What was changed just before this playtest (look for it):** the TUVA wording after a rejected application; a coach's offer to someone
+under 18 coming as a message from a parent (the offer waits on the coach's page; offers are rare and need a reason, so you may not see
+one); remote coaches only from 16; the coach's reason for a lighter day ("you'll get more out of the week"); the goals offer no longer
+says "Far away" twice.

@@ -43,7 +43,7 @@ func _frames(n: int) -> void:
 
 func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
-	load("res://scripts/core/health_system.gd").model_enabled = false
+	load("res://scripts/core/game_config.gd").use("real", {"health": false})   # (the real game without injuries; main.gd keeps a preset a tool already chose)
 	if _round == "heats":
 		load("res://scripts/core/race_day.gd").format_override = "heats"
 	await _frames(10)

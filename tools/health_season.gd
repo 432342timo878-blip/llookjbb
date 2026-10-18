@@ -33,6 +33,7 @@ func _run() -> void:
 	RP = load("res://scripts/core/race_performance.gd")
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	game.autosave = false
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})
 	var args := OS.get_cmdline_user_args()
 	var plan_id: String = args[0] if args.size() > 0 else "coach"
 	var policy: String = args[1] if args.size() > 1 else "neutral"

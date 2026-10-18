@@ -28,7 +28,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
-	load("res://scripts/core/health_system.gd").model_enabled = false
+	# The real game without injuries; the people's moments (session P1) would add stops to the weeks played to reach a race: off
+	# (the People tab's "?" is the same entry with them on; the layout check and the tour show the cast's pages).
+	load("res://scripts/core/game_config.gd").use("real", {"health": false, "people": false})
 	Help = load("res://scripts/ui/help.gd")
 	_button_script = load("res://scripts/ui/help_button.gd")
 	_overlay_script = load("res://scripts/ui/help_overlay.gd")
@@ -37,9 +39,6 @@ func _run() -> void:
 	await _frames(10)
 	var main := current_scene
 	var data = main.get_node("/root/Data")
-	# The people's moments (session P1) would add stops to the weeks played to reach a race: off here (the People tab's "?" is
-	# the same entry with them on; the layout check and the tour show the cast's pages).
-	load("res://scripts/core/storylet_system.gd").people_enabled = false
 
 	print("--- 1. data/help.json")
 	_check_data(data.help)

@@ -11,13 +11,18 @@
 # How to run it (no command line needed): double-click run_all_checks.bat in the project folder.
 # From a terminal:  powershell -NoProfile -ExecutionPolicy Bypass -File tools\run_all_checks.ps1
 # Only some checks:  ... -Only help,health      (a part of the name is enough)
+# A quick run (about 6 minutes, use it while working on something):  ... -Quick   or   run_all_checks.bat -Quick
+#   it leaves out the slow checks (race_rounds, playtest_fix_check, the PC-layout help check, the commentary check, the races
+#   fingerprint) and runs storylet_check without its long season runs; run the FULL list (no -Quick) at the end of a session, and
+#   the races fingerprint (quick_fingerprint.gd) whenever anything near the races changed.
 # Another Godot:     set the GODOT_EXE environment variable, or pass -Godot "C:\path\Godot_console.exe"
-# It takes about 10 minutes. The PC-layout help check opens a Godot window for a minute: leave it alone.
+# The full list takes about 15 minutes. The PC-layout help check opens a Godot window for a minute: leave it alone.
 # Everything the checks printed is saved in the folder shown at the end (one .txt per check).
 
 param(
 	[string]$Godot = "",
-	[string]$Only = ""
+	[string]$Only = "",
+	[switch]$Quick
 )
 
 $ErrorActionPreference = "Stop"
@@ -68,6 +73,13 @@ $checks = @(
 	# to change grades 8-9 changes it: run tools/school_fingerprint.gd and put the new hash here.
 	@{ name = "school_fingerprint (grades 8-9 are unchanged)"; args = "--headless -s res://tools/school_fingerprint.gd"; marker = "school fingerprint all: 55076d77225663517cd25057f72fb55c"; limit = 600 }
 )
+# -Quick (fix session 2026-10-18): the fast checks only, plus a small storylet_check.
+$quickSkip = @("help_check (PC layout, window)", "race_rounds", "commentary_check", "playtest_fix_check", "storylet_check", "quick_fingerprint (the races are unchanged)")
+if ($Quick) {
+	$checks = @($checks | Where-Object { $quickSkip -notcontains $_.name })
+	$checks += @{ name = "storylet_check (quick: no long season runs)"; args = "--headless -s res://tools/storylet_check.gd -- quick"; marker = "ALL CHECKS PASSED"; limit = 600 }
+	Write-Host "QUICK RUN: the slow checks are left out; run without -Quick before you finish." -ForegroundColor Yellow
+}
 if ($Only -ne "") {
 	$parts = $Only.Split(",") | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ -ne "" }
 	$checks = @($checks | Where-Object { $n = $_.name.ToLower(); @($parts | Where-Object { $n.Contains($_) }).Count -gt 0 })

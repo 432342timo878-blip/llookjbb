@@ -32,6 +32,10 @@ static func build() -> Control:
 	if cp != null:
 		box.add_child(_coach_setting(cp))
 
+	var ss := SchoolSystem.sys()
+	if ss != null and str(ss.stage_of(Game.date).get("id", "")) != "grade_8":
+		box.add_child(_courses_setting(ss))
+
 	box.add_child(UIKit.label(PeopleUI.ui("standing_rules"), "SubheadingLabel"))
 	var rules := UIKit.vbox(8)
 	box.add_child(rules)
@@ -57,6 +61,28 @@ static func _coach_setting(cp: CoachProposals) -> Control:
 		row.add_child(b)
 	col.add_child(row)
 	col.add_child(text)
+	return col
+
+
+## "Lukio courses": ask me every period / let the counsellor plan them (session after the check-in 2026-10-18; SchoolSystem.courses_mode).
+static func _courses_setting(ss: SchoolSystem) -> Control:
+	var s: Dictionary = Data.lukio.standing
+	var col := UIKit.vbox(8)
+	col.add_child(UIKit.label(str(s.head), "SubheadingLabel"))
+	var text := UIKit.wrapped(str(s.modes[ss.get_courses_mode()].text))
+	var group := ButtonGroup.new()
+	var row := UIKit.flex(8)
+	for mode in SchoolSystem.COURSES_MODES:
+		var b := UIKit.toggle(str(s.modes[mode].name), group)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.button_pressed = ss.get_courses_mode() == mode
+		b.pressed.connect(func():
+			ss.set_courses_mode(str(mode))
+			text.text = str(s.modes[str(mode)].text))
+		row.add_child(b)
+	col.add_child(row)
+	col.add_child(text)
+	col.add_child(UIKit.wrapped(str(s.also), "CaptionLabel"))
 	return col
 
 

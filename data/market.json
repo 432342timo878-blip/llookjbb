@@ -1,7 +1,7 @@
 {
  "_note": "The coach market (GDD 4.9.1 'Who you can get, and when', 'Shown and scouted', 4.9.2 'A coach can end it'; session C6, read by CoachMarket, scripts/core/coach_market.gd). THE POOL: the coaches around a career are made once (their own dice from the athlete's name and birth date: same career = same coaches; the global dice are never touched) from the club's town in data/towns.json (size class by population, the SUL centre) and data/clubs.json, and kept in CoachSystem's records (fictional ones get ids mk_1, mk_2 ...; the real coaches of data/coaching.json `real` keep their ids). WHO YOU CAN GET: each group of coaches opens at an age (`ages`); the national and regional ones open earlier once the athlete has reached the TF-juniorit standard (`seen`: camp coaches see you); real coaches follow their kind, reputation and min_level; the world-level ones (spots 0) only ever approach the athlete themselves (`offers`). COACHES CHOOSE: spots this season and min_level on the 800 m ability scale (the coach asks for the time that ability runs, RacePerformance.time_for). SCOUTING: each attribute is shown as a range of `width` points with the true value somewhere inside it (not always the middle); asking around, a visit and looking at his athletes' results take points off the width of the attributes they show; working together narrows every range to the exact value over `together_weeks`. DISTANCE (user 2026-10-17: three steps): same town = full coaching; same region (maakunta) = 2 days a week with him, half the penalty; further = a remote coach (plan by message, monthly visits), weaker technique, load management and race reading at meets he skips. BUDGET (user: the tighter numbers): the family answer sets euros a month for coaching beyond the club fee (club fees always fit); a coach with no published fee costs the estimate of his reputation (user). ENDING (user: 6 + 4 + 4 weeks): weeks of Strained trust, then two warning talks, then he ends it and the athlete picks the next coach; a real coach's words are neutral and professional (user). Every number is a first guess for the balance session (B1).",
  "version": 1,
- "ages": {"club": 14, "parent": 14, "remote": 14, "town": 16, "region": 16, "national": 16, "academy": 16, "real_personal": 16, "elite": 18},
+ "ages": {"club": 14, "parent": 14, "remote": 16, "town": 16, "region": 16, "national": 16, "academy": 16, "real_personal": 16, "elite": 18},
  "seen": {"_note": "Reaching the TF-juniorit standard of your age (data/standards.json, Standards.time) opens the regional and national coaches whatever the age, and one of them may write to you (an offer).", "standard": "tf_juniorit", "opens": ["region", "national"]},
  "pool": {
   "own_club": {"village": [1, 1], "small": [1, 2], "town": [2, 3], "city": [3, 5], "capital": [4, 6]},
@@ -65,6 +65,8 @@
  "offers": {
   "_note": "Coaches offer themselves (user 2026-10-17: 'whenever they deem it fit, if I'm slumping and they see I could do better etc.'; no ceiling, but a switch 'Open to offers'; never accepted from the message; the message as detailed as the coach is). Every Sunday night each coach who could take the athlete now (status ok: a place, the time, the budget; not the head coach, not a coach who ended it) weighs what HE sees, in points: `reasons` (talent = his read of the hidden potential minus the ability the athlete's best shows, x talent_per_point, only up to talent_max_age; slump = recent races clearly slower than the best and no best for a while, noticed with notice chance; progress = the best improved by progress_s in a year; crossed = a best that cleared his bar for the first time in the last crossed_days; seen = the TF-juniorit standard just reached; strained = trust Strained with the head coach for strained_weeks, FICTIONAL coaches only), plus better_per_point x (his average - the head coach's average, capped at better_cap) and minus fit_per_level x the gap between his group's level and the athlete's beyond fit_free. A score above `threshold` makes him write that week with chance (score - threshold) x chance_per_point (at most chance_max): the more he wants the athlete, the sooner he writes; a coach barely interested rarely bothers. At most one offer a week (the highest score), a coach writes again only after again_days (a new crossed or seen reason excepted), 'Not now' holds declined_days. His read has noise: sd = noise.floor + noise.per_point x (20 - judging ability) on every point he sees, so a poor judge writes for the wrong reasons and misses the right ones. His promise ('with me I think you could run X by next summer') = the time of (the ability the best shows + yearly_gain[age] x (1 + (his average - the head's) x self_belief_per_point + demands[his demands]) + his noise), so a poor judge or an ambitious coach overpromises; never more than promise_max_years years' gain, never slower than the best. The offer holds valid_days (his place is kept).",
   "look": "sunday",
+  "minor_age": 18,
+  "minor_note": "An athlete under minor_age is not written to directly (user 2026-10-18): the offer is told by a parent in the family thread (lines.parent_offer) and waits on the coach's page.",
   "valid_days": 30,
   "again_days": 180,
   "declined_days": 180,
@@ -150,6 +152,12 @@
   "visit_hint_near": "That day becomes an easy run with the group",
   "visit_hint_far": "That day becomes a rest day for the travel",
   "visit_pick": "Pick a day (this week and next):",
+  "offer_parent_head": "{coach_first}'S OFFER, PASSED ON BY {parent}",
+  "offer_family_head": "{coach_first}'S OFFER, PASSED ON BY YOUR FAMILY",
+  "offer_parent_note": "{coach_first} called {parent} first: coaches do not write to athletes under 18 directly. Nothing changes unless you start with {coach_first}.",
+  "offer_family_note": "{coach_first} got in touch with your family first: coaches do not write to athletes under 18 directly. Nothing changes unless you start with {coach_first}.",
+  "offer_decline": "Not now, thanks",
+  "offer_decline_hint": "No more offers from this coach for half a year",
   "visit_set": "Visit on {day}",
   "visit_cancel": "Cancel the visit",
   "visit_done": "You visited a session.",
@@ -254,6 +262,20 @@
    "fact_group": "Training group: {n} athletes, {level}.",
    "fact_kept": "{coach_first} keeps the place for you until {date}. You can see everything in Find a coach.",
    "estimate_note": "(The estimate is the coach's own.)"
+  },
+  "parent_offer": {
+   "_note": "An offer to an athlete under offers.minor_age (user 2026-10-18; Finnish sport's fair-play norm: under-18s are not approached directly): the coach calls a parent, who tells the athlete in the family thread; the offer itself waits on the coach's page in Find a coach. The text = intro + the reason line (by the main reason) + outro. Placeholders: {coach} full name, {coach_first}, {his}, {date}. No verbs that depend on a pronoun (a real coach's pronoun may be 'they').",
+   "intro": ["{coach} called me today about you.", "{coach} rang me this morning. It was about you.", "I had a call from {coach} today. About you."],
+   "reason": {
+    "talent": "{coach_first} says you can do much more than your times show.",
+    "slump": "{coach_first} has followed your last races and thinks you can run better than that.",
+    "progress": "{coach_first} has been following how fast you are improving.",
+    "crossed": "{coach_first} noticed your latest best time.",
+    "seen": "{coach_first} saw that you reached the TF standard.",
+    "strained": "{coach_first} heard that things are not going well with your coach.",
+    "better": "{coach_first} thinks you could get more out of your training."
+   },
+   "outro": ["{coach_first} has a place for you. I said you would think about it and that it is your decision. Everything is on {his} page in Find a coach, and the place is kept until {date}.", "There is a place for you with {coach_first}. I told {coach_first} it is up to you. You can read the offer on {his} page in Find a coach (until {date})."]
   },
   "offer_replies": [
    {"id": "more", "label": "Thanks, I'll think about it", "hint": "The place is kept for 30 days: see the coach in Find a coach"},

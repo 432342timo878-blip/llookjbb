@@ -385,12 +385,12 @@
 		}
 	},
 	"verdict": {
-		"_note": "Session C4 (GDD 4.9.2 'Ask the coach'; CoachVerdict). words = the four verdicts. reasons = why, by the part of the change that decided it as HE sees it (rest = it lowers the injury risk, fresh = better Form at the race, work = more training, race = racing is worth it, risk / form = what makes it Risky, lose_work / form_loss / bit_risky / nothing = Pointless, fine / tradeoff = Fine); short = what a coach with communication <= detail.short_max says instead, detail = the extra sentence of one with >= detail.full_min. voice = his opening word per verdict. compare = the line that says what was compared. Placeholders: {area} (the most loaded body area), {meet}, {day}, {coach_first}, {name}.",
+		"_note": "Session C4 (GDD 4.9.2 'Ask the coach'; CoachVerdict). words = the four verdicts. reasons = why, by the part of the change that decided it as HE sees it (rest = it lowers the injury risk, fresh = better Form at the race, work = the week gives more training (a lighter or a heavier day, whichever makes the key sessions count more), race = racing is worth it, risk / form = what makes it Risky, lose_work / form_loss / bit_risky / nothing = Pointless, fine / tradeoff = Fine); short = what a coach with communication <= detail.short_max says instead, detail = the extra sentence of one with >= detail.full_min. voice = his opening word per verdict. compare = the line that says what was compared. Placeholders: {area} (the most loaded body area), {meet}, {day}, {coach_first}, {name}.",
 		"words": {"good": "Good idea", "fine": "Fine", "pointless": "Pointless", "risky": "Risky"},
 		"reasons": {
 			"rest": ["Your {area} have taken a lot lately; easing off now keeps you out of trouble.", "Your {area} could use the break, and it costs you very little."],
 			"fresh": ["You'll be fresher for {meet}.", "It leaves your legs fresh for {meet}."],
-			"work": ["It's more work, and your body can take it right now.", "Good training, and you're fresh enough to absorb it."],
+			"work": ["You'll get more out of the week this way, and your body can take it right now.", "It makes the week better training, and you're fresh enough for it."],
 			"race": ["Race it. Racing is how you learn to race.", "Go and race. You're fit enough for it."],
 			"risk": ["Your {area} are already loaded. That's asking for an injury.", "That's a lot on your {area} right now. That's how injuries start."],
 			"form": ["So close to {meet}, you'd race on tired legs.", "That tiredness would still be in your legs at {meet}."],
@@ -402,14 +402,14 @@
 			"tradeoff": ["You give up a little, you gain a little. Either way works."]
 		},
 		"short": {
-			"rest": "Your {area} need it.", "fresh": "Fresher for {meet}.", "work": "More work. Good.", "race": "Race it.",
+			"rest": "Your {area} need it.", "fresh": "Fresher for {meet}.", "work": "More out of the week. Good.", "race": "Race it.",
 			"risk": "Too much on your {area}.", "form": "Too close to {meet}.", "lose_work": "You lose a session for nothing.",
 			"form_loss": "Takes your edge off.", "bit_risky": "Not worth it.", "nothing": "No difference.", "fine": "Fine.", "tradeoff": "Either way."
 		},
 		"detail": {
 			"rest": "One lighter day costs you little; an injury costs weeks.",
 			"fresh": "Hard work this close to a race doesn't make you fitter in time, it only makes you tired.",
-			"work": "You'll feel it for a day, but that's the point.",
+			"work": "The sessions that matter give you more when the week is built this way.",
 			"race": "The day's training would give you less than the race itself.",
 			"risk": "Soreness is the warning; most running injuries start when it's ignored.",
 			"form": "The fitness from it comes after the race; the tiredness comes right away.",

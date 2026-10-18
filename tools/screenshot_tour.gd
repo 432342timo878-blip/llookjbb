@@ -19,18 +19,14 @@ func _initialize() -> void:
 func _run() -> void:
 	# Keep the tour's saves away from the player's real saves (loaded here: autoloads exist now).
 	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
-	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4).
-	load("res://scripts/core/health_system.gd").model_enabled = false
+	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4). The real game, but the
+	# season goals / suggestions (session C5) and the people (session P1) are on only for their own parts of the tour.
+	load("res://scripts/core/game_config.gd").use("real", {"health": false, "goals": false, "suggests": false, "people": false})
 	# The help's "read" marks in their own file, empty at the start: the "?" buttons show their "new" dot.
 	var help = load("res://scripts/ui/help.gd")
 	help.SEEN_PATH = "user://tour_help_seen.cfg"
 	help.reset_seen()
 	await _frames(10)
-	# The season goals and the coach's suggestions (session C5) are switched on for their own part of the tour (_goals_tour) only.
-	load("res://scripts/core/season_goals.gd").enabled = false
-	load("res://scripts/core/coach_suggests.gd").enabled = false
-	# The people around the athlete (session P1) likewise: on for their own part (_cast_tour) only.
-	load("res://scripts/core/storylet_system.gd").people_enabled = false
 	await _shot("0_main_menu")
 	var main := current_scene
 	main.get_node("/root/Router").go("new_career")
@@ -422,11 +418,20 @@ func _lukio_tour(main: Node, hub_in: Control) -> void:
 			hub._scroll.scroll_vertical += int(l.global_position.y - hub._scroll.global_position.y) - 24
 		await _frames(4)
 		await _shot(str(shots[head]))
+	# The standing order "Lukio courses" (Training tab, bottom; fix session 2026-10-18), then the period's courses stop.
+	hub._show("training")
+	await _frames(6)
+	hub._scroll.scroll_vertical = 100000
+	await _frames(4)
+	await _shot("53l_standing_orders")
+	hub._show("people")
 	ss._post_courses(2)
 	hub._show_pending_event()
 	await _frames(6)
 	await _shot("53d_courses_stop")
 	hub._on_event_answer(game.pending_event().id, "done")
+	for sid in ss.subjects:   # (a failed course: without one the period's results are a message, not a stop)
+		ss.subjects[sid].level = 3.0
 	ss._finish_period(2, true)
 	hub._show_pending_event()
 	await _frames(6)

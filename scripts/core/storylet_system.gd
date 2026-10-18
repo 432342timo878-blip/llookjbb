@@ -80,7 +80,7 @@ var _content: Array = []
 
 func _init() -> void:
 	id = "moments"
-	rng.randomize()
+	GameConfig.randomize_dice(rng, "moments")
 
 
 ## The day number of a date (days since 1 Jan 1970): cooldowns, expiry and chains count in these.

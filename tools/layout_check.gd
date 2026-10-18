@@ -20,8 +20,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tour_saves/"
-	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4).
-	load("res://scripts/core/health_system.gd").model_enabled = false
+	# Same screens every run: no random colds or injuries (the health UI gets its own shots in M2 step 4). The real game, but the
+	# season goals / suggestions (session C5) and the people (session P1) are on only for their own views.
+	load("res://scripts/core/game_config.gd").use("real", {"health": false, "goals": false, "suggests": false, "people": false})
 	var help = load("res://scripts/ui/help.gd")
 	help.SEEN_PATH = "user://tour_help_seen.cfg"
 	help.reset_seen()
@@ -30,11 +31,6 @@ func _run() -> void:
 	var router = main.get_node("/root/Router")
 	var game = main.get_node("/root/Game")
 	var data = main.get_node("/root/Data")
-	# The season goals and the coach's suggestions (session C5) are switched on for their own views (_goals_views) only.
-	load("res://scripts/core/season_goals.gd").enabled = false
-	load("res://scripts/core/coach_suggests.gd").enabled = false
-	# The people around the athlete (session P1) likewise: on for their own views (_cast_views) only.
-	load("res://scripts/core/storylet_system.gd").people_enabled = false
 
 	# A short career so the hub has something to show.
 	router.go("new_career")
@@ -997,6 +993,19 @@ func _market_views(main: Node, game, tag: String) -> void:
 	await _frames(6)
 	await _shot("%s_market_coach_asked" % tag)
 	_check_overflow(hub, "%s market coach asked" % tag)
+	# An offer that came through a parent (an athlete under 18, fix session 2026-10-18): his page shows the offer with "Not now".
+	var oc := str(other.id)
+	mk.offers[oc] = {"until": M.today_no() + 30, "why": "better", "promise": 125.0, "via": "parent",
+			"text": mk.offer_text(other, {"better": 3.0, "talent": 1.5}, 125.0)}
+	hub._people_page = "coach:" + oc
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_market_coach_offer" % tag)
+	_check_overflow(hub, "%s market coach offer via parent" % tag)
+	hub._scroll.scroll_vertical = 100000
+	await _frames(3)
+	_check_overflow(hub, "%s market coach offer via parent end" % tag)
+	mk.offers.erase(oc)
 	# A change waiting for Monday: the head coach's page and the list.
 	if mk.may_start(other):
 		mk.start(other)
@@ -1517,6 +1526,16 @@ func _lukio_views(main: Node, game, tag: String) -> void:
 		hub._scroll.ensure_control_visible(l)
 		await _frames(4)
 		await _shot("%s_lukio_%s" % [tag, head.to_lower().replace(" ", "_")])
+	# The standing orders (Training tab): "Lukio courses: ask me every period / let the counsellor plan them" (fix session 2026-10-18).
+	for mode in ["ask", "counsellor"]:
+		ss.set_courses_mode(mode)
+		hub._show("training")
+		await _frames(6)
+		hub._scroll.scroll_vertical = 100000
+		await _frames(4)
+		await _shot("%s_lukio_standing_%s" % [tag, mode])
+		_check_overflow(hub, "%s lukio standing orders %s" % [tag, mode])
+	ss.set_courses_mode("ask")
 	# The period's courses (an optional course added first, so the editor shows Drop too).
 	var cands: Array = ss.add_candidates(2)
 	if not cands.is_empty():
@@ -1527,7 +1546,9 @@ func _lukio_views(main: Node, game, tag: String) -> void:
 	await _shot("%s_lukio_courses" % tag)
 	_check_overflow(hub, "%s lukio_courses" % tag)
 	hub._on_event_answer(game.pending_event().id, "done")
-	# The period's results.
+	# The period's results (a failed course: without one the results are a message, not a stop).
+	for sid in ss.subjects:
+		ss.subjects[sid].level = 3.0
 	ss._finish_period(2, true)
 	hub._show_pending_event()
 	await _frames(6)

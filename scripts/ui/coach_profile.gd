@@ -66,6 +66,8 @@ func _build() -> void:
 
 	# What you can do about another coach, on top (the answer, the change, finding out more).
 	if not is_head and mk != null:
+		if mk.offer_via_parent(cid):
+			add_child(_offer_panel(mk, c, cid))
 		add_child(_actions(mk, c, fill))
 
 	# About.
@@ -216,6 +218,29 @@ func _pending_panel(mk: CoachMarket, cs: CoachSystem) -> Control:
 			changed.emit())
 		box.add_child(stay)
 	return UIKit.alert_panel(box, Palette.ACCENT, 12)
+
+
+## The offer a coach made through a parent (the athlete is under 18, user 2026-10-18): his words and the facts, with "Not now".
+func _offer_panel(mk: CoachMarket, c: Dictionary, cid: String) -> Control:
+	var mui: Dictionary = Data.market.ui
+	var offer: Dictionary = mk.offers[cid]
+	var ms := Game.get_system("moments") as StoryletSystem
+	var parent := ""
+	if ms != null and ms.people.has(str(offer.get("parent", ""))):
+		parent = StoryletSystem.short_name(ms.people[str(offer.parent)])
+	var fill := {"parent": parent, "coach_first": str(c.name).split(" ")[0]}
+	var box := UIKit.vbox(8)
+	box.add_child(UIKit.label(str(mui.offer_parent_head if parent != "" else mui.offer_family_head).format(fill), "CaptionLabel"))
+	box.add_child(UIKit.wrapped(str(offer.get("text", "")), ""))
+	box.add_child(UIKit.wrapped(str(mui.offer_parent_note if parent != "" else mui.offer_family_note).format(fill), "CaptionLabel"))
+	var no := UIKit.button(str(mui.offer_decline), false, 200)
+	no.pressed.connect(func():
+		mk.decline_offer(cid)
+		_build()
+		changed.emit())
+	box.add_child(no)
+	box.add_child(UIKit.wrapped(str(mui.offer_decline_hint), "CaptionLabel"))
+	return UIKit.panel(box, 14)
 
 
 ## The status, the answer, "Start on Monday" (two steps) and finding out more.

@@ -10,6 +10,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var game = root.get_node("Game")
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"   # never touch the user's real saves
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})
 	var factory = load("res://scripts/core/athlete_factory.gd")
 	var rankings = load("res://scripts/core/rankings.gd")
 	var Cal = load("res://scripts/core/calendar.gd")

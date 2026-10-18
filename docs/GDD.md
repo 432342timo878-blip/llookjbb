@@ -4034,6 +4034,58 @@ goodbyes and homesickness, a teammate really quitting or joining, wanhat / penkk
 messages before a race ("see you at...") and more rival content; the final tuning of the people's mood weight (B1, with the whole
 picture).
 
+#### Built (check-in fixes 2026-10-18): the fix session after the third check-in
+
+The fix session the user agreed after the check-in 2026-10-18 (`docs/AUDIT.md` "Agreed with the user"). No design change beyond
+the list; the stops stay as they were until the user's season playtest 2 (`docs/PLAYTESTS.md` has the guide).
+
+- **TUVA instead of "a 10th-grade year".** Since 1 Aug 2022 the old 10th grade, LUVA and VALMA are one programme, TUVA (a preparatory
+  year for further studies that can raise comprehensive-school grades; OPH). Every text (the stage name, the rejection's answer, the path
+  message, the first-day message, the Help, the research note) says "TUVA year"; the mechanics are S3a's (a year at school, the
+  application again next February, then the default 3-year lukio). The id stays `grade_10` in the code and the saves, so older saves
+  load. (GDD S3a's "10th-grade year" above means this.)
+- **A coach never writes straight to an athlete under 18** (Finnish sport's fair-play norm; the check-in's source was the
+  floorball federation's 2025 code, SUL's own rule was not found). `market.json offers.minor_age` 18: for a younger athlete the coach
+  "calls a parent": `CoachMarket._tell_parent` puts a message from a parent into the family thread (the coach, why, "I said it is your
+  decision", where to read it, until when; three openings and two endings, one line per main reason, no pronoun-dependent verbs because a
+  real coach may be "they"), nothing appears in "Other coaches", and the offer (its full text with the cost, the group, the place kept 30
+  days) waits on the coach's page in an offer panel with "Not now" (`CoachProfile._offer_panel`, `decline_offer`, half a year of quiet).
+  Starting with him works as before. At 18 the old message in "Other coaches" comes. The academy coach of the athlete's own sports lukio
+  stays a message: it is the school's, reached by choosing to go there.
+- **Remote (online) coaches from 16** (`market.json ages.remote`; was 14).
+- **Text bugs:** the coach's reason `work` is worded for a heavier and a lighter change alike ("You'll get more out of the week this
+  way, and your body can take it right now": the phone playtest had "a rest day instead of mobility ... It's more work"); the goals
+  offer's far-away line reads "Far away · Not within reach this season." (was "Far away · Far away this year.").
+- **`GameConfig`** (`scripts/core/game_config.gd`; CODEMAP "Changes made after..."): one place for the 18 switches, two presets, **`real`**
+  (the player's game: what `main.gd` switched on) and **`lab`** (the neutral game of the fingerprints: no injuries, a club coach of 10s, the
+  moods in the middle, school life load 0, nothing that stops Play week). `main.gd` uses `real` (unless a tool chose first); every tool
+  starts with one `use` line, with overrides where its state was neither preset. `GameConfig.fixed_seed` fixes the dice drawn from the
+  clock for the tools. **Proved identical:** `training_balance -- 0` (coach 206.798298350 / 14.102831594 / 1226.006524079 and every
+  "identical to part 1: YES"), `quick_fingerprint` (73182f4e...), `school_fingerprint` (42fd3635... / 01dd20d7... / 55076d77...).
+- **Faster, steadier checks.** `run_all_checks.bat -Quick` (about 6 minutes: no `race_rounds`, `commentary_check`, `playtest_fix_check`,
+  the PC-layout help check or the races fingerprint; `storylet_check -- quick` skips its long season runs); the full list is ~15 minutes
+  and ends every session. `storylet_check` now plays fixed careers (`GameConfig.fixed_seed`): two parallel runs printed the same output
+  to the last line but the timing, so it cannot fail by chance any more. `layout_check` and the tour got the new views (the offer panel,
+  the standing orders in both states) and no longer rely on a period's results being a stop.
+- **`school_system.gd` split** (2 508 → 1 490 lines): `SchoolPathPart` (application, path, moving), `SchoolLukioPart` (courses, periods,
+  choices, stops, results) and `SchoolMatricPart` (matriculation exams) as static functions over a `SchoolSystem`, with forwarding
+  methods in the system; done with a script and checked by `load_check`, `school_check` and `school_fingerprint` (identical hashes).
+- **The standing order "Lukio courses: ask me every period / let the counsellor plan them"** (default: ask; Training tab, Standing orders,
+  shown from grade 9; saved as `courses_mode` only when it is not "ask"). With the counsellor the courses stop becomes a message and
+  the plan stays editable on the School page. **A period's results are a message unless a course failed** (grade 4: then the old
+  results stop with the retake lines); the message lists the subject grades and the average and sits in the school thread. `school_check`
+  tests the default, the unknown mode, the counsellor mode (no courses stop, a message each period, saved and loaded), a failed course.
+  Help: `school`'s sections, `training_season` v8, `training_repeat` v7, `lukio` v2, `market` v3 (a new "Offers under 18" section).
+- **`CLAUDE.md` 103 KB → 17 KB** (the rules, how to run and check, one line per system), the per-system detail moved verbatim to
+  `docs/CODEMAP.md` (read the paragraph when you work on a system), with a section for what changed after it was written.
+- **Checks:** the full `run_all_checks` (22 checks) all PASS; `layout_check` at 1280x720, 720x1280, 390x844, 1000x900 and 844x390 with no
+  OVERFLOW / SQUEEZED / WRONG (the offer panel and the standing orders included); the tour (188 shots) ran without a script error and the
+  new shots (the standing orders, the courses stop, the results stop) were looked at.
+
+**Not changed on purpose (as agreed):** the number of stops a week (decided after the user's playtest), the people's mood weight and the
+proposals' effect on the balance (B1), the smaller realism items (grades 8-9 optional subjects, a coach of another club without a club
+change, the weekly talk's generosity at 14), the race-controls design. The tools still flip single systems in the middle of a run
+(training_balance's parts 2c-2h, several checks); those are the experiments themselves ("with and without"), not setup.
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)

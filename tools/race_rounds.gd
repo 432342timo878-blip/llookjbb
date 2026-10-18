@@ -21,7 +21,7 @@ func _run() -> void:
 	game = root.get_node("Game")
 	data = root.get_node("Data")
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
-	load("res://scripts/core/health_system.gd").model_enabled = false
+	load("res://scripts/core/game_config.gd").use("lab")
 	Cal = load("res://scripts/core/calendar.gd")
 	RD = load("res://scripts/core/race_day.gd")
 	game.autosave = false

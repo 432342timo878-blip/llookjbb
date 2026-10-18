@@ -38,7 +38,7 @@ static func start_test_race(opts: Dictionary) -> Dictionary:
 	Game.start_career(athlete)
 	Game.dev_test = true
 	Game.autosave = autosave_before
-	HealthSystem.model_enabled = false   # (no injury gets in the way of the race; Game leaves test mode on a new or loaded career)
+	GameConfig.set_option("health", false)   # (no injury gets in the way of the race; Game leaves test mode on a new or loaded career)
 	if ability > 0.0:
 		for id in Data.races.ability_weights:
 			if not str(id).begins_with("_"):

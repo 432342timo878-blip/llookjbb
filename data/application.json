@@ -76,7 +76,7 @@
   "done_none": "None of your sports lukio wishes invited you to the tests, so there was no test day for you."
  },
  "apply": {
-  "_note": "The stops of the application: the window opens, a reminder when the list is still empty, the result. Answers: `build` = I make the list myself on the School page, `suggest` = the study counsellor fills it (a sensible spread by the points you have now), `later`. An empty list at the end is replaced by the general lukio of the town you train in (the safe default, also for the tools). The rejection stop offers the continuing application: the general lukio or vocational school of the town you train in, or a 10th-grade year.",
+  "_note": "The stops of the application: the window opens, a reminder when the list is still empty, the result. Answers: `build` = I make the list myself on the School page, `suggest` = the study counsellor fills it (a sensible spread by the points you have now), `later`. An empty list at the end is replaced by the general lukio of the town you train in (the safe default, also for the tools). The rejection stop offers the continuing application: the general lukio or vocational school of the town you train in, or a TUVA year (the id stays `grade_10` in the code and the saves: since 2022 the old 10th grade is TUVA, a preparatory year for further studies that can raise comprehensive-school grades, OPH).",
   "suggest": {"max_sports": 4, "reach": 1.5, "note": "The study counsellor's list: sports lukiot of your own region with athletics offered or a priority, whose limit your points now (with the guessed school points) come within `reach` of, best limit first (at most max_sports), then the general lukio of your town as the safe last wish."},
   "open_title": "The joint application is open",
   "open_text": "The joint application to upper secondary school runs {from} - {to}. You can list up to {max} wishes in order. A sports lukio counts your grades, your sport results and a test day in May. Build your list on the School page, or ask the study counsellor.",
@@ -111,10 +111,10 @@
   "none_choices": {
    "general": {"label": "The general lukio of {town}", "detail": "A place is certain. You study there and train as you do now."},
    "vocational": {"label": "A vocational school in {town}", "detail": "A place is certain. No exam weeks, no grades to keep up."},
-   "grade_10": {"label": "A 10th-grade year", "detail": "One more year to raise your grades. You apply again next February."}
+   "grade_10": {"label": "A TUVA year", "detail": "TUVA is a preparatory year for further studies. You can raise your comprehensive-school grades and apply again next February."}
   },
   "path_message": "From 1 August you study at {name}.",
-  "path_message_10": "From 1 August you do a 10th-grade year at {town}.",
+  "path_message_10": "From 1 August you start a TUVA year, the preparatory year for further studies, at {town}.",
   "news_delta": {"top": 8.0, "yes": 4.0, "no": -8.0},
   "news_yes": "Got into {name}",
   "news_top": "Got your first wish: {name}",
@@ -136,7 +136,7 @@
   "urheilulukio": "Your first day at {name}. The lessons are in periods, and every period ends with an exam week. Morning practice is on {days} at about 8:00-9:30, and a second session on those days does not weigh on your school life. As an athlete of a sports school you join the TF-nuoret activity of the athletics centre{centre}.",
   "centre": " in {centre}",
   "vocational": "Your first day at {name}. There are no lessons to grade here, but there are no exam weeks either.",
-  "grade_10": "A new year in grade 10. Your grades count again when you apply in February.",
+  "grade_10": "Your TUVA year begins. You can raise your comprehensive-school grades now, and they count again when you apply in February.",
   "morning_names": ["Mon", "Tue", "Wed", "Thu", "Fri"]
  },
  "morning": {
@@ -204,7 +204,7 @@
   "path_end": "Your last year ends on {date}.",
   "after_school": "School is over. What comes after is a later update.",
   "vocational_note": "A vocational school has no grades or exam weeks in this game.",
-  "kinds": {"urheilulukio": "Sports lukio", "lukio": "Upper secondary school", "vocational": "Vocational school", "grade_10": "10th grade"}
+  "kinds": {"urheilulukio": "Sports lukio", "lukio": "Upper secondary school", "vocational": "Vocational school", "grade_10": "TUVA year"}
  },
  "sources": [
   {"id": 1, "url": "https://www.oph.fi/fi/uutiset/2026/perusopetuksen-jalkeisten-koulutusten-yhteishaku-alkaa-17-helmikuuta", "read": "2026-10-17", "how": "search-summary", "facts": "joint application 17.2.-17.3.2026; up to seven choices; results from 11.6.2026 at the earliest; the place accepted by 25.6.2026 (from a search summary of the school documents listed with the page, not opened)"},

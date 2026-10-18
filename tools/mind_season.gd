@@ -66,7 +66,7 @@ func _row(plan: String, policy: String, n: int, weeks: int, first: int, quiet: b
 	var terms := []
 	var races := 0
 	for i in range(first, first + n):
-		H.model_enabled = true
+		load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})
 		var a = _athlete(i)
 		if plan == "repeat":
 			game.start_career(a, "repeat")

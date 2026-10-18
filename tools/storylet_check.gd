@@ -17,7 +17,7 @@ extends SceneTree
 ##    from every family answer, the yearly calendar, the effects (a late night, grades, the attitude, memory, a whole thread),
 ##    rivals becoming people, many seasons with the people on (rate, stops, repeats, nothing stuck, coverage per storylet, per
 ##    age and per person), save / load bit for bit, people off = no cast and no people's moments, neutral = the fingerprint.
-## Run: godot --headless --path . -s res://tools/storylet_check.gd [-- [careers for part 3, default 8] [seasons, default 2]
+## Run: godot --headless --path . -s res://tools/storylet_check.gd [-- quick] [-- [careers for part 3, default 8] [seasons, default 2]
 ##      [careers for part 7, default 6 (one per family answer, ~4 min); 12 for the full coverage count, ~8 min]]
 ## NOTE: read stderr too: a SCRIPT ERROR does not change the "ALL CHECKS PASSED" line.
 
@@ -60,8 +60,12 @@ func _run() -> void:
 	F = load("res://scripts/core/athlete_factory.gd")
 	MS = load("res://scripts/core/storylet_system.gd")
 	C = load("res://scripts/core/coach_system.gd")
-	load("res://scripts/core/mind_system.gd").neutral = true   # (session M1: the moods in the middle = the game before the mind)
-	load("res://scripts/core/school_system.gd").neutral = true   # (session S1: no life load = the game before school)
+	# Lab (the moods in the middle, no life load) with the health model on and real club coaches; the parts switch the rest on.
+	var GC = load("res://scripts/core/game_config.gd")
+	GC.use("lab", {"health": true, "coach_neutral": false})
+	# Fixed careers (fix session 2026-10-18): the dice a career draws from the clock (rivals, health, moments, proposals, each race)
+	# come from this seed, so a run is the same every time and the check cannot fail by chance (it failed once in S3a).
+	GC.fixed_seed = 4242
 	H = load("res://scripts/core/health_system.gd")
 	SS = load("res://scripts/core/season_system.gd")
 	saves = load("res://scripts/core/save_game.gd")
@@ -80,10 +84,13 @@ func _run() -> void:
 		careers = nums[0]
 	if nums.size() > 1:
 		seasons = nums[1]
+	# `quick` (run_all_checks -Quick): the data, the rules, save / load, neutral, the talk and the people's cheap parts; no long season runs.
+	var quick := "quick" in OS.get_cmdline_user_args()
 	_data_checks()
 	MS.include_test = true
 	_rules()
-	_seasons(careers, seasons)
+	if not quick:
+		_seasons(careers, seasons)
 	MS.talks_enabled = true   # (the coach's Sunday talk always stops Play week: only the parts below play with it)
 	_save_load()
 	_neutral()
@@ -1040,7 +1047,8 @@ func _people(careers: int) -> void:
 	SCH.neutral = false
 	_people_effects()
 	_people_rivals()
-	_people_seasons(careers, cal)
+	if not "quick" in OS.get_cmdline_user_args():
+		_people_seasons(careers, cal)
 	_people_save_load()
 	MIND.neutral = true
 	SCH.neutral = true

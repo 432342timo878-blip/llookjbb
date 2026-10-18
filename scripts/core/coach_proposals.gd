@@ -34,7 +34,7 @@ var fired: Array = []
 
 func _init() -> void:
 	id = "proposals"
-	rng.randomize()
+	GameConfig.randomize_dice(rng, "proposals")
 
 
 static func cfg() -> Dictionary:

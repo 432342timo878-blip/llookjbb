@@ -6,20 +6,11 @@ extends Control
 
 
 func _ready() -> void:
-	# The coach's Sunday talk (always a stop) and his message after a race belong to the real game; the check tools that play
-	# weeks without this shell leave them off (see StoryletSystem.talks_enabled).
-	StoryletSystem.talks_enabled = true
-	# The coach's proposals (session C4: with "Ask me first", the default, each one stops Play week) likewise.
-	CoachProposals.enabled = true
-	# The season goals and the coach's suggestions of meets and targets (session C5) likewise.
-	SeasonGoals.enabled = true
-	CoachSuggests.enabled = true
-	# The coach market (session C6: offers, the change of coach, a coach ending it after two warnings) likewise.
-	CoachMarket.enabled = true
-	# The school's decisions and the report card day (session S2) likewise.
-	SchoolSystem.decisions_enabled = true
-	# The people around the athlete and their moments (session P1: family, friends, partners, school, rivals) likewise.
-	StoryletSystem.people_enabled = true
+	# The game the player plays: every system on (the Sunday talk, the coach's proposals, goals and suggestions, the coach market,
+	# the school's decisions, the people). The check tools choose the same preset or the neutral "lab" (see GameConfig).
+	# (A tool that runs this scene and chose a preset first keeps its own.)
+	if GameConfig.current == "":
+		GameConfig.use("real")
 	Router.screen_requested.connect(_show_screen)
 	Router.screen_changed.connect(_backdrop.show_for)
 	get_window().size_changed.connect(_update_layout)

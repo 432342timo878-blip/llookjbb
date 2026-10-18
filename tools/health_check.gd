@@ -27,6 +27,7 @@ func _run() -> void:
 	Cal = load("res://scripts/core/calendar.gd")
 	H = load("res://scripts/core/health_system.gd")
 	game.autosave = false
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true})   # (the parts switch the health model off and on themselves)
 
 	_check_data()
 	_check_determinism()

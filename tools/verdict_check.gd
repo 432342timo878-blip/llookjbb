@@ -45,8 +45,6 @@ func _run() -> void:
 	MS = load("res://scripts/core/storylet_system.gd")
 	Cal = load("res://scripts/core/calendar.gd")
 	C = load("res://scripts/core/coach_system.gd")
-	load("res://scripts/core/mind_system.gd").neutral = true   # (session M1: the moods in the middle = the game before the mind)
-	load("res://scripts/core/school_system.gd").neutral = true   # (session S1: no life load = the game before school)
 	SS = load("res://scripts/core/season_system.gd")
 	WP = load("res://scripts/core/week_plan.gd")
 	saves = load("res://scripts/core/save_game.gd")
@@ -54,7 +52,8 @@ func _run() -> void:
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false
-	SS.offers_enabled = false
+	# Lab (the moods in the middle, no life load) with the health model on, real club coaches and no "three plans" stop.
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "season_offers": false})
 	for arg in OS.get_cmdline_user_args():
 		if arg.is_valid_int():
 			weeks = arg.to_int()

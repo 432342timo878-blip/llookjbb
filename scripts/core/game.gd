@@ -73,7 +73,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 	(get_system("coach") as CoachSystem).ensure_head(athlete, date)   # the career's club coach (GDD 4.9.1)
 	(get_system("moments") as StoryletSystem).ensure_cast(athlete)   # the people around them (session P1; only with the people on)
 	var rng := RandomNumberGenerator.new()
-	rng.randomize()
+	GameConfig.randomize_dice(rng, "rivals")
 	rivals = Rivals.generate(athlete, rng)
 	# A career on the coach's ★ plan starts with the coach's offer of the three plans (GDD 4.8; tools that name a
 	# plan don't get it).
@@ -87,7 +87,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 func _leave_test() -> void:
 	if dev_test:
 		dev_test = false
-		HealthSystem.model_enabled = true
+		GameConfig.set_option("health", true)
 
 
 func _make_systems() -> Array:
@@ -139,7 +139,7 @@ func from_dict(d: Dictionary) -> void:
 	rivals = d.get("rivals", [])
 	if rivals.is_empty():
 		var rng := RandomNumberGenerator.new()
-		rng.randomize()
+		GameConfig.randomize_dice(rng, "rivals")
 		rivals = Rivals.generate(athlete, rng)
 	Rivals.ensure_personalities(rivals)   # saves from before step R1
 	if not d.has("stats_year"):

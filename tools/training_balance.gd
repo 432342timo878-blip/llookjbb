@@ -42,6 +42,7 @@ var WP
 var RP
 var H
 var C
+var GC
 
 
 func _initialize() -> void:
@@ -58,16 +59,11 @@ func _run() -> void:
 	RP = load("res://scripts/core/race_performance.gd")
 	H = load("res://scripts/core/health_system.gd")
 	C = load("res://scripts/core/coach_system.gd")
-	# The balance is measured with a club coach of 10s (session C1: a coach of 10s changes nothing); part 2c checks a
-	# real club coach with the coach model off.
-	C.neutral_club = true
-	# The moods stay in the middle (session M1: OK / OK / Calm = the game before the mind); part 2g checks the mind switched off.
-	var MI = load("res://scripts/core/mind_system.gd")
-	MI.neutral = true
-	# School's life load is 0 (session S1: a normal school day at Normal / Normal = the game before school); part 2h checks the
-	# school switched off.
-	var SC = load("res://scripts/core/school_system.gd")
-	SC.neutral = true
+	# The balance is measured in the lab preset (GameConfig: a club coach of 10s, the moods in the middle, the school's life load 0)
+	# with the health model on between the parts; part 2c checks a real club coach with the coach model off, 2g the mind off, 2h the
+	# school off.
+	GC = load("res://scripts/core/game_config.gd")
+	GC.use("lab", {"health": true})
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
@@ -86,72 +82,70 @@ func _run() -> void:
 	for run in runs:
 		fingerprints.append(_m1_row(run, plans, false))
 	print("\n== 2. The same, day by day through the game with the health model OFF")
-	H.model_enabled = false
+	GC.set_option("health", false)
 	var same := true
 	for i in runs.size():
 		var fp: String = _m1_row(runs[i], plans, true)
 		same = same and fp == fingerprints[i]
-	H.model_enabled = true
+	GC.set_option("health", true)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same else "NO  <-- the M1 balance changed!"))
 
 	# Step 6a: intensity stored in the week plan (instead of as day changes) gives exactly the same results.
 	print("\n== 2b. Intensity in the week plan (M2 step 6a) instead of day changes: same fingerprints")
-	H.model_enabled = false
+	GC.set_option("health", false)
 	var same_plan := true
 	for i in runs.size():
 		same_plan = same_plan and _m1_row(runs[i], plans, true, true) == fingerprints[i]
-	H.model_enabled = true
+	GC.set_option("health", true)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_plan else "NO  <-- plan-level intensity differs!"))
 
 	# Session C1: parts 2 / 2b ran with the coach model ON and a club coach of 10s; the real club coach with the model
 	# OFF must give the same too. Then, for information, the real club coach with the model on.
 	print("\n== 2c. Coach model (session C1): the career's real club coach with the coach model OFF: same fingerprints")
-	H.model_enabled = false
-	C.neutral_club = false
-	C.model_enabled = false
+	GC.set_option("health", false)
+	GC.set_option("coach_neutral", false)
+	GC.set_option("coach_model", false)
 	var same_coach := true
 	for i in runs.size():
 		same_coach = same_coach and _m1_row(runs[i], plans, true) == fingerprints[i]
-	C.model_enabled = true
+	GC.set_option("coach_model", true)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_coach else "NO  <-- the coach model's off switch leaks!"))
 	print("   For information, the same club coach with the model ON (not a check):")
 	_m1_row(runs[0], plans, true)
 	var club: Dictionary = game.get_system("coach").head()
 	print("   (%s, %s, average %.1f: %s)" % [club.name, club.voice, C.average(club), club.attributes])
-	C.neutral_club = true
-	H.model_enabled = true
+	GC.set_option("coach_neutral", true)
+	GC.set_option("health", true)
 
 	# Session C2: the moments engine with the test moments ON gives the same fingerprints: every row at the default setting
 	# ("Play week stops for: Important only"), and the coach row with every moment a stop; stops answered, half of the other
 	# moments answered, the rest left to pass unanswered.
 	print("\n== 2d. Moments (session C2): the test moments ON, stop events answered: same fingerprints")
-	var MS = load("res://scripts/core/storylet_system.gd")
-	MS.include_test = true
-	H.model_enabled = false
+	GC.set_option("test_moments", true)
+	GC.set_option("health", false)
 	var same_moments := true
 	for i in runs.size():
 		same_moments = same_moments and _m1_row(runs[i], plans, true, false, "important") == fingerprints[i]
 	print("   (%d moments in the last row)" % game.get_system("moments").fired.size())
 	same_moments = same_moments and _m1_row(runs[0], plans, true, false, "all") == fingerprints[0]
 	print("   (%d moments with Every moment, each a stop)" % game.get_system("moments").fired.size())
-	MS.include_test = false
-	H.model_enabled = true
+	GC.set_option("test_moments", false)
+	GC.set_option("health", true)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_moments else "NO  <-- the moments change the training!"))
 
 	# Session C4: the coach's proposals ON. With "Never" he changes nothing (he only says what he would have changed), and
 	# with "Ask me first" every proposal is vetoed (a reason or none, by the event's id): the same fingerprints.
 	print("\n== 2e. Coach proposals (session C4) ON: 'Never', and 'Ask me first' with every proposal vetoed: same fingerprints")
-	var CP = load("res://scripts/core/coach_proposals.gd")
-	CP.enabled = true
-	H.model_enabled = false
+	GC.set_option("proposals", true)
+	GC.set_option("health", false)
 	var same_proposals := true
 	var proposed := 0
 	for setting in ["never", "ask"]:
 		for i in runs.size():
 			same_proposals = same_proposals and _m1_row(runs[i], plans, true, false, "important", setting) == fingerprints[i]
 			proposed += game.get_system("proposals").fired.size()
-	CP.enabled = false
-	H.model_enabled = true
+	GC.set_option("proposals", false)
+	GC.set_option("health", true)
 	print("   (%d proposals in the %d rows)" % [proposed, runs.size() * 2])
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_proposals and proposed > 0 else
 			("NO  <-- the proposals change the training without your OK!" if not same_proposals else "NO PROPOSALS: the check proves nothing")))
@@ -159,20 +153,18 @@ func _run() -> void:
 	# Session C5: the coach's suggestions of meets and targets ON (and the season goals, which only exist in a season-plan career):
 	# every suggestion answered "No thanks" (the player decides, so nothing is entered by himself): the same fingerprints.
 	print("\n== 2f. Coach suggests (session C5) ON, every suggestion answered 'No thanks': same fingerprints")
-	var CSG = load("res://scripts/core/coach_suggests.gd")
-	var SG = load("res://scripts/core/season_goals.gd")
-	CSG.enabled = true
-	SG.enabled = true
-	H.model_enabled = false
+	GC.set_option("suggests", true)
+	GC.set_option("goals", true)
+	GC.set_option("health", false)
 	var same_suggests := true
 	var suggested := 0
 	for setting in ["ask", "never", "always"]:
 		for i in runs.size() if setting == "ask" else 1:
 			same_suggests = same_suggests and _m1_row(runs[i], plans, true, false, "important", setting) == fingerprints[i]
 			suggested += game.get_system("suggests").fired.size()
-	CSG.enabled = false
-	SG.enabled = false
-	H.model_enabled = true
+	GC.set_option("suggests", false)
+	GC.set_option("goals", false)
+	GC.set_option("health", true)
 	print("   (%d suggestions in the 7 rows)" % suggested)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_suggests and suggested > 0 else
 			("NO  <-- his suggestions change the training without your OK!" if not same_suggests else "NO SUGGESTIONS: the check proves nothing")))
@@ -180,36 +172,36 @@ func _run() -> void:
 	# Session M1: every part above ran with the mind ON and the moods pinned in the middle (OK / OK / Calm). The mind switched OFF
 	# must give the same. Then, for information, the coach row with the moods FREE (a year of the same week wears motivation down).
 	print("\n== 2g. The mind (session M1): moods in the middle (every part above) = the mind OFF: same fingerprints")
-	H.model_enabled = false
-	MI.model_enabled = false
+	GC.set_option("health", false)
+	GC.set_option("mind", false)
 	var same_mind := true
 	for i in runs.size():
 		same_mind = same_mind and _m1_row(runs[i], plans, true) == fingerprints[i]
-	MI.model_enabled = true
+	GC.set_option("mind", true)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_mind else "NO  <-- the mind's off switch or its middle leaks!"))
 	print("   For information, the coach row with the moods FREE (not a check):")
-	MI.neutral = false
+	GC.set_option("mind_neutral", false)
 	_m1_row(runs[0], plans, true)
 	var mind = game.get_system("mind")
 	print("   (after the year: confidence %s %.1f, motivation %s %.1f, stress %s %.1f; %d weeks on the same week)" % [
 			mind.word("confidence").name, mind.value("confidence"), mind.word("motivation").name, mind.value("motivation"),
 			mind.word("stress").name, mind.value("stress"), mind.same_weeks])
-	MI.neutral = true
-	H.model_enabled = true
+	GC.set_option("mind_neutral", true)
+	GC.set_option("health", true)
 
 	# Session S1: every part above ran with the school ON and its life load neutral (0 every day). The school switched OFF must
 	# give the same. Then, for information, the coach row with the school FREE at Normal / Normal (holidays lighter, busy test
 	# weeks heavier: a real year is not all normal school weeks), and with Heavy effort + Lots of free time.
 	print("\n== 2h. School (session S1): the life load neutral (every part above) = the school OFF: same fingerprints")
-	H.model_enabled = false
-	SC.model_enabled = false
+	GC.set_option("health", false)
+	GC.set_option("school", false)
 	var same_school := true
 	for i in runs.size():
 		same_school = same_school and _m1_row(runs[i], plans, true) == fingerprints[i]
-	SC.model_enabled = true
+	GC.set_option("school", true)
 	print("   fingerprints identical to part 1: %s" % ("YES" if same_school else "NO  <-- the school's off switch or its neutral setting leaks!"))
 	print("   For information, the coach row with the school FREE (not a check): Normal / Normal, then Heavy effort + Lots of free time:")
-	SC.neutral = false
+	GC.set_option("school_neutral", false)
 	_m1_row(runs[0], plans, true)
 	var school = game.get_system("school")
 	print("   (after the year: grade average %.2f, %d report cards)" % [school.average(), school.reports.size()])
@@ -218,8 +210,8 @@ func _run() -> void:
 	school = game.get_system("school")
 	print("   (after the year: grade average %.2f)" % school.average())
 	_school_setting = []
-	SC.neutral = true
-	H.model_enabled = true
+	GC.set_option("school_neutral", true)
+	GC.set_option("health", true)
 
 	var n := 200
 	var args := OS.get_cmdline_user_args()

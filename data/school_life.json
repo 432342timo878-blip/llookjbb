@@ -11,7 +11,7 @@
    "urheilulukio": {"id": "urheilulukio", "name": "Sports lukio", "kind": "lukio", "subjects": true, "scale": 1.0, "years": 3, "applies": false, "morning": true, "exam_weeks": [{"periods": true, "last_shift_days": -2}]},
    "lukio": {"id": "lukio", "name": "Upper secondary school", "kind": "lukio", "subjects": true, "scale": 1.0, "years": 3, "applies": false, "exam_weeks": [{"periods": true, "last_shift_days": -2}]},
    "vocational": {"id": "vocational", "name": "Vocational school", "kind": "vocational", "subjects": false, "scale": 1.0, "years": 3, "applies": false, "exam_weeks": []},
-   "grade_10": {"id": "grade_10", "name": "10th grade", "kind": "ylakoulu", "subjects": true, "scale": 1.0, "years": 1, "applies": true, "exam_weeks": []},
+   "grade_10": {"id": "grade_10", "name": "TUVA year", "kind": "ylakoulu", "subjects": true, "scale": 1.0, "years": 1, "applies": true, "exam_weeks": []},
    "graduated": {"id": "graduated", "name": "School is over", "kind": "none", "subjects": false, "scale": 1.0, "years": 0, "applies": false, "exam_weeks": []}
   }
  },

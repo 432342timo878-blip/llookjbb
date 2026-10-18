@@ -18,8 +18,8 @@ func _run() -> void:
 	game = root.get_node("Game")
 	data = root.get_node("Data")
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
-	load("res://scripts/core/health_system.gd").model_enabled = false
-	load("res://scripts/core/coach_system.gd").neutral_club = true
+	# Lab (no injuries, a club coach of 10s) with the school and the moods free: that is what the hashes were made with.
+	load("res://scripts/core/game_config.gd").use("lab", {"school_neutral": false, "mind_neutral": false})
 	game.autosave = false
 	var SC = load("res://scripts/core/school_system.gd")
 	var all := ""

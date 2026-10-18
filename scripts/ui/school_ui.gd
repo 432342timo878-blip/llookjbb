@@ -257,7 +257,7 @@ static func bands(from: Dictionary, to: Dictionary) -> Array:
 			continue
 		out.append({"date": w.monday, "control": _band(str(c.busy_week).format({"n": int(w.n)}),
 				"%s - %s" % [DayInfo.short_day(w.monday), DayInfo.short_day(Game.add_days(w.monday, 4))], Palette.SCHOOL_TEST)})
-	# The joint application (S3a): the window, the test day and the results of the spring after a grade-9 / 10th-grade school year.
+	# The joint application (S3a): the window, the test day and the results of the spring after a grade-9 / TUVA school year.
 	var hi := Calendar.date_key(to)
 	var ac: Dictionary = Data.application.ui.calendar
 	for yr in range(SchoolCalendar.year_of(from), SchoolCalendar.year_of(to) + 1):

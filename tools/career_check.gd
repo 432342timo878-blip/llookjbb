@@ -78,8 +78,6 @@ func _run() -> void:
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false
-	H.model_enabled = true
-	SS.offers_enabled = true
 	var args := OS.get_cmdline_user_args()
 	var n := int(args[0]) if args.size() > 0 else 4
 	var kinds: Array = Array(args[1].split(",")) if args.size() > 1 and args[1] != "all" else ["beginner", "average", "trained", "early", "late", "random"]
@@ -91,10 +89,9 @@ func _run() -> void:
 		if arg.begins_with("plan="):
 			plan = arg.split("=")[1]
 	# Session C1: careers get a club coach of 10s (= the game before coaches), unless "coach=club" asks for the real ones.
-	load("res://scripts/core/coach_system.gd").neutral_club = not "coach=club" in args
-	# Session M1: the moods stay in the middle (= the game before the mind), unless "mind=free" lets them move.
-	load("res://scripts/core/mind_system.gd").neutral = not "mind=free" in args
-	load("res://scripts/core/school_system.gd").neutral = not "school=free" in args   # (S1: no life load unless asked)
+	# Lab with the health model on; "mind=free" lets the moods move, "school=free" gives the life load.
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": not "coach=club" in args,
+			"mind_neutral": not "mind=free" in args, "school_neutral": not "school=free" in args})
 	if plan == "best":
 		_make_best_plan()
 	for arg in args:   # what-ifs: training.progression.novice.bonus=1.1 (a data path = a number)

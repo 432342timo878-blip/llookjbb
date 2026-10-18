@@ -58,7 +58,8 @@ func _run() -> void:
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false
-	SS.offers_enabled = false
+	# Lab with the health model on and no "three plans" stop (the check switches the goals, the suggestions and the proposals on itself).
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "season_offers": false})
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		parts = Array(args[0].split(",")).map(func(x): return int(x))

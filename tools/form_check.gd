@@ -27,7 +27,7 @@ func _run() -> void:
 	Cal = load("res://scripts/core/calendar.gd")
 	FS = load("res://scripts/core/form_system.gd")
 	A = load("res://scripts/core/athlete.gd")
-	load("res://scripts/core/health_system.gd").model_enabled = false
+	load("res://scripts/core/game_config.gd").use("lab")
 	game.autosave = false
 
 	_check_data()

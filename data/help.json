@@ -24,7 +24,7 @@
   },
   "training_season": {
    "title": "Training: season plan",
-   "version": 7,
+   "version": 8,
    "sections": [
     {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
     {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
@@ -40,7 +40,7 @@
     {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what he thinks of the plan from next week on: changed against his, or as it is against an easier week.", "see": ["ask_coach"]},
     {"heading": "Mental training", "text": "Above the standing orders: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
     {"heading": "School life", "text": "Above the standing orders: your study effort and your free time. They change how heavy your school days are and how your grades go, never what you train. The School page in the People tab has the grades.", "see": ["moods"]},
-    {"heading": "Standing orders", "text": "At the bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes"]}
+    {"heading": "Standing orders", "text": "At the bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, from grade 9 on how your lukio courses are planned (you every period, or the counsellor), and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes", "lukio"]}
    ]
   },
   "phase_editor": {
@@ -58,7 +58,7 @@
   },
   "training_repeat": {
    "title": "Training: one repeating week",
-   "version": 6,
+   "version": 7,
    "sections": [
     {"heading": "Easing back in", "text": "After two weeks or more without running, your coach can put a few easier weeks over your plan. While they run, a box at the top shows them, and you can stop them early.", "see": ["easing_back_in"]},
     {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in the week strip."},
@@ -71,7 +71,7 @@
     {"heading": "The same week for months", "text": "A week that never changes wears your motivation down after about two months, and low motivation trains you a little less. Changing the week now and then keeps it fresh.", "see": ["moods"]},
     {"heading": "Mental training", "text": "Above the standing orders: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
     {"heading": "School life", "text": "Above the standing orders: your study effort and your free time. They change how heavy your school days are and how your grades go, never what you train. The School page in the People tab has the grades.", "see": ["moods"]},
-    {"heading": "Standing orders", "text": "At the very bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes"]}
+    {"heading": "Standing orders", "text": "At the very bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, from grade 9 on how your lukio courses are planned (you every period, or the counsellor), and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes", "lukio"]}
    ]
   },
   "calendar": {
@@ -121,7 +121,7 @@
   },
   "school": {
    "title": "School",
-   "version": 4,
+   "version": 5,
    "sections": [
     {"heading": "What school does", "text": "School changes how heavy your days are and how your grades go. It never changes what you train. A normal school week at Normal study effort and Normal free time is just your normal game."},
     {"heading": "Messages from school", "text": "Your class teacher, PE teacher and study counsellor write at the top of this page: tests, the school's cross-country run, the work-experience week, the application. Some answers nudge your grades a little or cost you a late night."},
@@ -133,7 +133,7 @@
     {"heading": "Tests and a race", "text": "When you have a race in a busy test week, a test on the race day itself, or a matriculation exam that week, play stops once. Race and risk the grades, study and scratch, or race and study on the bus: each has a price. Exam weeks nearly always count as busy."},
     {"heading": "Holidays", "text": "Breaks and the summer are lighter: you recover a little faster and feel less stressed. The week strip shades those days and the Calendar lists them. Pajulahti camp weeks are shown there too."},
     {"heading": "The joint application", "text": "In grade 9 you apply for upper secondary school: up to seven wishes in order, in February-March. A sports lukio counts your grades (0-10 points), your 800 m results (0-5) and its own test (0-5). Add schools, tap Info, reorder. Nothing chosen means your own town's lukio."},
-    {"heading": "Test day and results", "text": "In May the sports lukiot that invited you test you: a physical test and an interview, with three choices that count. In June you get the results: the first wish that accepts you is your place. If none does, you can pick a general lukio, a vocational school or a 10th-grade year and apply again."},
+    {"heading": "Test day and results", "text": "In May the sports lukiot that invited you test you: a physical test and an interview, with three choices that count. In June you get the results: the first wish that accepts you is your place. If none does, you can pick a general lukio, a vocational school or a TUVA year (a preparatory year for raising grades)."},
     {"heading": "After grade 9", "text": "A lukio has five periods a year; each ends with an exam week, heavy on school life. A sports lukio has morning practice: a second session on those days costs no extra school load. A vocational school has no grades or exam weeks here."},
     {"heading": "Lukio courses", "text": "Lukio is 75 courses. The study counsellor plans them over your periods; each period starts with a stop where you can change its courses and ends with your grades. More courses in a period make its school days heavier.", "see": ["lukio"]},
     {"heading": "Matriculation exams", "text": "At the end of lukio you take the matriculation exams on their real dates: Finnish and at least four more. You choose them and their sessions; each session is locked when its registration closes.", "see": ["matriculation"]},
@@ -142,11 +142,12 @@
   },
   "market": {
    "title": "Find a coach",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "Who you can get", "text": "At 14 and 15: your club's coaches, a parent who competed in athletics, and remote coaches. From 16, or once you reach the TF-juniorit standard: other clubs in your town, coaches in your region and national coaches. An athletics-centre town has more."},
+    {"heading": "Who you can get", "text": "At 14 and 15: your club's coaches and a parent who competed in athletics. From 16, or once you reach the TF-juniorit standard: other clubs in your town, coaches in your region, national coaches and remote coaches. An athletics-centre town has more."},
     {"heading": "Coaches choose too", "text": "A coach may want a time from you first, or have no place this season. Club fees always fit; a personal coach must fit your family's monthly budget."},
     {"heading": "Offers", "text": "Coaches also write to you themselves, when they see a reason: a talent they think is wasted, a slump, fast progress, a best that reaches their group. An offer is only as good as the coach: a poor judge can misread you or promise too much. Nothing changes unless you start with the coach. Switch offers off on this page."},
+    {"heading": "Offers under 18", "text": "A coach does not write to an athlete under 18. He calls a parent, who tells you in the family thread. His offer waits on his page here, with the cost and the place kept for 30 days. \"Not now\" keeps him quiet for half a year."},
     {"heading": "Finding out more", "text": "Skills show as ranges. Look at the athletes' results, ask around (a teammate answers) or visit a session (that day becomes an easy run, or a rest day if it means travel). Eight weeks together make every skill exact.", "see": ["coach_distance"]},
     {"heading": "Changing coach", "text": "Ask to be coached; if the answer is yes, start on the next Monday. Your old coach, the group and the club will notice. A new coach starts as New trust, with a new group."},
     {"heading": "When a coach ends it", "text": "Only after weeks of Strained trust and two warning talks. Answering them well brings trust back. If it still ends, you choose your next coach from those who would take you."}
@@ -363,12 +364,13 @@
   },
   "lukio": {
    "title": "Lukio courses",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Your choices", "text": "On your first lukio day you choose long or short maths, whether to start a new language, and three or four years. Four years means fewer courses a period: lighter school days, one more year. You can switch until your third year; long maths can become short, not back."},
     {"heading": "The plan", "text": "The study counsellor spreads your 75 courses over the periods: every compulsory course, and optional ones in your exam subjects first. The first year is the busiest, and the last spring is kept free for the exams. The School page shows the whole plan."},
     {"heading": "Each period", "text": "A stop on a period's first day shows its courses. Move a course to a later period, add an optional one or drop one. In a sports lukio you may also leave out some compulsory courses, never in a subject you take an exam in."},
-    {"heading": "Grades", "text": "Each course has its exam in the period's exam week. A stop at the end shows the grades, 4 to 10. A subject's grade is the average of its courses. A failed course is retaken in the next exam week. Coaching and study counselling are just passed."},
+    {"heading": "Ask or let the counsellor", "text": "In the Training tab's standing orders, \"Lukio courses\" decides whether you look at the courses every period (the default) or the study counsellor plans them and you only get a message. You can always change the plan on the School page."},
+    {"heading": "Grades", "text": "Each course has its exam in the period's exam week. At the end you get the grades, 4 to 10, as a message, and as a stop only when a course failed. A subject's grade is the average of its courses. A failed course is retaken in the next exam week. Coaching and study counselling are just passed."},
     {"heading": "Coaching courses", "text": "At a sports lukio your morning practice counts as 12 coaching courses. They are training, so they don't make school days heavier."}
    ]
   },

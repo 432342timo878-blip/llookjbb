@@ -46,8 +46,8 @@ func _run() -> void:
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false
-	H.model_enabled = false
-	MS.neutral = true
+	# Lab (no injuries, the moods in the middle) with real club coaches and the school free; the parts switch the market on.
+	load("res://scripts/core/game_config.gd").use("lab", {"coach_neutral": false, "school_neutral": false})
 	_data_checks()
 	_pool_checks()
 	_scouting()
@@ -538,7 +538,7 @@ func _offers() -> void:
 	var o: Dictionary = data.market.offers
 	var cpp: float = float(o.chance_per_point)
 	var cmax: float = float(o.chance_max)
-	_career("tap", 1400, 2010, 1)   # 16, 'A parent was a top athlete in another sport': 80 a month
+	_career("tap", 1400, 2008, 1)   # 18 (offers come to the athlete himself from 18), 'A parent was a top athlete in another sport': 80 a month
 	var mk = _mk()
 	mk.ensure_pool()
 	var a = game.athlete
@@ -587,6 +587,37 @@ func _offers() -> void:
 	mk._weekly_offers()
 	_ok("'Open to offers: No' = no coach writes", mk.offers.is_empty())
 	mk.open_offers = true
+	# Under 18 (fix session 2026-10-18): the coach calls a parent; the family thread tells it, the offer waits on his page.
+	SL.people_enabled = true
+	_career("tap", 1404, 2010, 1)   # 16
+	mk = _mk()
+	mk.ensure_pool()
+	game.athlete.personal_bests["800m"] = 150.0
+	mk.seen_pb = 150.0
+	game.athlete.personal_bests["800m"] = 123.0
+	mk.on_day_end({})
+	var coaches_before: int = game.get_system("moments").thread("coaches").size()
+	var family_before: int = game.get_system("moments").thread("family").size()
+	mk._weekly_offers()
+	var minor_offers: Array = mk.offers.keys()
+	_ok("a 16-year-old gets an offer (%d)" % minor_offers.size(), minor_offers.size() == 1)
+	if minor_offers.size() == 1:
+		var mid: String = minor_offers[0]
+		var ms2 = game.get_system("moments")
+		var fam: Array = ms2.thread("family")
+		_ok("the coach does not write to a minor: nothing new in Other coaches", ms2.thread("coaches").size() == coaches_before)
+		_ok("a parent tells it in the family thread", fam.size() == family_before + 1 and str(ms2.people[str(fam.back().from)].role) in ["mum", "dad"]
+				and str(fam.back().text).contains(str(mk.coach(mid).name).split(" ")[0]) and str(fam.back().text).contains("Find a coach"))
+		_ok("the offer waits on his page (via parent, with its text and the facts) and can be started", mk.offer_via_parent(mid)
+				and str(mk.offers[mid].text).contains(str(data.market.lines.pitch.facts_head)) and mk.may_start(mk.coach(mid)))
+		mk.decline_offer(mid)
+		_ok("'Not now' on his page: the offer is gone and he stays quiet", not mk.offer_open(mid) and not mk.may_offer(mk.coach(mid)))
+	SL.people_enabled = false
+	# Remote (online) coaches only from 16 (fix session 2026-10-18).
+	_career("tap", 1405, 2011, 1)   # 15
+	_ok("a 15-year-old sees no remote coach", _mk().listing().get("remote", []).is_empty())
+	_career("tap", 1406, 2010, 1)   # 16
+	_ok("a 16-year-old sees the remote coaches", not _mk().listing().get("remote", []).is_empty())
 	# A slump and progress, as the coaches see them.
 	_career("tap", 1403, 2009, 1)   # 17
 	mk = _mk()

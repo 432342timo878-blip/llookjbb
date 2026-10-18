@@ -46,7 +46,7 @@ var _inj_mult := 1.0         # today's injury multiplier from the life load (Sch
 
 func _init() -> void:
 	id = "health"
-	rng.randomize()
+	GameConfig.randomize_dice(rng, "health")
 
 
 static func areas() -> Array:

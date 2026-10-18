@@ -451,7 +451,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         checks; `season_playtest.gd` counts stops by kind (new `player` policy): **3.1–3.2 stops a week, no week without one**
         (proposals 1.0, the Sunday talk 1.0, the people 0.8); found TUVA (the 10th grade is gone since 2022), offers sent
         straight to minors, two text bugs; the user has not played anything since playtest 1. Order agreed below.
-  - [ ] **Fix session (after the check-in 2026-10-18; details in `docs/AUDIT.md` "Agreed with the user (2026-10-18)"):**
+  - [x] **Fix session (after the check-in 2026-10-18, done 2026-10-18; GDD 4.9.5 "Built (check-in fixes 2026-10-18)"; details in `docs/AUDIT.md` "Agreed with the user (2026-10-18)"):** *(built: TUVA texts; offers to under-18s through a parent + remote coaches from 16; the proposal and goals texts; `GameConfig` with `real` / `lab` + `fixed_seed`; `run_all_checks -Quick` (~6 min); `storylet_check` on fixed careers (+ `-- quick`); `school_system.gd` split into `SchoolPathPart` / `SchoolLukioPart` / `SchoolMatricPart`; the standing order "Lukio courses" + period results as a message unless a course failed; `CLAUDE.md` 103 KB → 17 KB with the details in `docs/CODEMAP.md`.)*
         (1) TUVA instead of the 10th grade, a coach's offer to an under-18 through a parent, remote coaches from 16, the two
         text bugs (a lighter proposal's "more work", "Far away · Far away"); (2) one `GameConfig` with the presets `real` /
         `lab` replacing the scattered tool switches; (3) `run_all_checks -Quick` (~5 min), fixed careers in `storylet_check`,
@@ -460,7 +460,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         *(Sonnet, high)*
         Check: `run_all_checks` (full), `training_balance -- 0`, `school_fingerprint`, `quick_fingerprint` identical; layout
         check + tour for the changed screens.
-  - [ ] **Season playtest 2 by the user:** a season of the real game (and the Dev menu's jump for grade 9, the application and
+  - [ ] **Season playtest 2 by the user** *(the guide is in `docs/PLAYTESTS.md`)*: a season of the real game (and the Dev menu's jump for grade 9, the application and
         lukio); notes into `docs/PLAYTESTS.md`; then decide the number of stops (the user: "decide after my playtest").
   - [ ] **D2. Real schools (research + data, then a short build)** *(user 2026-10-18, after P1: "Upper secondary school
         (Sastamala)" is a placeholder from S3a, not research)*: for every game town the real general lukiot (with their published

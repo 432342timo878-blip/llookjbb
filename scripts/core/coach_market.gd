@@ -1038,6 +1038,13 @@ func post_offer(c: Dictionary, reasons: Dictionary, rng: RandomNumberGenerator) 
 	offers[cid] = {"until": today_no() + int(o.valid_days), "why": main, "promise": promise}
 	last_offer[cid] = today_no()
 	var ms := Game.get_system("moments") as StoryletSystem
+	if age() < int(o.minor_age):
+		# Under 18 (user 2026-10-18): the coach calls a parent; the athlete hears it in the family thread and reads the offer
+		# on his page.
+		offers[cid].via = "parent"
+		offers[cid].text = offer_text(c, reasons, promise)
+		_tell_parent(c, main, rng)
+		return
 	if ms == null:
 		return
 	var pid := ms.market_person(c)
@@ -1047,6 +1054,40 @@ func post_offer(c: Dictionary, reasons: Dictionary, rng: RandomNumberGenerator) 
 	ms.post_custom("market", "offer:" + cid, offer_text(c, reasons, promise), replies, false,
 			{"from": pid, "thread": "coaches", "expires_days": int(o.valid_days),
 			"title": str(cfg().lines.offer_title).format({"coach": c.name})})
+
+
+## The parent's message in the family thread: the coach called, why, the place is kept until a date (data lines.parent_offer).
+## Remembers the parent in the offer (`parent` = the person's id) for his page. No family in the career (the tools without the
+## people): the offer simply waits on his page.
+func _tell_parent(c: Dictionary, main: String, rng: RandomNumberGenerator) -> void:
+	var ms := Game.get_system("moments") as StoryletSystem
+	if ms == null:
+		return
+	ms._sync_people()
+	var parents := ms.people_for("parent")
+	if parents.is_empty():
+		return
+	var p: Dictionary = parents[rng.randi_range(0, parents.size() - 1)]
+	var pl: Dictionary = cfg().lines.parent_offer
+	var cid := str(c.id)
+	var fill := {"coach": str(c.name), "coach_first": str(c.name).split(" ")[0], "his": CoachSystem.pronoun(c, "his"),
+			"date": Calendar.format_day(_date_of(int(offers[cid].until)))}
+	var parts := [str(pl.intro[rng.randi_range(0, pl.intro.size() - 1)]).format(fill),
+			str(pl.reason.get(main, pl.reason.better)).format(fill),
+			str(pl.outro[rng.randi_range(0, pl.outro.size() - 1)]).format(fill)]
+	offers[cid].parent = str(p.id)
+	ms.say("family", str(p.id), " ".join(parts))
+
+
+## True when this coach's open offer reached the athlete through a parent (shown on his page, with "Not now").
+func offer_via_parent(cid: String) -> bool:
+	return offer_open(cid) and str(offers[cid].get("via", "")) == "parent"
+
+
+## "Not now, thanks" on the page of a coach who made an offer through a parent: no more offers from him for declined_days.
+func decline_offer(cid: String) -> void:
+	declined[cid] = today_no()
+	offers.erase(cid)
 
 
 ## The reason he writes first about: the biggest one he sees ("better" when nothing else).
@@ -1202,8 +1243,7 @@ func on_reply(ref: String, reply_id: String) -> Dictionary:
 		"offer":
 			var c := coach(parts[1])
 			if reply_id == "no":
-				declined[parts[1]] = today_no()
-				offers.erase(parts[1])
+				decline_offer(parts[1])
 			if c.is_empty() or reply_id == StoryletSystem.NONE:
 				return {}
 			if reply_id == "more":

@@ -38,8 +38,8 @@ func _run() -> void:
 	C = load("res://scripts/core/coach_system.gd")
 	H = load("res://scripts/core/health_system.gd")
 	WP = load("res://scripts/core/week_plan.gd")
-	H.model_enabled = false
-	C.neutral_club = true
+	# Lab (no injuries, a club coach of 10s) with the school and the moods free: the parts pin the neutral settings where needed.
+	load("res://scripts/core/game_config.gd").use("lab", {"mind_neutral": false, "school_neutral": false})
 	game.autosave = false
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():
@@ -1260,11 +1260,40 @@ func _check_lukio() -> void:
 	print("    stops from the first lukio day to 13 Oct 2027: %s" % ", ".join(kinds))
 	_ok("the first lukio day: three choice stops (maths, a language, the years), then period 1's courses", _count(seen, "lukio_choice") == 3
 			and kinds.find("lukio_courses") > kinds.rfind("lukio_choice"))
-	_ok("... period 1 ends with a results stop and period 2 starts with a courses stop (two separate stops, user)",
-			_count(seen, "lukio_results") == 1 and _count(seen, "lukio_courses") == 2)
+	# Fix session 2026-10-18: the period's results are a message, and a stop only when a course failed.
+	var failed_periods: int = ss6.reports.filter(func(r): return r.has("period") and (r.courses as Array).any(func(c): return int(c.g) == 4)).size()
+	var period_reports: int = ss6.reports.filter(func(r): return r.has("period")).size()
+	_ok("... a period's results are a stop only when a course failed (%d failed of %d periods: %d results stops) and a courses stop starts each period (%d)" % [
+			failed_periods, period_reports, _count(seen, "lukio_results"), _count(seen, "lukio_courses")],
+			_count(seen, "lukio_results") == failed_periods and _count(seen, "lukio_courses") == 2 and period_reports >= 1)
+	var school_msgs: Array = game.get_system("moments").thread("school").filter(func(m): return str(m.from) == "system")
+	_ok("... and every period without a failed course left a message in the school thread (%d)" % school_msgs.size(),
+			school_msgs.size() >= period_reports - failed_periods and (failed_periods < period_reports) == (school_msgs.size() > 0))
+	_ok("the setting 'ask me every period' is the default and is not saved", ss6.get_courses_mode() == "ask" and not ss6.to_dict().has("courses_mode"))
 	_ok("an answer that is no option keeps the counsellor's pick (maths, 3 years); German was taken and its courses are in",
 			str(ss6.lukio.maths) in ["long", "short"] and str(ss6.lukio.b3) == "german" and int(ss6.lukio.years) == 3 and ss6.lukio.units.any(func(u): return str(u.s) == "b3")
 			and ss6.subject_list().any(func(s): return str(s.name) == "German"))
+	# The standing order "Lukio courses: let the counsellor plan them": no courses stops, a message each period, kept in a save.
+	var ss6b = _lukio_career(2011)
+	_ok("an unknown mode is refused", not ss6b.set_courses_mode("whatever") and ss6b.get_courses_mode() == "ask")
+	_ok("the counsellor mode can be set (before the lukio starts)", ss6b.set_courses_mode("counsellor") and ss6b.get_courses_mode() == "counsellor")
+	var seen_b := _play_to("2027-10-13", {"lukio_choice": "german"})
+	_ok("counsellor mode: the three choice stops still come, but no courses stop (%d) and no period starts unplanned" % _count(seen_b, "lukio_courses"),
+			_count(seen_b, "lukio_choice") == 3 and _count(seen_b, "lukio_courses") == 0 and ss6b.lukio.asked.has("c0") and ss6b.lukio.asked.has("c1"))
+	var auto_msgs: Array = game.get_system("moments").thread("school").filter(func(m): return str(m.text).contains("has planned your courses"))
+	_ok("... and each period start left a message about the counsellor's plan (%d)" % auto_msgs.size(), auto_msgs.size() >= 2)
+	_ok("... the plan is still 75 courses and the setting is saved", _plan_counts(ss6b.lukio).plan + _plan_counts(ss6b.lukio).done == 75
+			and str(_parse(_json(game.get_system("school").to_dict())).courses_mode) == "counsellor")
+	game.from_dict(_parse(_json(game.to_dict())))
+	_ok("... and a loaded save keeps it", game.get_system("school").get_courses_mode() == "counsellor")
+	# A failed course keeps the results a stop (everything at grade 3 before period 1's exam week).
+	var ss6c = _lukio_career(2011)
+	_play_to("2027-09-20", {"lukio_choice": "german"})
+	for sid in ss6c.subjects:
+		ss6c.subjects[sid].level = 3.0
+		ss6c.subjects[sid].natural = 3.0
+	var seen_c := _play_to("2027-10-13", {"lukio_choice": "german"})
+	_ok("a period with a failed course ends with a results stop (%d)" % _count(seen_c, "lukio_results"), _count(seen_c, "lukio_results") == 1)
 	SC.decisions_enabled = false
 
 	# Speed: a lukio day against a grade 8 day (the long tools play thousands of days).

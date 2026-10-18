@@ -35,14 +35,14 @@ func _run() -> void:
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false
-	H.model_enabled = true
-	SS.offers_enabled = true
+	# Lab with the health model on, real club coaches and the moods and the school free (what the tool always measured).
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})
 	var args := OS.get_cmdline_user_args()
 	var n := int(args[0]) if args.size() > 0 else 12
 	var first := int(args[1]) if args.size() > 1 else 0
 	var mode: String = args[2] if args.size() > 2 else "quick"
 	if args.size() > 3 and args[3] == "health_off":
-		H.model_enabled = false
+		load("res://scripts/core/game_config.gd").set_option("health", false)
 	for i in n:
 		_career(first + i, mode)
 	_report()

@@ -46,14 +46,10 @@ func _run() -> void:
 	RP = load("res://scripts/core/race_performance.gd")
 	saves = load("res://scripts/core/save_game.gd")
 	saves.DIR = "user://tool_saves/"
-	load("res://scripts/core/coach_system.gd").neutral_club = true   # (a club coach of 10s = the game before coaches, C1)
-	load("res://scripts/core/mind_system.gd").neutral = true   # (the moods in the middle = the game before the mind, M1)
-	load("res://scripts/core/school_system.gd").neutral = true   # (no life load = the game before school, S1)
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true})   # (lab = a club coach of 10s, the moods in the middle, no life load; the health model on)
 	data = root.get_node("/root/Data")
 	game = root.get_node("/root/Game")
 	game.autosave = false
-	H.model_enabled = true
-	SS.offers_enabled = true
 	var n := 50
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():

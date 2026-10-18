@@ -16,7 +16,7 @@
 		{"id": "stretch", "name": "Stretch", "offset": -0.008, "from": -0.014, "chance": "Needs a good season."},
 		{"id": "dream", "name": "Dream", "offset": -0.02, "from": -1.0, "chance": "Needs everything to go right."}
 	],
-	"far": {"below": -0.06, "chance": "Far away this year."},
+	"far": {"below": -0.06, "chance": "Not within reach this season."},
 	"pick": {"steady": 0, "balanced": 1, "ambitious": 2},
 	"lean": {"min": -2, "max": 2},
 	"milestone": {

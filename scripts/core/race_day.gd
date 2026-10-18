@@ -56,7 +56,7 @@ func _init(m: Dictionary, a: Athlete, pool: Array) -> void:
 	_indoor = meet.get("indoor", false)
 	_cfg = Data.races.rounds
 	fatigue = a.fatigue
-	_rng.randomize()
+	GameConfig.randomize_dice(_rng, "race_day")
 	var standard_ability := 0.0
 	if meet.has("standard"):
 		var limits: Dictionary = Data.competitions.standards[meet.standard].get(a.main_event, {})

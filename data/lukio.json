@@ -1,5 +1,5 @@
 {
- "_note": "Lukio courses and the matriculation exams (GDD 4.9.3, session S3b; scripts/core/lukio.gd, scripts/core/matriculation.gd, SchoolSystem). REAL facts carry `src` (the sources at the end, each read on the date given); everything marked `estimated` is Claude's first guess, tuned in B1. A 'course' in the game is a 2-credit study unit (opintojakso): the decree counts credits (opintopisteet), and a school must let a student take the national optional studies as 2-credit units (decree 810/2018 12 §), so 150 credits = 75 courses (the old '75 courses' of the 2003 curriculum, src 4). Course names are the game's own ('Finnish 3'); the national module codes are not used. Grades 8-9 and the 10th grade are untouched by this file: it acts only in a lukio stage (data/school_life.json stages.secondary lukio / urheilulukio).",
+ "_note": "Lukio courses and the matriculation exams (GDD 4.9.3, session S3b; scripts/core/lukio.gd, scripts/core/matriculation.gd, SchoolSystem). REAL facts carry `src` (the sources at the end, each read on the date given); everything marked `estimated` is Claude's first guess, tuned in B1. A 'course' in the game is a 2-credit study unit (opintojakso): the decree counts credits (opintopisteet), and a school must let a student take the national optional studies as 2-credit units (decree 810/2018 12 §), so 150 credits = 75 courses (the old '75 courses' of the 2003 curriculum, src 4). Course names are the game's own ('Finnish 3'); the national module codes are not used. Grades 8-9 and a TUVA year are untouched by this file: it acts only in a lukio stage (data/school_life.json stages.secondary lukio / urheilulukio).",
  "decree": {
   "_note": "Valtioneuvoston asetus lukiokoulutuksesta 810/2018, Annex 1 (the youth syllabus), as in force on 2026-10-17 (src 1). compulsory = pakolliset opinnot in credits, optional = the national optional studies (valtakunnalliset valinnaiset) a school must offer, in credits. Music and art: 6 credits together, each 2 or 4. Thematic studies are national optional only. B2 / B3 languages: 16 + 16 credits offered, all optional.",
   "src": 1,
@@ -162,6 +162,15 @@
   "stress_news": 12.0,
   "estimated_note": "life_load = the school life load of an exam day (estimated: six hours of writing); stress_news = the stress news on the Sunday before a week with an exam."
  },
+ "standing": {
+  "_note": "The standing order 'Lukio courses' (fix session 2026-10-18; Training tab, Standing orders; SchoolSystem.courses_mode). ask = a stop at the start of every period to look at the courses (the default); counsellor = the study counsellor plans them and a message tells which (the plan can still be changed on the School page). Shown from grade 9 on.",
+  "head": "Lukio courses",
+  "modes": {
+   "ask": {"name": "Ask me every period", "text": "At the start of every lukio period you look at your courses and can change them."},
+   "counsellor": {"name": "Let the counsellor plan them", "text": "The study counsellor plans your courses. You get a message each period, and you can still change them on the School page."}
+  },
+  "also": "Period results come as a message, and as a stop only when a course failed."
+ },
  "stops": {
   "_note": "The lukio's stops (only with SchoolSystem.decisions_enabled, i.e. the real game: every tool gets the defaults and never a stop). An answer that is not an option id = the default in brackets.",
   "choices_title": "Your lukio choices",
@@ -180,8 +189,10 @@
   "courses_title": "Period {n} courses",
   "courses_text": "Period {n} of your year {year} starts today ({from} - {to}). Here are your courses. You can move one to a later period, add an optional course, or drop an optional one.",
   "courses_done": {"label": "Done", "detail": ""},
+  "courses_auto": "Period {n} of your year {year} starts today ({from} - {to}). The study counsellor has planned your courses, as you asked. You can still change them on the School page.",
   "results_title": "Period {n} results",
   "results_text": "The exam week is over. Your grades from period {n}:",
+  "results_message": "Period {n} is over, and no course failed. Your grades: {grades}. Average {avg}. The details are on your lukio card on the School page.",
   "results_none": "No graded courses this period.",
   "results_retake": "{course} failed: you retake it in the next exam week.",
   "results_continue": {"label": "Continue", "detail": ""},

@@ -33,8 +33,8 @@ func _run() -> void:
 	H = load("res://scripts/core/health_system.gd")
 	MS = load("res://scripts/core/storylet_system.gd")
 	WP = load("res://scripts/core/week_plan.gd")
-	H.model_enabled = false
-	C.neutral_club = true
+	# Lab (no injuries, a club coach of 10s) with the moods and the school free: the parts pin them where they need to.
+	load("res://scripts/core/game_config.gd").use("lab", {"mind_neutral": false, "school_neutral": false})
 	game.autosave = false
 
 	_check_data()

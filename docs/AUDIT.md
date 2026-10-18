@@ -507,3 +507,4 @@ people content; the risk is the coach's routine stops crowding it out.
   another club without a club change, the weekly talk's generosity at 14), the people's mood weight and the proposals' effect on
   the balance (B1, with the `real` preset), the race-controls design.
 - **Next check-in:** at the end of M2, after B1 and the user's playtest of it.
+- **Done (fix session, 2026-10-18):** all five groups above are built: see GDD 4.9.5 "Built (check-in fixes 2026-10-18)". Not done on purpose: the stops stay as they are until the user's season playtest 2 (`docs/PLAYTESTS.md` has the guide).

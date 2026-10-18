@@ -22,8 +22,7 @@ func _run() -> void:
 	data = root.get_node("Data")
 	Cal = load("res://scripts/core/calendar.gd")
 	SCal = load("res://scripts/core/school_calendar.gd")
-	load("res://scripts/core/health_system.gd").model_enabled = false
-	load("res://scripts/core/coach_system.gd").neutral_club = true
+	load("res://scripts/core/game_config.gd").use("lab", {"mind_neutral": false, "school_neutral": false})
 	game.autosave = false
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0 and args[0].is_valid_int():

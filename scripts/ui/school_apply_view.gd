@@ -1,7 +1,7 @@
 class_name SchoolApplyView
 extends VBoxContainer
 ## The joint application and the school you go to (GDD 4.9.3, session S3a), on the School page: while the athlete is in grade 9 (or a
-## 10th-grade year) the application panel (the points now, the wish list in order, every school you can add with what is known
+## TUVA year) the application panel (the points now, the wish list in order, every school you can add with what is known
 ## about it, the results afterwards), and from the first day at a new school the YOUR SCHOOL panel (the kind of school, its town,
 ## the years, the morning practice, the athletics centre). Reading the SchoolSystem and changing only the wish list; the list can
 ## be changed while the window is open. Every control is at least 44 px; a phone stacks the rows. Texts: data/application.json `ui`.

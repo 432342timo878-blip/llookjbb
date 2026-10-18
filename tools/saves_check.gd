@@ -24,7 +24,7 @@ func _run() -> void:
 	var saves = load("res://scripts/core/save_game.gd")
 	saves.DIR = folder
 	game.autosave = false
-	load("res://scripts/core/health_system.gd").model_enabled = true   # the real game: health on
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})   # (health on, everything free)
 	var slots := []
 	for file in DirAccess.get_files_at(folder):
 		if file.ends_with(".json"):

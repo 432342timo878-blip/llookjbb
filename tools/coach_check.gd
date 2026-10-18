@@ -30,8 +30,8 @@ func _initialize() -> void:
 func _run() -> void:
 	F = load("res://scripts/core/athlete_factory.gd")
 	C = load("res://scripts/core/coach_system.gd")
-	load("res://scripts/core/mind_system.gd").neutral = true   # (session M1: the moods in the middle = the game before the mind)
-	load("res://scripts/core/school_system.gd").neutral = true   # (session S1: no life load = the game before school)
+	# Lab with the health model on and real club coaches (the check makes its own neutral ones where it needs them).
+	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false})
 	H = load("res://scripts/core/health_system.gd")
 	SS = load("res://scripts/core/season_system.gd")
 	saves = load("res://scripts/core/save_game.gd")

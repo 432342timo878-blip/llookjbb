@@ -42,6 +42,10 @@ var applications := {}          # the application year (as text) -> {wishes [ids
 ## registered {session: [exams]}, sat {"session|exam": {parts [scores], absent}}, results [{session, exam, grade, points, absent}],
 ## cert}, asked {stop keys}, done (the lukio courses are over)}.
 var lukio := {}
+## The standing order "Lukio courses" (fix session 2026-10-18): "ask" = a stop at the start of every period to look at the courses
+## (the default), "counsellor" = the study counsellor plans them and a message tells which. Saved only when it is not "ask"; it can be
+## set before a lukio starts (the Training tab's standing orders).
+var courses_mode := "ask"
 
 var _schedules := {}            # school year -> {date key -> [subject ids]} (made from the career's seed; not saved)
 var _lukio_exams := {}          # lukio period -> {date key -> [course ids]} (Lukio.exam_schedule; not saved, cleared on a change)
@@ -50,6 +54,7 @@ var _exam_days := {}            # school year -> {date key: true} (from the stag
 var _stage_cache := {}          # school year -> the stage after grade 9 (from the paths; not saved)
 
 const KEEP_TESTS := 60
+const COURSES_MODES := ["ask", "counsellor"]
 
 
 func _init() -> void:
@@ -122,9 +127,22 @@ func _secondary_stage(year: int) -> Dictionary:
 	return s
 
 
+## The standing order "Lukio courses": "ask" or "counsellor".
+func get_courses_mode() -> String:
+	return courses_mode
+
+
+func set_courses_mode(mode: String) -> bool:
+	if not mode in COURSES_MODES:
+		return false
+	_ensure_started()   # (the setting is saved with the state, which an unstarted school does not have)
+	courses_mode = mode
+	return true
+
+
 ## The path segment that holds a school year ({} = school is over). A year no stored segment covers gets the default: three
 ## years of the general lukio (what a tool that never decides, or a player who made no list, gets), after grade 9 and after a
-## 10th-grade year.
+## TUVA year (stored as the path kind "grade_10": the id of the old 10th grade, kept for the saves).
 func segment_for(year: int) -> Dictionary:
 	var first := first_secondary_year()
 	var end_all := first
@@ -1063,1336 +1081,296 @@ func busy_weeks(from: Dictionary, to: Dictionary) -> Array:
 	return out
 
 
-# --- The joint application and the path after grade 9 (session S3a) ----------------------------------------------------------------
-# The state changes (the list is locked, the test is taken, the results decide the path) happen on their dates in every
-# career, with sensible defaults; only with decisions_enabled (the real game) does the player get a stop for each of them.
+# --- The application, the lukio and the matriculation exams (sessions S3a / S3b) -------------------------------------------------
+# The code lives in school_path_part.gd (the joint application, the path, moving), school_lukio_part.gd (courses, periods, the lukio's stops
+# and results) and school_matric_part.gd (the matriculation exams): static functions over this system, whose state they read and change
+# (paths, applications, lukio). The methods below forward to them so the screens and tools call the system as before.
+# (Split out of this file in the fix session after the check-in 2026-10-18; behaviour unchanged.)
+
+# -- SchoolPathPart
 
 ## The application made in the spring of `year` ({} before it is touched).
 func application(year: int) -> Dictionary:
-	return applications.get(str(year), {})
+	return SchoolPathPart.application(self, year)
 
 
 func _app(year: int) -> Dictionary:
-	var k := str(year)
-	if not applications.has(k):
-		applications[k] = {"wishes": [], "locked": false, "test": {}, "results": [], "decided": false}
-	return applications[k]
+	return SchoolPathPart._app(self, year)
 
 
 ## The application year the athlete is making now (the spring after this school year), 0 when the stage does not apply.
 func app_year_now() -> int:
-	if Game.athlete == null or not bool(stage_of(Game.date).get("applies", false)):
-		return 0
-	return SchoolCalendar.year_of(Game.date) + 1
+	return SchoolPathPart.app_year_now(self)
 
 
 ## "before" (the window has not opened), "open", "locked" (closed, no results yet) or "done" (the path is decided).
 func app_state(year: int) -> String:
-	var A := application(year)
-	if bool(A.get("decided", false)):
-		return "done"
-	var dt := SchoolApplication.dates(year)
-	var k := Calendar.date_key(Game.date)
-	if k < Calendar.date_key(dt.open):
-		return "before"
-	if k <= Calendar.date_key(dt.close) and not bool(A.get("locked", false)):
-		return "open"
-	return "locked"
-
-
-func can_edit_wishes(year: int) -> bool:
-	return app_state(year) == "open"
+	return SchoolPathPart.app_state(self, year)
 
 
 func wishes_of(year: int) -> Array:
-	return application(year).get("wishes", [])
+	return SchoolPathPart.wishes_of(self, year)
 
 
 func add_wish(year: int, wish_id: String) -> bool:
-	if not can_edit_wishes(year) or wish_id in wishes_of(year) or wishes_of(year).size() >= int(Data.application.window.max_wishes):
-		return false
-	if SchoolApplication.option(wish_id, _town()).is_empty():
-		return false
-	_app(year).wishes.append(wish_id)
-	return true
+	return SchoolPathPart.add_wish(self, year, wish_id)
 
 
 func remove_wish(year: int, wish_id: String) -> void:
-	if can_edit_wishes(year):
-		_app(year).wishes.erase(wish_id)
+	SchoolPathPart.remove_wish(self, year, wish_id)
 
 
 ## Moves a wish one place up (-1) or down (+1) in the list.
 func move_wish(year: int, wish_id: String, step: int) -> void:
-	if not can_edit_wishes(year):
-		return
-	var list: Array = _app(year).wishes
-	var i := list.find(wish_id)
-	var j := i + step
-	if i < 0 or j < 0 or j >= list.size():
-		return
-	list[i] = list[j]
-	list[j] = wish_id
+	SchoolPathPart.move_wish(self, year, wish_id, step)
 
 
 func set_wishes(year: int, list: Array) -> void:
-	if not can_edit_wishes(year):
-		return
-	var out := []
-	for w in list:
-		if not SchoolApplication.option(str(w), _town()).is_empty() and not str(w) in out and out.size() < int(Data.application.window.max_wishes):
-			out.append(str(w))
-	_app(year).wishes = out
+	SchoolPathPart.set_wishes(self, year, list)
 
 
 ## The application days: the window opens, the reminder, the test day, the results, and moving day.
 func _application_day(d: Dictionary) -> void:
-	var key := Calendar.date_key(d)
-	_arrival_day(d, key)
-	var stage := stage_of(d)
-	if not bool(stage.get("applies", false)):
-		return
-	var year := SchoolCalendar.year_of(d) + 1
-	var dt := SchoolApplication.dates(year)
-	if key == Calendar.date_key(dt.open):
-		_open_window(year)
-	elif key == Calendar.date_key(dt.remind):
-		if not bool(_app(year).locked) and wishes_of(year).is_empty() and decisions_enabled and not neutral:
-			_post_apply(year, "remind")
-	elif key == Calendar.date_key(dt.test):
-		_test_day(year)
-	elif key == Calendar.date_key(dt.results):
-		_results(year)
-
-
-func _open_window(year: int) -> void:
-	_app(year)
-	if decisions_enabled and not neutral:
-		_post_apply(year, "open")
+	SchoolPathPart._application_day(self, d)
 
 
 func _post_apply(year: int, which: String) -> void:
-	var c: Dictionary = Data.application.apply
-	var dt := SchoolApplication.dates(year)
-	var fill := {"from": Calendar.format_day(dt.open), "to": Calendar.format_day(dt.close), "max": int(Data.application.window.max_wishes), "town": _town()}
-	var second := bool(paths.size() > 0 and str(paths.back().kind) == "grade_10")
-	var title := str(c.open_title if which == "open" else c.remind_title)
-	var text := str(c.remind_text if which == "remind" else (c.open_text_10 if second else c.open_text)).format(fill)
-	var choices := []
-	for id in ["build", "suggest", "later"]:
-		choices.append({"id": id, "label": str(c.choices[id].label), "detail": str(c.choices[id].detail)})
-	var e := Game.post_event(id, title, text, choices, true)
-	e.kind = "school_apply"
-	e.year = year
+	SchoolPathPart._post_apply(self, year, which)
 
 
 ## The list is closed on the last day: an empty list becomes the general lukio of the town you train in.
 func _lock_list(year: int) -> void:
-	var A := _app(year)
-	if bool(A.locked):
-		return
-	A.locked = true
-	var c: Dictionary = Data.application.apply
-	var empty: bool = A.wishes.is_empty()
-	if empty:
-		A.wishes = ["general"]
-	if decisions_enabled and not neutral:
-		var names := []
-		for w in A.wishes:
-			names.append(str(SchoolApplication.option(str(w), _town()).get("name", w)))
-		Game.post_event(id, str(Data.application.ui.head).capitalize(), str(c.locked_default if empty else c.locked).format({"list": ", ".join(names)}))
-
-
-func _test_day(year: int) -> void:
-	var A := _app(year)
-	_lock_list(year)
-	if not (A.test as Dictionary).is_empty():
-		return
-	var a := Game.athlete
-	var sp := SchoolApplication.sport_points(a, year)
-	var invited := []
-	for w in A.wishes:
-		var o := SchoolApplication.option(str(w), _town())
-		if str(o.get("kind", "")) == "sports" and float(sp.total) >= SchoolApplication.invite_min(o):
-			invited.append(str(w))
-	var t: Dictionary = Data.application.test
-	if invited.is_empty():
-		A.test = {"done": true, "invited": [], "base": 0.0, "steps": {}}
-		if decisions_enabled and not neutral and _has_sports_wish(A.wishes):
-			Game.post_event(id, str(t.title), str(t.done_none))
-		return
-	A.test = {"done": false, "invited": invited, "phys": SchoolApplication.physical_points(a), "interview": SchoolApplication.interview_points(a),
-			"steps": {}, "base": 0.0}
-	if decisions_enabled and not neutral:
-		_post_test_step(year, 0)
-	else:
-		for step in t.steps:
-			_apply_step(year, str(step.id), str(step.auto))
-		_finish_test(year)
-
-
-func _has_sports_wish(wishes: Array) -> bool:
-	for w in wishes:
-		if str(w).begins_with("sports:"):
-			return true
-	return false
+	SchoolPathPart._lock_list(self, year)
 
 
 func _post_test_step(year: int, i: int) -> void:
-	var t: Dictionary = Data.application.test
-	var step: Dictionary = t.steps[i]
-	var choices := []
-	for o in step.options:
-		choices.append({"id": str(o.id), "label": str(o.label), "detail": str(o.detail)})
-	var e := Game.post_event(id, str(step.title), (str(t.intro) + "\n\n" if i == 0 else "") + str(step.text), choices, true)
-	e.kind = "school_test"
-	e.year = year
-	e.step = i
+	SchoolPathPart._post_test_step(self, year, i)
 
 
 func _apply_step(year: int, step_id: String, option_id: String) -> void:
-	var A := _app(year)
-	A.test.steps[step_id] = {"option": option_id, "delta": SchoolApplication.step_delta(self, year, step_id, option_id)}
+	SchoolPathPart._apply_step(self, year, step_id, option_id)
 
 
 func _finish_test(year: int) -> void:
-	var A := _app(year)
-	var base: float = float(A.test.phys) + float(A.test.interview)
-	for s in A.test.steps.values():
-		base += float(s.delta)
-	A.test.base = clampf(base, 0.0, float(Data.application.points.school.max))
-	A.test.done = true
-	if decisions_enabled and not neutral:
-		var t: Dictionary = Data.application.test
-		Game.post_event(id, str(t.done_title), str(t.done_text).format({"date": Calendar.format_day(SchoolApplication.dates(year).results)}))
+	SchoolPathPart._finish_test(self, year)
 
 
 ## Results day: every wish in order against its limit; the first that accepts you is your place.
 func _results(year: int) -> void:
-	var A := _app(year)
-	if bool(A.decided):
-		return
-	_lock_list(year)
-	if (A.test as Dictionary).is_empty() or not bool(A.test.get("done", false)):
-		A.test = {}
-		_test_day_auto(year)
-	var rows := SchoolApplication.evaluate(self, A.wishes, year)
-	A.results = rows
-	var place := ""
-	for r in rows:
-		if str(r.status) == "yes":
-			place = str(r.wish)
-			break
-	if not (decisions_enabled and not neutral):
-		_decide(year, place if place != "" else "general")
-		return
-	var c: Dictionary = Data.application.results
-	var lines := [str(c.intro)]
-	for r in rows:
-		lines.append(SchoolApplication.result_line(r))
-	var choices := []
-	var fill := {"town": _town(), "date": Calendar.format_day(SchoolApplication.dates(year).accept_by)}
-	if place != "":
-		var o := SchoolApplication.option(place, _town())
-		fill.name = str(o.name)
-		fill.town = str(o.town)
-		lines.append(str(c.accepted).format(fill))
-		choices.append({"id": "accept", "label": str(c.accept_choice.label), "detail": str(c.accept_choice.detail).format(fill)})
-		choices.append({"id": "decline", "label": str(c.decline_choice.label), "detail": str(c.decline_choice.detail)})
-	else:
-		lines.append(str(c.none))
-		choices = _fallback_choices()
-	var e := Game.post_event(id, str(c.title), "\n".join(lines), choices, true)
-	e.kind = "school_result"
-	e.year = year
-	e.wish = place
+	SchoolPathPart._results(self, year)
 
 
 func _fallback_choices() -> Array:
-	var c: Dictionary = Data.application.results
-	var out := []
-	for k in ["general", "vocational", "grade_10"]:
-		out.append({"id": k, "label": str(c.none_choices[k].label).format({"town": _town()}), "detail": str(c.none_choices[k].detail).format({"town": _town()})})
-	return out
-
-
-## The test of a career that reached results day without one (a save from before, a tool): every step with its auto answer.
-func _test_day_auto(year: int) -> void:
-	var A := _app(year)
-	var a := Game.athlete
-	var sp := SchoolApplication.sport_points(a, year)
-	var invited := []
-	for w in A.wishes:
-		var o := SchoolApplication.option(str(w), _town())
-		if str(o.get("kind", "")) == "sports" and float(sp.total) >= SchoolApplication.invite_min(o):
-			invited.append(str(w))
-	if invited.is_empty():
-		A.test = {"done": true, "invited": [], "base": 0.0, "steps": {}}
-		return
-	A.test = {"done": false, "invited": invited, "phys": SchoolApplication.physical_points(a), "interview": SchoolApplication.interview_points(a), "steps": {}, "base": 0.0}
-	for step in Data.application.test.steps:
-		_apply_step(year, str(step.id), str(step.auto))
-	var base: float = float(A.test.phys) + float(A.test.interview)
-	for s in A.test.steps.values():
-		base += float(s.delta)
-	A.test.base = clampf(base, 0.0, float(Data.application.points.school.max))
-	A.test.done = true
+	return SchoolPathPart._fallback_choices(self)
 
 
 ## Puts the athlete on the path of a wish ("general" / "vocational" / "grade_10" / "sports:<id>") from the next 1 August.
 func _decide(year: int, wish_id: String) -> void:
-	var A := _app(year)
-	A.decided = true
-	var kind := ""
-	var school := ""
-	var wtown := _town()
-	var name := ""
-	if wish_id == "grade_10":
-		kind = "grade_10"
-		name = str(Data.school_life.stages.secondary.grade_10.name)
-	else:
-		var o := SchoolApplication.option(wish_id, _town())
-		if o.is_empty():
-			o = SchoolApplication.option("general", _town())
-		kind = SchoolApplication.path_kind(o)
-		school = str(o.school.get("id", ""))
-		wtown = str(o.town)
-		name = str(o.name)
-	paths.append({"kind": kind, "school": school, "town": wtown, "start_year": year, "years": int(Data.school_life.stages.secondary[kind].years)})
-	_stage_cache = {}
-	_exam_days = {}
-	_schedules = {}
-	var rows: Array = A.results
-	var top := not rows.is_empty() and str(rows[0].status) == "yes"
-	var any := false
-	for r in rows:
-		if str(r.status) == "yes":
-			any = true
-	var c: Dictionary = Data.application.results
-	var ms := MindSystem.sys()
-	if ms != null and not neutral and decisions_enabled:
-		if any and wish_id != "general" and wish_id != "vocational":
-			ms.add("confidence", float(c.news_delta.top if top else c.news_delta.yes), str(c.news_top if top else c.news_yes).format({"name": name}))
-		elif not any:
-			ms.add("confidence", float(c.news_delta.no), str(c.news_no))
-	if decisions_enabled:
-		Game.post_event(id, str(c.title), str(c.path_message_10 if kind == "grade_10" else c.path_message).format({"name": name, "town": wtown}))
+	SchoolPathPart._decide(self, year, wish_id)
 
 
-## Moving day and the first day at a new school (1 August of a path's first year).
-func _arrival_day(d: Dictionary, key: int) -> void:
-	if d.month != 8 or d.day != 1:
-		return
-	for sgm in paths:
-		if int(sgm.start_year) != int(d.year) or bool(sgm.get("arrived", false)):
-			continue
-		sgm.arrived = true
-		var new_town := str(sgm.town)
-		if new_town != "" and new_town != _town():
-			_move_to(new_town, str(sgm.get("school", "")))
-		if decisions_enabled and not neutral:
-			_post_arrival(sgm)
-		if str(sgm.kind) == "urheilulukio" and decisions_enabled and CoachMarket.enabled:
-			var cm := CoachMarket.sys()
-			var school := _school_row(str(sgm.school))
-			if cm != null and not school.is_empty():
-				cm.post_academy_offer(cm.add_academy_coach(school), school)
-
-
-func _school_row(school_id: String) -> Dictionary:
-	for s in Data.urheilulukiot.schools:
-		if str(s.id) == school_id:
-			return s
-	return {}
-
-
-func _post_arrival(sgm: Dictionary) -> void:
-	var c: Dictionary = Data.application.arrival
-	var row := _school_row(str(sgm.school))
-	var name := str(row.get("name", Data.application.ui.kinds.get(str(sgm.kind), "")))
-	var text := ""
-	match str(sgm.kind):
-		"urheilulukio":
-			var days := []
-			for i in Data.application.morning.schools.get(str(sgm.school), Data.application.morning.default):
-				days.append(str(c.morning_names[int(i)]))
-			var centre := ""
-			var t := Data.get_town(str(sgm.town))
-			if t.has("centre") and t.centre != null:
-				for x in Data.urheilulukiot.centres.list:
-					if str(x.id) == str(t.centre):
-						centre = str(c.centre).format({"centre": str(x.name)})
-			text = str(c.urheilulukio).format({"name": name, "days": ", ".join(days), "centre": centre})
-		"lukio":
-			text = str(c.lukio).format({"name": name})
-		"vocational":
-			text = str(c.vocational).format({"name": name})
-		_:
-			text = str(c.grade_10)
-	Game.post_event(id, str(c.title), text)
-
-
-## Moves the athlete to `town` for school: the town they live and train in changes (the club stays), the old coach is now far
-## away, the coaches around the new town appear in the market, the old coach and the group say goodbye.
-func _move_to(town_name: String, school_id: String) -> void:
-	var a := Game.athlete
-	var old := CoachSystem.home_town(a)
-	var cs := Game.get_system("coach") as CoachSystem
-	var head: Dictionary = cs.head() if cs != null else {}
-	a.training_town = town_name
-	var m: Dictionary = Data.application.moving
-	if decisions_enabled and not neutral:
-		var row := _school_row(school_id)
-		var text := str(m.text_dorm if school_id in m.dorm else m.text_flat).format({"town": town_name, "school": str(row.get("name", "")), "old": old})
-		Game.post_event(id, str(m.title).format({"town": town_name}), text)
-		var ms := Game.get_system("moments") as StoryletSystem
-		var cm := CoachMarket.sys()
-		if ms != null and cm != null and not head.is_empty():
-			ms.say("coach", str(head.id), cm.line(head, "farewell", {"new": town_name}))
-			var mates := ms.people_for("teammate")
-			if not mates.is_empty():
-				var rng := RandomNumberGenerator.new()
-				rng.seed = _seed("goodbye|" + town_name)
-				ms.say("group", str(mates[rng.randi_range(0, mates.size() - 1)].id), str(m.group_goodbye).format({"town": town_name}))
-	var market := CoachMarket.sys()
-	if market != null and CoachMarket.enabled:
-		market.refresh_for_move()
-
-
-# --- Lukio: courses and periods (session S3b) ---------------------------------------------------------------------------------
-# A lukio starts on the first day of its stage (1 August of its first year): the subjects move to the lukio's (lukio grades run
-# lower, new subjects such as philosophy start from their relatives), the counsellor's choices (maths, an extra language,
-# 3 or 4 years) and the plan of courses are made. With decisions_enabled (the real game) the choices are stops on the first
-# school day, and every period starts with a stop for its courses and ends with a stop for its results (user 2026-10-17);
-# every tool gets the counsellor's defaults and never a stop. Grades 8-9 and a 10th-grade year never run any of this.
+# -- SchoolLukioPart
 
 ## True on a date in a lukio stage once its lukio has started.
 func lukio_active(d: Dictionary) -> bool:
-	if lukio.is_empty() or Game.athlete == null:
-		return false
-	var st := stage_of(d)
-	if str(st.get("kind", "")) != "lukio":
-		return false
-	return int(SchoolCalendar.year_of(d)) - int(st.get("year_index", 0)) == int(lukio.start_year)
-
-
-## The lukio segment of a date's stage ({} when the stage is not a lukio).
-func _lukio_seg(d: Dictionary) -> Dictionary:
-	if str(stage_of(d).get("kind", "")) != "lukio":
-		return {}
-	return segment_for(SchoolCalendar.year_of(d))
+	return SchoolLukioPart.lukio_active(self, d)
 
 
 ## The course exams written on a date: [course ids].
 func lukio_exams_on(d: Dictionary) -> Array:
-	var per := Lukio.period_at(self, lukio, d)
-	if per.is_empty():
-		return []
-	return _exams_of(int(per.p)).get(Calendar.date_key(d), [])
-
-
-func _exams_of(p: int) -> Dictionary:
-	if not _lukio_exams.has(p):
-		_lukio_exams[p] = Lukio.exam_schedule(self, lukio, p)
-	return _lukio_exams[p]
-
-
-func _lukio_changed() -> void:
-	_lukio_exams = {}
+	return SchoolLukioPart.lukio_exams_on(self, d)
 
 
 func _lukio_day_start(d: Dictionary) -> void:
-	var seg := _lukio_seg(d)
-	if not seg.is_empty() and (lukio.is_empty() or int(lukio.start_year) != int(seg.start_year)):
-		_start_lukio(seg, d)
-	if lukio_active(d):
-		var per := Lukio.period_at(self, lukio, d)
-		if not per.is_empty() and decisions_enabled and not neutral:
-			var first := _first_school_day(per.start, per.end)
-			if Calendar.date_key(d) >= Calendar.date_key(first) and bool(lukio.chosen) and not lukio.asked.has("c%d" % int(per.p)) \
-					and (per.exam.is_empty() or Calendar.date_key(d) < Calendar.date_key(per.exam[0])):
-				_post_courses(int(per.p))
-			if not bool(lukio.chosen) and not lukio.asked.has("choice") and Calendar.date_key(d) >= Calendar.date_key(first):
-				lukio.asked["choice"] = true
-				_post_choice("maths")
-	if not lukio.is_empty():
-		_matric_day_start(d)
+	SchoolLukioPart._lukio_day_start(self, d)
 
 
 func _first_school_day(from: Dictionary, to: Dictionary) -> Dictionary:
-	var d := from
-	while Calendar.date_key(d) <= Calendar.date_key(to):
-		if SchoolCalendar.is_school_day(_town(), d):
-			return d
-		d = Game.add_days(d, 1)
-	return from
+	return SchoolLukioPart._first_school_day(self, from, to)
 
 
 ## The lukio begins: the subjects, the counsellor's choices and plan, the matriculation plan. A lukio that starts in the middle
 ## of a year (a save or a tool) has its earlier periods done, graded by the levels.
 func _start_lukio(seg: Dictionary, d: Dictionary) -> void:
-	var lv: Dictionary = Data.lukio.levels
-	var pick_long := level("maths") >= float(Data.lukio.plan.long_maths_from)
-	lukio = {"start_year": int(seg.start_year), "school": str(seg.get("school", "")), "sports": str(seg.kind) == "urheilulukio",
-			"maths": "long" if pick_long else "short", "b3": "none", "years": int(seg.years),
-			"music_art": "music" if level("music") >= level("art") else "art", "chosen": not (decisions_enabled and not neutral),
-			"shifted": false, "maths_shifted": false, "units": [], "asked": {}, "done": false,
-			"matric": {"plan": {}, "locked": [], "registered": {}, "sat": {}, "results": [], "cert": false}}
-	# The subjects: lukio grades run lower; the new subjects start from their relatives (with a roll of their own).
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _seed("lukio_subjects|%d" % int(seg.start_year))
-	for s in Lukio.cfg().subjects.list:
-		var sid := str(s.id)
-		if str(s.kind) == "pass" or sid == "b3":
-			continue
-		_lukio_subject(sid, s, rng)
-	lukio.shifted = true
-	if lukio.maths == "long":
-		_shift_subject("maths", float(lv.long_maths_shift))
-		lukio.maths_shifted = true
-	_lukio_seed_matric()
-	_replan(0)
-	_stage_cache = {}
-	# Started after its first school day: the periods before today are done (graded by the levels, no exams).
-	var per := Lukio.period_at(self, lukio, d)
-	if not per.is_empty():
-		var upto := int(per.p) - 1
-		if not per.exam.is_empty() and Calendar.date_key(d) > Calendar.date_key(per.exam.back()):
-			upto = int(per.p)
-		for p in range(0, upto + 1):
-			_finish_period(p, false)
-		if int(per.p) > 0:
-			lukio.asked["choice"] = true
-			lukio.chosen = true
-
-
-func _lukio_subject(sid: String, s: Dictionary, rng: RandomNumberGenerator) -> void:
-	var lv: Dictionary = Data.lukio.levels
-	var shift := float(lv.lukio_shift) + float(s.get("shift", 0.0))
-	if subjects.has(sid):
-		_shift_subject(sid, shift)
-		return
-	var from: Array = s.get("from", [])
-	var lvl := 0.0
-	var nat := 0.0
-	for f in from:
-		lvl += level(str(f))
-		nat += float(subjects.get(str(f), {}).get("natural", level(str(f))))
-	var n := maxi(1, from.size())
-	var roll := rng.randfn(0.0, float(lv.new_subject_sd))
-	var lo := float(cfg().grades.min)
-	var hi := float(cfg().grades.max)
-	subjects[sid] = {"natural": clampf(nat / n + shift + roll, lo, hi), "level": clampf(lvl / n + shift + roll, lo, hi)}
+	SchoolLukioPart._start_lukio(self, seg, d)
 
 
 ## A moment's `grades` effect (session P1): every academic subject's level moves by `points` x data/cast.json
 ## grades.grades_per_point; the natural level stays, so the drift takes it back over the weeks (studying for a test helps
 ## that test). Nothing with the model off or neutral. Returns the change per subject.
 func nudge_grades(points: float) -> float:
-	if not model_enabled or neutral:
-		return 0.0
-	_ensure_started()
-	var shift := points * float(Data.cast.grades.grades_per_point)
-	var lo := float(cfg().grades.min)
-	var hi := float(cfg().grades.max)
-	for s in subject_list():
-		var sid := str(s.id)
-		if is_academic(sid) and subjects.has(sid):
-			subjects[sid].level = clampf(float(subjects[sid].level) + shift, lo, hi)
-	return shift
-
-
-func _shift_subject(sid: String, shift: float) -> void:
-	if not subjects.has(sid):
-		return
-	var lo := float(cfg().grades.min)
-	var hi := float(cfg().grades.max)
-	subjects[sid].natural = clampf(float(subjects[sid].natural) + shift, lo, hi)
-	subjects[sid].level = clampf(float(subjects[sid].level) + shift, lo, hi)
-
-
-func _lukio_seed_matric() -> void:
-	var plan := Matriculation.suggest(self, lukio)
-	lukio.matric.plan = {}
-	for ex in plan:
-		if ex in Matriculation.available(lukio):
-			lukio.matric.plan[ex] = plan[ex]
+	return SchoolLukioPart.nudge_grades(self, points)
 
 
 ## The counsellor puts the courses from period `from_p` on into the plan again (after a choice or a change).
 func _replan(from_p: int) -> void:
-	Lukio.ensure_units(self, lukio)
-	Lukio.fill_optional(self, lukio, from_p)
-	Lukio.spread(self, lukio, from_p)
-	_lukio_changed()
+	SchoolLukioPart._replan(self, from_p)
 
 
 ## The period whose courses can be changed now: the current one before its first exam (-1 = none).
 func editable_period() -> int:
-	if not lukio_active(Game.date):
-		return -1
-	var per := Lukio.period_at(self, lukio, Game.date)
-	if per.is_empty():
-		return -1
-	if not per.exam.is_empty() and Calendar.date_key(Game.date) >= Calendar.date_key(per.exam[0]):
-		return -1
-	return int(per.p)
+	return SchoolLukioPart.editable_period(self)
 
 
 # --- The player's changes to a period's courses (the courses stop) ---
-
 func course_later(uid: String) -> bool:
-	var p := editable_period()
-	var u := Lukio.unit(lukio, uid)
-	if p < 0 or u.is_empty() or int(u.p) != p or str(u.st) != "plan" or p + 1 >= Lukio.period_count(lukio):
-		return false
-	u.p = p + 1
-	_after_edit(p)
-	return true
+	return SchoolLukioPart.course_later(self, uid)
 
 
 func course_add(uid: String) -> bool:
-	var p := editable_period()
-	var u := Lukio.unit(lukio, uid)
-	if p < 0 or u.is_empty() or str(u.k) != "opt" or str(u.st) == "done" or (str(u.st) == "plan" and int(u.p) <= p):
-		return false
-	u.st = "plan"
-	u.p = p
-	u.by = "player"
-	_after_edit(p)
-	return true
+	return SchoolLukioPart.course_add(self, uid)
 
 
 ## Drops an optional course of the period (back to the pool, never added again by the counsellor) or, in a sports lukio, leaves
 ## out a compulsory one by the rule.
 func course_drop(uid: String) -> bool:
-	var p := editable_period()
-	var u := Lukio.unit(lukio, uid)
-	if p < 0 or u.is_empty() or int(u.p) != p or str(u.st) != "plan":
-		return false
-	if str(u.k) == "opt":
-		u.st = "pool"
-		u.by = "player_out"
-	elif Lukio.can_drop_comp(lukio, u):
-		u.st = "drop"
-		u.by = "player"
-	else:
-		return false
-	u.p = -1
-	_after_edit(p)
-	return true
+	return SchoolLukioPart.course_drop(self, uid)
 
 
 func course_put_back(uid: String) -> bool:
-	var p := editable_period()
-	var u := Lukio.unit(lukio, uid)
-	if p < 0 or u.is_empty() or str(u.st) != "drop":
-		return false
-	u.st = "plan"
-	u.p = p
-	u.by = "player"
-	_after_edit(p)
-	return true
-
-
-func _after_edit(p: int) -> void:
-	Lukio.fill_optional(self, lukio, p + 1)
-	Lukio.spread(self, lukio, p + 1)
-	_lukio_changed()
+	return SchoolLukioPart.course_put_back(self, uid)
 
 
 ## Optional courses that can be added to the period: the next one of each subject that is not done or already in it.
 func add_candidates(p: int) -> Array:
-	var out := []
-	var seen := {}
-	var list := (lukio.units as Array).duplicate()
-	list.sort_custom(func(a, b): return int(a.n) < int(b.n))
-	for u in list:
-		var sid := str(u.s)
-		if seen.has(sid) or str(u.k) != "opt" or str(u.st) == "done" or str(u.st) == "drop":
-			continue
-		if str(u.st) == "plan" and int(u.p) <= p:
-			continue
-		seen[sid] = true
-		out.append(u)
-	return out
+	return SchoolLukioPart.add_candidates(self, p)
 
 
 # --- The choices ---
-
 func can_change_years() -> bool:
-	if not lukio_active(Game.date):
-		return false
-	return SchoolCalendar.year_of(Game.date) - int(lukio.start_year) < 2
+	return SchoolLukioPart.can_change_years(self)
 
 
 ## 3 or 4 years (user: every lukio; until the third year starts): the path's length changes and the rest of the plan is
 ## spread again.
 func set_lukio_years(n: int) -> bool:
-	var allowed := (Data.lukio.rules.years_allowed as Array).map(func(x): return int(x))
-	if not can_change_years() or not n in allowed or n == int(lukio.years):
-		return false
-	_set_years(n)
-	_replan(_replan_from())
-	return true
-
-
-## The first period the counsellor may plan again: the current one while its courses can change, else the next (in the summer
-## between two school years: the next year's first).
-func _replan_from() -> int:
-	var per := Lukio.period_at(self, lukio, Game.date)
-	if per.is_empty():
-		var yi := SchoolCalendar.year_of(Game.date) - int(lukio.start_year)
-		if Game.date.month >= 6 and Game.date.month < 8:
-			yi += 1
-		return clampi(yi * Lukio.per_year(), 0, Lukio.period_count(lukio) - 1)
-	return int(per.p) + (0 if editable_period() >= 0 else 1)
-
-
-func _set_years(n: int) -> void:
-	var found := false
-	for sgm in paths:
-		if int(sgm.start_year) == int(lukio.start_year) and str(sgm.kind) in ["lukio", "urheilulukio"]:
-			sgm.years = n
-			found = true
-	if not found:   # the default path (no list was made): stored now, with its new length
-		var seg := segment_for(int(lukio.start_year))
-		paths.append({"kind": str(seg.get("kind", "lukio")), "school": str(seg.get("school", "")), "town": str(seg.get("town", _town())),
-				"start_year": int(lukio.start_year), "years": n, "arrived": true, "default": true})
-	lukio.years = n
-	_stage_cache = {}
-	_exam_days = {}
-	_schedules = {}
-	Lukio.clear_cache()
-	# The exam plan follows the sessions of the new length (an exam already registered or written keeps its session): the
-	# counsellor's suggestion for every exam that is not fixed yet.
-	matric_fill_suggestion()
+	return SchoolLukioPart.set_lukio_years(self, n)
 
 
 func can_short_maths() -> bool:
-	if lukio.is_empty() or str(lukio.maths) != "long" or not lukio_active(Game.date):
-		return false
-	for k in lukio.matric.locked:
-		if "maths" in lukio.matric.registered.get(str(k), []):
-			return false
-	return true
+	return SchoolLukioPart.can_short_maths(self)
 
 
 ## Long maths -> short (real schools allow it; the long courses done count towards the short syllabus).
 func to_short_maths() -> bool:
-	if not can_short_maths():
-		return false
-	var done := []
-	for u in lukio.units:
-		if str(u.s) == "maths" and str(u.st) == "done" and int(u.n) > 1:
-			done.append(u)
-	done.sort_custom(func(a, b): return int(a.n) < int(b.n))
-	lukio.units = (lukio.units as Array).filter(func(u): return not (str(u.s) == "maths" and int(u.n) > 1))
-	lukio.maths = "short"
-	if bool(lukio.maths_shifted):
-		_shift_subject("maths", -float(Data.lukio.levels.long_maths_shift))
-		lukio.maths_shifted = false
-	var max_n := Lukio.comp_count("maths", lukio) + Lukio.opt_count("maths", lukio)
-	for i in done.size():
-		var n := 2 + i
-		if n > max_n:
-			break
-		lukio.units.append({"id": Lukio._unit_id("maths", n, lukio), "s": "maths", "n": n, "k": "comp" if n <= Lukio.comp_count("maths", lukio) else "opt",
-				"p": int(done[i].p), "st": "done", "g": int(done[i].g), "x": float(done[i].x), "by": "", "r": false})
-	_replan(_replan_from())
-	return true
+	return SchoolLukioPart.to_short_maths(self)
 
 
 # --- The stops of the lukio ---
-
 func _post_choice(step: String) -> void:
-	var c: Dictionary = Data.lukio.stops
-	var choices := []
-	var text := ""
-	var pick := ""
-	match step:
-		"maths":
-			text = str(c.maths_text)
-			for k in ["long", "short"]:
-				choices.append({"id": k, "label": str(c.maths_options[k].label), "detail": str(c.maths_options[k].detail)})
-			pick = str(c.maths_options[str(lukio.maths)].label)
-		"language":
-			text = str(c.language_text)
-			for l in Data.lukio.subjects.languages:
-				choices.append({"id": str(l.id), "label": str(l.name), "detail": str(l.text)})
-			pick = Lukio.language_name("none")
-		"years":
-			text = str(c.years_text)
-			for k in ["3", "4"]:
-				choices.append({"id": k, "label": str(c.years_options[k].label), "detail": str(c.years_options[k].detail)})
-			pick = str(c.years_options[str(int(lukio.years))].label)
-	text += "\n\n" + str(c.counsellor_pick).format({"pick": pick})
-	var e := Game.post_event(id, str(c.choices_title), text, choices, true)
-	e.kind = "lukio_choice"
-	e.step = step
+	SchoolLukioPart._post_choice(self, step)
 
 
 func _post_courses(p: int) -> void:
-	lukio.asked["c%d" % p] = true
-	var per := Lukio.period_info(self, lukio, p)
-	var c: Dictionary = Data.lukio.stops
-	var fill := {"n": int(per.i) + 1, "year": int(per.year_index) + 1, "from": Calendar.format_day(per.start), "to": Calendar.format_day(per.end)}
-	var e := Game.post_event(id, str(c.courses_title).format(fill), str(c.courses_text).format(fill),
-			[{"id": "done", "label": str(c.courses_done.label), "detail": ""}], true)
-	e.kind = "lukio_courses"
-	e.period = p
+	SchoolLukioPart._post_courses(self, p)
 
 
 func _answer_lukio(e: Dictionary, choice: String) -> void:
-	match str(e.kind):
-		"lukio_choice":
-			_answer_choice(str(e.step), choice)
-		"matric_exam":
-			var key := "%s|%s" % [str(e.session), str(e.exam)]
-			var sat: Dictionary = lukio.matric.sat
-			if not sat.has(key):
-				sat[key] = {"parts": [], "absent": false}
-			if choice == "skip":
-				sat[key].absent = true
-			elif str(e.get("meet", "")) != "":   # sitting the exam: the race of the same day is withdrawn
-				Game.scratch_race(str(e.meet))
-		_:
-			pass   # (courses: the changes were made in the panel; results, plan, certificate: read and continue)
-
-
-func _answer_choice(step: String, choice: String) -> void:
-	match step:
-		"maths":
-			if choice in ["long", "short"] and choice != str(lukio.maths):
-				var shift := float(Data.lukio.levels.long_maths_shift)
-				lukio.maths = choice
-				if choice == "long" and not bool(lukio.maths_shifted):
-					_shift_subject("maths", shift)
-					lukio.maths_shifted = true
-				elif choice == "short" and bool(lukio.maths_shifted):
-					_shift_subject("maths", -shift)
-					lukio.maths_shifted = false
-			_post_choice("language")
-		"language":
-			var known := false
-			for l in Data.lukio.subjects.languages:
-				known = known or str(l.id) == choice
-			if known and choice != "none":
-				lukio.b3 = choice
-				var rng := RandomNumberGenerator.new()
-				rng.seed = _seed("lukio_b3|%s" % choice)
-				_lukio_subject("b3", Lukio.subject_def("b3"), rng)
-			_post_choice("years")
-		"years":
-			if choice in ["3", "4"] and int(choice) != int(lukio.years):
-				_set_years(int(choice))
-			lukio.chosen = true
-			_replan(_replan_from())
-			var per := Lukio.period_at(self, lukio, Game.date)
-			if not per.is_empty() and not lukio.asked.has("c%d" % int(per.p)):
-				_post_courses(int(per.p))
+	SchoolLukioPart._answer_lukio(self, e, choice)
 
 
 # --- The exams of the period and its results ---
-
 ## Writes the course exams of the day: [subject ids written].
 func _write_lukio_exams(d: Dictionary) -> Array:
-	var written := []
-	for uid in lukio_exams_on(d):
-		var u := Lukio.unit(lukio, uid)
-		if u.is_empty() or str(u.st) != "plan":
-			continue
-		var sid := str(u.s)
-		var t: Dictionary = cfg().tests
-		var rng := RandomNumberGenerator.new()
-		rng.seed = _seed("course|%s|%d" % [uid, Calendar.date_key(d)])
-		var score := level(sid) + rng.randfn(0.0, float(t.noise_sd)) - _week_and_stress_penalty(d, float(t.stress_from), float(t.stress_penalty))
-		var step := float(t.round_to)
-		score = clampf(roundf(score / step) * step, float(cfg().grades.min), float(cfg().grades.max))
-		u.x = score
-		tests_log.append({"date": d.duplicate(), "subject": sid, "score": score})
-		written.append(sid)
-	return written
+	return SchoolLukioPart._write_lukio_exams(self, d)
 
 
 ## The meet-and-tests answer of the week and today's stress, as grade points off an exam (0 when neutral).
 func _week_and_stress_penalty(d: Dictionary, stress_from: float, stress_penalty: float) -> float:
-	if neutral:
-		return 0.0
-	var off := float(option_of(choice_of(Calendar.monday_of(d))).get("test_penalty", 0.0))
-	var mind := MindSystem.sys()
-	if mind != null:
-		var st := mind.value("stress")
-		if st > stress_from:
-			off += (st - stress_from) / (100.0 - stress_from) * stress_penalty
-	return off
+	return SchoolLukioPart._week_and_stress_penalty(self, d, stress_from, stress_penalty)
 
 
 func _lukio_day_end(d: Dictionary) -> void:
-	var per := Lukio.period_at(self, lukio, d)
-	if per.is_empty():
-		return
-	var last: Dictionary = per.exam.back() if not per.exam.is_empty() else per.end
-	if Calendar.date_key(d) == Calendar.date_key(last):
-		_finish_period(int(per.p), decisions_enabled and not neutral)
+	SchoolLukioPart._lukio_day_end(self, d)
 
 
 ## The end of a period: every course of it graded (a failed course goes to the next period's exam week once), its results kept
 ## as a report and, in the real game, shown in a stop.
 func _finish_period(p: int, stop: bool) -> void:
-	if lukio.asked.has("r%d" % p):
-		return
-	lukio.asked["r%d" % p] = true
-	var w := float(Data.lukio.courses.exam_weight)
-	var graded := []
-	var retakes := []
-	for u in Lukio.courses_in(lukio, p):
-		if str(u.st) != "plan":
-			continue
-		var kind := Lukio.kind_of(str(u.s))
-		var g := -1
-		if str(u.k) != "coach" and kind != "pass":
-			var lv := level(str(u.s))
-			if kind == "academic":
-				var x := float(u.x) if float(u.x) >= 0.0 else lv
-				g = clampi(floori(w * x + (1.0 - w) * lv + 0.5), 4, 10)
-			else:
-				g = clampi(floori(lv + 0.5), 4, 10)
-		if bool(u.r):
-			g = maxi(g, int(u.g))
-			u.r = false
-		u.g = g
-		u.st = "done"
-		graded.append(u)
-		if g == 4 and kind == "academic" and bool(Data.lukio.courses.retake) and not u.has("retaken") and p + 1 < Lukio.period_count(lukio):
-			u.st = "plan"
-			u.p = p + 1
-			u.r = true
-			u.retaken = true
-			u.x = -1.0
-			retakes.append(u)
-	_lukio_changed()
-	reports.append(_period_report(p, graded))
-	if stop:
-		var per := Lukio.period_info(self, lukio, p)
-		var c: Dictionary = Data.lukio.stops
-		var fill := {"n": int(per.i) + 1}
-		var e := Game.post_event(id, str(c.results_title).format(fill), str(c.results_text).format(fill),
-				[{"id": "continue", "label": str(c.results_continue.label), "detail": ""}], true)
-		e.kind = "lukio_results"
-		e.period = p
-		e.index = reports.size() - 1
-
-
-func _period_report(p: int, graded: Array) -> Dictionary:
-	var per := Lukio.period_info(self, lukio, p)
-	var grades := {}
-	var total := 0.0
-	var n := 0
-	var ac := 0.0
-	var n_ac := 0
-	for s in Lukio.subject_defs(lukio):
-		var sid := str(s.id)
-		if str(s.kind) == "pass":
-			continue
-		var g := Lukio.subject_grade(lukio, sid)
-		if g <= 0:
-			continue
-		grades[sid] = g
-		total += g
-		n += 1
-		if str(s.kind) == "academic":
-			ac += g
-			n_ac += 1
-	var courses := []
-	for u in graded:
-		courses.append({"id": str(u.id), "s": str(u.s), "n": int(u.n), "g": int(u.g)})
-	var label := str(Data.lukio.stops.results_title).format({"n": int(per.i) + 1})
-	return {"date": Game.date.duplicate(), "kind": "period", "label": label, "stage": str(stage_of(per.end).id), "year": int(per.year),
-			"grades": grades, "average": total / maxf(1.0, n), "academic_average": ac / maxf(1.0, n_ac), "period": p, "courses": courses}
+	SchoolLukioPart._finish_period(self, p, stop)
 
 
 func _lukio_load_parts(d: Dictionary, scale: float) -> Array:
-	var out := []
-	var per := Lukio.period_at(self, lukio, d)
-	if not per.is_empty() and not is_exam_day(d):
-		var n := 0
-		for u in Lukio.courses_in(lukio, int(per.p)):
-			if Lukio.is_classroom(u) and not bool(u.r):
-				n += 1
-		var v := float(n - int(Data.lukio.plan.normal_courses)) * float(Data.lukio.plan.load_per_course)
-		if v != 0.0:
-			out.append({"id": "courses" if v > 0.0 else "courses_light", "value": v * (scale if v > 0.0 else 1.0), "n": n})
-	if not matric_on(d).is_empty():
-		out.append({"id": "matric", "value": float(Data.lukio.matric.life_load) * scale})
-	return out
+	return SchoolLukioPart._lukio_load_parts(self, d, scale)
 
 
-# --- The matriculation exams (session S3b) -----------------------------------------------------------------------------------
+# -- SchoolMatricPart
 
 ## The three sessions for the required exams: from the first session the athlete registered for, else the lukio's last three.
 func matric_main_sessions() -> Array:
-	if lukio.is_empty():
-		return []
-	var locked: Array = lukio.matric.locked
-	if locked.is_empty():
-		return Matriculation.sessions_for(int(lukio.start_year), int(lukio.years))
-	var first := str(locked[0])
-	for k in locked:
-		if Lukio._session_rank(str(k)) < Lukio._session_rank(first):
-			first = str(k)
-	return [first, Matriculation.next_key(first), Matriculation.next_key(Matriculation.next_key(first))]
+	return SchoolMatricPart.matric_main_sessions(self)
 
 
 ## Every session the plan can use: the main three and, for retakes and better grades, the next three after them.
 func matric_sessions() -> Array:
-	var out := matric_main_sessions()
-	if out.is_empty():
-		return out
-	var k := str(out.back())
-	for i in int(Data.lukio.matric.retakes):
-		k = Matriculation.next_key(k)
-		out.append(k)
-	return out
+	return SchoolMatricPart.matric_sessions(self)
 
 
 ## Sessions the plan can still change: not locked, before the deadline.
 func matric_open(key: String) -> bool:
-	return not key in lukio.matric.locked and Calendar.date_key(Game.date) <= Calendar.date_key(Matriculation.deadline(key))
+	return SchoolMatricPart.matric_open(self, key)
 
 
 ## Whether an exam may go into a session: open; a new exam only in the main three; a retake of a failed exam in the next three
 ## after the failure; a passed one any time; one realia subject a day.
 func matric_allowed(exam_id: String, key: String) -> bool:
-	if lukio.is_empty() or not matric_open(key) or not exam_id in Matriculation.available(lukio):
-		return false
-	var main := matric_main_sessions()
-	var tried := false
-	for r in lukio.matric.results:
-		if str(r.exam) == exam_id:
-			tried = true
-	if not tried and not key in main:
-		return false
-	if not key in matric_sessions():
-		return false
-	var days: Array = Matriculation.exam(exam_id).get("days", [])
-	for ex in lukio.matric.plan:
-		if str(ex) != exam_id and str(lukio.matric.plan[ex]) == key:
-			var od: Array = Matriculation.exam(str(ex)).get("days", [])
-			if not days.is_empty() and not od.is_empty() and str(days[0]) == str(od[0]):
-				return false
-	return true
+	return SchoolMatricPart.matric_allowed(self, exam_id, key)
 
 
 ## Puts an exam into a session ("" = out of the plan). False when the rules don't allow it.
 func set_matric(exam_id: String, key: String) -> bool:
-	var plan: Dictionary = lukio.matric.plan
-	if plan.has(exam_id) and not matric_open(str(plan[exam_id])):
-		return false
-	if key == "":
-		plan.erase(exam_id)
-		return true
-	if not matric_allowed(exam_id, key):
-		return false
-	plan[exam_id] = key
-	return true
+	return SchoolMatricPart.set_matric(self, exam_id, key)
 
 
 ## The counsellor's plan again for every exam that is not fixed yet.
 func matric_fill_suggestion() -> void:
-	var plan: Dictionary = lukio.matric.plan
-	for ex in plan.keys():
-		if matric_open(str(plan[ex])):
-			plan.erase(ex)
-	var sug := Matriculation.suggest(self, lukio)
-	var main := matric_main_sessions()
-	for ex in sug:
-		if plan.has(ex) or _passed(str(ex)):
-			continue
-		var k := str(sug[ex])
-		if not matric_open(k):   # (the suggested session is past: the next open main one)
-			k = ""
-			for m in main:
-				if matric_open(str(m)):
-					k = str(m)
-					break
-		if k != "" and matric_allowed(str(ex), k):
-			plan[ex] = k
-
-
-func _passed(exam_id: String) -> bool:
-	for r in lukio.matric.results:
-		if str(r.exam) == exam_id and Matriculation.passed(str(r.grade)):
-			return true
-	return false
+	SchoolMatricPart.matric_fill_suggestion(self)
 
 
 ## The best result of each exam: {exam id: grade}.
 func matric_best() -> Dictionary:
-	var out := {}
-	for r in lukio.matric.results:
-		var ex := str(r.exam)
-		if not out.has(ex) or Matriculation.points(str(r.grade)) > Matriculation.points(str(out[ex])):
-			out[ex] = str(r.grade)
-	return out
+	return SchoolMatricPart.matric_best(self)
 
 
 ## The exams of the plan and the passed ones together (what the rules are checked against).
 func matric_set() -> Array:
-	var out := []
-	for ex in lukio.matric.plan:
-		out.append(str(ex))
-	var best := matric_best()
-	for ex in best:
-		if Matriculation.passed(str(best[ex])) and not str(ex) in out:
-			out.append(str(ex))
-	return out
+	return SchoolMatricPart.matric_set(self)
 
 
 ## The matriculation exams written on a date: [exam ids] (registered ones, or the plan's before the deadline; not skipped).
 func matric_on(d: Dictionary) -> Array:
-	if lukio.is_empty():
-		return []
-	var out := []
-	var key := Calendar.date_key(d)
-	for k in _sessions_near(d):
-		var list: Array = lukio.matric.registered.get(k, []) if k in lukio.matric.locked else _plan_in(k)
-		for ex in list:
-			if bool(lukio.matric.sat.get("%s|%s" % [k, str(ex)], {}).get("absent", false)):
-				continue
-			for dd in Matriculation.exam_dates(k, str(ex)):
-				if Calendar.date_key(dd) == key:
-					out.append(str(ex))
-	return out
-
-
-## The session whose exams could fall near a date (the spring one in March - April, the autumn one in September).
-func _sessions_near(d: Dictionary) -> Array:
-	var m := int(d.month)
-	if m == 3 or m == 4:
-		return [Matriculation.key_for("spring", int(d.year))]
-	if m == 9 or m == 10:
-		return [Matriculation.key_for("autumn", int(d.year))]
-	return []
+	return SchoolMatricPart.matric_on(self, d)
 
 
 func _plan_in(key: String) -> Array:
-	var out := []
-	for ex in lukio.matric.plan:
-		if str(lukio.matric.plan[ex]) == key:
-			out.append(str(ex))
-	return out
+	return SchoolMatricPart._plan_in(self, key)
 
 
 func _matric_day_start(d: Dictionary) -> void:
-	var key := Calendar.date_key(d)
-	var stops := decisions_enabled and not neutral
-	var main := matric_main_sessions()
-	# The first plan: from the school year that holds the first deadline (user: one stop for the plan, then one per session).
-	if stops and not main.is_empty() and lukio.matric.locked.is_empty() and not lukio.asked.has("plan"):
-		var first_deadline := Matriculation.deadline(str(main[0]))
-		var y := SchoolCalendar.year_for(_town(), SchoolCalendar.year_of(first_deadline))
-		if key >= Calendar.date_key(_first_school_day(y.start, y.end)) and key <= Calendar.date_key(first_deadline) and bool(lukio.chosen):
-			lukio.asked.plan = true
-			_post_matric_plan("")
-	for k in matric_sessions():
-		var sk := str(k)
-		# The stop to check a session's exams before its deadline.
-		if stops and matric_open(sk) and not lukio.asked.has("reg" + sk) and key >= Calendar.date_key(Matriculation.stop_date(sk)) \
-				and lukio.asked.has("plan") and not _plan_in(sk).is_empty():
-			lukio.asked["reg" + sk] = true
-			_post_matric_plan(sk)
-		# The exam days.
-		if sk in lukio.matric.locked:
-			for ex in lukio.matric.registered.get(sk, []):
-				var dates := Matriculation.exam_dates(sk, str(ex))
-				for i in dates.size():
-					if Calendar.date_key(dates[i]) == key and stops:
-						_post_matric_exam(sk, str(ex), i, dates.size())
-			if key == Calendar.date_key(Matriculation.results_date(sk)) and not lukio.asked.has("res" + sk):
-				lukio.asked["res" + sk] = true
-				_matric_results(sk, stops)
+	SchoolMatricPart._matric_day_start(self, d)
 
 
 func _matric_day_end(d: Dictionary) -> void:
-	_matric_log = []
-	if lukio.is_empty():
-		return
-	var key := Calendar.date_key(d)
-	for k in matric_sessions():
-		var sk := str(k)
-		# The deadline: the session's exams are registered for good.
-		if key == Calendar.date_key(Matriculation.deadline(sk)) and not sk in lukio.matric.locked:
-			var list := _plan_in(sk)
-			if not list.is_empty():
-				lukio.matric.locked.append(sk)
-				lukio.matric.registered[sk] = list
-				if decisions_enabled and not neutral:
-					var names := []
-					for ex in list:
-						names.append(Matriculation.exam_name(str(ex), lukio))
-					Game.post_event(id, str(Data.lukio.stops.register_title).format({"session": Matriculation.session_name(sk)}),
-							", ".join(names))
-		if not sk in lukio.matric.locked:
-			continue
-		for ex in lukio.matric.registered.get(sk, []):
-			var dates := Matriculation.exam_dates(sk, str(ex))
-			for i in dates.size():
-				if Calendar.date_key(dates[i]) != key:
-					continue
-				var sat_key := "%s|%s" % [sk, str(ex)]
-				var sat: Dictionary = lukio.matric.sat
-				if not sat.has(sat_key):
-					sat[sat_key] = {"parts": [], "absent": false}
-				var entry: Dictionary = sat[sat_key]
-				_matric_log.append({"exam": str(ex), "absent": bool(entry.absent)})
-				if not bool(entry.absent):
-					(entry.parts as Array).append(_matric_score(str(ex), i, d))
-
-
-## A matriculation exam's score: the subject's level + its optional courses done + a roll - stress and the week's answer.
-func _matric_score(exam_id: String, part: int, d: Dictionary) -> float:
-	var c: Dictionary = Data.lukio.matric.score
-	var sid := str(Matriculation.exam(exam_id).get("subject", exam_id))
-	var opt := 0
-	for u in lukio.units:
-		if str(u.s) == sid and str(u.k) == "opt" and str(u.st) == "done":
-			opt += 1
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _seed("matric|%s|%d|%d" % [exam_id, part, Calendar.date_key(d)])
-	var t: Dictionary = cfg().tests
-	return level(sid) + minf(float(c.bonus_max), opt * float(c.bonus_per_optional)) + rng.randfn(0.0, float(c.sd)) \
-			- _week_and_stress_penalty(d, float(t.stress_from), float(t.stress_penalty))
+	SchoolMatricPart._matric_day_end(self, d)
 
 
 ## Results day: every registered exam of the session graded; a failed one goes into the next session's plan (while retakes are
 ## left); the certificate when everything is passed.
 func _matric_results(key: String, stop: bool) -> void:
-	var lines := []
-	var any_bad := false
-	var total := 0
-	var n := 0
-	for ex in lukio.matric.registered.get(key, []):
-		var exs := str(ex)
-		var entry: Dictionary = lukio.matric.sat.get("%s|%s" % [key, exs], {"parts": [], "absent": false})
-		var need := Matriculation.exam_dates(key, exs).size()
-		var absent := bool(entry.absent) or (entry.parts as Array).size() < need
-		var grade := "I"
-		if not absent:
-			var s := 0.0
-			for x in entry.parts:
-				s += float(x)
-			grade = Matriculation.grade_for(s / maxf(1.0, (entry.parts as Array).size()))
-		lukio.matric.results.append({"session": key, "exam": exs, "grade": grade, "points": Matriculation.points(grade), "absent": absent})
-		if str(lukio.matric.plan.get(exs, "")) == key:
-			lukio.matric.plan.erase(exs)
-		if not Matriculation.passed(grade):
-			any_bad = true
-			var fails := 0
-			for r in lukio.matric.results:
-				if str(r.exam) == exs and not Matriculation.passed(str(r.grade)):
-					fails += 1
-			if fails <= int(Data.lukio.matric.retakes) and not _passed(exs):   # the retake goes to the next session (the plan can change)
-				lukio.matric.plan[exs] = Matriculation.next_key(key)
-		total += Matriculation.points(grade)
-		n += 1
-		var c: Dictionary = Data.lukio.stops
-		if absent:
-			lines.append(str(c.matric_results_absent).format({"exam": Matriculation.exam_name(exs, lukio)}))
-		else:
-			lines.append(str(c.matric_results_line).format({"exam": Matriculation.exam_name(exs, lukio), "grade": grade, "name": Matriculation.grade_name(grade)}))
-	var ms := MindSystem.sys()
-	var st: Dictionary = Data.lukio.stops
-	if ms != null and not neutral and decisions_enabled and n > 0:
-		if any_bad:
-			ms.add("confidence", float(st.news_delta.bad), str(st.news.matric_bad))
-		elif float(total) / n >= 5.0:
-			ms.add("confidence", float(st.news_delta.good), str(st.news.matric_good))
-	if stop and n > 0:
-		var text := str(st.matric_results_text).format({"session": Matriculation.session_name(key)}) + "\n" + "\n".join(lines)
-		if any_bad:
-			text += "\n\n" + str(st.matric_results_retake)
-		var e := Game.post_event(id, str(st.matric_results_title), text, [{"id": "continue", "label": str(st["continue"].label), "detail": ""}], true)
-		e.kind = "matric_results"
-		e.session = key
-	_check_certificate()
+	SchoolMatricPart._matric_results(self, key, stop)
 
 
 ## The matriculation certificate: the passed exams meet the rules and the lukio courses are done.
 func _check_certificate() -> void:
-	if lukio.is_empty() or bool(lukio.matric.cert) or not bool(lukio.get("done", false)):
-		return
-	var passed := []
-	var best := matric_best()
-	for ex in best:
-		if Matriculation.passed(str(best[ex])):
-			passed.append(str(ex))
-	var chk := Matriculation.check(passed, lukio)
-	var st: Dictionary = Data.lukio.stops
-	if not bool(chk.ok):
-		if decisions_enabled and not neutral and not lukio.asked.has("cert_wait"):
-			lukio.asked.cert_wait = true
-			Game.post_event(id, str(st.certificate_title), str(st.certificate_wait))
-		return
-	lukio.matric.cert = true
-	if decisions_enabled and not neutral:
-		var lines := []
-		var pts := 0
-		for ex in passed:
-			lines.append("%s: %s" % [Matriculation.exam_name(ex, lukio), str(best[ex])])
-			pts += Matriculation.points(str(best[ex]))
-		var text := str(st.certificate_text) + "\n" + "\n".join(lines) + "\n\n" + str(st.certificate_points).format({"points": pts, "n": passed.size()})
-		var e := Game.post_event(id, str(st.certificate_title), text, [{"id": "continue", "label": str(st["continue"].label), "detail": ""}], true)
-		e.kind = "matric_cert"
-		var ms := MindSystem.sys()
-		if ms != null:
-			ms.add("confidence", float(st.news_delta.graduate), str(st.news.graduate))
+	SchoolMatricPart._check_certificate(self)
 
 
 func _post_matric_plan(key: String) -> void:
-	var st: Dictionary = Data.lukio.stops
-	var title := ""
-	var text := ""
-	if key == "":
-		var names := []
-		for k in matric_main_sessions():
-			names.append(Matriculation.session_name(str(k)))
-		title = str(st.plan_title)
-		text = str(st.plan_text).format({"sessions": ", ".join(names)})
-	else:
-		title = str(st.register_title).format({"session": Matriculation.session_name(key)})
-		text = str(st.register_text).format({"session": Matriculation.session_name(key), "date": Calendar.format_day(Matriculation.deadline(key))})
-	var e := Game.post_event(id, title, text, [{"id": "done", "label": str(st.plan_done.label), "detail": ""}], true)
-	e.kind = "matric_plan"
-	e.session = key
+	SchoolMatricPart._post_matric_plan(self, key)
 
 
 func _post_matric_exam(key: String, exam_id: String, part: int, parts: int) -> void:
-	var st: Dictionary = Data.lukio.stops
-	var sat: Dictionary = lukio.matric.sat.get("%s|%s" % [key, exam_id], {})
-	if bool(sat.get("absent", false)):
-		return
-	var part_text := ""
-	if parts > 1:
-		var names: Array = Matriculation.exam(exam_id).get("parts", [])
-		part_text = str(st.exam_part).format({"part": str(names[part]) if part < names.size() else str(part + 1)})
-	var meet := ""
-	var race_text := ""
-	var races := Calendar.races_in_week(Game.entries, Calendar.monday_of(Game.date))
-	var di := Calendar.days_between(Calendar.monday_of(Game.date), Game.date)
-	if races.has(di):
-		meet = str(races[di].key)
-		race_text = str(st.exam_race).format({"meet": str(races[di].name)})
-	var choices := []
-	for k in ["sit", "skip"]:
-		choices.append({"id": k, "label": str(st.exam_options[k].label), "detail": str(st.exam_options[k].detail)})
-	var e := Game.post_event(id, str(st.exam_title), str(st.exam_text).format({"exam": Matriculation.exam_name(exam_id, lukio), "part": part_text, "race": race_text}).strip_edges(),
-			choices, true)
-	e.kind = "matric_exam"
-	e.session = key
-	e.exam = exam_id
-	e.part = part
-	e.meet = meet
+	SchoolMatricPart._post_matric_exam(self, key, exam_id, part, parts)
 
 
 ## Reads a saved lukio state (numbers as the right types).
@@ -2438,6 +1416,8 @@ func to_dict() -> Dictionary:
 		out["apps"] = applications
 	if not lukio.is_empty():   # (S3b: likewise, only once a lukio has started)
 		out["lukio"] = lukio
+	if courses_mode != "ask":   # (fix session 2026-10-18: likewise)
+		out["courses_mode"] = courses_mode
 	return out
 
 
@@ -2455,6 +1435,7 @@ func from_dict(d: Dictionary) -> void:
 	paths = []
 	applications = {}
 	lukio = {}
+	courses_mode = "ask"
 	_schedules = {}
 	_exam_days = {}
 	_stage_cache = {}
@@ -2480,6 +1461,7 @@ func from_dict(d: Dictionary) -> void:
 		var test: Dictionary = src.get("test", {})
 		applications[str(k)] = {"wishes": (src.get("wishes", []) as Array).map(func(x): return str(x)), "locked": bool(src.get("locked", false)),
 				"test": test, "results": rows, "decided": bool(src.get("decided", false))}
+	courses_mode = str(d.get("courses_mode", "ask")) if str(d.get("courses_mode", "ask")) in COURSES_MODES else "ask"
 	started = bool(d.get("started", false))
 	effort = str(d.get("effort", "normal"))
 	free_time = str(d.get("free_time", "normal"))
