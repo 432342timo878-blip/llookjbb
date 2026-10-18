@@ -24,7 +24,7 @@
   },
   "training_season": {
    "title": "Training: season plan",
-   "version": 8,
+   "version": 9,
    "sections": [
     {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
     {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
@@ -35,6 +35,7 @@
     {"heading": "Lighter weeks and easing in", "text": "In the base phases every fourth week is lighter, so your body can catch up. A new phase doesn't start all at once: its sessions come in a day at a time over the first weeks.", "see": ["lighter_weeks", "easing_in"]},
     {"heading": "Target meets ◆", "text": "Up to three a season. Your plan builds up to them, and the last ten days before each one are a taper so you arrive fresh and sharp.", "see": ["targets"]},
     {"heading": "Body strain", "text": "Under this week's plan: how much you train compared with your usual weeks, and how risky the plan is for your body right now.", "see": ["load_vs_normal", "plan_risk"]},
+    {"heading": "This week", "text": "The list shows the week as it is right now, the same days as the week strip: races, days already played, and days you, your coach or an injury changed. The phase's own plan is behind it, and the coach's reason for a day is under it."},
     {"heading": "Over the week strip", "text": "The line above the week strip shows the phase and week you are in, how many days are left before a target, or the week of easing back in."},
     {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."},
     {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what he thinks of the plan from next week on: changed against his, or as it is against an easier week.", "see": ["ask_coach"]},

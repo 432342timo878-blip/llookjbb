@@ -294,7 +294,10 @@ func _messages_into(col: Control, thread_id: String, empty_note := "", most := 0
 		var box := UIKit.vbox(14)
 		box.add_child(UIKit.label(PeopleUI.ui("waiting"), "CaptionLabel"))
 		for m in waiting:
-			box.add_child(PeopleUI.moment_card(_ms, m, _answer.bind(str(m.id))))
+			# (A lambda, not `_answer.bind(id)`: the card binds the reply id again, and a bind on a bind passes the outer
+			# argument FIRST, so `_answer` got the reply as the moment and every answer in a thread did nothing: playtest 2.)
+			var moment_id := str(m.id)
+			box.add_child(PeopleUI.moment_card(_ms, m, func(reply_id: String): _answer(moment_id, reply_id)))
 		box.add_child(UIKit.wrapped(PeopleUI.ui("reply_note"), "CaptionLabel"))
 		col.add_child(UIKit.alert_panel(box, Palette.ACCENT, 14))
 

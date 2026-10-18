@@ -305,11 +305,42 @@ func _targets_section() -> Control:
 # --- This week -------------------------------------------------------------------------------------------
 
 func _this_week() -> void:
-	var plan := Game.season.week_for(Game.week_monday())
-	var days := PlanUI.days_list(plan, plan.why)
+	# The week AS IT IS (playtest 2, 2026-10-18): the days the week strip shows, with the races, the days already played and what you,
+	# your coach or an injury changed, not the season plan's template week (which does not know about those: "the Training tab
+	# differs from the week view").
+	var week := Game.current_week()
+	var template := Game.season.week_for(Game.week_monday())
+	var days := UIKit.vbox(6)
+	var plan_days := []
+	var plan_intensity := []
+	for d in 7:
+		var info := DayInfo.of(week, d)
+		var date: Dictionary = info.date
+		var names := []
+		for id in info.sessions:
+			names.append(Data.get_session(id).name)
+		var line := "%s %d.%d.: " % [Training.DAY_NAMES[d], date.day, date.month]
+		if not (info.race as Dictionary).is_empty():
+			line += "RACE: %s" % str(info.race.get("name", "a race"))
+		else:
+			line += ", ".join(names) if not names.is_empty() else "Rest day"
+			if not names.is_empty() and info.intensity != WeekPlan.NORMAL:
+				line += " (%s)" % Training.intensity(info.intensity).name
+		if info.played:
+			line += "  · played"
+		elif info.changed:
+			var who := str(DayInfo.WHO.get(str(info.by.values()[0]), "you"))
+			line += "  · changed by %s" % who
+		days.add_child(UIKit.wrapped(line, ""))
+		var why: Array = template.why
+		if not info.played and not info.changed and (info.race as Dictionary).is_empty() and d < why.size() and str(why[d]) != "":
+			days.add_child(UIKit.wrapped(str(why[d]), "CaptionLabel"))
+		plan_days.append(info.sessions)
+		plan_intensity.append(info.intensity)
+	var plan := WeekPlan.make(plan_days, plan_intensity)
 	days.add_child(UIKit.wrapped("To change a single day of this week, tap it in the week strip above.", "MutedLabel"))
 	var col := UIKit.vbox(8)
-	col.add_child(UIKit.label("THIS WEEK · " + SeasonUI.week_text(plan).to_upper(), "CaptionLabel"))
+	col.add_child(UIKit.label("THIS WEEK · " + SeasonUI.week_text(template).to_upper(), "CaptionLabel"))
 	col.add_child(days)
 	add_child(UIKit.panel(col, 16))
 	if CoachAsk.available():   # his verdict on the plan from next week on (session C4)

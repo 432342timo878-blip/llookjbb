@@ -178,7 +178,7 @@ career simulator." Tried the Dev jump to reach the school choices and could not 
 | Race: 2D blobs on a horrible-looking track; bigger arenas need zoom; realistic graphics (needs research) | big | F: race presentation |
 | Race: effects on me, my attributes, my relationships; pre-race warm-up and post-race cool-down | missing | F |
 | All my race results in one list (the Overview skims it) | missing | F |
-| In race season the Training tab and the day-by-day view differ | ? | to check (the week's changes and the race day replace sessions in the day view) |
-| In People I cannot choose any option in the chats | ? | could not reproduce: waiting moments show their reply buttons on top of the thread; maybe answered ones were meant (needs the user's example) |
+| In race season the Training tab and the day-by-day view differ | bug | B, **fixed 2026-10-18**: the Training tab's "This week" listed the season plan's template, not the week as it is (races, played days, changes by you / the coach / an injury); it now lists the same days as the strip (	ools/week_views_check.gd) |
+| In People I cannot choose any option in the chats (with "Important only") | bug | B, **fixed 2026-10-18**: the reply buttons called the handler with the moment and the reply swapped (a ind on a ind), so every answer given in a thread silently did nothing; only the stop popups worked. This is also why 35 messages were "never answered". 	ools/people_answer_check.gd presses the buttons (it fails without the fix) |
 | A deep skill tree; "we have lost the essence of a career simulator"; the training is monotonous | direction | D: for a design session |
 | Wants "see from the save how my year went": done above | | |
