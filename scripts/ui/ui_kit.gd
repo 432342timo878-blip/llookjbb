@@ -4,7 +4,7 @@ class_name UIKit
 
 static func label(text: String, variation := "") -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = CoachSystem.words(text)   # (session F1: a coach text's pronouns = the head coach's; other texts come filled)
 	if variation != "":
 		l.theme_type_variation = variation
 	return l
@@ -18,7 +18,7 @@ static func wrapped(text: String, variation := "MutedLabel") -> Label:
 
 static func button(text: String, primary := false, min_width := 140.0) -> Button:
 	var b := Button.new()
-	b.text = text
+	b.text = CoachSystem.words(text)
 	# 44 px is a comfortable touch target; on a phone the width comes from the layout instead.
 	b.custom_minimum_size = Vector2(minf(min_width, 100.0) if Layout.compact else min_width, 44)
 	if primary:
@@ -28,7 +28,7 @@ static func button(text: String, primary := false, min_width := 140.0) -> Button
 
 static func toggle(text: String, group: ButtonGroup) -> Button:
 	var b := Button.new()
-	b.text = text
+	b.text = CoachSystem.words(text)
 	b.toggle_mode = true
 	b.button_group = group
 	b.theme_type_variation = "ToggleButton"

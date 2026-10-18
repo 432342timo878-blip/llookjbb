@@ -120,6 +120,34 @@ static func pronoun(c: Dictionary, key: String) -> String:
 	return str(p.get(str(c.get("gender", "unknown")), p.unknown).get(key, key))
 
 
+static var _verb_rx: RegEx
+
+## A text with the coach's pronoun placeholders filled (session F1, playtest 2: "Marja is not a he"): {he} {him} {his} {himself},
+## capitalised {He} {Him} {His} {Himself}, and {v:changes|change} (the first form for he / she, the second for they). `c` = the coach
+## the text is about; {} = the head coach (none: they). Any other {placeholder} is left alone, so it can run before or after .format().
+static func words(text: String, c: Dictionary = {}) -> String:
+	if text.find("{") < 0:
+		return text
+	if c.is_empty():
+		c = current_head()
+	var all: Dictionary = Data.coaching.pronouns
+	var p: Dictionary = all.get(str(c.get("gender", "unknown")), all.unknown)
+	for key in ["he", "him", "his", "himself"]:
+		var w := str(p[key])
+		text = text.replace("{%s}" % key, w).replace("{%s}" % key.capitalize(), w.capitalize())
+	if text.find("{v:") >= 0:
+		if _verb_rx == null:
+			_verb_rx = RegEx.create_from_string("\\{v:([^|}]*)\\|([^}]*)\\}")
+		text = _verb_rx.sub(text, "$2" if bool(p.get("plural", false)) else "$1", true)
+	return text
+
+
+## The head coach's record when a career runs ({} otherwise: the words say "they").
+static func current_head() -> Dictionary:
+	var sys = Game.get_system("coach") if Game.athlete != null else null
+	return sys.head() if sys != null else {}
+
+
 # --- Effects (all exactly neutral at 10) ------------------------------------------------------
 
 ## The week's training effect: attribute id -> multiplier of its trained gain, for the attributes whose group

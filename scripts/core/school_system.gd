@@ -911,7 +911,7 @@ func _answer_week(e: Dictionary, choice: String) -> void:
 		week_choices.erase(keys.pop_front())
 	var meet_name := str(Calendar.get_meet(str(e.meet)).get("name", ""))
 	if bool(o.scratch):
-		Game.scratch_race(str(e.meet))
+		Game.scratch_race(str(e.meet), "school")
 	var ms := MindSystem.sys()
 	if ms != null and c.news.has(str(o.id)):
 		ms.add("stress", float(o.stress), str(c.news[str(o.id)]))

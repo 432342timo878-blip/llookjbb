@@ -23,7 +23,7 @@ static func build() -> Control:
 		b.button_pressed = ms.stop_mode() == mode
 		b.pressed.connect(func():
 			ms.set_stop_mode(str(mode))
-			text.text = str(Data.moments.settings.stops[str(mode)].text))
+			text.text = CoachSystem.words(str(Data.moments.settings.stops[str(mode)].text)))
 		row.add_child(b)
 	box.add_child(row)
 	box.add_child(text)
@@ -57,7 +57,7 @@ static func _coach_setting(cp: CoachProposals) -> Control:
 		b.button_pressed = cp.setting() == mode
 		b.pressed.connect(func():
 			cp.set_setting(str(mode))
-			text.text = str(s[str(mode)].text))
+			text.text = CoachSystem.words(str(s[str(mode)].text)))
 		row.add_child(b)
 	col.add_child(row)
 	col.add_child(text)
@@ -78,7 +78,7 @@ static func _courses_setting(ss: SchoolSystem) -> Control:
 		b.button_pressed = ss.get_courses_mode() == mode
 		b.pressed.connect(func():
 			ss.set_courses_mode(str(mode))
-			text.text = str(s.modes[str(mode)].text))
+			text.text = CoachSystem.words(str(s.modes[str(mode)].text)))
 		row.add_child(b)
 	col.add_child(row)
 	col.add_child(text)

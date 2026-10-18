@@ -491,12 +491,9 @@ func _count_day(ctx: Dictionary, year: int) -> void:
 	if str(rec.race) != "":
 		c.races = int(c.races) + 1
 	else:
-		var planned: int = w.plan[d].size()
-		var done: int = rec.sessions.size()
-		if not w.changed_by(d).values().has("player"):
-			done = planned   # (a day the coach or an injury changed is not a skipped day)
-		c.planned = int(c.planned) + planned
-		c.done = int(c.done) + mini(done, planned)
+		var n := w.session_count(d, rec)   # (session F1: the same "done" as the Sunday talk)
+		c.planned = int(c.planned) + int(n.planned)
+		c.done = int(c.done) + int(n.done)
 	var h := Game.get_system("health") as HealthSystem
 	if h != null and Calendar.date_key(ctx.date) in h.overrides:
 		c.through = int(c.through) + 1

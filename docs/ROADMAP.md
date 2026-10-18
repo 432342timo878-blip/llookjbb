@@ -465,7 +465,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   **The new order (agreed 2026-10-18, GDD 4.10; the loop first, the look pulled forward, a playtest by the user after the loop).**
   Every session: lab fingerprints identical unless it is meant to change them (R7), help entries for anything new, `run_all_checks
   -Quick` while working and the full run at the end, layout check + tour for changed screens, a commit and "Push origin".
-  - [ ] **F1. Playtest-2 bug fixes** (the 11 confirmed bugs of `docs/PLAYTESTS.md`'s table): (1) the coach's pronouns from the coach's
+  - [x] **F1. Playtest-2 bug fixes** *(done 2026-10-18: GDD 4.10 "Built (step F1)", `tools/f1_check.gd`)* (the 11 confirmed bugs of `docs/PLAYTESTS.md`'s table): (1) the coach's pronouns from the coach's
         gender, not a hard-coded "he" (~300 texts: placeholders); (2) "Confidence confident" (the mood name and word glued); (3) the rippi
         question needs `!rippi_none`; (4) `fam_screen` "phone until one" contradicts the phone rule (tie it to the rule or drop it); (5)
         mobility "a bit much for your shins" (no strain = no risk in the coach's noise); (6) the "fresh enough" reason on a lighter change;

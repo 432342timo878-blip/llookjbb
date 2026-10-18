@@ -85,25 +85,56 @@ static func _to_race() -> bool:
 
 
 ## Plays the current career forward, a day at a time, until `until` (a date; {} = no date) is today, or until a race day
-## (the race screen is next) or a stop event (the hub shows it) comes first. The autosave is written once at the end.
-## → {result (Game.DAY_DONE / WEEK_DONE / RACE / STOP), days}
-static func jump(until: Dictionary) -> Dictionary:
-	var days := 0
+## (the race screen is next) comes first. Session F1 (playtest 2: "the messages always interrupt", the school years could not be
+## reached): every stop event on the way is answered with its default (default_answer) and the jump goes on; with `pass_races`
+## a race day is run as a quick race in the pack (the Dev menu's date jumps) instead of ending the jump. The autosave is
+## written once at the end. → {result (Game.DAY_DONE / WEEK_DONE / RACE), days, stops (answered), races (run)}
+static func jump(until: Dictionary, pass_races := false) -> Dictionary:
 	var result := Game.DAY_DONE
 	var autosave_before := Game.autosave
 	Game.autosave = false
+	var first := Game.date.duplicate()
+	var stops := 0
+	var races := 0
 	var limit := 800   # (more than two years: a jump with no date and no race in sight ends anyway)
-	while days < limit:
+	var guard := 0
+	while Calendar.days_between(first, Game.date) < limit and guard < limit * 4:
+		guard += 1
 		if not until.is_empty() and Calendar.date_key(Game.date) >= Calendar.date_key(until):
 			break
 		result = Game.advance_day()
-		days += 1
-		if result == Game.RACE or result == Game.STOP:
-			break
+		if result == Game.STOP:
+			var n := 0
+			while not Game.pending_event().is_empty() and n < 50:
+				var e := Game.pending_event()
+				Game.answer_event(e.id, default_answer(e))
+				stops += 1
+				n += 1
+			continue
+		if result == Game.RACE:
+			if not pass_races:
+				break
+			var rd := Game.race_day
+			while not rd.is_done():
+				rd.start_round(false, "pack").run()
+				rd.finish_round()
+			result = Game.finish_race()
+			races += 1
 	Game.autosave = autosave_before
 	if autosave_before:
 		SaveGame.save(SaveGame.AUTOSAVE)
-	return {"result": result, "days": days}
+	return {"result": result, "days": Calendar.days_between(first, Game.date), "stops": stops, "races": races}
+
+
+## The answer a jump gives a stop event: the event's own `default` when it has one, else a message's first reply (answering
+## nothing would cost trust week after week), else "ok" (every system reads "ok" as its default or "later").
+static func default_answer(e: Dictionary) -> String:
+	if str(e.get("default", "")) != "":
+		return str(e.default)
+	var choices: Array = e.get("choices", [])
+	if str(e.get("kind", "")) == "moment" and not choices.is_empty():
+		return str(choices[0].id)
+	return "ok"
 
 
 ## The next 1st of `month` (1-12) after today, as a date.
@@ -112,3 +143,10 @@ static func next_first_of(month: int) -> Dictionary:
 	if month <= int(Game.date.month):
 		year += 1
 	return {"year": year, "month": month, "day": 1}
+
+
+## The 1st of `month` in the year `years` after the next one (next_first_of moved on by `years - 1` years): 1 Aug, 2 years on.
+static func first_of_after(month: int, years: int) -> Dictionary:
+	var d := next_first_of(month)
+	d.year = int(d.year) + years - 1
+	return d

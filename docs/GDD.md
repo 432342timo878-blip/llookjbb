@@ -4242,6 +4242,44 @@ and indoor, Godot 2D / 2.5D techniques, free (CC0) runner art (R6); (3) camps: d
 (the school health survey, Kouluterveyskysely) to set how often late nights and romance happen (P2); (7) the youth path: when weights,
 double days and altitude camps start (SUL's youth path) (T1); (8) real schools (D2, already planned).
 
+#### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
+
+No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),
+whose 34 parts were run on the code from before the fixes too: 22 failed there (each bug at least once; the rest are controls), all pass now.
+1. **The coach's pronouns** (Marja is a woman): every player-visible coach text says the pronoun with a placeholder, `{he} {him} {his}
+   {himself}` (capitalised `{He}` … at a sentence start) and a verb after it as `{v:changes|change}` (he / she take the first form, an
+   "unknown" real coach's "they" the second; `data/coaching.json pronouns` gained `himself` and `plural`). `CoachSystem.words(text, coach)`
+   fills them, for the head coach when no coach is named; it runs where coach texts are posted (`StoryletSystem._post`, `post_proposal`,
+   `post_custom` with the market coach the text is about, every thread message, `Game.post_event`) and in `UIKit.label / button / toggle`
+   as a safety net (help texts, standing orders, goals, race advice), so a text about ANOTHER coach is filled before it reaches the UI
+   (coach profile, market). The "~300" of the playtest table were mostly developer `_note`s: ~70 visible texts changed (help ~30, the
+   week-talk hints, coaching attribute descriptions, standing orders, goals, advice). A few help lines say "the coach" instead.
+2. **"Confidence confident"**: the race card's line is now "Confidence: Confident. You race a little faster at a meet like this."
+3. **The rippi question** `fr_rippi_together` has `!rippi_none` (the camp's own dates already needed a June / July camp).
+4. **`fam_screen`** no longer states a late night the game never played ("until one o'clock", "midnight"): a parent asks about tonight
+   before a hard session; "OK, phone off at ten" sets the flag `phone_off_ten` and the moment never comes again (an existing standing rule
+   answers it once more, silently, which sets the flag).
+5. **The coach's noise needs strain**: `CoachVerdict.strain_moved(change)` (the changed days' session strain x the level's strain); a day
+   or week change that moves none gets no risk noise in `perceive` (the draw stays, so the dice order is unchanged). Mobility added =
+   no risk, for any coach; a hill session added still goes through his eye.
+6. **`work_light`**: a LIGHTER change (less load) whose best part is the training says "Easing off here lets the sessions that matter
+   count for more" instead of "you're fresh enough for it" (`CoachVerdict.reason_for`, in `judge`; texts in `coach_talk.json verdict`).
+7. **Ask the coach is remembered**: `CoachAsk.press` tells `CoachProposals.note_asked`; the asked days (date keys, saved as `asked`)
+   get no proposal and no scratch advice of his.
+8. **A scratch gets his reaction**: `Game.scratch_race(meet, cause)` with cause player / school / coach; unless it was his own advice he
+   writes in his thread (`CoachTalk.scratch_line`, `coach_talk.json scratched`): hurt (an injury or a sore area) / school / plain, then the
+   next race. Picked by the meet's key (no dice), only with the moments on (not in `lab`).
+9. **No promises, no UI names in his lines**: "if it is still there on Wednesday, you tell me", "You can see it in the day view", "tell me
+   if it grows", "Ask for the numbers", "the week itself in the Training tab" and the like (19 lines) rewritten to what the game does.
+10. **One "done"**: `WeekSim.session_count(d, record)` is the only definition: a day whose sessions the coach or an injury changed counts as
+   the day they set (nothing missed); otherwise the plan's sessions count and each one not trained is missed; extra sessions beyond the
+   plan are counted apart. The habit goal (`SeasonGoals._count_day`) and the Sunday talk (`CoachTalk._last_week`) both use it.
+11. **The Dev jump passes stops**: `DevTools.jump(until, pass_races)` answers each stop event with `DevTools.default_answer` (the event's
+   `default`, a message's first reply, else "ok") and, for the date buttons, runs the races as quick pack races; new targets "1 Aug" one
+   and two years on reach grade 9's application and the lukio.
+Fingerprints identical (`training_balance -- 0` coach row 206.798298350 / 14.102831594 / 1226.006524079, races 73182f4e…, school
+55076d77…); the user's autosave (a copy) loads and plays a week on.
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)

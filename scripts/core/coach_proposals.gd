@@ -27,6 +27,7 @@ var requests: Array = []   # from the Sunday talk: [{kind ("lighter_week" / "mor
 var week := {}         # {monday (day number), count}
 var last_day := -1     # day number of the last proposal
 var silent: Array = [] # day numbers of silent vetoes
+var asked: Array = []  # date keys (Calendar.date_key) of days the player asked him about (note_asked; session F1)
 var _next := 1
 ## Not saved, for the tools: every proposal made since the system was made.
 var fired: Array = []
@@ -166,7 +167,23 @@ func _free_day(w: WeekSim, d: int) -> bool:
 	if not w.can_change(d) or w.changes.has(d):
 		return false
 	var date := Game.add_days(w.monday, d)
-	return not proposed_on(date) and not _sore_asked(date)
+	return not proposed_on(date) and not _sore_asked(date) and not asked_about(date)
+
+
+## Session F1 (playtest 2: "I asked the coach about my edit, she said fine, then proposed a change to that very day"): the days
+## the player asked him about with Ask the coach (a day or a race in the day editor) get no proposal or scratch advice of his.
+## `change` = the CoachVerdict change that was asked about. Dates already past are dropped.
+func note_asked(change: Dictionary) -> void:
+	var today := Calendar.date_key(Game.date)
+	asked = asked.filter(func(k): return int(k) >= today)
+	for x in change.get("days", []):
+		var key := Calendar.date_key(x.date)
+		if not key in asked:
+			asked.append(key)
+
+
+func asked_about(date: Dictionary) -> bool:
+	return Calendar.date_key(date) in asked
 
 
 ## The "sore" warning (HealthSystem) of the evening before asked about this day.
@@ -328,7 +345,7 @@ func _scratch_advice(ctx: Dictionary, w: WeekSim, first: int, last_d: int, coach
 		if not w.is_race_day(d) or d < w.day:
 			continue
 		var date := Game.add_days(w.monday, d)
-		if proposed_on(date) or _sore_asked(date):
+		if proposed_on(date) or _sore_asked(date) or asked_about(date):
 			continue
 		var j := CoachVerdict.judge(CoachVerdict.race_change(d), coach)
 		if j.verdict != CoachVerdict.GOOD:
@@ -497,7 +514,7 @@ func on_reply(proposal_id: String, reply_id: String) -> Dictionary:
 ## Puts the proposal into the week (by = "coach"); a scratch proposal withdraws the entry first (Game.scratch_race).
 func _apply(p: Dictionary) -> void:
 	if p.kind == "scratch" and p.meet != "":
-		Game.scratch_race(str(p.meet))
+		Game.scratch_race(str(p.meet), "coach")
 	var w := Game.current_week()
 	if Calendar.date_key(w.monday) != Calendar.date_key(p.monday):
 		return
@@ -658,10 +675,13 @@ func proposal(proposal_id: String) -> Dictionary:
 
 ## Nothing to save while he never proposed anything and the setting is the default (older careers save as before).
 func to_dict() -> Dictionary:
-	if list.is_empty() and requests.is_empty() and silent.is_empty() and _next == 1:
+	if list.is_empty() and requests.is_empty() and silent.is_empty() and asked.is_empty() and _next == 1:
 		return {"mode": mode} if mode != "" else {}
-	return {"mode": mode, "rng_seed": str(rng.seed), "rng_state": str(rng.state), "list": list, "requests": requests,
+	var d := {"mode": mode, "rng_seed": str(rng.seed), "rng_state": str(rng.state), "list": list, "requests": requests,
 			"week": week, "last_day": last_day, "silent": silent, "next": _next}
+	if not asked.is_empty():
+		d.asked = asked
+	return d
 
 
 ## JSON makes every number a float: days, dates and counts back to ints.
@@ -687,4 +707,5 @@ func from_dict(d: Dictionary) -> void:
 		week[k] = int(week[k])
 	last_day = int(d.get("last_day", -1))
 	silent = d.get("silent", []).map(func(x): return int(x))
+	asked = d.get("asked", []).map(func(x): return int(x))
 	_next = int(d.get("next", 1))

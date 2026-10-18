@@ -175,6 +175,19 @@ func changed_by(d: int) -> Dictionary:
 	return who
 
 
+## THE definition of a "done" session for the whole game (session F1, playtest 2: the habit goal said "352 of 352" while the
+## Sunday talk said "8 of 11"): played day `d` with its record `rec` -> {planned, done, extra}. A day whose sessions the coach or
+## an injury changed counts as the day they set (nothing missed); otherwise the plan's sessions count and each one not trained is
+## missed (the player's own change, a rest day they chose). done <= planned; extra = sessions trained beyond the plan.
+func session_count(d: int, rec: Dictionary) -> Dictionary:
+	var trained: int = rec.sessions.size()
+	var planned: int = plan[d].size()
+	var by := str(changes.get(d, {}).get("sessions", {}).get("by", ""))
+	if by == "coach" or by == "injury":
+		planned = trained
+	return {"planned": planned, "done": mini(trained, planned), "extra": maxi(0, trained - planned)}
+
+
 ## Only days not yet played can be changed, and not race days (races are fixed).
 func can_change(d: int) -> bool:
 	return d >= day and d < 7 and not races.has(d)

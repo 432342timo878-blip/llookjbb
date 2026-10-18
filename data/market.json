@@ -73,7 +73,7 @@
   "threshold": 3.0,
   "chance_per_point": 0.04,
   "chance_max": 0.25,
-  "attention_note": "How much of the athlete a coach sees, by where he is listed (his weekly chance x this): the club's and the town's coaches see you at the track, the others only at meets now and then.",
+  "attention_note": "How much of the athlete a coach sees, by where the coach is listed (the coach's weekly chance x this): the club's and the town's coaches see you at the track, the others only at meets now and then.",
   "attention": {"club": 0.6, "parent": 0.0, "town": 0.5, "region": 0.25, "academy": 0.3, "national": 0.2, "remote": 0.15, "elite": 0.5},
   "reasons": {"talent_per_point": 0.4, "talent_cap": 2.0, "talent_max_age": 21, "slump": 2.0, "progress": 1.5, "crossed": 2.5, "seen": 2.5, "strained": 1.5},
   "notice": {"base": 0.4, "per_point": 0.03},

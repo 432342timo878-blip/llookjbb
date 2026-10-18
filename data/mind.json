@@ -145,9 +145,9 @@
   "ambition_low": "You're content: goals and plans move you less either way.",
   "ambition_mid": "",
   "ambition_high_from": 13, "ambition_low_below": 8,
-  "race_line": "CONFIDENCE {word}: {effect}",
-  "race_faster": "you race a little faster at a meet like this.",
-  "race_slower": "you race a little slower at a meet like this.",
+  "race_line": "Confidence: {word}. {effect}",
+  "race_faster": "You race a little faster at a meet like this.",
+  "race_slower": "You race a little slower at a meet like this.",
   "dragged": "You dragged yourself through it.",
   "cue_line": "Your word: {word}",
   "plan_head": "MENTAL TRAINING",
@@ -185,7 +185,7 @@
    "calm": {
     "confidence_low": "I can see the last results have knocked you. They don't define you.",
     "confidence_high": "You're believing in yourself. Good. Keep it quiet and keep working.",
-    "motivation_low": "You look a bit flat lately. That happens. Tell me if something's wrong.",
+    "motivation_low": "You look a bit flat lately. That happens, and it passes.",
     "motivation_high": "You've been keen this week. I like that.",
     "stress_high": "You seem tense. Let's keep things simple this week."
    },
@@ -213,7 +213,7 @@
    "analyst": {
     "confidence_low": "Your confidence dropped more than your numbers did. Look at the tests: you're on track.",
     "confidence_high": "Confidence is up, and the data backs it.",
-    "motivation_low": "Your session quality dipped this week. Something's off. Tell me.",
+    "motivation_low": "Your session quality dipped this week. Something's off, and we'll find it.",
     "motivation_high": "Session quality was high this week. Good.",
     "stress_high": "Your stress is up. I'll keep the plan simple and predictable."
    },

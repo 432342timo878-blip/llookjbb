@@ -2,17 +2,17 @@
  "_note": "The coach model (GDD 4.9.1-4.9.2, built in session C1; read by CoachSystem, scripts/core/coach_system.gd). A coach is a record: {id, name, gender, voice (the personality in data/coaches.json whose words he uses at races), kind (club / parent / remote / academy / personal), real (true = a real coach: facts only from public sources, listed in source; attributes are our estimates from those facts; a neutral professional voice, never invented storylines), source, attributes (the 11 below, whole numbers 1-20), personality (= voice), style (-2 very controlling ... +2 very supportive, words in styles), demands (steady / balanced / ambitious: the season plan he leans to), facts {birth_year, club_id, town, qualification, reputation, event_focus, cost_month, open (takes every club member), spots, min_level}, group (the training group: fictional teammates {id, first_name, last_name, gender, birth_year, event, level, role})}. Effects are measured against `neutral` (10): (attribute - 10) x per_point, so a coach of 10s changes nothing (the M1 / step 7 balance stays exact). Every number here is a first guess for the balance session at the end of M2 part 2 (GDD 4.9.7).",
  "neutral": 10,
  "attributes": [
-  {"id": "endurance_knowledge", "name": "Endurance knowledge", "description": "How much your aerobic, threshold and economy work gives you; the quality of his endurance sessions and splits."},
+  {"id": "endurance_knowledge", "name": "Endurance knowledge", "description": "How much your aerobic, threshold and economy work gives you; the quality of {his} endurance sessions and splits."},
   {"id": "speed_strength_knowledge", "name": "Speed & strength knowledge", "description": "How much your speed, speed endurance, power and strength work gives you."},
   {"id": "technique", "name": "Technique", "description": "How fast your running technique grows; drills done right."},
-  {"id": "periodization", "name": "Periodization", "description": "How well his season plan fits you: lighter weeks, the taper hitting your form on the day, the quality of his pick of plan."},
+  {"id": "periodization", "name": "Periodization", "description": "How well {his} season plan fits you: lighter weeks, the taper hitting your form on the day, the quality of {his} pick of plan."},
   {"id": "youth_development", "name": "Youth development", "description": "Under 18: protects a growing body (growth-spurt niggles) and makes the most of your first training years."},
-  {"id": "load_management", "name": "Load management", "description": "How early and how rightly he spots soreness and load spikes, and changes your days for them."},
-  {"id": "race_reading", "name": "Race reading", "description": "How often his race shouts are right; his clues before a race and his marks on a race video."},
+  {"id": "load_management", "name": "Load management", "description": "How early and how rightly {he} {v:spots|spot} soreness and load spikes, and {v:changes|change} your days for them."},
+  {"id": "race_reading", "name": "Race reading", "description": "How often {his} race shouts are right; {his} clues before a race and {his} marks on a race video."},
   {"id": "mental_coaching", "name": "Mental coaching", "description": "Mental training works better, composure grows faster, confidence comes back faster after a bad race."},
-  {"id": "motivating", "name": "Motivating", "description": "How much he lifts your motivation; how strongly his praise and criticism land."},
-  {"id": "communication", "name": "Communication", "description": "How much and how clearly he explains why; how he gets along with your family and school."},
-  {"id": "judging_ability", "name": "Judging ability", "description": "How right his estimates are: time goals, what you can run, the range he gives for your potential."}
+  {"id": "motivating", "name": "Motivating", "description": "How much {he} {v:lifts|lift} your motivation; how strongly {his} praise and criticism land."},
+  {"id": "communication", "name": "Communication", "description": "How much and how clearly {he} {v:explains|explain} why; how {he} {v:gets|get} along with your family and school."},
+  {"id": "judging_ability", "name": "Judging ability", "description": "How right {his} estimates are: time goals, what you can run, the range {he} {v:gives|give} for your potential."}
  ],
  "effects": {
   "_note": "Built in C1: training (the week's trained gains per attribute group, Training._apply_progression) and race_advice (how often his shout on a race card is the sensible answer; at 10 exactly races.json controls.coach.accuracy). Built in C4: endurance and speed & strength knowledge, load management and periodization set how clearly he sees a change (`verdict` below: his noise) and load management how early he looks ahead (`proposals`). Built in M1 (data/mind.json, MindSystem): mental_coaching (composure growth from big meets and the mental plan x (1 + (mc - 10) x composure_per_point); confidence drifts back up faster x (1 + (mc - 10) x confidence_back_per_point)) and motivating (how strongly the coach's words in moments land: x (1 + (m - 10) x lift_per_point); the motivation target + (m - 10) x mind.json drift.motivation.motivating_per_point). Prepared, not used yet (the balance session): youth_development.",
@@ -38,10 +38,10 @@
  ],
  "demands": {"steady": "Steady: plays it safe", "balanced": "Balanced", "ambitious": "Ambitious: wants more"},
  "pronouns": {
-  "_note": "Session C6: the words for a coach by `gender`; `unknown` (a real coach whose sources state none) = they / them / their, never a guess from a name. Texts that use them avoid a verb right after {he} (they 'are', he 'is').",
-  "male": {"he": "he", "him": "him", "his": "his"},
-  "female": {"he": "she", "him": "her", "his": "her"},
-  "unknown": {"he": "they", "him": "them", "his": "their"}
+  "_note": "Session C6: the words for a coach by `gender`; `unknown` (a real coach whose sources state none) = they / them / their, never a guess from a name. Session F1 (playtest 2: Marja is not a he): every player-visible text says the coach's pronoun with a placeholder, filled by CoachSystem.words(text, coach): {he} {him} {his} {himself} (and {He} {Him} {His} {Himself} at the start of a sentence), and a verb right after it as {v:changes|change} (the first form for he / she, the second for they: `plural`). A bare he / his / him in a coach text is a bug (tools/f1_check.gd scans the data).",
+  "male": {"he": "he", "him": "him", "his": "his", "himself": "himself", "plural": false},
+  "female": {"he": "she", "him": "her", "his": "her", "himself": "herself", "plural": false},
+  "unknown": {"he": "they", "him": "them", "his": "their", "himself": "themselves", "plural": true}
  },
  "personalities": {
   "_note": "For each voice in coaches.json: lean = points added before the coach's own spread (then centred, so they only say where he is strong and weak), style / demands = weights of the draw.",

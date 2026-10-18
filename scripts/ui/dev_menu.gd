@@ -134,7 +134,8 @@ func _jump_panel() -> Control:
 	if have:
 		col.add_child(UIKit.wrapped("%s%s · today is %s. The days are played for real (training, health, rivals) and the game "
 				% ["TEST CAREER: " if Game.dev_test else "", Game.athlete.full_name(), Calendar.format_day(Game.date)]
-				+ "is saved once at the end. It stops early at a race day or when something needs your answer."))
+				+ "is saved once at the end. Questions on the way get their default answer; a jump to a date also runs the races "
+				+ "on the way as quick races."))
 	else:
 		_no_career(col)
 	var flow := HFlowContainer.new()
@@ -148,7 +149,13 @@ func _jump_panel() -> Control:
 		var b := UIKit.button("To " + j[0], false, 120)
 		b.disabled = not have
 		var month: int = j[1]
-		b.pressed.connect(func(): _jump(DevTools.next_first_of(month)))
+		b.pressed.connect(func(): _jump(DevTools.next_first_of(month), true))
+		flow.add_child(b)
+	for years in [1, 2]:   # (session F1: far enough for grade 9's joint application and the lukio)
+		var target := DevTools.first_of_after(8, years) if have else {}
+		var b := UIKit.button("To 1 Aug %d" % int(target.get("year", 0)) if have else "To 1 Aug, %d year%s on" % [years, "" if years == 1 else "s"], false, 120)
+		b.disabled = not have
+		b.pressed.connect(func(): _jump(target, true))
 		flow.add_child(b)
 	col.add_child(flow)
 	_jump_message = UIKit.wrapped("")
@@ -158,14 +165,14 @@ func _jump_panel() -> Control:
 	return p
 
 
-func _jump(until: Dictionary) -> void:
+func _jump(until: Dictionary, pass_races := false) -> void:
 	if _busy:
 		return
 	_busy = true
 	_jump_message.text = "Playing the days. This can take a few seconds; the window may not answer meanwhile..."
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var res := DevTools.jump(until)
+	var res := DevTools.jump(until, pass_races)
 	_busy = false
 	if res.result == Game.RACE:
 		Router.go("race")

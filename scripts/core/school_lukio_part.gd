@@ -402,7 +402,7 @@ static func _answer_lukio(me: SchoolSystem, e: Dictionary, choice: String) -> vo
 			if choice == "skip":
 				sat[key].absent = true
 			elif str(e.get("meet", "")) != "":   # sitting the exam: the race of the same day is withdrawn
-				Game.scratch_race(str(e.meet))
+				Game.scratch_race(str(e.meet), "school")
 		_:
 			pass   # (courses: the changes were made in the panel; results, plan, certificate: read and continue)
 

@@ -12,7 +12,7 @@
     {"heading": "The week strip", "text": "Monday to Sunday of this week; tap a day to see or change it. Each mark is a session: blue Easy, grey Normal, red Hard. RACE is a meet you entered, a small dot means you changed that day, and played days are dimmed."},
     {"heading": "School on the strip", "text": "A day shaded teal is a school break or holiday. A violet T marks a day with a test (a number when there are several). Tap the day to see it as morning, school, training and evening."},
     {"heading": "! and + on a day", "text": "A round ! means you were sore that day; its colour says how sore. A + means an injury or illness limited the day; its colour says how serious it is. A small speech bubble means someone wrote to you that day: filled while it is new."},
-    {"heading": "Your coach's initial", "text": "A round letter in your coach's colour means he changed that day. Tap the day to see why, and to veto it if you disagree.", "see": ["coach_changes"]},
+    {"heading": "Your coach's initial", "text": "A round letter in your coach's colour means {he} changed that day. Tap the day to see why, and to veto it if you disagree.", "see": ["coach_changes"]},
     {"heading": "How you feel", "text": "Your fatigue: Fresh, Normal, Tired or Exhausted. Training adds to it and rest takes it away. When you are tired, sessions train you less and races go slower.", "see": ["fatigue"]},
     {"heading": "Race form", "text": "How you would race if the race were today. It is not about fitness: it is about being sharp and fresh on the day.", "see": ["form"]},
     {"heading": "Warning signs", "text": "Body areas that feel sore after training, worst first. Tap one to see why it is sore and what helps. \"A bit sore\" is the early warning.", "see": ["soreness"]},
@@ -38,7 +38,7 @@
     {"heading": "This week", "text": "The list shows the week as it is right now, the same days as the week strip: races, days already played, and days you, your coach or an injury changed. The phase's own plan is behind it, and the coach's reason for a day is under it."},
     {"heading": "Over the week strip", "text": "The line above the week strip shows the phase and week you are in, how many days are left before a target, or the week of easing back in."},
     {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."},
-    {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what he thinks of the plan from next week on: changed against his, or as it is against an easier week.", "see": ["ask_coach"]},
+    {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what {he} {v:thinks|think} of the plan from next week on: changed against {his}, or as it is against an easier week.", "see": ["ask_coach"]},
     {"heading": "Mental training", "text": "Above the standing orders: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
     {"heading": "School life", "text": "Above the standing orders: your study effort and your free time. They change how heavy your school days are and how your grades go, never what you train. The School page in the People tab has the grades.", "see": ["moods"]},
     {"heading": "Standing orders", "text": "At the bottom: what Play week stops for (Important only, or Every moment), whether your coach may change your days, from grade 9 on how your lukio courses are planned (you every period, or the counsellor), and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes", "lukio"]}
@@ -49,7 +49,7 @@
    "version": 2,
    "sections": [
     {"heading": "The phase's week", "text": "This week repeats through the whole phase, with the season's rules on top (lighter weeks, easing in, the easy day before a race, the taper). Change sessions and Easy / Normal / Hard here as in a repeating week."},
-    {"heading": "Ask your coach", "text": "Under the week, ask your coach about it: your changed week against his, or his own week against an easier one. For a later phase he judges it from where your body will be by then.", "see": ["ask_coach"]},
+    {"heading": "Ask your coach", "text": "Under the week, ask your coach about it: your changed week against {his}, or {his} own week against an easier one. For a later phase {he} {v:judges|judge} it from where your body will be by then.", "see": ["ask_coach"]},
     {"heading": "Your changes", "text": "A phase you changed is marked \"your changes\". Back to coach's puts the coach's week back."},
     {"heading": "Lighter weeks", "text": "Switch the lighter weeks on or off for this phase. A lighter week makes every day one step easier.", "see": ["lighter_weeks"]},
     {"heading": "Easing in", "text": "How many weeks the phase takes to blend in from the phase before it. Fewer is a quicker change, more is gentler on the body.", "see": ["easing_in"]},
@@ -65,7 +65,7 @@
     {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in the week strip."},
     {"heading": "Easy, Normal, Hard", "text": "How hard you do the day's sessions. Hard trains you a bit more but tires you and strains your body much more. Easy keeps most of the training effect for much less strain, which makes it a good way to train more without getting hurt."},
     {"heading": "Coach's plan and Clear week", "text": "Coach's plan puts back the starter week your club coach suggests. Clear week empties every day so you can start from scratch."},
-    {"heading": "Ask your coach", "text": "Under the buttons, ask your coach about your week: changed against his starter week, or his own week against an easier one.", "see": ["ask_coach"]},
+    {"heading": "Ask your coach", "text": "Under the buttons, ask your coach about your week: changed against {his} starter week, or {his} own week against an easier one.", "see": ["ask_coach"]},
     {"heading": "The summary", "text": "Weekly load, the fatigue you can expect after a few weeks of this plan, what it trains, and the body strain.", "see": ["fatigue", "load_vs_normal", "plan_risk"]},
     {"heading": "Sessions and seasons", "text": "Outdoor tracks are closed from November to April. Without an indoor track, track sessions are done on roads and work less well. Skiing is possible from December to March. The list at the bottom says what each session trains."},
     {"heading": "Back to the season plan", "text": "The switch at the top takes you back to your coach's season plan, with your earlier changes to it."},
@@ -80,7 +80,7 @@
    "version": 6,
    "sections": [
     {"heading": "School on the Calendar", "text": "Between the meets: school breaks (teal), busy test weeks (violet) and the Pajulahti camp weeks for grades 7-9, information only for now. Grade 9 adds the joint application's dates; lukio adds each period's exam week, your matriculation sessions and their registration deadlines (violet)."},
-    {"heading": "Your coach suggests", "text": "A meet marked COACH SUGGESTS is one he thinks worth racing, with his reason. Enter it, or No thanks: he won't suggest it again. He also suggests making a meet a target. He never enters you himself.", "see": ["coach_changes"]},
+    {"heading": "Your coach suggests", "text": "A meet marked COACH SUGGESTS is one {he} {v:thinks|think} worth racing, with {his} reason. Enter it, or No thanks: {he} won't suggest it again. {He} also {v:suggests|suggest} making a meet a target. {He} never {v:enters|enter} you {himself}.", "see": ["coach_changes"]},
     {"heading": "Entering a meet", "text": "Tap Enter to race a meet. On race day the race replaces that day's training. Tap Entered ✓ again to withdraw."},
     {"heading": "★ and ◆", "text": "★ means your coach suggests the meet. ◆ marks one of your season's target meets; Make target turns a meet into one (at most three a season).", "see": ["targets"]},
     {"heading": "Qualifying times", "text": "Championships have a qualifying time for your age class. The meet says whether you have it. You may still enter one event without it. The best runners of your age class usually enter, so a championship field is about as big as the real one, often 10 to 30."},
@@ -114,8 +114,8 @@
     {"heading": "What an answer changes", "text": "Never your training. An answer can move your moods, how someone feels about you, give you a late night (a heavier next day) or nudge your schoolwork. The card after an answer says what changed.", "see": ["moods"]},
     {"heading": "School", "text": "The School row opens your grades, tests and report cards, the two school settings, the joint application and the school after grade 9. Your teachers' messages are at the top of that page.", "see": ["moods"]},
     {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. At a sports lukio the school's morning-practice coach writes in your first week. Find a coach shows every coach you can see now."},
-    {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"he will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
-    {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one: the phase, the hard sessions and why, and one thing to focus on. It always stops Play week. A talk may end with a question. After a race he writes to you that evening."},
+    {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"{he} will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
+    {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one: the phase, the hard sessions and why, and one thing to focus on. It always stops Play week. A talk may end with a question. After a race {he} {v:writes|write} to you that evening."},
     {"heading": "Coach profile", "text": "Who your coach is, the character, how well you fit and how much you trust each other. The skills are a range that narrows week by week and is exact after eight weeks together. Below them is the training group."},
     {"heading": "Settings", "text": "What Play week stops for, and your saved rules, are at the bottom of the Training tab."}
    ]
@@ -148,7 +148,7 @@
     {"heading": "Who you can get", "text": "At 14 and 15: your club's coaches and a parent who competed in athletics. From 16, or once you reach the TF-juniorit standard: other clubs in your town, coaches in your region, national coaches and remote coaches. An athletics-centre town has more."},
     {"heading": "Coaches choose too", "text": "A coach may want a time from you first, or have no place this season. Club fees always fit; a personal coach must fit your family's monthly budget."},
     {"heading": "Offers", "text": "Coaches also write to you themselves, when they see a reason: a talent they think is wasted, a slump, fast progress, a best that reaches their group. An offer is only as good as the coach: a poor judge can misread you or promise too much. Nothing changes unless you start with the coach. Switch offers off on this page."},
-    {"heading": "Offers under 18", "text": "A coach does not write to an athlete under 18. He calls a parent, who tells you in the family thread. His offer waits on his page here, with the cost and the place kept for 30 days. \"Not now\" keeps him quiet for half a year."},
+    {"heading": "Offers under 18", "text": "A coach does not write to an athlete under 18. The coach calls a parent, who tells you in the family thread. The offer waits on the coach's page here, with the cost and the place kept for 30 days. \"Not now\" keeps that coach quiet for half a year."},
     {"heading": "Finding out more", "text": "Skills show as ranges. Look at the athletes' results, ask around (a teammate answers) or visit a session (that day becomes an easy run, or a rest day if it means travel). Eight weeks together make every skill exact.", "see": ["coach_distance"]},
     {"heading": "Changing coach", "text": "Ask to be coached; if the answer is yes, start on the next Monday. Your old coach, the group and the club will notice. A new coach starts as New trust, with a new group."},
     {"heading": "When a coach ends it", "text": "Only after weeks of Strained trust and two warning talks. Answering them well brings trust back. If it still ends, you choose your next coach from those who would take you."}
@@ -158,10 +158,10 @@
    "title": "A message that stops the week",
    "version": 4,
    "sections": [
-    {"heading": "Goals and suggestions", "text": "Your coach also writes about your season goals, when one is met or the season is looked back on, and when he suggests a meet to race or a target. Nothing is decided without you.", "see": ["standards"]},
+    {"heading": "Goals and suggestions", "text": "Your coach also writes about your season goals, when one is met or the season is looked back on, and when {he} {v:suggests|suggest} a meet to race or a target. Nothing is decided without you.", "see": ["standards"]},
     {"heading": "Why it stops", "text": "Your coach's Sunday talk always stops Play week. Other messages stop it when your answer really matters: a party the night before a race, the cottage week, your family on your report card. About one a week. Pick an answer to carry on."},
-    {"heading": "Your coach suggests a change", "text": "He wants to change a coming day, or advises you to scratch from a race. OK lets him. Veto keeps your plan: a reason costs nothing, but many vetoes without one cost a little trust.", "see": ["coach_changes"]},
-    {"heading": "The answers", "text": "The line under each button says what it may cost, like \"he will remember\". A talk without a question just needs \"Thanks, coach\"."},
+    {"heading": "Your coach suggests a change", "text": "{He} {v:wants|want} to change a coming day, or {v:advises|advise} you to scratch from a race. OK lets {him}. Veto keeps your plan: a reason costs nothing, but many vetoes without one cost a little trust.", "see": ["coach_changes"]},
+    {"heading": "The answers", "text": "The line under each button says what it may cost, like \"{he} will remember\". A talk without a question just needs \"Thanks, coach\"."},
     {"heading": "Later", "text": "The whole conversation stays in the People tab. What Play week stops for is a setting at the bottom of the Training tab."}
    ]
   },
@@ -181,12 +181,12 @@
    "sections": [
     {"heading": "The day at school", "text": "At the top: your day in four blocks (morning, school, training, evening) and how heavy the day is for you at school. Holidays are lighter. Tests in a busy week, late nights and two practices on a school day are heavier."},
     {"heading": "This week only", "text": "Changes here are for this one day of this week. Days already played and race days can't be changed. To change every week, use the Training tab."},
-    {"heading": "Your coach says", "text": "Under the sessions your coach tells you why you do the day. A coach who explains a lot gives the reason; a quiet one just says what to do. His voice follows his character."},
+    {"heading": "Your coach says", "text": "Under the sessions your coach tells you why you do the day. A coach who explains a lot gives the reason; a quiet one just says what to do. {His} voice follows {his} character."},
     {"heading": "Sessions", "text": "Swap a session, remove it, add a second one (two at most) or make the day a rest day. A greyed-out session isn't possible this time of year, or with your injury; the reason is in its name."},
     {"heading": "Easy, Normal, Hard", "text": "How hard you do the day. The day's load is shown next to what your plan has. Hard trains a bit more but strains the body much more.", "see": ["fatigue"]},
     {"heading": "Back to plan", "text": "A changed day says who changed it. Back to plan returns the day to your plan. The \"Season plan\" line says why the day looks as it does: a lighter week, easing in, an easy day before a race, the taper or easing back in after a layoff.", "see": ["easing_back_in"]},
-    {"heading": "Changed by your coach", "text": "A day your coach changed shows his reason at the top. Veto puts your plan back; then pick why. A reason costs nothing.", "see": ["coach_changes"]},
-    {"heading": "Ask your coach", "text": "At the bottom, ask your coach about the day as it stands, or about a race: race it or scratch? His answer shows right there.", "see": ["ask_coach"]},
+    {"heading": "Changed by your coach", "text": "A day your coach changed shows {his} reason at the top. Veto puts your plan back; then pick why. A reason costs nothing.", "see": ["coach_changes"]},
+    {"heading": "Ask your coach", "text": "At the bottom, ask your coach about the day as it stands, or about a race: race it or scratch? {His} answer shows right there.", "see": ["ask_coach"]},
     {"heading": "Injury limits", "text": "An injury or illness takes out what you shouldn't do. With a minor problem you can train through it, but it can make it worse and take longer to heal. \"Locked\" means it isn't allowed at all.", "see": ["injuries"]},
     {"heading": "Race day", "text": "On a race day you see the meet and your race form. If you are injured or ill, you can scratch (not start), and your coach may advise you to. A played day only shows what you did."}
    ]
@@ -195,7 +195,7 @@
    "title": "Before the race",
    "version": 7,
    "sections": [
-    {"heading": "Your coach suggests", "text": "A suggested plan and kick plan, in his own words. Use his plan fills in the choices below; you can still change them. His view is only as good as his race reading, and his character tilts it: a hard coach likes the front, a calm one waits, a warm one plays safe."},
+    {"heading": "Your coach suggests", "text": "A suggested plan and kick plan, in {his} own words. Use {his} plan fills in the choices below; you can still change them. {His} view is only as good as {his} race reading, and {his} character tilts it: a hard coach likes the front, a calm one waits, a warm one plays safe."},
     {"heading": "The field", "text": "The runners in your race (your section or heat at a championship), fastest personal best first, with this year's best (SB). Once you have raced a runner twice you also see how they run: Front runner, Pack runner, Kicker or Surger."},
     {"heading": "Sections and heats", "text": "Finnish championships run the 800 m in sections: the fastest runners in the last one, places and medals by time across all sections. PLACES says about what a medal and the top 8 will need. Senior and international meets have heats: the first few go through (Q), then the fastest of the rest (q)."},
     {"heading": "You", "text": "How you feel today, your race form, and a warning if you would race injured or ill.", "see": ["form"]},
@@ -221,7 +221,7 @@
     {"heading": "The card", "text": "A decision card sits beside the track (on a phone, in a sheet below it), so you can see what is happening while you choose. The race waits until you answer, and the action bar is dimmed meanwhile."},
     {"heading": "Your word", "text": "With self-talk in your mental training (Training tab), the cue word you picked shows on every card: the word you say to yourself when it hurts.", "see": ["mental_training"]},
     {"heading": "Commentary", "text": "A stadium announcer calls small meets; at championships a commentator and an expert explain what you may miss: moves that get away, kicks that die, boxes, heat runners easing off. Key moments flash over the top of the track. The newest line is also under the track (a phone: the ticker; tap it for the whole log, the race waits)."},
-    {"heading": "Your coach", "text": "Your coach sits in the stands: outdoors by the 200 m start (the diamond), indoors at the hall rail. He speaks only about what he can see: your splits as you pass him, the cards, your kick. Each coach has a personality: calm, hard, warm or tactical. About ten seconds after a choice you hear how it is working out."}
+    {"heading": "Your coach", "text": "Your coach sits in the stands: outdoors by the 200 m start (the diamond), indoors at the hall rail. {He} {v:speaks|speak} only about what {he} can see: your splits as you pass {him}, the cards, your kick. Each coach has a personality: calm, hard, warm or tactical. About ten seconds after a choice you hear how it is working out."}
    ]
   },
   "race_result": {
@@ -278,23 +278,23 @@
    "title": "Season goals",
    "version": 1,
    "sections": [
-    {"heading": "Three goals", "text": "With his plan for a season your coach offers three goals: a time you run, a milestone (a real limit or a place at a meet) and a habit (sessions you do, warnings you respect, races you run). You pick the level of each."},
-    {"heading": "Choosing a level", "text": "The arrows step through the levels, from Safe to Dream. The star marks the level he would pick; it follows how demanding he is. The words say how likely it is, in his eyes."},
-    {"heading": "His estimate", "text": "He plays your plan forward and guesses what you can run at the season's peak. A coach who judges you well sets goals that fit. A poor judge may set goals that are too easy or too hard, and you won't see it until the season shows.", "see": ["ask_coach"]},
+    {"heading": "Three goals", "text": "With {his} plan for a season your coach offers three goals: a time you run, a milestone (a real limit or a place at a meet) and a habit (sessions you do, warnings you respect, races you run). You pick the level of each."},
+    {"heading": "Choosing a level", "text": "The arrows step through the levels, from Safe to Dream. The star marks the level {he} would pick; it follows how demanding the coach is. The words say how likely it is, in {his} eyes."},
+    {"heading": "{His} estimate", "text": "{He} {v:plays|play} your plan forward and {v:guesses|guess} what you can run at the season's peak. A coach who judges you well sets goals that fit. A poor judge may set goals that are too easy or too hard, and you won't see it until the season shows.", "see": ["ask_coach"]},
     {"heading": "Real limits", "text": "A milestone can be a real limit of the Finnish Athletics Federation: the SM limit, the Team Finland criteria or the Kalevan kisat limit.", "see": ["standards"]},
-    {"heading": "When a goal is met", "text": "It counts as soon as you reach it: he writes to you and your trust in him grows, a little more if you chose a level above his. What is still open is settled when the season ends."},
-    {"heading": "When it is missed", "text": "A missed goal never costs you trust. He looks back with you after the meet or at the season's end. What you answer tells him how to set next season's goals: the same, higher or lower."},
+    {"heading": "When a goal is met", "text": "It counts as soon as you reach it: {he} {v:writes|write} to you and your trust in {him} grows, a little more if you chose a level above {his}. What is still open is settled when the season ends."},
+    {"heading": "When it is missed", "text": "A missed goal never costs you trust. {He} {v:looks|look} back with you after the meet or at the season's end. What you answer tells {him} how to set next season's goals: the same, higher or lower."},
     {"heading": "Where you see them", "text": "On the Overview and the Progress page, with how you stand. If you decided later, ask your coach for goals on the Overview."}
    ]
   },
   "dev_menu": {
    "title": "Dev menu",
-   "version": 2,
+   "version": 3,
    "sections": [
     {"heading": "What this is", "text": "A menu for testing the game, only in a test build (the game run from the Godot editor). A finished game does not show it. Nothing here counts as real play."},
     {"heading": "Watch a test race", "text": "Pick indoor or outdoor, sections or heats, and a meet level, then Start test race. A separate test career is played to such a race and the race opens. Your own saves are never touched and the test career is never saved."},
     {"heading": "The level", "text": "The meet's level decides who commentates: a stadium announcer at local and district meets, one commentator at a national championship, a commentator and an expert at international youth meets and on TV."},
-    {"heading": "Jump the career forward", "text": "Plays the career you have open to the next race day or to a date. The days are played for real and the game is saved once at the end. The jump stops early at a race or when something needs your answer."},
+    {"heading": "Jump the career forward", "text": "Plays the career you have open to the next race day or to a date. The days are played for real and the game is saved once at the end. Questions on the way get their default answer. A jump to a date also runs the races on the way as quick races, so it can reach the school years."},
     {"heading": "Test moments", "text": "Placeholder messages from your coach and training group. Open a career (Open my latest save), switch them On, then Go to the career and play. Important ones stop Play week as a panel; the rest wait and are listed here. Every moment makes all of them stop."},
     {"heading": "Back to your own career", "text": "After a test race, press Main menu and then Continue or Load. A test career shows TEST CAREER at the top and cannot be saved."}
    ]
@@ -394,7 +394,7 @@
     {"heading": "Motivation", "text": "Flat, Low, OK, Keen, Fired up. A coach you click with, new things and staying healthy lift it; the same training for months, a long layoff and stress wear it down. It changes how much your sessions train you, never what you do."},
     {"heading": "Stress", "text": "Calm, Busy, Stressed, Overwhelmed. A big meet coming, a long injury, training far above your normal and a strained coach raise it, and so does school: a week full of tests, an exam week, a matriculation exam, heavy study, late nights and two practices on a school day. Holidays ease it. It drags motivation down."},
     {"heading": "The middle does nothing", "text": "While confidence and motivation say OK and stress says Calm, nothing changes: you train and race as normal. Only the words around them matter."},
-    {"heading": "Your coach", "text": "In the Sunday talk your coach may mention a mood, and when one is low he asks how you are. A coach good at motivating lifts you more; a good mental coach brings confidence back faster."}
+    {"heading": "Your coach", "text": "In the Sunday talk your coach may mention a mood, and when one is low {he} {v:asks|ask} how you are. A coach good at motivating lifts you more; a good mental coach brings confidence back faster."}
    ]
   },
   "mental_training": {
@@ -456,20 +456,20 @@
    "title": "Your coach changes your days",
    "version": 2,
    "sections": [
-    {"heading": "Meets and targets", "text": "Your coach also suggests a meet to race or a meet to make a target, when he sees a reason: a gap in your racing, a tune-up before a target, a limit within reach. Never more than one a month. He never enters you himself: you say yes or no thanks.", "see": ["standards"]},
-    {"heading": "When he does it", "text": "Only when something catches his eye: sore legs, tired legs, a race close, or a lighter week you asked for in the Sunday talk. At most twice a week. A coach good at load management looks further ahead and sees more truly."},
-    {"heading": "Your setting", "text": "In Standing orders (Training tab). Ask me first: he sends the change as a message and Play week stops for it. Always, tell me: he changes the day and tells you. Never: he changes nothing, only says what he would have changed."},
+    {"heading": "Meets and targets", "text": "Your coach also suggests a meet to race or a meet to make a target, when {he} {v:sees|see} a reason: a gap in your racing, a tune-up before a target, a limit within reach. Never more than one a month. {He} never {v:enters|enter} you {himself}: you say yes or no thanks.", "see": ["standards"]},
+    {"heading": "When it happens", "text": "Only when something catches {his} eye: sore legs, tired legs, a race close, or a lighter week you asked for in the Sunday talk. At most twice a week. A coach good at load management looks further ahead and sees more truly."},
+    {"heading": "Your setting", "text": "In Standing orders (Training tab). Ask me first: {he} {v:sends|send} the change as a message and Play week stops for it. Always, tell me: {he} {v:changes|change} the day and {v:tells|tell} you. Never: {he} {v:changes|change} nothing, only {v:says|say} what {he} would have changed."},
     {"heading": "Veto", "text": "You decide. Veto keeps your plan, in the message or in the day. Give a reason and it costs nothing. Two silent vetoes in four weeks are fine; after that each one costs a little trust."},
-    {"heading": "Scratching", "text": "With an injury before a race he may advise you to scratch. He never scratches you himself: he always asks, and on Never he only says so. Ignoring a real warning of his costs a little trust."}
+    {"heading": "Scratching", "text": "With an injury before a race {he} may advise you to scratch. {He} never {v:scratches|scratch} you {himself}: {he} always {v:asks|ask}, and on Never {he} only {v:says|say} so. Ignoring a real warning of {his} costs a little trust."}
    ]
   },
   "ask_coach": {
    "title": "Ask your coach",
    "version": 1,
    "sections": [
-    {"heading": "What he answers", "text": "Good idea, Fine, Pointless or Risky, with his reason. He weighs the training you gain or lose, the injury risk and how fresh you will be for your next races."},
-    {"heading": "What he compares", "text": "A changed day or week against the plan; an unchanged one against an easier version; a race against scratching it. The line under his name says what he compared."},
-    {"heading": "He can be wrong", "text": "His view is only as good as he is. A coach strong in endurance, speed, load management and planning is nearly always right; a weak one can be wrong both ways. A demanding coach dislikes easy days, a careful one likes them."},
+    {"heading": "What {he} {v:answers|answer}", "text": "Good idea, Fine, Pointless or Risky, with {his} reason. {He} {v:weighs|weigh} the training you gain or lose, the injury risk and how fresh you will be for your next races."},
+    {"heading": "What {he} {v:compares|compare}", "text": "A changed day or week against the plan; an unchanged one against an easier version; a race against scratching it. The line under {his} name says what {he} compared."},
+    {"heading": "A coach can be wrong", "text": "A coach's view is only as good as the coach. A coach strong in endurance, speed, load management and planning is nearly always right; a weak one can be wrong both ways. A demanding coach dislikes easy days, a careful one likes them."},
     {"heading": "Just a question", "text": "Asking changes nothing and costs nothing, and it is not written into your messages. The same question on the same day gets the same answer."}
    ]
   }

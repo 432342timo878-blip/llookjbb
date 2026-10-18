@@ -52,6 +52,7 @@ $checks = @(
 	@{ name = "help_check (PC layout, window)"; args = "--rendering-driver opengl3 --resolution 1280x720 -s res://tools/help_check.gd"; marker = "ALL CHECKS PASSED"; limit = 400 },
 	@{ name = "people_answer_check (a thread's reply buttons work)"; args = "--headless -s res://tools/people_answer_check.gd"; marker = "ALL CHECKS PASSED"; limit = 300 },
 	@{ name = "week_views_check (the Training tab shows the week as it is)"; args = "--headless -s res://tools/week_views_check.gd"; marker = "ALL CHECKS PASSED"; limit = 300 },
+	@{ name = "f1_check (the 11 bugs of season playtest 2)"; args = "--headless -s res://tools/f1_check.gd"; marker = "ALL CHECKS PASSED"; limit = 400 },
 	@{ name = "day_engine_check"; args = "--headless -s res://tools/day_engine_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "health_check"; args = "--headless -s res://tools/health_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "form_check"; args = "--headless -s res://tools/form_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },

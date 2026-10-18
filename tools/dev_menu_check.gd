@@ -3,7 +3,8 @@ extends SceneTree
 ##   - the menu opens, its jump buttons are disabled without a career, "Start test race" makes a test career and opens the race
 ##   - a test career is never saved (the player's autosave file stays byte for byte as it was; no snapshot file appears), the
 ##     health model is off in it, and a new or loaded career ends test mode (saving works again, the health model is on)
-##   - a jump plays the career to a date (or stops at a race day / a stop event) and saves once
+##   - a jump plays the career to a date (stop events answered with their defaults, races run quickly: session F1) and saves once;
+##     a jump with no date stops at the next race day
 ## Run: godot --headless --path . -s res://tools/dev_menu_check.gd
 ## Saves go to user://tool_saves/, never over the player's own. Read stderr too (a SCRIPT ERROR may not show in the result).
 
@@ -105,15 +106,15 @@ func _run() -> void:
 	# 5. A jump in a real career: to a date, one autosave at the end
 	var target: Dictionary = DT.next_first_of(1)   # (1 Jan 2027 from 2 Nov 2026)
 	_ok(int(target.year) == 2027 and int(target.month) == 1, "the next 1 January from 2 Nov 2026 is in 2027 (%s)" % [target])
-	jump = DT.jump(target)
-	if jump.result in [game.DAY_DONE, game.WEEK_DONE]:
-		_ok(game.date.year == 2027 and game.date.month == 1 and game.date.day == 1, "a jump to 1 Jan ends on 1 Jan (today %s)" % [game.date])
-	else:
-		_ok(jump.result in [game.RACE, game.STOP], "a jump ends early only at a race or a stop event (%s)" % jump.result)
+	# (session F1: a date jump answers the stops with their defaults and runs the races on the way, so it always reaches the date)
+	jump = DT.jump(target, true)
+	_ok(game.date.year == 2027 and game.date.month == 1 and game.date.day == 1,
+			"a jump to 1 Jan ends on 1 Jan (today %s; %d stops answered, %d races run)" % [game.date, jump.stops, jump.races])
+	_ok(game.pending_event().is_empty(), "no stop event waits after the jump")
 	var saved := FileAccess.get_file_as_string(auto_path)
 	_ok(saved.contains("\"year\": %d" % int(game.date.year)), "the jump saved the career once at the end")
 	jump = DT.jump({})
-	_ok(jump.result in [game.RACE, game.STOP] or int(jump.days) == 800, "a jump with no date goes to a race day, a stop event, or the 800-day limit (%s, %d days)" % [jump.result, jump.days])
+	_ok(jump.result == game.RACE or int(jump.days) >= 800, "a jump with no date goes to a race day or the 800-day limit (%s, %d days)" % [jump.result, jump.days])
 
 	print("")
 	print("dev_menu_check: %d checks, %d failed -> %s" % [_checks, _fails, "ALL CHECKS PASSED" if _fails == 0 else "SOME CHECKS FAILED"])

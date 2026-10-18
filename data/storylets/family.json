@@ -263,13 +263,13 @@
 		},
 		{
 			"id": "fam_screen", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 40,
-			"when": {"age": [14, 16], "day_type": "weekday", "tomorrow_tags": ["hard", "speed"]},
+			"when": {"age": [14, 16], "day_type": "weekday", "tomorrow_tags": ["hard", "speed"], "flags": ["!phone_off_ten"]},
 			"text": [
-				"I saw the light under your door at midnight again. Phone off at ten, please.",
-				"You were on your phone until one o'clock. You have a hard session tomorrow, don't you?"
+				"Hard session tomorrow, isn't it? How about the phone goes off at ten on school nights?",
+				"You've got a hard session tomorrow. Phone off at ten tonight? Sleep is when the training sinks in."
 			],
 			"replies": [
-				{"id": "ok", "label": "OK, phone off at ten", "hint": "", "effects": {"relation": 2, "stress": -1},
+				{"id": "ok", "label": "OK, phone off at ten", "hint": "", "effects": {"relation": 2, "stress": -1, "flag": "phone_off_ten"},
 					"rule": "Phone off at ten on school nights", "result": "Thank you. Sleep is training too, your coach says.", "result_from": "sender"},
 				{"id": "one_more", "label": "Just one more video", "hint": "a late night", "effects": {"relation": -1, "sleep": -1},
 					"result": "That's what you said yesterday.", "result_from": "sender"}

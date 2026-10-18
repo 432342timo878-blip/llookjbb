@@ -44,7 +44,9 @@ const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "tea
 		"weekday", "tomorrow",
 		# session P1:
 		"mum", "dad", "parent", "sibling", "best", "friend", "partner", "rival", "class_teacher", "pe_teacher", "counsellor",
-		"town", "test_subject", "avg", "old_sport", "family_word"]
+		"town", "test_subject", "avg", "old_sport", "family_word",
+		# session F1: the coach's pronouns (CoachSystem.words; {He} and {v:a|b} are not lower-case names and pass the pattern)
+		"he", "him", "his", "himself"]
 ## Session P1: the senders of the cast (StoryletSystem.people_for) and their sub-selectors.
 const SENDERS := {"coach": [], "teammate": ["roles"], "partner": ["roles"], "family": [], "parent": ["mum", "dad", "athlete"],
 		"sibling": [], "best_friend": [], "friend": [], "friends": [], "school": ["class_teacher", "pe_teacher", "counsellor"],

@@ -402,8 +402,9 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 	var fill := _fill(ctx, p)
 	var replies := []
 	for rep in _valid_replies(s, ctx, p):
-		replies.append({"id": str(rep.id), "label": str(rep.label).format(fill), "hint": str(rep.get("hint", "")).format(fill)})
-	var body := _variant_text(s.text[vi]).format(fill)
+		replies.append({"id": str(rep.id), "label": CoachSystem.words(str(rep.label).format(fill)),
+				"hint": CoachSystem.words(str(rep.get("hint", "")).format(fill))})
+	var body := CoachSystem.words(_variant_text(s.text[vi]).format(fill))
 	var prefix := str(opts.get("prefix", ""))
 	var text := body if prefix == "" else (prefix if body == "" else prefix + "\n\n" + body)
 	var talk := bool(opts.get("talk", false))
@@ -856,8 +857,9 @@ func post_proposal(proposal_id: String, text: String, replies: Array, stop: bool
 		return {}
 	_start_threads()
 	var today := day_no(Game.date)
+	text = CoachSystem.words(text)
 	var m := {"id": "m%d" % _next, "kind": "proposal", "proposal": proposal_id, "storylet": "", "date": Game.date.duplicate(),
-			"day": today, "thread": "coach", "from": str(p.id), "text": text, "variant": 0, "replies": replies.duplicate(true),
+			"day": today, "thread": "coach", "from": str(p.id), "text": text, "variant": 0, "replies": _words_in(replies, {}),
 			"fill": {}, "expires": today + int(Data.moments.expires_days), "stop": false, "event": "", "answer": "",
 			"answered_day": -1, "auto": false, "talk": false}
 	_next += 1
@@ -881,8 +883,10 @@ func post_custom(kind: String, ref: String, text: String, replies: Array, stop: 
 	_start_threads()
 	var thread := str(opts.get("thread", "coach"))
 	var today := day_no(Game.date)
+	var about := _coach_record(str(p.id))
+	text = CoachSystem.words(text, about)
 	var m := {"id": "m%d" % _next, "kind": kind, "ref": ref, "storylet": "", "date": Game.date.duplicate(),
-			"day": today, "thread": thread, "from": str(p.id), "text": text, "variant": 0, "replies": replies.duplicate(true),
+			"day": today, "thread": thread, "from": str(p.id), "text": text, "variant": 0, "replies": _words_in(replies, about),
 			"fill": {}, "expires": today + int(opts.get("expires_days", Data.moments.expires_days)), "stop": false, "event": "",
 			"answer": "", "answered_day": -1, "auto": false, "talk": false}
 	if opts.has("title"):
@@ -893,6 +897,22 @@ func post_custom(kind: String, ref: String, text: String, replies: Array, stop: 
 	if stop:
 		_post_event(m, p)
 	return m
+
+
+## The coach record a person id names (a market coach's person id is his record id), else {} (= the head coach in CoachSystem.words).
+func _coach_record(pid: String) -> Dictionary:
+	var sys = Game.get_system("coach")
+	return sys.coaches.get(pid, {}) if sys != null else {}
+
+
+## Replies (id, label, hint) with the coach's pronouns filled (session F1).
+static func _words_in(replies: Array, about: Dictionary) -> Array:
+	var out := replies.duplicate(true)
+	for r in out:
+		for key in ["label", "hint"]:
+			if r.has(key):
+				r[key] = CoachSystem.words(str(r[key]), about)
+	return out
 
 
 ## A person of the coach market (session C6): a coach who is not (or not yet) the head coach, writing in the "coaches" thread.
@@ -1575,6 +1595,7 @@ static func thread_name(thread: String) -> String:
 func _message(thread: String, from: String, text: String, moment_id: String, date: Dictionary) -> void:
 	if not threads.has(thread):
 		threads[thread] = []
+	text = CoachSystem.words(text, _coach_record(from))   # (session F1: the coach's pronouns; already filled texts pass unchanged)
 	threads[thread].append({"id": "x%d" % _next, "date": date.duplicate(), "day": day_no(date), "from": from, "text": text,
 			"moment": moment_id, "read": from == "you" or from == "system"})   # (the player's own lines and the game's lines are never "new")
 	_next += 1

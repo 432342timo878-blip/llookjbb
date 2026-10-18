@@ -146,23 +146,23 @@ career simulator." Tried the Dev jump to reach the school choices and could not 
 
 | Note | Kind | Verified |
 |---|---|---|
-| "Marja" is not a he (the coach's texts) | bug | B: "he / his / him" hard-coded in the coach's UI and data texts (~300) |
-| "Confidence confident: you race a little faster at a meet like this" | text bug | B: the mood name and the word are glued |
-| Rippikoulu question though "I don't want to go" was answered | bug | B: `fr_rippi_together` has no `!rippi_none` condition |
-| Phone until 1 o'clock though phone off at ten / early sleep | bug | B: `fam_screen` states a fact the game never simulated, repeats 4x after the rule |
-| "It's a bit too much for your shins" after adding mobility & stretching | bug | B: mobility has no strain; his noise (`perceive`) made a risk out of nothing |
-| "Fresh enough" to go from Normal to Easy | bug | B: the reason `work` is used for lighter changes too (my fix of 2026-10-18 only softened the words) |
-| Asked the coach about my edit, she said fine, then proposed a change to that very day | bug | B: proposals do not remember "Ask the coach" |
-| Niggle before the race, skipped it, the coach said nothing before or after | gap | B: `Game.scratch_race` posts no coach reaction |
-| "Tell me if ... on Wednesday", nothing happens | text bug | B: a closing line with no mechanism |
-| 8/11 done this week vs 352 of 352 planned sessions | bug | B: two definitions of "done" (above) |
-| Dev jump cannot pass the school years, messages always interrupt | tool bug | B: `DevTools.jump` stops at every stop event |
+| "Marja" is not a he (the coach's texts) | bug | B: "he / his / him" hard-coded in the coach's UI and data texts (~300, ~70 of them visible); **fixed in F1**: `{he}` placeholders + `CoachSystem.words` |
+| "Confidence confident: you race a little faster at a meet like this" | text bug | B: the mood name and the word are glued; **fixed in F1** |
+| Rippikoulu question though "I don't want to go" was answered | bug | B: `fr_rippi_together` has no `!rippi_none` condition; **fixed in F1** |
+| Phone until 1 o'clock though phone off at ten / early sleep | bug | B: `fam_screen` states a fact the game never simulated, repeats 4x after the rule; **fixed in F1** (asks about tonight; never again after "phone off at ten") |
+| "It's a bit too much for your shins" after adding mobility & stretching | bug | B: mobility has no strain; his noise (`perceive`) made a risk out of nothing; **fixed in F1** (no strain moved = no risk noise) |
+| "Fresh enough" to go from Normal to Easy | bug | B: the reason `work` is used for lighter changes too (my fix of 2026-10-18 only softened the words); **fixed in F1** (`work_light`) |
+| Asked the coach about my edit, she said fine, then proposed a change to that very day | bug | B: proposals do not remember "Ask the coach"; **fixed in F1** |
+| Niggle before the race, skipped it, the coach said nothing before or after | gap | B: `Game.scratch_race` posts no coach reaction; **fixed in F1** (his message when you scratch; the "what this race did" card is L2) |
+| "Tell me if ... on Wednesday", nothing happens | text bug | B: a closing line with no mechanism; **fixed in F1** (19 lines) |
+| 8/11 done this week vs 352 of 352 planned sessions | bug | B: two definitions of "done" (above); **fixed in F1** (`WeekSim.session_count`; the habit goal itself is cut in 4.10) |
+| Dev jump cannot pass the school years, messages always interrupt | tool bug | B: `DevTools.jump` stops at every stop event; **fixed in F1** (default answers, quick races, "1 Aug" one / two years on) |
 | School test results never pop up (only on the School page) | gap | D |
 | Messages and school grades in one view: cluttered | UI | D |
 | Click-heavy, clutter, "what do my answers change?", repetitive options, texty, not pretty, "the coach's block of text" | the big one | D: consequences are small and invisible; the content pool is small and canned (the save: 101 variants, 240 moments) |
 | Wayyy too many events with "stop for every event" | setting | D: by design (every moment is a stop); the default is Important only |
 | I can't see if I'm too tired; want the whole week block when the coach suggests a change | missing | D / F |
-| "You see it in the day view" breaks the fourth wall | text | D |
+| "You see it in the day view" breaks the fourth wall | text | D; the line itself **rewritten in F1** |
 | "Listen to your shins" but I only see a popup | missing | D: the body is only visible in the Overview / day editor |
 | Season goals: what does met / missed mean; more milestone and habit options; a mid-season review | missing | D / F (met: +trust and a message; missed: a talk, no loss; there is no review before the end of the season) |
 | Compare my coach with the offered coaches (like FM) | missing | F |

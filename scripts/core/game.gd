@@ -216,7 +216,9 @@ func withdraw(meet_key: String) -> void:
 ## The player scratches from an entered race (doesn't start): the entry is withdrawn and that day becomes
 ## a training day again. Works before the day (the race is still only in the week) and on race day itself,
 ## when the race screen is waiting (`race_day`); then the day is still to be played, as a training day.
-func scratch_race(meet_key: String) -> void:
+## `cause` (session F1): "player" (the Calendar, the day editor, the sore warning), "school" (a busy test week) or "coach" (his
+## own scratch advice); the head coach says a line in his thread unless it was his advice (CoachTalk.scratch_line).
+func scratch_race(meet_key: String, cause := "player") -> void:
 	var meet := Calendar.get_meet(meet_key)
 	withdraw(meet_key)
 	if race_day != null and race_day.meet.key == meet_key:
@@ -228,6 +230,9 @@ func scratch_race(meet_key: String) -> void:
 	var health := get_system("health") as HealthSystem
 	if health:
 		health.refresh()   # injury limits for the day that was a race day
+	var ms := get_system("moments") as StoryletSystem
+	if ms != null and ms.active():
+		ms.coach_says(CoachTalk.scratch_line(meet, cause))
 
 
 ## The next entered meet from today on, or {}.
@@ -461,8 +466,18 @@ func _prune() -> void:
 ## [{id, label, detail}]; with none the player just acknowledges it ("ok"). A `stop` event pauses
 ## Play week until it is answered. Returns the event.
 func post_event(source: String, title: String, text: String, choices := [], stop := false) -> Dictionary:
-	var e := {"id": "e%d" % _next_event, "date": date.duplicate(), "source": source, "title": title,
-			"text": text, "choices": choices, "stop": stop, "answer": ""}
+	# Session F1: a coach text's pronoun placeholders are filled with the head coach's (texts about another coach come filled).
+	# (copies: the choices may be an array or dictionaries of the data files)
+	choices = choices.duplicate()
+	for i in choices.size():
+		var c = choices[i]
+		for key in ["label", "detail", "hint"]:
+			if c is Dictionary and c.has(key) and str(c[key]).find("{") >= 0:
+				c = c.duplicate()
+				c[key] = CoachSystem.words(str(c[key]))
+				choices[i] = c
+	var e := {"id": "e%d" % _next_event, "date": date.duplicate(), "source": source, "title": CoachSystem.words(title),
+			"text": CoachSystem.words(text), "choices": choices, "stop": stop, "answer": ""}
 	_next_event += 1
 	events.append(e)
 	return e

@@ -370,11 +370,77 @@ static func truth(change: Dictionary) -> Dictionary:
 	t.ref_s = ref
 	t.meet = meet
 	t.area = _area_name(start)
+	t.strain_moved = strain_moved(change)
 	var r := classify(t.train_w, t.risk_w, t.form_w, t.race_w)
 	t.total = r.total
 	t.verdict = r.verdict
 	t.reason = r.reason
 	return t
+
+
+## How much body strain a change moves (session F1, playtest 2: "a bit much for your shins" after adding mobility & stretching):
+## the sum over the changed days of |strain of the candidate's sessions - the base's| (data/training.json `strain` x the level's
+## strain), for a day change or a week plan; -1 = not known (a race, a meet, a target), so the coach's eye works as before.
+static func strain_moved(change: Dictionary) -> float:
+	var pairs := _day_pairs(change)
+	if pairs.is_empty():
+		return -1.0
+	var moved := 0.0
+	for p in pairs:
+		moved += absf(_day_strain(p[1]) - _day_strain(p[0]))
+	return moved
+
+
+## True when a change makes the days lighter (less load: data/training.json `load` x the level's load), for the reason's words
+## (session F1, playtest 2: "fresh enough" to go from Normal to Easy). False when not known.
+static func is_lighter(change: Dictionary) -> bool:
+	var moved := 0.0
+	for p in _day_pairs(change):
+		moved += _day_load(p[1]) - _day_load(p[0])
+	return moved < 0.0
+
+
+## The reason as said for this change: "work" on a lighter change is "work_light" (the key sessions count more after it), not
+## "you're fresh enough for it".
+static func reason_for(reason: String, change: Dictionary) -> String:
+	return "work_light" if reason == "work" and is_lighter(change) else reason
+
+
+## [[base day, candidate day], ...] of a day change or a week plan ({sessions, intensity}); [] for a race, a meet or a target.
+static func _day_pairs(change: Dictionary) -> Array:
+	var pairs := []
+	match str(change.get("kind", "")):
+		"day", "proposal", "request":
+			for x in change.get("days", []):
+				if bool(x.base.get("race", false)) or bool(x.cand.get("race", false)):
+					return []
+				pairs.append([x.base, x.cand])
+		"week":
+			for i in change.base.size():
+				var bp = change.base[i].get("plan")
+				var cp = change.cand[i].get("plan")
+				if bp != null and cp != null:
+					for d in 7:
+						pairs.append([{"sessions": bp.days[d], "intensity": bp.intensity[d]}, {"sessions": cp.days[d], "intensity": cp.intensity[d]}])
+					break
+	return pairs
+
+
+static func _day_load(day: Dictionary) -> float:
+	var mult := float(Training.intensity(str(day.get("intensity", WeekSim.NORMAL))).get("load", 1.0))
+	var sum := 0.0
+	for sid in day.get("sessions", []):
+		sum += float(Data.get_session(str(sid)).get("load", 0.0))
+	return sum * mult
+
+
+static func _day_strain(day: Dictionary) -> float:
+	var mult := float(Training.intensity(str(day.get("intensity", WeekSim.NORMAL))).get("strain", 1.0))
+	var sum := 0.0
+	for sid in day.get("sessions", []):
+		for v in Data.get_session(str(sid)).get("strain", {}).values():
+			sum += float(v)
+	return sum * mult
 
 
 static func _race_weight(meet: Dictionary, target_key := "") -> float:
@@ -497,8 +563,10 @@ static func perceive(t: Dictionary, coach: Dictionary, dice: int) -> Dictionary:
 			* (absf(float(t.train_end_w)) * rel + float(n.train_abs)))
 	var spd := float(t.train_spd_w) + rng.randfn(0.0, noise_sd(float(attrs.get("speed_strength_knowledge", 10)))
 			* (absf(float(t.train_spd_w)) * rel + float(n.train_abs)))
-	var risk := float(t.risk_w) + rng.randfn(0.0, noise_sd(float(attrs.get("load_management", 10)))
-			* (absf(float(t.risk_w)) * rel + float(n.risk_abs)))
+	var risk_noise := rng.randfn(0.0, noise_sd(float(attrs.get("load_management", 10))) * (absf(float(t.risk_w)) * rel + float(n.risk_abs)))
+	if float(t.get("strain_moved", -1.0)) == 0.0:
+		risk_noise = 0.0   # (session F1: a change that moves no strain has no risk he could misjudge; the draw stays for the dice order)
+	var risk := float(t.risk_w) + risk_noise
 	var form_noise := rng.randfn(0.0, noise_sd(float(attrs.get("periodization", 10))) * (absf(float(t.form_w)) * rel + float(n.form_abs)))
 	var form := float(t.form_w) + (form_noise if bool(t.races) else 0.0)
 	var dm: Dictionary = cfg().demands.get(str(coach.get("demands", "balanced")), cfg().demands.balanced)
@@ -518,6 +586,8 @@ static func judge(change: Dictionary, coach := {}) -> Dictionary:
 		coach = head_view()
 	var t := truth(change)
 	var seen := perceive(t, coach, seed_for(coach, change))
+	seen.reason = reason_for(str(seen.reason), change)
+	t.reason = reason_for(str(t.reason), change)
 	return {"verdict": seen.verdict, "word": word(seen.verdict), "reason": seen.reason, "truth": t, "seen": seen,
 			"text": say(seen, t, change, coach), "compare": compare_text(change)}
 

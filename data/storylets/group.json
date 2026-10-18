@@ -123,7 +123,7 @@
 			"when": {"memory": ["helped"], "memory_days": {"helped": [14, 120]}},
 			"text": [
 				"I ran my first race without dying! Your tips helped. Thank you!",
-				"{coach_first} said my drills look better. I told him you taught me."
+				"{coach_first} said my drills look better. I told {him} you taught me."
 			],
 			"replies": [
 				{"id": "proud", "label": "I'm proud of you!", "hint": "", "effects": {"relation": 4, "motivation": 2},

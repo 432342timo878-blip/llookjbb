@@ -39,7 +39,7 @@
 		},
 		"focus": {
 			"injured": "Follow the limits of your {injury}. Rest is the training now.",
-			"sore": "Listen to your {area}. Tell me if it gets worse.",
+			"sore": "Listen to your {area}: if it gets worse, ease off.",
 			"race_week": "Save your legs for {meet}. Sleep and eat well.",
 			"taper": "Trust the taper. Feeling restless is normal.",
 			"lighter": "Let the harder weeks sink in. Sleep is part of the training.",
@@ -53,7 +53,7 @@
 				"transition": "Switch off a little. Run for fun this week.",
 				"autumn_general": "Start gently. There is a whole year ahead."
 			},
-			"default": "Show up, do the work, and tell me how it feels."
+			"default": "Show up, do the work, and listen to your body."
 		}
 	},
 	"race": {
@@ -70,6 +70,14 @@
 			"bad": "It was not your best.",
 			"hurt": "That was a rough one."
 		}
+	},
+	"scratched": {
+		"_note": "Session F1 (playtest 2: 'a niggle before the race, I skipped it, the coach said nothing before or after'): the head coach's message in his thread when the player scratches from an entered race (Game.scratch_race; not when it was his own advice: he has answered that already). hurt = an injury or a sore area today; school = scratched for a busy test week; plain = no reason he can see. {meet} = the meet, {area} = the most loaded body area, {next} = the next entered race's line (next / no_next). The line is picked by the meet (no dice).",
+		"hurt": ["Good call on {meet}. Racing on sore {area} can cost you weeks; one race costs nothing.", "Right decision. {meet} isn't worth your {area}. We let it settle first."],
+		"school": ["Fine. School comes first this week; {meet} can wait.", "Understood. A busy school week is a good reason to skip {meet}."],
+		"plain": ["You've scratched from {meet}. Your call; we use the day for training.", "No {meet}, then. We'll make it a good training day instead."],
+		"next": "Next up: {next_meet} on {next_date}.",
+		"no_next": "Pick another race when you're ready."
 	},
 	"phase_why": {
 		"general_base": "This phase builds the engine. The training is easy on purpose: it makes everything later possible.",
@@ -170,7 +178,7 @@
 				"kept": "Every session done. That's the standard.",
 				"missed": "Sessions missing. That's not the standard.",
 				"none": "A whole week off. That's a problem.",
-				"sore": "You're sore. Tell me before it becomes an injury.",
+				"sore": "You're sore. Ease off before it becomes an injury.",
 				"race_pb": "Personal best. Good. Don't get comfortable.",
 				"race_good": "A decent race. We want more.",
 				"race_bad": "That race was below you. I expect more.",
@@ -202,7 +210,7 @@
 				"kept": "You did every session! I'm proud of you.",
 				"missed": "A few sessions missed, and that's all right. Life happens.",
 				"none": "A week off. Rest is allowed, you know.",
-				"sore": "A little soreness. Tell me if it grows, all right?",
+				"sore": "A little soreness. Be gentle with it, all right?",
 				"race_pb": "A personal best! I'm so proud of you!",
 				"race_good": "A lovely race. You should be happy.",
 				"race_bad": "It wasn't your day, and that's all right. We go again.",
@@ -241,7 +249,7 @@
 				"race_hurt": "A race with a fall or an injury tells us little. Recover first."
 			},
 			"focus_intro": ["The key point:"],
-			"close": ["Ask if you want the details.", "Any questions, ask."],
+			"close": ["Stick to the plan.", "That's the summary."],
 			"day": {
 				"easy": "Easy keeps your recovery on track.",
 				"hard": "A quality session. The pace matters more than the volume.",
@@ -250,7 +258,7 @@
 			},
 			"race": {
 				"pb": "Good data for the next plan. Recover tomorrow.",
-				"good": "Solid. I'll look at the splits and tell you what I see.",
+				"good": "Solid. The splits were close to the plan.",
 				"bad": "We will find the mistake. Not tonight; rest first.",
 				"hurt": "No conclusions from this one. Recover, then we continue."
 			}
@@ -273,7 +281,7 @@
 				"race_hurt": "A race like that gives no usable data. Recover first."
 			},
 			"focus_intro": ["The number to watch:"],
-			"close": ["The details are in the plan.", "Questions? Ask for the numbers."],
+			"close": ["The details are in the plan.", "The numbers don't lie."],
 			"day": {
 				"easy": "Easy keeps the heart rate low. That's the point.",
 				"hard": "A quality day. Hit the target splits, not faster.",
@@ -330,7 +338,7 @@
 				"kept": "Every single session! That's a champion's week!",
 				"missed": "A few missed, no drama. Next week we nail it!",
 				"none": "A week off. Recharged? Let's go again!",
-				"sore": "A bit sore. Tell me straight away if it grows!",
+				"sore": "A bit sore. Easy days are your friend right now!",
 				"race_pb": "A PERSONAL BEST! I'm still buzzing!",
 				"race_good": "A great race! You're on your way!",
 				"race_bad": "Not your day, and that's fine. The next one is yours!",
@@ -385,12 +393,13 @@
 		}
 	},
 	"verdict": {
-		"_note": "Session C4 (GDD 4.9.2 'Ask the coach'; CoachVerdict). words = the four verdicts. reasons = why, by the part of the change that decided it as HE sees it (rest = it lowers the injury risk, fresh = better Form at the race, work = the week gives more training (a lighter or a heavier day, whichever makes the key sessions count more), race = racing is worth it, risk / form = what makes it Risky, lose_work / form_loss / bit_risky / nothing = Pointless, fine / tradeoff = Fine); short = what a coach with communication <= detail.short_max says instead, detail = the extra sentence of one with >= detail.full_min. voice = his opening word per verdict. compare = the line that says what was compared. Placeholders: {area} (the most loaded body area), {meet}, {day}, {coach_first}, {name}.",
+		"_note": "Session C4 (GDD 4.9.2 'Ask the coach'; CoachVerdict). words = the four verdicts. reasons = why, by the part of the change that decided it as HE sees it (rest = it lowers the injury risk, fresh = better Form at the race, work = the week gives more training (a heavier day, or one that is not lighter; a LIGHTER change that gives more training says work_light instead: session F1, CoachVerdict.reason_for), race = racing is worth it, risk / form = what makes it Risky, lose_work / form_loss / bit_risky / nothing = Pointless, fine / tradeoff = Fine); short = what a coach with communication <= detail.short_max says instead, detail = the extra sentence of one with >= detail.full_min. voice = his opening word per verdict. compare = the line that says what was compared. Placeholders: {area} (the most loaded body area), {meet}, {day}, {coach_first}, {name}.",
 		"words": {"good": "Good idea", "fine": "Fine", "pointless": "Pointless", "risky": "Risky"},
 		"reasons": {
 			"rest": ["Your {area} have taken a lot lately; easing off now keeps you out of trouble.", "Your {area} could use the break, and it costs you very little."],
 			"fresh": ["You'll be fresher for {meet}.", "It leaves your legs fresh for {meet}."],
 			"work": ["You'll get more out of the week this way, and your body can take it right now.", "It makes the week better training, and you're fresh enough for it."],
+			"work_light": ["Easing off here lets the sessions that matter count for more.", "You'll get more out of the hard days if this one is lighter."],
 			"race": ["Race it. Racing is how you learn to race.", "Go and race. You're fit enough for it."],
 			"risk": ["Your {area} are already loaded. That's asking for an injury.", "That's a lot on your {area} right now. That's how injuries start."],
 			"form": ["So close to {meet}, you'd race on tired legs.", "That tiredness would still be in your legs at {meet}."],
@@ -402,7 +411,7 @@
 			"tradeoff": ["You give up a little, you gain a little. Either way works."]
 		},
 		"short": {
-			"rest": "Your {area} need it.", "fresh": "Fresher for {meet}.", "work": "More out of the week. Good.", "race": "Race it.",
+			"rest": "Your {area} need it.", "fresh": "Fresher for {meet}.", "work": "More out of the week. Good.", "work_light": "Better for the hard days.", "race": "Race it.",
 			"risk": "Too much on your {area}.", "form": "Too close to {meet}.", "lose_work": "You lose a session for nothing.",
 			"form_loss": "Takes your edge off.", "bit_risky": "Not worth it.", "nothing": "No difference.", "fine": "Fine.", "tradeoff": "Either way."
 		},
@@ -410,6 +419,7 @@
 			"rest": "One lighter day costs you little; an injury costs weeks.",
 			"fresh": "Hard work this close to a race doesn't make you fitter in time, it only makes you tired.",
 			"work": "The sessions that matter give you more when the week is built this way.",
+			"work_light": "Fitness comes from the key sessions, and they give more on fresher legs.",
 			"race": "The day's training would give you less than the race itself.",
 			"risk": "Soreness is the warning; most running injuries start when it's ignored.",
 			"form": "The fitness from it comes after the race; the tiredness comes right away.",
@@ -449,7 +459,7 @@
 			"phase": "Ask {coach_first} about this week",
 			"hide": "Hide",
 			"head": "{coach_first} on this",
-			"note": "His view is only as good as he is: a weak coach can be wrong both ways."
+			"note": "A coach's view is only as good as the coach: a weak one can be wrong both ways."
 		}
 	},
 	"proposal": {
@@ -480,7 +490,7 @@
 		"request_no": "You asked for {what}, but I'd keep the week as it is.",
 		"ignored": "You trained {day} as it was. I did say your {area} needed a break.",
 		"replies": {
-			"accept": {"label": "OK, do it", "hint": "He changes the day"},
+			"accept": {"label": "OK, do it", "hint": "{He} {v:changes|change} the day"},
 			"accept_scratch": {"label": "Scratch", "hint": "You won't start; an easy day instead"},
 			"veto_prefix": "Veto: ",
 			"race_prefix": "Race anyway: ",
@@ -497,11 +507,11 @@
 		"answered": {
 			"calm": {"accept": "Good. That's settled.", "veto": "Fair enough, your call.", "silent": "All right."},
 			"drill": {"accept": "Right. Done.", "veto": "Your call. Don't make me regret it.", "silent": "If you say so."},
-			"warm": {"accept": "Thank you! Look after yourself.", "veto": "Okay, you know your body. Tell me how it goes.", "silent": "Okay..."},
+			"warm": {"accept": "Thank you! Look after yourself.", "veto": "Okay, you know your body. Look after it.", "silent": "Okay..."},
 			"tactician": {"accept": "Logged.", "veto": "Noted. We'll see what the data says.", "silent": "Noted."},
 			"analyst": {"accept": "Updated.", "veto": "Noted. I'll compare the outcome.", "silent": "Logged."},
 			"mentor": {"accept": "Good.", "veto": "Your call. Be sensible.", "silent": "Hm."},
-			"motivator": {"accept": "Great! Sorted!", "veto": "Okay! Tell me how it feels!", "silent": "Oh. Okay!"},
+			"motivator": {"accept": "Great! Sorted!", "veto": "Okay! Go and make it count!", "silent": "Oh. Okay!"},
 			"speed": {"accept": "Good. Done.", "veto": "Your legs. Your call.", "silent": "Fine."}
 		},
 		"lines": {
@@ -512,9 +522,9 @@
 		},
 		"settings": {
 			"head": "Let the coach adjust my days",
-			"ask": {"name": "Ask me first", "text": "He sends you his change as a message with OK / Veto, and Play week stops for it."},
-			"always": {"name": "Always, tell me", "text": "He changes the day himself and tells you in a message. You can veto it in the day."},
-			"never": {"name": "Never", "text": "He changes nothing, but he notices: he says what he would have changed, and ignoring a real warning costs a little trust."}
+			"ask": {"name": "Ask me first", "text": "{He} {v:sends|send} you {his} change as a message with OK / Veto, and Play week stops for it."},
+			"always": {"name": "Always, tell me", "text": "{He} {v:changes|change} the day {himself} and {v:tells|tell} you in a message. You can veto it in the day."},
+			"never": {"name": "Never", "text": "{He} {v:changes|change} nothing, but {he} {v:notices|notice}: {he} {v:says|say} what {he} would have changed, and ignoring a real warning costs a little trust."}
 		},
 		"ui": {
 			"changed_head": "CHANGED BY {COACH}",

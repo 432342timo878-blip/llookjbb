@@ -366,7 +366,7 @@
 		},
 		{
 			"id": "fr_rippi_together", "thread": "friends", "from": "friends", "slot": "evening", "once": true,
-			"when": {"turns": [15, 15], "month": [2, 3], "seen": ["fam_rippi_choice"]},
+			"when": {"turns": [15, 15], "month": [2, 3], "seen": ["fam_rippi_choice"], "flags": ["!rippi_none"]},
 			"text": [
 				"Which rippikoulu camp did you choose? Half the class goes in July!",
 				"I'm going to the June camp. Tell me you're on the same one."

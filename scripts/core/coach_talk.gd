@@ -55,13 +55,14 @@ static func week_talk(ctx: Dictionary, fill: Dictionary, rng: RandomNumberGenera
 	var review := []
 	var facts: Dictionary = t.facts
 	var fs: Dictionary = {"done": last.done, "planned": last.planned}
+	var trained: Dictionary = {"done": last.done + last.extra, "planned": last.planned}
 	if last.done == 0 and last.planned > 0:
 		review.append(str(facts.sessions_none))
 	elif last.planned == 0:
-		if last.done > 0:
-			review.append(str(facts.sessions_free).format(fs))
-	elif last.done > last.planned:
-		review.append(str(facts.sessions_extra).format(fs))
+		if last.extra > 0:
+			review.append(str(facts.sessions_free).format(trained))
+	elif last.done == last.planned and last.extra > 0:
+		review.append(str(facts.sessions_extra).format(trained))
 	elif last.done == last.planned:
 		review.append(str(facts.sessions_all).format(fs))
 	elif last.done * 4 < last.planned * 3:
@@ -130,6 +131,7 @@ static func week_talk(ctx: Dictionary, fill: Dictionary, rng: RandomNumberGenera
 static func _last_week(w: WeekSim) -> Dictionary:
 	var done := 0
 	var planned := 0
+	var extra := 0
 	var fatigue := 0.0
 	var races := []
 	for r in w.played:
@@ -138,14 +140,12 @@ static func _last_week(w: WeekSim) -> Dictionary:
 		if str(r.race) != "":
 			races.append(str(r.race))
 			continue
-		done += r.sessions.size()
-		var ch: Dictionary = w.changes.get(d, {})
-		if ch.has("sessions") and str(ch.sessions.by) == "injury":
-			planned += r.sessions.size()   # (the injury took the rest out: not a missed session)
-		else:
-			planned += w.plan[d].size()
+		var n := w.session_count(d, r)   # (session F1: the one "done" of the game, as the habit goal counts it)
+		done += int(n.done)
+		planned += int(n.planned)
+		extra += int(n.extra)
 	var avg := fatigue / maxi(w.played.size(), 1)
-	var out := {"done": done, "planned": planned, "fatigue": avg, "feel": str(Training.fatigue_state(avg)[0]).to_lower(),
+	var out := {"done": done, "planned": planned, "extra": extra, "fatigue": avg, "feel": str(Training.fatigue_state(avg)[0]).to_lower(),
 			"sore": _sore_names(), "injuries": [], "races": []}
 	var h := Game.get_system("health") as HealthSystem
 	if h != null and HealthSystem.model_enabled:
@@ -178,6 +178,29 @@ static func _sore_names() -> Array:
 		if ids.has(a.id):
 			out.append(str(a.name).to_lower())
 	return out
+
+
+## The head coach's message when the player scratches from `meet` (session F1, playtest 2: he said nothing before or after):
+## why he thinks it was right (hurt: an injury or a sore area today; school: a busy test week; plain) and the next race. `cause` =
+## Game.scratch_race's: "coach" (his own advice, answered already) = "". The line is picked by the meet's key (no dice).
+static func scratch_line(meet: Dictionary, cause: String) -> String:
+	if cause == "coach" or meet.is_empty():
+		return ""
+	var c: Dictionary = cfg().scratched
+	var kind := "school" if cause == "school" else "plain"
+	var h := Game.get_system("health") as HealthSystem
+	if h != null and HealthSystem.model_enabled and h.started:
+		var hurt := not h.injuries.filter(func(i): return str(i.tier) != "illness").is_empty()
+		for area in HealthSystem.areas():
+			hurt = hurt or h.soreness_level(area.id) >= HealthSystem.SORE
+		if hurt:
+			kind = "hurt"
+	var list: Array = c[kind]
+	var fill := {"meet": str(meet.get("name", "")), "area": CoachVerdict._area_name(CoachVerdict.now_start())}
+	var text := str(list[absi(str(meet.get("key", "")).hash()) % list.size()]).format(fill)
+	var nxt := Game.next_race()
+	var tail := str(c.no_next) if nxt.is_empty() else str(c.next).format({"next_meet": str(nxt.name), "next_date": Calendar.format_day(nxt.date)})
+	return text + " " + tail
 
 
 ## The athlete's last result at a meet (the race of the week), or {}.

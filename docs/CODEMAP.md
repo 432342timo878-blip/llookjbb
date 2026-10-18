@@ -40,6 +40,13 @@ Read the paragraphs below with these in mind; they win where they disagree.
   saved as `courses_mode` only when not "ask"), shown in `StandingOrders` from grade 9 on (`data/lukio.json standing`). In
   "counsellor" mode `SchoolLukioPart._post_courses` posts a message instead of the stop. A period's results are a message (the event
   without a stop + a line in the school thread) unless a course failed (grade 4): then the old results stop.
+- **Session F1 (playtest-2 bugs, GDD 4.10 "Built (step F1)"):** the coach's pronouns are placeholders `{he} {him} {his} {himself}`
+  (`{He}` … capitalised) + `{v:singular|plural}` filled by `CoachSystem.words(text, coach)` (head coach when `coach` = {}); it runs in
+  `StoryletSystem` (posts, thread messages), `Game.post_event` and `UIKit.label / button / toggle`; a text about another coach is filled
+  with that coach's record first. **Never write a bare he / his / him in a coach text** (`tools/f1_check.gd` scans the data). Also:
+  `CoachVerdict.strain_moved` (no strain moved = no risk noise) and `reason_for` (`work_light`), `CoachProposals.note_asked / asked_about`
+  (saved `asked`), `Game.scratch_race(meet, cause)` + `CoachTalk.scratch_line`, `WeekSim.session_count` (the one "done"),
+  `DevTools.jump(until, pass_races)` + `default_answer` + `first_of_after`, `MindUI.race_text`.
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

@@ -61,7 +61,11 @@ func _show_button() -> void:
 
 ## Asks him (the tools call this too).
 func press() -> void:
-	last = CoachVerdict.judge(_make.call())
+	var change: Dictionary = _make.call()
+	last = CoachVerdict.judge(change)
+	var cp := Game.get_system("proposals") as CoachProposals
+	if cp != null:
+		cp.note_asked(change)   # (session F1: no proposal of his on a day you just asked him about)
 	_clear()
 	add_child(card(last, func():
 		_show_button()

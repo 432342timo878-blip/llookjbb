@@ -115,10 +115,15 @@ static func race_line(meet: Dictionary) -> Control:
 	if t == 0.0:
 		return null
 	var w := ms.word("confidence")
-	var l := UIKit.wrapped(str(ui().race_line).format({"word": str(w.name).to_upper(),
-			"effect": str(ui().race_faster if t > 0.0 else ui().race_slower)}), "")
+	# (session F1, playtest 2: "Confidence confident" read as one glued phrase; now the mood, its word, then the effect)
+	var l := UIKit.wrapped(race_text(str(w.name), t), "")
 	l.add_theme_color_override("font_color", w.color)
 	return l
+
+
+## The confidence line's text: "Confidence: Confident. You race a little faster at a meet like this." (`term` > 0 = faster).
+static func race_text(word_name: String, term: float) -> String:
+	return str(ui().race_line).format({"word": word_name, "effect": str(ui().race_faster if term > 0.0 else ui().race_slower)})
 
 
 ## "Your word: Smooth" for the race cards, or "" without self-talk in the mental plan.

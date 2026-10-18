@@ -171,7 +171,7 @@ func _build() -> void:
 			l.custom_minimum_size.x = 56
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			row.add_child(l)
-		attrs.add_child(UIKit.tap_to_explain(row, str(at.description)))
+		attrs.add_child(UIKit.tap_to_explain(row, CoachSystem.words(str(at.description), c)))
 	var need := int(Data.market.scouting.together_weeks)
 	var note := str(cfg.exact_note).format({"weeks": weeks}) if exact else (str(cfg.range_note).format({"weeks": weeks, "need": need})
 			if is_head or weeks > 0 else str(mui.scout_note).format({"weeks": need}))

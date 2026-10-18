@@ -11,8 +11,8 @@
 			],
 			"replies": [
 				{"id": "bored", "label": "I'm bored of the same training", "hint": "Something new would lift you", "effects": {"trust": 1, "motivation": 1, "flag": "said_bored"},
-					"result": "Fair. Then let's change something: a new session in the week, or the week itself in the Training tab. Variety keeps the head fresh.", "result_from": "sender"},
-				{"id": "tired", "label": "I'm just tired", "hint": "He may lighten your week", "effects": {"trust": 1, "motivation": 1, "proposal": "lighter_week"},
+					"result": "Fair. Then let's change something: a new session in the week, or a different week altogether. Variety keeps the head fresh.", "result_from": "sender"},
+				{"id": "tired", "label": "I'm just tired", "hint": "{He} may lighten your week", "effects": {"trust": 1, "motivation": 1, "proposal": "lighter_week"},
 					"result": "Then we take a little off this week. Tired and flat often go together.", "result_from": "sender"},
 				{"id": "fine", "label": "I'm fine", "hint": "", "effects": {},
 					"result": "All right. My door is open if that changes.", "result_from": "sender"}
@@ -44,10 +44,10 @@
 				"{name}, you look stressed. Is it the training, or something else?"
 			],
 			"replies": [
-				{"id": "lot", "label": "Yes, a lot going on", "hint": "He may lighten your week", "effects": {"trust": 1, "stress": -1, "proposal": "lighter_week"},
+				{"id": "lot", "label": "Yes, a lot going on", "hint": "{He} may lighten your week", "effects": {"trust": 1, "stress": -1, "proposal": "lighter_week"},
 					"result": "Then training should be the easy part this week. We take a little off.", "result_from": "sender"},
 				{"id": "manage", "label": "I can manage", "hint": "", "effects": {"stress": -1},
-					"result": "Good. Breathe, sleep, and tell me if it gets too much.", "result_from": "sender"},
+					"result": "Good. Breathe, sleep, and keep the easy days easy.", "result_from": "sender"},
 				{"id": "leave", "label": "I don't want to talk about it", "hint": "{coach_first} will let it be", "effects": {},
 					"result": "That's fine. I'm here if you do.", "result_from": "sender"}
 			]

@@ -59,10 +59,10 @@
 				"back_crowd": "A big field: the middle gets crowded. Wait at the back, stay out of trouble and use your finish."
 			},
 			"thresholds": {"strong": 0.3, "kicker": 0.3},
-			"use": "Use his plan",
+			"use": "Use {his} plan",
 			"used": "Plan set. You can still change it.",
-			"hint": "Only a suggestion: it is your race. His view is only as good as his race reading.",
-			"watch_hint": "In a race you watch, he shouts on the cards, as before."
+			"hint": "Only a suggestion: it is your race. {His} view is only as good as {his} race reading.",
+			"watch_hint": "In a race you watch, {he} {v:shouts|shout} on the cards, as before."
 		}
 	},
 	"suggest": {
@@ -87,7 +87,7 @@
 			"no_thanks": "No thanks",
 			"calendar_meet": "{reason}",
 			"calendar_target": "{reason}",
-			"settings_note": "Meets and targets: he suggests them, you decide. He never enters a meet by himself."
+			"settings_note": "Meets and targets: {he} {v:suggests|suggest} them, you decide. {He} never {v:enters|enter} a meet by {himself}."
 		},
 		"intro": {
 			"calm": "I've been looking at the calendar.",
@@ -111,7 +111,7 @@
 		"replies": {
 			"accept_meet": {"label": "Yes, enter it", "hint": "It goes in your calendar and replaces that day's training"},
 			"accept_target": {"label": "Yes, make it a target ◆", "hint": "Entered, with the season plan built round it"},
-			"decline": {"label": "No thanks", "hint": "He won't suggest it again"}
+			"decline": {"label": "No thanks", "hint": "{He} won't suggest it again"}
 		},
 		"answered": {
 			"calm": {"accept": "Good. I've put it in.", "decline": "Fair enough."},
