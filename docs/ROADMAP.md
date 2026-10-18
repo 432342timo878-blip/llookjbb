@@ -461,22 +461,69 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         Check: `run_all_checks` (full), `training_balance -- 0`, `school_fingerprint`, `quick_fingerprint` identical; layout
         check + tour for the changed screens.
   - [x] **Season playtest 2 by the user** *(done 2026-10-18; notes sorted in `docs/PLAYTESTS.md` "Season playtest 2")*: verdict: a tedious micromanagement clicker, boring non-immersive races, "I don't know why things happen or whether anything matters". The user chose (2026-10-18): the design session next, the stops unchanged until then.
-  - [ ] **Design session after playtest 2** *(Opus, high; no code; the user's pick, 2026-10-18)*: one conversation that decides what a week and a season should FEEL like before any more building. Brief: (1) **causes made visible**: a "why" view for the body, Form, mood and the week's result, what every answer changed, effects after each race (attributes, relationships, mood); (2) **far fewer, richer stops** (real decisions only; state-aware moments that remember choices; the pool was 101 variants for 240 moments in a season, 35 never answered; consider cutting or merging systems that do not pay off: proposals 38 of 40 "lighter", the habit goal, the Q&A events); (3) **more to play with**: training and development depth (a skill tree?), the training group's real effect, new friends, camps, warm-up and cool-down, goal reviews; (4) **race presentation and the UI overhaul** pulled forward if the user wants (research: real race graphics, zoom, a visual direction the user picks); (5) the career-simulator essence (the user: "we have lost it"). Input: `docs/PLAYTESTS.md` (playtest 2 table and the save analysis), `docs/AUDIT.md` check-in 2026-10-18 part 3. Output: decisions in the GDD, a new roadmap order. The confirmed bugs of the playtest 2 table (coach pronouns, the rippi / phone / "confidence confident" texts, the lighter-day reason, ask-then-propose, scratch reaction, the habit counter, the Dev jump) are built right after that design, or inside it.
-  - [ ] **D2. Real schools (research + data, then a short build)** *(user 2026-10-18, after P1: "Upper secondary school
-        (Sastamala)" is a placeholder from S3a, not research)*: for every game town the real general lukiot (with their published
-        lowest accepted averages, 5 or 6 periods), the real vocational schools (athletics-friendly programmes) and the real
-        grades 7-9 schools, each fact with its source and read date, unverified ones marked; then the application, the School page
-        and the lukio calendar use them instead of the town-named placeholders. *(Opus, high)*
-  - [ ] **P2. Moments part 2 (ages 16–17, school chains, milestones), standing-order rules.** *(Opus, high)*
-  - [ ] **G1. Test days + Rep by rep** (one shared played-session screen, Auto, training PBs). *(Opus, high)*
-  - [ ] **G2. Race rehearsal + Video review.** *(Sonnet, high)*
-  - [ ] **G3. Camp week + Warm-up routine.** *(Sonnet, high)*
-  - [ ] **B1. Balance session:** every target of GDD 4.9.7 over many seasons (`career_check`, `season_check`, `storylet_check`).
+  - [x] **Design session after playtest 2** *(done 2026-10-18: **GDD 4.10 "plan → play → see"**: the Sunday planner as the one weekly stop, mid-week stops only for real ones, the coach's changes as notes on the planner, causes visible, goals with stakes, people as state + 9 free-time slots, new people and a first relationship from ~15, the training group's pull, focus blocks + unlocks + a skill tree earned by doing, two race prototypes, the look pulled forward, a Career tab + reputation + season review; the cut list is in 4.10; the old D2 / P2 / G1-G3 / B1 / UI-overhaul list below is replaced by the new order)* *(Opus, high; no code; the user's pick, 2026-10-18)*: one conversation that decides what a week and a season should FEEL like before any more building. Brief: (1) **causes made visible**: a "why" view for the body, Form, mood and the week's result, what every answer changed, effects after each race (attributes, relationships, mood); (2) **far fewer, richer stops** (real decisions only; state-aware moments that remember choices; the pool was 101 variants for 240 moments in a season, 35 never answered; consider cutting or merging systems that do not pay off: proposals 38 of 40 "lighter", the habit goal, the Q&A events); (3) **more to play with**: training and development depth (a skill tree?), the training group's real effect, new friends, camps, warm-up and cool-down, goal reviews; (4) **race presentation and the UI overhaul** pulled forward if the user wants (research: real race graphics, zoom, a visual direction the user picks); (5) the career-simulator essence (the user: "we have lost it"). Input: `docs/PLAYTESTS.md` (playtest 2 table and the save analysis), `docs/AUDIT.md` check-in 2026-10-18 part 3. Output: decisions in the GDD, a new roadmap order. The confirmed bugs of the playtest 2 table (coach pronouns, the rippi / phone / "confidence confident" texts, the lighter-day reason, ask-then-propose, scratch reaction, the habit counter, the Dev jump) are built right after that design, or inside it.
+  **The new order (agreed 2026-10-18, GDD 4.10; the loop first, the look pulled forward, a playtest by the user after the loop).**
+  Every session: lab fingerprints identical unless it is meant to change them (R7), help entries for anything new, `run_all_checks
+  -Quick` while working and the full run at the end, layout check + tour for changed screens, a commit and "Push origin".
+  - [ ] **F1. Playtest-2 bug fixes** (the 11 confirmed bugs of `docs/PLAYTESTS.md`'s table): (1) the coach's pronouns from the coach's
+        gender, not a hard-coded "he" (~300 texts: placeholders); (2) "Confidence confident" (the mood name and word glued); (3) the rippi
+        question needs `!rippi_none`; (4) `fam_screen` "phone until one" contradicts the phone rule (tie it to the rule or drop it); (5)
+        mobility "a bit much for your shins" (no strain = no risk in the coach's noise); (6) the "fresh enough" reason on a lighter change;
+        (7) a proposal on a day the player just asked the coach about (proposals remember "Ask the coach"); (8) the coach's reaction to a
+        scratched race (before and after); (9) closing lines that promise a mechanism ("tell me … on Wednesday") and name the UI ("you see it
+        in the day view"); (10) one definition of a "done" session (the habit counter vs the Sunday talk); (11) the Dev jump passes stops
+        (answers them with the default) so the school years can be reached. *(Sonnet, high)*
+        Done: each bug has a check that fails before and passes after; fingerprints identical; the user's save still loads.
+  - [ ] **V1. The look: visual direction** (research: FM, sports-broadcast graphics, running apps such as Strava / Garmin, mobile sports
+        managers; three directions as mock-ups; the user picks; written into GDD 5 with colours, type, density and icon style; D28
+        revisited). No game code. *(Opus, high)*
+        Done: a chosen direction in the GDD, and the week planner shown in it as a mock-up.
+  - [ ] **L1. The week planner** (GDD 4.10 decision 1): the Sunday planner replaces the Sunday talk popup; the coach's notes on days (only
+        when his truth is not "Fine"; Make it easy / Keep mine); proposals are no longer stops; the mid-week stop rule; race weeks shown with
+        the plan's own taper; the Training tab becomes the season plan; the 9 free-time slots with standing habits (neutral habit in `lab`);
+        built in V1's look; save version 5 (older saves load). *(Opus, high)*
+        Done: a normal week = 2 clicks; `season_playtest` measures ≤ 1 mid-week stop a week on average and weeks that play through.
+  - [ ] **L2. Causes visible** (decision 2): body bars with % and warning lines, Form with its factors, moods with causes, the week report
+        column (one "done"), the "what this race did" card (incl. a scratch), effects as words + what they do with numbers on a tap.
         *(Opus, high)*
+        Done: every number the player cares about has a "why" one tap away; the tour shows each.
+  - [ ] **L3. The cuts + goals + school page** (decisions 3–5 and the cut list): sort P1's ~150 storylets into delete / feed / invitation /
+        story beat, a "never contradict" check in `storylet_check`, the habit goal and the cue word cut, mental training as sessions, the
+        goals menu with stakes + the two reviews, the School page apart from the messages with tests in the week report. *(Opus, high)*
+        Done: the cut list done; `storylet_check` finds no contradicting or promising lines; stops a week measured.
+  - [ ] **K1. Career tab + the next big thing + reputation + the season review** (decision 10). *(Sonnet, high)*
+        Done: every result in one list, the milestones timeline, the Overview's countdown and long path, a season ends as a chapter.
+  - [ ] **Season playtest 3 by the user** (6–8 weeks of the new loop is enough): does a week feel like plan → play → see? Notes into
+        `docs/PLAYTESTS.md`; the sizes of things are tuned after it (memory: feel it before tuning).
+  - [ ] **P2. People as state** (decision 6, replaces the old "moments part 2"): new people from places, person pages, friendship by
+        shared time and fading, invitations from the calendar and the state, a first relationship from ~15, the training group's card
+        (level, fixed days, pull, leaving it), Find a coach's comparison, moments for ages 16–17 in the new form. Research first: Finnish
+        teens' time use, sleep and dating age; training group sizes and schedules. *(Opus, high)*
+        Done: a friend can be made and lost through slots; the group's pull shows in the week report; `storylet_check` covers the new kinds.
+  - [ ] **R6. Race presentation** (decision 8): research (athletics TV graphics, World Athletics track specs outdoor + indoor, Godot 2D /
+        2.5D techniques, CC0 runner art), then **two short prototypes** (TV-style 2D and a 2.5D broadcast angle) for the user to pick from,
+        then the build: the stadium from specs, figures, follow camera + zoom, TV graphics, the kick slow-motion setting (Off / Short /
+        Full), plain labels. Presentation only: the races hash stays. *(Opus, high)*
+        Done: the user picked a prototype; `race_check`, `layout_check`, the tour; races hash identical.
+  - [ ] **R7. Race controls + "Move in" + the race-day timeline + competitiveness** (the backlog's race-controls design, the warm-up /
+        cool-down timeline, the tree's race-craft nodes if T1 is done): a race session that changes the engine on purpose. *(Opus, high)*
+        Done: a new deliberate races hash recorded; `race_shape`, `race_rounds`, `race_check`.
+  - [ ] **G1. Test days + Rep by rep** (one shared played-session screen, Auto, training PBs; research: youth test batteries and norms).
+        *(Opus, high)*
+  - [ ] **G3. Camp weeks** (the Pajulahti grade 7–9 camps, club, district and holiday camps, later TF camps; research: dates and costs;
+        new people from camps). *(Sonnet, high)*
+  - [ ] **T1. Development: focus blocks + real unlocks + the skill tree** (decision 7; research: SUL's youth path for weights, double
+        days, altitude camps; the race-craft nodes wait for or join R7). *(Opus, high)*
+  - [ ] **G2. Race rehearsal + Video review.** *(Sonnet, high)*
+  - [ ] **D2. Real schools (research + data, then a short build)** *(independent: can run beside any session above)* *(user 2026-10-18,
+        after P1: "Upper secondary school (Sastamala)" is a placeholder from S3a, not research)*: for every game town the real general
+        lukiot (with their published lowest accepted averages, 5 or 6 periods), the real vocational schools (athletics-friendly
+        programmes) and the real grades 7-9 schools, each fact with its source and read date, unverified ones marked; then the
+        application, the School page and the lukio calendar use them instead of the town-named placeholders. *(Opus, high)*
+  - [ ] **Restyle the remaining screens** in V1's look (with layout_check, the tour and help_check updated). *(Sonnet, high)*
+  - [ ] **B1. Balance session:** every target of GDD 4.9.7 + 4.10 over many seasons in the `real` preset (`career_check`, `season_check`,
+        `storylet_check`, the slots' and the group's effect sizes). *(Opus, high)*
   - Then the user's playtest and the **check-in at the end of M2** *(Opus)*. Gym day comes with the specialists (later).
-  - Then the **UI overhaul** *(user 2026-10-18: "things are looking a bit too AI"; after M2 entirely)*: a design session first
-    (reference games and screenshots, a visual direction the user picks, written into the GDD), then the theme and every screen
-    rebuilt, with layout_check, the tour and help_check updated. *(Opus, high)*
 - [x] Coaching (original item; designed above) (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
       over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10).
       From the season playtest (user, 2026-10-10: "small choices; it needs to be more interactive with the coaches and

@@ -15,9 +15,11 @@ talent balance). M2 part 2 built so far: the coaching + school + people design (
 People tab + Sunday talk, proposals + Veto, goals + race advice, the coach market), M1 (the mind), D1 (research data), S1–S3b (school,
 the application, lukio, matriculation), P1 (the cast + moments for ages 14–15). Three check-ins done (2026-10-10, 10-11, 10-18); the
 fix session after the third one (TUVA, offers to minors through a parent, `GameConfig`, `-Quick`, split school file, the lukio
-courses setting, this trimmed file) is in `docs/GDD.md` "Built (check-in fixes 2026-10-18)". Next: the user's season playtest 2, then
-D2 (real schools) → P2 → G1–G3 → B1 (balance), then the check-in at the end of M2; races from 23 on need more meets (research
-beside the design); the race-controls idea needs its own design session. Youth opponents stay fictional (minors); real athletes
+courses setting, this trimmed file) is in `docs/GDD.md` "Built (check-in fixes 2026-10-18)". Season playtest 2 (2026-10-18: "a tedious
+micromanagement clicker") led to the redesign **GDD 4.10 "plan → play → see"** (read it before any work on the week, the people or the
+UI: one Sunday planner, mid-week stops only for real decisions, causes visible, people as state + free-time slots). Next, in
+`docs/ROADMAP.md` order: F1 (the 11 playtest bugs) → V1 (the look) → L1–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
 ## How to run and check (Windows PC of the user)

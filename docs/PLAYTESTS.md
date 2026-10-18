@@ -178,7 +178,12 @@ career simulator." Tried the Dev jump to reach the school choices and could not 
 | Race: 2D blobs on a horrible-looking track; bigger arenas need zoom; realistic graphics (needs research) | big | F: race presentation |
 | Race: effects on me, my attributes, my relationships; pre-race warm-up and post-race cool-down | missing | F |
 | All my race results in one list (the Overview skims it) | missing | F |
-| In race season the Training tab and the day-by-day view differ | bug | B, **fixed 2026-10-18**: the Training tab's "This week" listed the season plan's template, not the week as it is (races, played days, changes by you / the coach / an injury); it now lists the same days as the strip (	ools/week_views_check.gd) |
-| In People I cannot choose any option in the chats (with "Important only") | bug | B, **fixed 2026-10-18**: the reply buttons called the handler with the moment and the reply swapped (a ind on a ind), so every answer given in a thread silently did nothing; only the stop popups worked. This is also why 35 messages were "never answered". 	ools/people_answer_check.gd presses the buttons (it fails without the fix) |
+| In race season the Training tab and the day-by-day view differ | bug | B, **fixed 2026-10-18**: the Training tab's "This week" listed the season plan's template, not the week as it is (races, played days, changes by you / the coach / an injury); it now lists the same days as the strip (`tools/week_views_check.gd`) |
+| In People I cannot choose any option in the chats (with "Important only") | bug | B, **fixed 2026-10-18**: the reply buttons called the handler with the moment and the reply swapped (a `bind` on a `bind`), so every answer given in a thread silently did nothing; only the stop popups worked. This is also why 35 messages were "never answered". `tools/people_answer_check.gd` presses the buttons (it fails without the fix) |
 | A deep skill tree; "we have lost the essence of a career simulator"; the training is monotonous | direction | D: for a design session |
 | Wants "see from the save how my year went": done above | | |
+
+**What came of it (design session, 2026-10-18):** GDD 4.10 "plan → play → see" answers the table: the D and F rows are decisions
+there (the planner, causes visible, people as state, depth, races, the look, the Career tab); the B rows are session F1 in
+`docs/ROADMAP.md`. The two "?" rows turned out to be bugs and were fixed the same day (above; the thread-reply bug explains many of the 35
+"never answered" moments); with one week view (4.10 decision 1) the Training tab and the day view cannot differ again.

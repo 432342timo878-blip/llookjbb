@@ -1,6 +1,6 @@
 # Game Design Document — Track & Field Career (working title)
 
-Version 0.11 — 2026-10-11 (the Coaching + School design: 4.9; the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
+Version 0.12 — 2026-10-18 (the redesign after season playtest 2, "plan → play → see": 4.10; earlier: the Coaching + School design: 4.9; the talent balance session: 4.2 "Talent balance"; the check-in after step 7, `docs/AUDIT.md`: 4.2 corrected; step 7, the multi-year check: 4.2 "Multi-year check"; earlier: the realism audit,
 `docs/AUDIT.md`; meet formats, 4.3.1 decisions 28–34; race realism R1–R5, M2 steps 3–6). Living document: updated after
 each design discussion.
 
@@ -2430,6 +2430,10 @@ messages. Step 6's club coach only offers data templates, the ★ rule, targets 
 
 ### 4.9 Coaching, school and the people around you (M2 part 2, designed 2026-10-11)
 
+> **Read 4.10 first (2026-10-18):** after season playtest 2 the week was redesigned as "plan → play → see". 4.10 replaces 4.9's Sunday
+> talk popup, the proposals as stops, the result card's bare words, the habit goal, the mental-plan setting and cue word, the people's
+> Q&A moments as the main content, and the Warm-up routine minigame. The models below (coach, market, school, mind, cast, storylets) stay.
+
 **Why.** The season playtest (`docs/PLAYTESTS.md`): "very bored, wouldn't return after one season", "small choices", "it needs to
 be more interactive with the coaches and everyone around me"; the days feel empty; "what makes the coach happy?"; "don't know why
 I train what I train". The talent session (4.2 "Talent balance") left Coaching the last few percent: the plans differ by only 1–2 s at
@@ -4086,6 +4090,158 @@ the list; the stops stay as they were until the user's season playtest 2 (`docs/
 proposals' effect on the balance (B1), the smaller realism items (grades 8-9 optional subjects, a coach of another club without a club
 change, the weekly talk's generosity at 14), the race-controls design. The tools still flip single systems in the middle of a run
 (training_balance's parts 2c-2h, several checks); those are the experiments themselves ("with and without"), not setup.
+
+### 4.10 The week, the season and the career: plan → play → see (designed 2026-10-18, after season playtest 2)
+
+**Why.** Season playtest 2 (`docs/PLAYTESTS.md`): "a bit tedious micromanagement clicker with a boring, non-immersive racing… I don't
+know why things are happening, what is affecting what, does anything really matter. We have somewhat lost the essence of being a career
+simulator." The save showed a realistic career (PB 2:33.5 → 2:20.06, 17 races, light health) wrapped in a question machine: 240 moments
+from 101 storylets (35 never answered, many of them because of a thread-reply bug fixed the same day), 40 coach proposals (38 "lighter", 31 of them "Fine" in truth but all called "Good idea"), a habit
+goal that counted 352 of 352, events that contradicted the player's own choices. **Diagnosis (Claude, agreed):** the simulation is fine; the
+interface between the player and the simulation is wrong. The world talks *at* the player through popups whose results are invisible. In
+FM the player sets things up, the world runs, the result is shown with its causes, and the match is the week's payoff; most of the inbox
+is information, not questions. **This section replaces the parts of 4.9 it names**; everything else in 4.9 stays (the coach model and
+market, the school model, the mind model, the cast, the storylet engine).
+
+**The rule for the whole game (user + Claude, 2026-10-18):** *a stop only for a real decision whose consequence the player can see
+afterwards; everything else is visible state or a quiet feed, never a question.* Every effect is shown with what it **does**.
+
+**Decisions (user, 2026-10-18; every one the recommended option unless marked):**
+
+1. **The loop: plan → play → see.**
+   - **The Sunday-evening week planner** is the one weekly stop and **opens every week** (the user's earlier "the Sunday talk always
+     stops Play week" kept in spirit; the talk's popup goes, its good content moves here). A normal week = about two clicks (glance, Play
+     week). One screen: **last week** on the left (sessions done, what changed and why as short cause chips, the coach's one line: this
+     column *is* the week report); **next week's block** in the middle (sessions + intensity per day, the evening and weekend slots, the
+     calendar: races, tests, school tests, invitations); **body and mind** on the right (bars and words with causes) and Play week.
+     Mock-up in the design session's chat (2026-10-18); the final look comes from V1.
+   - **The coach's changes become notes on the planner days**, with the reason and the number behind it ("Thursday tempo → easy run?
+     Shins at 62 %, warning at 70 %. Cost: a little less aerobic work"), answered *Make it easy / Keep mine* (Keep mine = the Veto, D18).
+     **He writes a note only when his judgement is not "Fine"** (his view through his attributes as in C4; a weak coach still errs both
+     ways). Proposals are no longer stops; at most a real warning mid-week (below). "Ask the coach" stays as a tap on a planner day.
+   - **Race weeks are planned by the season plan itself** (taper, the easy day before a race: 4.8): the coach never proposes easing the
+     plan already does. A race the player enters from the Calendar shows its lighter days in the planner at once.
+   - **One week view.** The planner is the only place the week is shown and changed; the Training tab becomes the **season plan**
+     (phases, focus blocks, standing habits). So the Training tab and the day-by-day view can no longer differ (playtest note).
+   - **Play week runs the whole week** unless a mid-week stop happens. **Mid-week stops (the user's pick: "only real ones"):** a niggle,
+     injury or illness (with the body view in the stop), a race day, a clash the player did not settle on Sunday, a rare story beat with
+     a visible price. **Target ~0–1 a week; many weeks play straight through.**
+   - **The race is the week's payoff**, followed by a **"what this race did" card**: Form on the day and why, confidence, the attributes
+     it touched (race tactics, consistency, composure), the coach's reaction (also to a scratch: playtest bug), the people who saw it,
+     the next race.
+2. **Causes made visible.**
+   - **The body as numbers** (the user's pick: "meaning + numbers for body"): tiredness and each body area's strain as bars with % and
+     the warning line, the week's load vs normal, plan risk; Form with its factors (sharpness, freshness) before a race.
+   - **People and moods as words plus what they do** ("Eino: Good friend → Close: asks you out more; time with him lifts motivation";
+     "Motivation Keen: training a little better (PB, time with friends)"). A tap shows the exact numbers and the recent causes.
+     Replaces the result card's bare "Eino ▼ a little" (C3).
+   - **The week report** (the planner's left column) lists sessions done (one definition of "done" for the whole game), attribute
+     changes with their causes, the body, the moods, school tests, relationship changes.
+3. **Season goals with real stakes.** Agreed with the coach at the season start from a **bigger menu** (times, milestones: standards,
+   selections, a final, a place; process goals only if counted honestly). **Met goals open real things:** the coach puts you up for bigger
+   meets or the TF-juniorit wild card, the family pays for a camp, trust. **Reviews** at the end of the indoor season and at midsummer (on
+   track / adjust the goal / drop it), as a section of that Sunday's planner, not a popup. **The habit goal "92 % of the sessions" is cut.**
+4. **The mind as state.** Confidence / motivation / stress stay (M1's model) as visible state with causes. **Mental training becomes
+   sessions in the week block** (imagery, relaxation) like any other session; the weekly mental-plan setting goes. **The cue word ("Your
+   word: Strong") is cut**: it did nothing the player could see.
+5. **School in the background, with real choices.** Its **own School page**, not mixed with the messages (playtest: "too cluttered");
+   tests on the planner ("Maths test Wed") and their results in the week report; one clear line on what grades are for (the application
+   average). **Stops only for** exam vs meet, the joint application and the lukio choices (the lukio-courses standing order stays).
+6. **People as state plus shared time** (replaces most question moments; P2 is redesigned around it).
+   - **New people come from places:** a new class (grade 7, lukio), the training group, camps, meets (a rival met again and again), later
+     a summer job. You get to know them by spending slots with them; **a friendship fades without shared time**. Each person has a
+     **person page**: how close, what they give (motivation, a training partner, help with school), what they cost (time, late nights).
+   - **A first crush / relationship from about 15** (the user's yes), age-appropriate: texting, time together, what it does to time, mood
+     and sleep, nothing more. From the class, the group or a camp; a crush can become a relationship; it wants weekend slots, late
+     texting costs sleep, it lifts mood, it can end (a breakup = a real dip for a couple of weeks). **The player chooses who their
+     character is interested in** when it first comes up. Fictional minors only, as all youth people.
+   - **Free-time slots: every evening + Saturday + Sunday (9 a week; the user's pick over Claude's four).** Each slot: friends / family /
+     partner / study / rest (+ a hobby later). **Standing habits fill them by default** ("Mon–Thu: homework and sleep, Friday: friends,
+     Sunday: family"), so an untouched week plays as set once; the planner **highlights a slot only when something lands on it** (an
+     invitation, a clash with a race or a hard session). Sleep follows from the evenings. The neutral habit (lab) = today's Normal /
+     Normal life settings, so the fingerprints stay identical.
+   - **Invitations land in the slots** while you plan, each with its visible price (sleep, tomorrow's session, the friendship; "the third
+     skip in a row and he stops asking"); events come from the calendar and the state (a party on the Saturday before a race is a real
+     clash). Flavour that asks nothing becomes a **quiet feed** without buttons; **story beats** (a friend quits, a fight at home, the
+     first crush, the rival chain) stay as rare stops with a visible price.
+   - **The training group gets a real effect and can be left:** a group card with its level vs yours, its **fixed days** (you cannot move
+     them), the **pull** (a stronger group lifts your hard sessions, a weaker one holds them back), the teammates as people. Leaving = train
+     alone (free days, no pull, fewer friends, the coach sees you less) or join another group (through Find a coach).
+   - **Find a coach gets an FM-style comparison** of your coach and the ones on offer (attributes as ranges side by side, the group,
+     cost, what would change).
+   - **Content never contradicts the player:** every moment checks the choices and rules it touches (no rippi question after "I don't
+     want to go", no "phone until one" after "phone off at ten"); nothing states a fact the game did not simulate; no line promises what the
+     player cannot do ("tell me on Wednesday") or names the UI ("you see it in the day view").
+7. **Depth and variety.**
+   - **Focus blocks:** every 6–8 weeks the player picks 1–2 focus areas with the coach (aerobic engine, speed reserve, strength,
+     technique, race craft); the sessions follow and a projection shows what the block should give.
+   - **Real unlocks** by age, level and coach: weights at ~15–16 (technique first), double days at 16, lab tests at an academy,
+     warm-weather camps, the specialists; a development page shows the path ahead (ages from research, below).
+   - **A skill tree, earned by doing, with forks** (the user asked for focus blocks, unlocks *and* a tree; this is the realistic form):
+     nodes are real abilities (race craft: *Running in traffic*, *Kick from 300*, *Front-running*, *Tight indoor bends*; technique: *Drills
+     mastered* → economy; routines; strength skills). Doing the thing fills a node (race from the front 5 times → *Front-running I*); at some
+     milestones the player picks one of two forks (kicker vs front-runner), which shapes the style. **The race-craft nodes change races, so
+     they are built in a race session with a new deliberate race hash.**
+   - **Played sessions (4.9.6), all four the user ticked:** Test days, Camp weeks, Rep by rep, Race rehearsal + Video review.
+   - **A race-day timeline** for the warm-up and the cool-down (replaces 4.9.6's "Warm-up routine" as a separate minigame): race day opens
+     as a short timeline (arrive, warm-up, call room, start); the routine is set once (length, drills, strides; cold days want longer) and
+     adjusted if the player likes; after the race a cool-down choice with its visible effect on tomorrow's soreness; readiness for the first
+     200 m comes from it.
+8. **Racing and presentation** (the race engine itself stays: the user liked it).
+   - **Two prototypes first (the user: "try both… you can choose"):** a short race in **TV-style 2D** (a stadium drawn from real track
+     specs, runners as small figures with moving legs and club colours, a follow camera with zoom, TV graphics: positions, splits, gaps,
+     names on the key runners) and in a **2.5D broadcast angle**. The user watches both; the clearly better one wins (Claude's bet: 2D as
+     the base, maybe the broadcast angle for the home straight). D3 ("2D") holds unless the prototype changes the user's mind.
+   - **Zoom** for bigger arenas; **the kick slow-motion becomes a setting** (Off / Short / Full); **plain labels** (each action says what
+     it does: "Wait at the back" must say whether it holds or eases; a card says what each choice costs and why it is offered); **"Move
+     in"** (back to the inside line; a deliberate race-engine change, new hash, race session); competitiveness (4.9.4) and the race-controls
+     idea in the same race session.
+9. **The look: pulled forward** (the user's pick). A research session finds references (FM, sports-broadcast graphics, running apps such
+   as Strava / Garmin, mobile sports managers), Claude shows three directions as mock-ups, the user picks; the new screens of the loop
+   are built in it from the start and the old ones are restyled after. Sleeker, less text, "informative yet easy to read". D28 (dark,
+   FM-inspired) is revisited there.
+10. **The long arc: the career-simulator essence.**
+    - **A Career tab:** every race result in one list (filter by season / meet), a **timeline of milestones** (first PB under 2:20, first
+      SM final, the TF-juniorit letter, records, coach changes, the urheilulukio), PB progression, rankings history.
+    - **The Overview always shows "the next big thing"** (countdown to the target race + what you need) and **the long path** (the
+      coach's 2–3-year plan: urheilulukio, TF-nuoret, Kalevan kisat).
+    - **Reputation** (unknown → one to watch → local name → national name…) from results, age and meet level, built with the Career
+      tab: it decides who notices you (coaches' offers, camp selections, the commentators' words; later media and sponsors).
+    - **A season review chapter** at the end of October: the season in numbers, goals met / missed and what they opened, rankings, the
+      best race, the coach's verdict, what changed in your life, then the next season's plan and goals with the coach.
+
+**Cut or turned into background** (the list the user asked for):
+
+| Cut | Turned into background (visible state / quiet feed) |
+|---|---|
+| The Sunday talk as a popup (its content moves into the planner) | The moods (state with causes) |
+| Coach proposals as stops, and every proposal whose truth is "Fine" | Grades and test results (week report + School page) |
+| The habit goal ("92 % of the sessions") | Relationship numbers (person pages, words + what they do) |
+| The cue word on the race cards | Family and friends chatter that asks nothing (a feed without buttons) |
+| The weekly mental-plan setting (mental training = sessions) | The coach's comments on the week (the week report) |
+| The setting "Play week stops for: Every moment" (moments no longer stop) | |
+| Q&A moments without a consequence: each of P1's ~150 storylets is sorted into delete / feed / invitation / story beat | |
+| Lines that promise or state what the game does not simulate ("tell me on Wednesday", "phone until one", "see it in the day view") | |
+| Messages and school grades in one view | |
+
+**What stays as real decisions:** the planner (training, slots, invitations, the coach's notes), the race (tactics, cards / controls),
+injuries and niggles (scratch or race), the coach market, exam vs meet, the joint application, the lukio choices, the goals at the season
+start and their reviews, the focus blocks and the tree's forks, the story beats.
+
+**Rules kept:** the lab preset keeps every fingerprint identical (new systems off or neutral in `lab`, the neutral habit = today's life
+settings); the race engine changes only in race sessions (R7, the tree's race-craft nodes); realism over neat balance; world data in data
+files with sources; no real people below senior level; the player decides (the coach's notes are suggestions, the planner never changes
+itself). **Left to each build session's own design questions:** the planner's exact layout (after V1), which storylets go where in the
+sort, the slot effects' sizes (B1), the tree's nodes and fork points, the reputation scale. **Order of work:** `docs/ROADMAP.md` (the
+sessions F1 → B1 after "Design session after playtest 2").
+
+**Research the user lets Claude do** (each in the session that needs it, sources into data / the GDD): (1) the look: FM, sports-broadcast
+graphics, running apps, mobile sports managers (V1); (2) race graphics: real athletics TV graphics, World Athletics track specs outdoor
+and indoor, Godot 2D / 2.5D techniques, free (CC0) runner art (R6); (3) camps: district, club, TF camps with dates and costs (G3);
+(4) youth test batteries and norms (G1); (5) training groups: sizes and schedules (P2); (6) Finnish teens' time use, sleep and dating age
+(the school health survey, Kouluterveyskysely) to set how often late nights and romance happen (P2); (7) the youth path: when weights,
+double days and altitude camps start (SUL's youth path) (T1); (8) real schools (D2, already planned).
+
 ### Other systems (to be designed)
 
 - Nutrition, sleep (sleep partly: it comes from choices in 4.9)
