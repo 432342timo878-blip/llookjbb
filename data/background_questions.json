@@ -40,66 +40,77 @@
    "answers": [
     {
      "text": "Football",
+     "sport": "football",
      "detail": "Quick feet and used to competing, but you've never run far without a ball.",
      "experience": 2,
      "effects": {"speed": 1, "acceleration": 1, "competitiveness": 0.5, "aerobic_capacity": -1}
     },
     {
      "text": "Ice hockey",
+     "sport": "ice_hockey",
      "detail": "Explosive and physical, but not used to running far.",
      "experience": 1,
      "effects": {"power": 1, "strength": 1, "competitiveness": 0.5, "running_economy": -1}
     },
     {
      "text": "Floorball",
+     "sport": "floorball",
      "detail": "Endless sprints and changes of direction, not much running form.",
      "experience": 2,
      "effects": {"acceleration": 1.5, "speed_endurance": 0.5, "competitiveness": 0.5, "running_technique": -1}
     },
     {
      "text": "Pesäpallo",
+     "sport": "pesapallo",
      "detail": "Short dashes between bases, sharp reactions, little endurance.",
      "experience": 1,
      "effects": {"acceleration": 1.5, "starts": 1, "speed": 0.5, "aerobic_capacity": -1.5}
     },
     {
      "text": "Basketball",
+     "sport": "basketball",
      "detail": "Springy legs and good coordination, but a heavy stride.",
      "experience": 1,
      "effects": {"power": 1.5, "mobility": 0.5, "acceleration": 0.5, "running_economy": -1}
     },
     {
      "text": "Cross-country skiing",
+     "sport": "skiing",
      "detail": "A big engine from long winters on skis, but not much pop in your legs.",
      "experience": 2,
      "effects": {"aerobic_capacity": 2, "lactate_threshold": 1, "determination": 0.5, "speed": -1, "power": -1}
     },
     {
      "text": "Orienteering",
+     "sport": "orienteering",
      "detail": "Years of running through forests: a strong engine, but no sprint.",
      "experience": 3,
      "effects": {"aerobic_capacity": 1.5, "running_economy": 1, "durability": 0.5, "race_tactics": 0.5, "speed": -1, "acceleration": -1}
     },
     {
      "text": "Swimming",
+     "sport": "swimming",
      "detail": "A strong engine, but running muscles and bones aren't used to the pounding.",
      "experience": 1,
      "effects": {"aerobic_capacity": 2, "mobility": 1, "determination": 0.5, "durability": -1.5, "running_economy": -0.5}
     },
     {
      "text": "Gymnastics",
+     "sport": "gymnastics",
      "detail": "Strong, mobile and body-aware, but never ran far.",
      "experience": 1,
      "effects": {"mobility": 2, "strength": 1, "power": 1, "aerobic_capacity": -1.5, "running_economy": -1}
     },
     {
      "text": "Dance",
+     "sport": "dance",
      "detail": "Light on your feet, great posture and rhythm, not much strength or engine.",
      "experience": 1,
      "effects": {"mobility": 2, "running_technique": 1, "composure": 0.5, "strength": -1, "aerobic_capacity": -1}
     },
     {
      "text": "Martial arts or wrestling",
+     "sport": "martial_arts",
      "detail": "Tough, disciplined and hard to break, but stiff when you run.",
      "experience": 1,
      "effects": {"strength": 1, "pain_tolerance": 1.5, "determination": 0.5, "running_economy": -1, "mobility": -0.5}
@@ -130,42 +141,49 @@
    "answers": [
     {
      "text": "A PE teacher spotted you",
+     "origin": "pe_teacher",
      "detail": "You won the school cross-country run without really trying.",
      "experience": 0,
      "effects": {"aerobic_capacity": 0.5, "potential": 0.5, "ambition": 1}
     },
     {
      "text": "Friends from school",
+     "origin": "friends",
      "detail": "You came along because they did, and stayed for the fun.",
      "experience": 0,
      "effects": {"composure": 1, "consistency": 1, "determination": -0.5, "ambition": -0.5}
     },
     {
      "text": "Your parents signed you up",
+     "origin": "parents",
      "detail": "It wasn't your idea at first, but the routine stuck years ago.",
      "experience": 1,
      "effects": {"professionalism": 1.5, "durability": 0.5, "determination": -1}
     },
     {
      "text": "A coach from your old sport",
+     "origin": "old_coach",
      "detail": "They said your legs were wasted in that sport.",
      "experience": 1,
      "effects": {"determination": 1, "running_technique": 0.5, "potential": 0.5}
     },
     {
      "text": "Watching the stars on TV",
+     "origin": "tv",
      "detail": "The Olympics and World Championships lit a fire in you.",
      "experience": 0,
      "effects": {"competitiveness": 1, "ambition": 2}
     },
     {
      "text": "The Finland–Sweden athletics international",
+     "origin": "international",
      "detail": "A packed stadium and blue-and-white flags. You were hooked.",
      "experience": 0,
      "effects": {"competitiveness": 1, "composure": 0.5, "ambition": 1.5}
     },
     {
      "text": "Nobody, it was your own idea",
+     "origin": "own",
      "detail": "You turned up at the track one day and asked to join.",
      "experience": 0,
      "effects": {"determination": 1.5, "ambition": 1}

@@ -1,0 +1,557 @@
+{
+	"_note": "The FRIENDS' moments (session P1, GDD 4.9.5; format in README.md). Senders: best_friend (from school, not an athlete), friend (1-2 more, each with a trait: gamer, musician, artist, joker, scout, partygoer, old_team = from the athlete's old sport), friends (any). Real Finnish teenage life that clashes with training: weekend parties before a race, gaming nights, a band's gig, vappu, the end of the school year, the confirmation camp. Moments never change what is trained: going out costs sleep (a late night = life load the next day) and a 'no' costs the friendship a little. Standing orders: weekend_party, school_night. Ages 14-16 (P2 adds 16-17).",
+	"storylets": [
+		{
+			"id": "fr_why_running", "thread": "friends", "from": "best_friend", "slot": "evening", "once": true,
+			"when": {"age": [14, 16], "weeks_in_career": [0, 6]},
+			"text": [
+				"Serious question. Why do you run in circles for fun? Explain it to me like I'm five.",
+				"So you're an athlete now? Like, properly? Do you still have time for normal people?"
+			],
+			"replies": [
+				{"id": "love", "label": "It's the best feeling", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "Weird. But OK, I respect it.", "result_from": "sender"},
+				{"id": "joke", "label": "Free snacks after races", "hint": "", "effects": {"relation": 3},
+					"result": "Now THAT I understand.", "result_from": "sender"},
+				{"id": "time", "label": "Always time for you", "hint": "{from} will remember", "remember": true, "effects": {"relation": 3, "memory": "promised_time"},
+					"result": "I'm holding you to that.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_party_race", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 21, "important": true,
+			"when": {"age": [14, 16], "weekday": [4, 5], "race_tomorrow": true},
+			"text": [
+				"Party at Joonas's place tonight! His parents are away. Everyone's going. You're coming, right?",
+				"Saturday night at the beach, a bonfire, the whole class. Come on, just for a bit!",
+				{"text": "There's a party tonight and you're the only one who hasn't answered. Coming?", "when": {"trait": ["partygoer"]}}
+			],
+			"replies": [
+				{"id": "no", "label": "I race tomorrow, sorry", "hint": "{from} will be a bit hurt", "effects": {"relation": -2, "relation_thread": {"friends": -1}},
+					"rule": "Always say no to parties the night before a race", "result": "Boring. Good luck tomorrow, I guess.", "result_from": "sender"},
+				{"id": "short", "label": "An hour, then home", "hint": "a late night before a race", "effects": {"relation": 2, "sleep": -1, "motivation": 1},
+					"result": "You left at ten like Cinderella. Everyone noticed. In a good way."},
+				{"id": "all", "label": "I'm in!", "hint": "a very late night before a race", "effects": {"relation": 4, "relation_thread": {"friends": 1}, "sleep": -2, "motivation": 2},
+					"result": "You got home at one. The party was legendary. Tomorrow may not be."}
+			],
+			"standing": "party_before_race"
+		},
+		{
+			"id": "fr_party_weekend", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 21,
+			"when": {"age": [14, 16], "weekday": [4, 5], "race_tomorrow": false, "tomorrow_tags": ["long", "hard"]},
+			"text": [
+				"Movie night at mine tonight. Pizza, horror films, nobody sleeps. Coming?",
+				"Everyone's going bowling and then to the kiosk. You in?",
+				{"text": "Sauna evening at our place, then we watch the game. You have to come.", "when": {"month": [1, 2, 3, 10, 11, 12]}}
+			],
+			"replies": [
+				{"id": "go", "label": "I'm in", "hint": "a late night", "effects": {"relation": 3, "sleep": -1, "motivation": 1},
+					"result": "Best night in ages. Your legs may disagree tomorrow."},
+				{"id": "early", "label": "I'll come, but leave early", "hint": "", "effects": {"relation": 1},
+					"rule": "Go to weekend evenings, but leave early", "result": "Better than nothing!", "result_from": "sender"},
+				{"id": "no", "label": "Long run tomorrow, sorry", "hint": "{from} will be a bit hurt", "effects": {"relation": -2},
+					"rule": "Say no to weekend evenings before a long or hard session", "result": "You and your long runs.", "result_from": "sender"}
+			],
+			"standing": "weekend_party"
+		},
+		{
+			"id": "fr_gaming", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "day_type": "weekday", "trait": ["gamer"]},
+			"text": [
+				"New season starts tonight. Online at nine? We need you on the team.",
+				"Are you online? We're one player short. Just a couple of rounds."
+			],
+			"replies": [
+				{"id": "play", "label": "Couple of rounds, then bed", "hint": "probably a late night", "effects": {"relation": 2, "sleep": -1, "stress": -1},
+					"result": "\"Couple of rounds\" ended at midnight. As always."},
+				{"id": "no", "label": "Not tonight", "hint": "", "effects": {"relation": -1},
+					"rule": "No gaming on school nights", "result": "Noob.", "result_from": "sender"},
+				{"id": "weekend", "label": "Saturday instead?", "hint": "", "effects": {"relation": 1},
+					"result": "Deal. Saturday you're mine.", "result_from": "sender"}
+			],
+			"standing": "school_night"
+		},
+		{
+			"id": "fr_gig", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 60,
+			"when": {"age": [14, 16], "weekday": [2, 3], "trait": ["musician"]},
+			"text": [
+				"Our band plays at the youth centre on Friday! Our first real gig. You HAVE to come.",
+				"Gig on Friday at the school's spring concert. I'm doing a solo. Will you be there?"
+			],
+			"replies": [
+				{"id": "yes", "label": "Wouldn't miss it", "hint": "{from} will never forget", "remember": true, "effects": {"relation": 5, "memory": "came_to_gig", "sleep": -1, "motivation": 1},
+					"result": "You were the loudest one in the crowd. Thank you!", "result_from": "sender"},
+				{"id": "no", "label": "I have practice, sorry", "hint": "{from} will be hurt", "effects": {"relation": -4, "memory": "missed_gig"},
+					"result": "OK. I get it. Sort of.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_gig_missed", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 90,
+			"when": {"age": [14, 16], "memory": ["missed_gig"], "memory_days": {"missed_gig": [20, 120]}},
+			"text": [
+				"We play again next month. Last time you didn't come. This time?",
+				"Just so you know, everyone asked where you were at our gig."
+			],
+			"replies": [
+				{"id": "promise", "label": "This time I'll be there", "hint": "", "effects": {"relation": 3, "forget": "missed_gig"},
+					"result": "Front row. I'll check.", "result_from": "sender"},
+				{"id": "sorry", "label": "I'm sorry, really", "hint": "", "effects": {"relation": 1},
+					"result": "It's OK. Just... come sometime.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_art", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 90,
+			"when": {"age": [14, 16], "trait": ["artist"]},
+			"text": [
+				"I drew you running. Don't laugh. Want to see?",
+				"I'm making a comic about our class. You're the superhero who runs really fast. Is that OK?"
+			],
+			"replies": [
+				{"id": "love", "label": "Show me!", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "OK, the legs are a bit long. Artistic freedom.", "result_from": "sender"},
+				{"id": "shy", "label": "Please don't show anyone", "hint": "", "effects": {"relation": -1},
+					"result": "Too late. It's on the classroom wall.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_scout", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 120,
+			"when": {"age": [14, 16], "trait": ["scout"], "month": [4, 5, 8, 9]},
+			"text": [
+				"Scout hike next weekend! Two nights in a tent, a lake, no phones. Come along as a guest?",
+				"We're building a lean-to shelter in the forest on Saturday. Need someone with legs that don't get tired."
+			],
+			"replies": [
+				{"id": "go", "label": "Sounds great", "hint": "a weekend away", "effects": {"relation": 4, "motivation": 2, "sleep": -1},
+					"result": "Bring a sleeping bag and your running shoes. The trails are amazing."},
+				{"id": "no", "label": "Not this time", "hint": "", "effects": {"relation": -1},
+					"result": "Next time, then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_old_team", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 120,
+			"when": {"age": [14, 16], "trait": ["old_team"], "month": [5, 6, 8]},
+			"text": [
+				"The summer tournament is in two weeks. The team misses you. Come back for one weekend? Just for fun.",
+				"We play the final on Saturday! Come and watch, the old {old_sport} team wants to see you."
+			],
+			"replies": [
+				{"id": "watch", "label": "I'll come and watch", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "You cheered louder than the parents.", "result_from": "sender"},
+				{"id": "play", "label": "I'll play one match!", "hint": "a hard day for your legs", "effects": {"relation": 5, "motivation": 2},
+					"result": "You still have it. And you're faster than all of us now."},
+				{"id": "no", "label": "I can't, sorry", "hint": "", "effects": {"relation": -2},
+					"result": "OK. Good luck with the running thing.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_watch_race", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 60,
+			"when": {"age": [14, 16], "race_in_days": [2, 6]},
+			"text": [
+				"Can I come and watch {meet}? I've never seen a real race. What do I do, just shout?",
+				"I'm coming to {meet}. I'm making a sign. Don't try to stop me."
+			],
+			"replies": [
+				{"id": "come", "label": "Yes, come!", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "The sign says GO {name} GO. Very original.", "result_from": "sender"},
+				{"id": "no", "label": "I'd get too nervous", "hint": "", "effects": {"relation": -1, "stress": -1},
+					"result": "OK, I'll follow the results online like a stalker.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_race_pb", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "pb_days_ago": [0, 1]},
+			"text": [
+				"I saw your time! I don't understand it, but everyone says it's good. Congrats!!",
+				"Personal best?! Teach me how to be good at something."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks!", "hint": "", "effects": {"relation": 2, "confidence": 1},
+					"result": "Celebrate with me on Saturday. That's an order.", "result_from": "sender"},
+				{"id": "modest", "label": "It was just OK", "hint": "", "effects": {"relation": 1},
+					"result": "Stop being modest. It's annoying.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_race_bad", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "race_outcome": ["bad"]},
+			"text": [
+				"Heard it didn't go well. Ice cream? I'm buying.",
+				"Bad race? Whatever. You're still the fastest person I know."
+			],
+			"replies": [
+				{"id": "yes", "label": "Ice cream sounds perfect", "hint": "", "effects": {"relation": 3, "confidence": 1, "stress": -1},
+					"result": "Two scoops. One for the bad race, one for the next good one.", "result_from": "sender"},
+				{"id": "alone", "label": "I need a quiet night", "hint": "", "effects": {"relation": 1},
+					"result": "OK. I'm here tomorrow.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_left_out", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 60, "important": true,
+			"when": {"age": [14, 16], "relation": [null, 50], "weeks_in_career": [6, null]},
+			"text": [
+				"You never have time any more. Training, training, training. Are we still friends?",
+				"Everyone went to the cinema without you again. Not because we don't like you. You just never come."
+			],
+			"replies": [
+				{"id": "sorry", "label": "You're right. Saturday, just us?", "hint": "", "effects": {"relation": 6, "motivation": 1},
+					"result": "Saturday. No excuses.", "result_from": "sender",
+					"next": {"id": "fr_left_out_saturday", "days": [2, 5]}},
+				{"id": "explain", "label": "It's important to me", "hint": "", "effects": {"relation": 1, "stress": 1},
+					"result": "I know. I just miss you.", "result_from": "sender"},
+				{"id": "defend", "label": "You don't understand", "hint": "{from} will be hurt", "effects": {"relation": -4, "stress": 2},
+					"result": "Maybe I don't.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_left_out_saturday", "thread": "friends", "from": "best_friend", "slot": "evening", "chain_only": true,
+			"when": {},
+			"text": [
+				"So. Saturday. Cinema or just walking around eating sweets?",
+				"Saturday plan: no talk about running. Can you do that?"
+			],
+			"replies": [
+				{"id": "sweets", "label": "Walking and sweets", "hint": "", "effects": {"relation": 4, "stress": -2, "motivation": 1},
+					"result": "Like old times. Best Saturday in months."},
+				{"id": "cinema", "label": "Cinema", "hint": "", "effects": {"relation": 4, "stress": -1},
+					"result": "The film was terrible. The evening was great."}
+			]
+		},
+		{
+			"id": "fr_secret", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 70,
+			"when": {"age": [14, 16], "relation": [50, null]},
+			"text": [
+				"I need advice. There's someone in 9B. Should I say something or is that insane?",
+				"Can I tell you something? My parents are fighting all the time. I don't want to be at home."
+			],
+			"replies": [
+				{"id": "listen", "label": "Tell me everything", "hint": "{from} will remember", "remember": true, "effects": {"relation": 5, "memory": "listened", "sleep": -1},
+					"result": "Thanks for listening. Really. You're a good friend.", "result_from": "sender"},
+				{"id": "short", "label": "Talk tomorrow? I'm wiped", "hint": "", "effects": {"relation": -2},
+					"result": "Sure. Tomorrow.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_study_together", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 21,
+			"when": {"age": [14, 16], "test_tomorrow": true},
+			"text": [
+				"{test_subject} test tomorrow. Study together after your practice? My place, I have snacks.",
+				"Panic. {test_subject} tomorrow. Video call and go through it together?"
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, let's do it", "hint": "grades ▲ a little · a late night", "effects": {"relation": 3, "grades": 2, "sleep": -1},
+					"result": "We actually learned something. Mostly."},
+				{"id": "alone", "label": "I study better alone", "hint": "", "effects": {"grades": 1},
+					"rule": "Study alone the night before a test", "result": "Fine, genius.", "result_from": "sender"},
+				{"id": "sleep", "label": "I'm going to sleep early", "hint": "", "effects": {"stress": -1},
+					"result": "Lucky you, being calm.", "result_from": "sender"}
+			],
+			"standing": "test_evening"
+		},
+		{
+			"id": "fr_homework_help", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 45,
+			"when": {"age": [14, 16], "day_type": "weekday", "school_day": true},
+			"text": [
+				"Can I copy your maths homework? Just this once. OK, also last time.",
+				"Did you understand the chemistry thing today? I understood nothing."
+			],
+			"replies": [
+				{"id": "explain", "label": "I'll explain it", "hint": "", "effects": {"relation": 2, "grades": 1},
+					"result": "OK, now it makes sense. You should be a teacher.", "result_from": "sender"},
+				{"id": "copy", "label": "Here, just copy it", "hint": "", "effects": {"relation": 2},
+					"result": "Legend.", "result_from": "sender"},
+				{"id": "no", "label": "Do your own homework", "hint": "", "effects": {"relation": -2},
+					"result": "Harsh.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_valentine", "dated": true, "thread": "friends", "from": "best_friend", "slot": "morning", "cooldown_days": 300,
+			"when": {"age": [14, 16], "days_to": {"valentine": [0, 0]}},
+			"text": [
+				"Happy Friendship Day! Here's a heart emoji. Don't make it weird.",
+				"Ystävänpäivä! You're my best friend. Even with all the running."
+			],
+			"replies": [
+				{"id": "back", "label": "Happy Friendship Day!", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Two heart emojis. We're very emotional people.", "result_from": "sender"},
+				{"id": "joke", "label": "Who are you?", "hint": "", "effects": {"relation": 1},
+					"result": "Rude. Still my best friend.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_vappu", "dated": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "days_to": {"vappu": [0, 3]}},
+			"text": [
+				"Vappu! Picnic in the park tomorrow, balloons, munkki and sima. Coming?",
+				"Vappu eve in the town square. Everyone will be there. Are you coming or training?"
+			],
+			"replies": [
+				{"id": "go", "label": "Of course!", "hint": "", "effects": {"relation": 3, "motivation": 2, "sleep": -1},
+					"result": "Sima, doughnuts, everyone in silly hats. A perfect vappu."},
+				{"id": "run_first", "label": "After my run", "hint": "", "effects": {"relation": 1},
+					"rule": "Run first, then the plans with friends", "result": "We'll save you a doughnut.", "result_from": "sender"},
+				{"id": "no", "label": "Not this year", "hint": "", "effects": {"relation": -3},
+					"result": "Who skips vappu?", "result_from": "sender"}
+			],
+			"standing": "run_first"
+		},
+		{
+			"id": "fr_school_end", "dated": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "days_to": {"school_end": [0, 1]}},
+			"text": [
+				"SUMMER! We're going to the beach after the spring party. Coming?",
+				"Last day of school! Ice cream, the beach, the whole class. You can't say no today."
+			],
+			"replies": [
+				{"id": "go", "label": "Yes! Summer!", "hint": "", "effects": {"relation": 3, "motivation": 2, "stress": -2},
+					"result": "Cold water, warm sun, ten weeks of freedom."},
+				{"id": "run_first", "label": "After my session", "hint": "", "effects": {"relation": 1, "stress": -1},
+					"rule": "Run first, then the plans with friends", "result": "We'll be at the beach. It's not going anywhere.", "result_from": "sender"}
+			],
+			"standing": "run_first"
+		},
+		{
+			"id": "fr_summer_plans", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "month": [6], "days_after": {"school_end": [2, 14]}},
+			"text": [
+				"What are you doing this summer? Please say something other than running.",
+				"Summer plan: we go to Linnanmäki together. You can't refuse a roller coaster."
+			],
+			"replies": [
+				{"id": "together", "label": "Let's plan a day together", "hint": "", "effects": {"relation": 4, "motivation": 1},
+					"result": "Day picked. Written in my calendar. In pen.", "result_from": "sender"},
+				{"id": "busy", "label": "Mostly races and training", "hint": "", "effects": {"relation": -2},
+					"result": "Of course. Send me a postcard from the track.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_new_year", "dated": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "days_to": {"new_year": [1, 3]}},
+			"text": [
+				"Fireworks on the hill on New Year's Eve? Everyone's going.",
+				"New Year's Eve at Emilia's. Her parents are cool. Midnight on the roof terrace!"
+			],
+			"replies": [
+				{"id": "go", "label": "I'm coming", "hint": "a late night", "effects": {"relation": 3, "motivation": 1, "sleep": -1},
+					"result": "Happy new year! Best fireworks yet."},
+				{"id": "family", "label": "I'm with my family", "hint": "", "effects": {"relation": -1},
+					"result": "OK. Happy new year in advance!", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_pikkujoulu", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "days_to": {"christmas": [8, 20]}, "weekday": [3, 4]},
+			"text": [
+				"The class pikkujoulu is on Friday! Secret Santa, max 5 euros. You're coming?",
+				"Pre-Christmas party at the youth centre on Friday. Dress code: ugly Christmas sweater."
+			],
+			"replies": [
+				{"id": "go", "label": "I'm in", "hint": "", "effects": {"relation": 3, "motivation": 1, "sleep": -1},
+					"result": "You got socks with reindeer on them. Perfect."},
+				{"id": "no", "label": "Can't, I have practice", "hint": "", "effects": {"relation": -2},
+					"result": "Your Secret Santa gift is waiting at school.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_injured", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 45,
+			"when": {"age": [14, 16], "injured": true},
+			"text": [
+				"So you're injured. Bad news for you, good news for me: now you have time! Film night?",
+				"How's the leg? I could come over and we play something. You don't need legs for that."
+			],
+			"replies": [
+				{"id": "yes", "label": "Please, I'm so bored", "hint": "", "effects": {"relation": 4, "motivation": 1, "stress": -1},
+					"result": "Bringing snacks. And the second controller.", "result_from": "sender"},
+				{"id": "no", "label": "I want to be alone", "hint": "", "effects": {"relation": -1},
+					"result": "OK. Text me when you're bored of being alone.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_rippi_together", "thread": "friends", "from": "friends", "slot": "evening", "once": true,
+			"when": {"turns": [15, 15], "month": [2, 3], "seen": ["fam_rippi_choice"]},
+			"text": [
+				"Which rippikoulu camp did you choose? Half the class goes in July!",
+				"I'm going to the June camp. Tell me you're on the same one."
+			],
+			"replies": [
+				{"id": "same", "label": "Let's go together!", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Yesss. A whole week of no parents.", "result_from": "sender"},
+				{"id": "different", "label": "I chose mine already", "hint": "", "effects": {"relation": -1},
+					"result": "Oh. We'll meet new people, I guess.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_rippi_camp", "dated": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 300,
+			"when": {"days_after": {"rippileiri": [1, 5]}, "flags": ["!rippi_day"]},
+			"text": [
+				"Camp is the best! Last night we talked until three. Are you running in the mornings? You're crazy.",
+				"The isoset are cool and the lake is freezing. Morning run around the lake, champion?"
+			],
+			"replies": [
+				{"id": "run", "label": "A short morning run", "hint": "", "effects": {"relation": 1, "motivation": 1},
+					"result": "Half the camp watched you go. Now you're 'the runner'.", "result_from": "sender"},
+				{"id": "camp", "label": "This week is for camp", "hint": "late nights", "effects": {"relation": 3, "motivation": 2, "sleep": -1},
+					"result": "Best week of the summer. Nobody slept."}
+			]
+		},
+		{
+			"id": "fr_application", "thread": "friends", "from": "best_friend", "slot": "evening", "once": true,
+			"when": {"stage": ["grade_9"], "app": ["open"]},
+			"text": [
+				"Where are you applying? Please say the same lukio as me.",
+				"If you go to a sports lukio, are we still going to see each other?"
+			],
+			"replies": [
+				{"id": "same", "label": "We'll stay close, promise", "hint": "{from} will remember", "remember": true, "effects": {"relation": 4, "memory": "promised_close"},
+					"result": "Promise promise?", "result_from": "sender"},
+				{"id": "far", "label": "I might go far away", "hint": "", "effects": {"relation": -1, "stress": 1},
+					"result": "Oh. Well, there are trains.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_app_moving", "thread": "friends", "from": "best_friend", "slot": "evening", "once": true, "expires_days": 4,
+			"when": {"app_result": ["first", "other"], "month": [6, 7]},
+			"text": [
+				"So it's decided. Congrats! I'm happy for you. And sad. Both.",
+				"You got in! Whatever happens, you're still my best friend."
+			],
+			"replies": [
+				{"id": "visit", "label": "We'll visit all the time", "hint": "", "effects": {"relation": 4, "motivation": 1},
+					"result": "Every holiday. I'm writing it down.", "result_from": "sender"},
+				{"id": "sad", "label": "I'll miss you", "hint": "", "effects": {"relation": 5, "stress": 1},
+					"result": "Stop it, I'm going to cry in public.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_hangout", "thread": "friends", "from": "friends", "slot": "morning", "cooldown_days": 25,
+			"when": {"age": [14, 16], "school_day": true, "weekday": [0, 1, 2, 3]},
+			"text": [
+				"Shopping centre after school? Just walking around and eating sweets.",
+				"Everyone's going to the youth centre after school today. Table tennis tournament. You in?",
+				"Hang out at mine after school? My mum made pulla."
+			],
+			"replies": [
+				{"id": "go", "label": "For an hour, before practice", "hint": "", "effects": {"relation": 3, "stress": -1},
+					"result": "An hour of doing nothing with friends. Exactly what you needed."},
+				{"id": "no", "label": "Can't, practice", "hint": "", "effects": {"relation": -1},
+					"rule": "Straight from school to training", "result": "As always.", "result_from": "sender"}
+			],
+			"standing": "after_school"
+		},
+		{
+			"id": "fr_sleepover", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 120,
+			"when": {"age": [14, 16], "weekday": [2, 3], "race_in_days": [4, null]},
+			"text": [
+				"My birthday party is on Saturday! A sleepover, pizza and films until morning. Coming?",
+				"Saturday: birthday sleepover at mine. You can't miss it, I'm only turning fifteen once."
+			],
+			"replies": [
+				{"id": "all", "label": "Wouldn't miss it", "hint": "a very late night", "effects": {"relation": 5, "motivation": 1, "sleep": -2},
+					"result": "Nobody slept. Best birthday ever, apparently.", "result_from": "sender"},
+				{"id": "cake", "label": "I'll come for the cake", "hint": "", "effects": {"relation": 2},
+					"result": "Cake first, then you vanish. Classic you.", "result_from": "sender"},
+				{"id": "no", "label": "I can't this time", "hint": "{from} will be hurt", "effects": {"relation": -4},
+					"result": "Oh. OK.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_swim", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 45,
+			"when": {"age": [14, 16], "month": [11, 12, 1, 2, 3], "weekday": [4, 5]},
+			"text": [
+				"Swimming hall on Sunday? The new slide is open. And the sauna.",
+				"Sunday swim? Mostly the slides and the hot tub, not real swimming."
+			],
+			"replies": [
+				{"id": "go", "label": "Yes, slides!", "hint": "", "effects": {"relation": 3, "stress": -1, "motivation": 1},
+					"result": "Two hours of slides and sauna. Your legs felt surprisingly good."},
+				{"id": "no", "label": "Long run on Sunday", "hint": "", "effects": {"relation": -1},
+					"result": "Have fun running in the dark.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_snow", "thread": "friends", "from": "friends", "slot": "morning", "cooldown_days": 40,
+			"when": {"age": [14, 16], "month": [12, 1, 2], "day_type": "weekend"},
+			"text": [
+				"It snowed half a metre! Sledding on the big hill? Bring the sledge.",
+				"Snow fort at the park. We need someone to carry snow fast. You're perfect."
+			],
+			"replies": [
+				{"id": "go", "label": "Coming!", "hint": "", "effects": {"relation": 3, "stress": -1, "motivation": 1},
+					"result": "Cold cheeks, wet gloves, a lot of laughing."},
+				{"id": "run_first", "label": "After my session", "hint": "", "effects": {"relation": 1},
+					"rule": "Run first, then the plans with friends", "result": "The hill will still be there.", "result_from": "sender"}
+			],
+			"standing": "run_first"
+		},
+		{
+			"id": "fr_moped", "thread": "friends", "from": "friends", "slot": "evening", "once": true,
+			"when": {"turns": [15, 15], "month": [3, 4, 5, 6]},
+			"text": [
+				"I'm getting my moped licence this summer! You should too. We could ride to the beach.",
+				"Half the class is doing the moped licence now. Are you?"
+			],
+			"replies": [
+				{"id": "want", "label": "I want one too", "hint": "costs the family", "effects": {"relation": 2, "motivation": 1, "budget": -1},
+					"result": "Moped gang!", "result_from": "sender"},
+				{"id": "legs", "label": "I have legs, thanks", "hint": "", "effects": {"relation": 1},
+					"result": "Ha. Fair. You're faster than a moped anyway. Almost.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_ice_cream", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 21,
+			"when": {"age": [14, 16], "month": [6, 7, 8], "race_tomorrow": false},
+			"text": [
+				"Ice cream at the harbour tonight? It's light until midnight anyway.",
+				"Beach tonight? Someone's bringing a speaker."
+			],
+			"replies": [
+				{"id": "go", "label": "On my way", "hint": "a late night", "effects": {"relation": 3, "motivation": 1, "sleep": -1},
+					"result": "The sun never really set. Neither did the talking."},
+				{"id": "early", "label": "For an hour", "hint": "", "effects": {"relation": 1},
+					"result": "One hour. You actually left on time. Impressive.", "result_from": "sender"},
+				{"id": "no", "label": "Early start tomorrow", "hint": "", "effects": {"relation": -1},
+					"result": "Boo. OK.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_video", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 90,
+			"when": {"age": [14, 16]},
+			"text": [
+				"New challenge online: sprint against a car. Film it with me? We'll go viral.",
+				"Can I film you running for my channel? Slow motion. It'll look so cool."
+			],
+			"replies": [
+				{"id": "film", "label": "Let's film it", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "312 views. Your grandma is 280 of them."},
+				{"id": "no", "label": "Not my thing", "hint": "", "effects": {"relation": -1},
+					"result": "Your loss. Fame was right there.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_app_stress", "thread": "friends", "from": "best_friend", "slot": "evening", "once": true,
+			"when": {"stage": ["grade_9"], "month": [1, 2, 3]},
+			"text": [
+				"I'm freaking out about the application. My average is too low for the lukio I want. How are you so calm?",
+				"Do you know what you want to be? Everyone else seems to know. I have no idea."
+			],
+			"replies": [
+				{"id": "help", "label": "Let's study together", "hint": "grades ▲ a little", "effects": {"relation": 4, "grades": 1},
+					"result": "Deal. Tuesdays and Thursdays after your practice.", "result_from": "sender"},
+				{"id": "calm", "label": "I'm not calm either", "hint": "", "effects": {"relation": 3, "stress": 1},
+					"result": "Oh good. I mean, not good. You know what I mean.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fr_cinema", "thread": "friends", "from": "best_friend", "slot": "evening", "cooldown_days": 35,
+			"when": {"age": [14, 16], "weekday": [3, 4, 5]},
+			"text": [
+				"The new film comes out on Friday. Cinema? I'll buy the popcorn.",
+				"Cinema on Saturday? Something stupid with explosions."
+			],
+			"replies": [
+				{"id": "go", "label": "Yes!", "hint": "", "effects": {"relation": 3, "stress": -1},
+					"result": "Terrible film. Great evening."},
+				{"id": "later", "label": "Next week?", "hint": "", "effects": {"relation": -1},
+					"result": "You always say next week.", "result_from": "sender"}
+			]
+		}
+	]
+}

@@ -18,6 +18,8 @@ func _ready() -> void:
 	CoachMarket.enabled = true
 	# The school's decisions and the report card day (session S2) likewise.
 	SchoolSystem.decisions_enabled = true
+	# The people around the athlete and their moments (session P1: family, friends, partners, school, rivals) likewise.
+	StoryletSystem.people_enabled = true
 	Router.screen_requested.connect(_show_screen)
 	Router.screen_changed.connect(_backdrop.show_for)
 	get_window().size_changed.connect(_update_layout)

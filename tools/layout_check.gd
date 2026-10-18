@@ -33,6 +33,8 @@ func _run() -> void:
 	# The season goals and the coach's suggestions (session C5) are switched on for their own views (_goals_views) only.
 	load("res://scripts/core/season_goals.gd").enabled = false
 	load("res://scripts/core/coach_suggests.gd").enabled = false
+	# The people around the athlete (session P1) likewise: on for their own views (_cast_views) only.
+	load("res://scripts/core/storylet_system.gd").people_enabled = false
 
 	# A short career so the hub has something to show.
 	router.go("new_career")
@@ -123,6 +125,8 @@ func _run() -> void:
 		await _coach_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _people_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
+		await _cast_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _proposal_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
@@ -892,6 +896,63 @@ func _people_views(main: Node, game, tag: String) -> void:
 		ms.answer(m.id, str(m.replies[0].id))
 	ms.mark_read("coach")
 	hub._show("overview")
+	await _frames(3)
+
+
+## The people around the athlete (session P1), switched on for this part only: a family moment as a stop and its result card,
+## the People list with the new rows, the Family thread (attitude + people), Friends and the Training group (partners marked)
+## with moments waiting, a rival who became a person (the Rivals thread), the School page's messages. Everything is answered
+## afterwards and the people are switched off again.
+func _cast_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var ms = game.get_system("moments")
+	MS.people_enabled = true
+	ms.ensure_cast(game.athlete)
+	for i in 2:
+		game.rivals[i].met = maxi(int(game.rivals[i].get("met", 0)), 3)
+	ms._sync_people()
+	var ctx := {"date": game.date.duplicate(), "day": 2, "day_type": "weekday", "week": game.current_week()}
+	var today: int = MS.day_no(game.date)
+	var parent: Dictionary = ms.people_for("parent")[0]
+	ms.set_stop_mode("all")
+	ms._post(ms.storylet("fam_card_down"), parent, ctx, today, false, {"counted": false})
+	ms.set_stop_mode("important")
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("%s_cast_stop" % tag)
+	_check_overflow(hub, "%s cast_stop" % tag)
+	var e: Dictionary = game.pending_event()
+	if not e.is_empty():
+		hub._on_event_answer(e.id, "promise")
+		await _frames(6)
+		await _shot("%s_cast_result" % tag)
+		_check_overflow(hub, "%s cast_result" % tag)
+		hub._end_result_card()
+		await _frames(3)
+	for pair in [["fam_shoes", "parent"], ["fr_party_weekend", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
+		var who: Array = ms.people_for(str(pair[1]))
+		if not who.is_empty():
+			ms._post(ms.storylet(str(pair[0])), who[0], ctx, today, true, {"counted": false})
+	hub._refresh_week_ui()
+	for page in ["", "family", "friends", "group", "rivals", "school"]:
+		hub._people_page = page
+		hub._show("people")
+		await _frames(6)
+		await _shot("%s_cast_%s" % [tag, page if page != "" else "list"])
+		_check_overflow(hub, "%s cast_%s" % [tag, page])
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s cast_%s_end" % [tag, page])
+	for m in ms.pending():
+		ms.answer(m.id, str(m.replies[0].id))
+	for t in ms.threads:
+		ms.mark_read(t)
+	hub._people_page = ""
+	hub._show("overview")
+	MS.people_enabled = false
+	ms._sync_people()
 	await _frames(3)
 
 

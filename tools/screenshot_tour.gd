@@ -29,6 +29,8 @@ func _run() -> void:
 	# The season goals and the coach's suggestions (session C5) are switched on for their own part of the tour (_goals_tour) only.
 	load("res://scripts/core/season_goals.gd").enabled = false
 	load("res://scripts/core/coach_suggests.gd").enabled = false
+	# The people around the athlete (session P1) likewise: on for their own part (_cast_tour) only.
+	load("res://scripts/core/storylet_system.gd").people_enabled = false
 	await _shot("0_main_menu")
 	var main := current_scene
 	main.get_node("/root/Router").go("new_career")
@@ -284,6 +286,8 @@ func _run() -> void:
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _people_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
+	await _cast_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
 	await _goals_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _mind_tour(main, hub)
@@ -297,6 +301,87 @@ func _run() -> void:
 	await _lukio_tour(main, hub)
 	saves.delete(slot)
 	quit()
+
+
+# --- The people around the athlete (session P1): a family moment as a stop and its result card, the People list, the Family,
+# --- Friends, Training group and Rivals threads, the School page's messages, a late night in the next day's blocks (shots 54...) ---
+
+func _cast_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var hub: Control = hub_in
+	_answer_pending(game)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var ms = game.get_system("moments")
+	MS.people_enabled = true
+	ms.ensure_cast(game.athlete)
+	for i in 2:
+		game.rivals[i].met = maxi(int(game.rivals[i].get("met", 0)), 3)
+	ms._sync_people()
+	var ctx := {"date": game.date.duplicate(), "day": 1, "day_type": "weekday", "week": game.current_week()}
+	var today: int = MS.day_no(game.date)
+	var parent: Dictionary = ms.people_for("parent")[0]
+	print("cast tour: family attitude ", ms.family.get("attitude", ""), ", people ", ms.people.size())
+	ms.set_stop_mode("all")
+	ms._post(ms.storylet("fam_against_tests"), parent, ctx, today, false, {"counted": false})
+	ms.set_stop_mode("important")
+	hub._refresh_week_ui()
+	hub._show_pending_event()
+	await _frames(6)
+	await _shot("54_cast_family_stop")
+	var e: Dictionary = game.pending_event()
+	if not e.is_empty():
+		hub._on_event_answer(e.id, "study")
+		await _frames(6)
+		await _shot("54b_cast_result_card")
+		hub._end_result_card()
+		await _frames(3)
+	for pair in [["fam_shoes", "parent"], ["fr_party_weekend", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
+		var who: Array = ms.people_for(str(pair[1]))
+		if not who.is_empty():
+			ms._post(ms.storylet(str(pair[0])), who[0], ctx, today, true, {"counted": false})
+	hub._refresh_week_ui()
+	var shots := {"": "54c_people_list", "family": "54d_family", "friends": "54e_friends", "group": "54f_group", "rivals": "54g_rivals", "school": "54h_school_messages"}
+	for page in shots:
+		hub._people_page = page
+		hub._show("people")
+		await _frames(6)
+		await _shot(shots[page])
+	# The late night of the answer above, in tomorrow's blocks of the day editor.
+	var w = game.current_week()
+	var d: int = mini(int(w.day) + 1, 6)
+	hub._show("overview")
+	hub._open_day(d)
+	await _frames(8)
+	if hub._editor != null:
+		var p: Node = hub._editor.get_parent()
+		while p and not p is ScrollContainer:
+			p = p.get_parent()
+		var line = _find_text(hub._editor, str(main.get_node("/root/Data").school_life.texts.pulls.late_night))
+		if p and line != null:
+			(p as ScrollContainer).ensure_control_visible(line)
+		await _frames(4)
+	await _shot("54i_late_night_blocks")
+	hub._close_day()
+	for m in ms.pending():
+		ms.answer(m.id, str(m.replies[0].id))
+	for t in ms.threads:
+		ms.mark_read(t)
+	hub._people_page = ""
+	hub._show("overview")
+	MS.people_enabled = false
+	ms._sync_people()
+	await _frames(3)
+
+
+## The first Label under `node` whose text contains `text` (null when none).
+func _find_text(node: Node, text: String):
+	if node is Label and text in (node as Label).text:
+		return node
+	for ch in node.get_children():
+		var f = _find_text(ch, text)
+		if f != null:
+			return f
+	return null
 
 
 # --- Lukio and the matriculation exams (session S3b): a sports lukio in Tampere from 2028 seen in period 3 (the School page, the

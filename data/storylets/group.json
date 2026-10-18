@@ -1,0 +1,439 @@
+{
+	"_note": "The TRAINING GROUP's moments (session P1, GDD 4.9.5; format in README.md). Senders: partner (the close training partners, data/cast.json partners) or partner:<role> (joker, racer, veteran, newcomer, quiet, leader, talker: coaching.json club.group.roles), teammate (anyone in the coach's group). They change with the coach (a new group comes with a new coach). Moments never change what is trained: a reply moves moods, the relationship or a remembered flag. Ages 14-16 (P2 adds 16-17). All teammates are fictional.",
+	"storylets": [
+		{
+			"id": "gr_hello", "thread": "group", "from": "partner", "slot": "evening", "once": true,
+			"when": {"weeks_in_career": [0, 3]},
+			"text": [
+				"Hey, you're the new one in {coach_first}'s group, right? I'm {from}. Want to warm up together on Thursday?",
+				"Welcome to the group! Tip: never stand next to {coach_first} while the reps are being counted. You'll get an extra one."
+			],
+			"replies": [
+				{"id": "yes", "label": "Sure, Thursday!", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Cool. I'm the one with the orange hat.", "result_from": "sender"},
+				{"id": "ha", "label": "Thanks for the warning", "hint": "", "effects": {"relation": 2},
+					"result": "Survival tips, free of charge.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_joker", "thread": "group", "from": "partner:joker", "slot": "morning", "cooldown_days": 30,
+			"when": {"today_tags": ["hard", "speed"]},
+			"text": [
+				"Intervals today. I've already written my will. You can have my spikes.",
+				"Rumour: {coach_first} is adding two reps because it's Tuesday. Or Wednesday. Any day really.",
+				"I dreamt the intervals were cancelled. Then I woke up."
+			],
+			"replies": [
+				{"id": "laugh", "label": "Ha! See you there", "hint": "", "effects": {"relation": 2, "stress": -1, "motivation": 1},
+					"result": "If I faint, carry me to the café.", "result_from": "sender"},
+				{"id": "serious", "label": "Focus, it's a key session", "hint": "", "effects": {"relation": -1},
+					"result": "Yes, captain. Sorry, captain.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_joker_cold", "thread": "group", "from": "partner:joker", "slot": "morning", "cooldown_days": 40,
+			"when": {"month": [12, 1, 2], "today_tags": ["run"]},
+			"text": [
+				"-17 this morning. My eyelashes froze. Are we really running outside?",
+				"The weather app says 'stay indoors'. {coach_first} says 'tights and a buff'."
+			],
+			"replies": [
+				{"id": "go", "label": "Real runners love winter", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "You are not normal. See you there.", "result_from": "sender"},
+				{"id": "complain", "label": "I hate this country", "hint": "", "effects": {"relation": 2, "stress": -1},
+					"result": "Ha! Same. Three layers, see you at five.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_racer", "thread": "group", "from": "partner:racer", "slot": "evening", "cooldown_days": 30,
+			"when": {"today_tags": ["hard", "speed"]},
+			"text": [
+				"I beat you on the last rep today. Just saying.",
+				"Last 200 today: me 31.8, you 32.4. I wrote it down.",
+				"You were slower on reps 4-6. I noticed. Tired?"
+			],
+			"replies": [
+				{"id": "next", "label": "Next time I'll beat you", "hint": "{from} will remember", "remember": true, "effects": {"relation": 2, "motivation": 2, "memory": "challenged"},
+					"result": "Bring it.", "result_from": "sender"},
+				{"id": "plan", "label": "It's training, not a race", "hint": "", "effects": {"relation": -1, "trust": 1},
+					"result": "Everything is a race.", "result_from": "sender"},
+				{"id": "fine", "label": "Fair enough, you were good", "hint": "", "effects": {"relation": 3},
+					"result": "...Thanks. You too, actually.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_racer_count", "thread": "group", "from": "partner:racer", "slot": "evening", "cooldown_days": 60,
+			"when": {"memory": ["challenged"], "memory_days": {"challenged": [10, 90]}, "today_tags": ["hard", "speed"]},
+			"text": [
+				"Score so far: me 7, you 4. Last reps only. Don't pretend you're not counting.",
+				"OK, you won the last rep today. It doesn't count, I had a stitch."
+			],
+			"replies": [
+				{"id": "game", "label": "Game on", "hint": "", "effects": {"relation": 2, "motivation": 2},
+					"result": "May the best legs win.", "result_from": "sender"},
+				{"id": "stop", "label": "Let's stop counting", "hint": "", "effects": {"relation": -1, "forget": "challenged", "stress": -1},
+					"result": "...Fine. I'll count in my head.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_veteran_sm", "thread": "group", "from": "partner:veteran", "slot": "evening", "cooldown_days": 120,
+			"when": {"race_in_days": [3, 10]},
+			"text": [
+				"First big meet? At my first Nuorten SM I threw up in the call room. Then I ran a PB. So, you know.",
+				"Advice for {meet}: warm up early, don't watch the other heats, and eat something an hour before."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks, that helps", "hint": "", "effects": {"relation": 3, "confidence": 1, "stress": -1},
+					"result": "You'll be fine. Probably no throwing up.", "result_from": "sender"},
+				{"id": "more", "label": "What else should I know?", "hint": "{from} likes to talk", "effects": {"relation": 4, "stress": -1},
+					"result": "Bring two pairs of socks. Long story.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_veteran_hurt", "thread": "group", "from": "partner:veteran", "slot": "evening", "cooldown_days": 60,
+			"when": {"sore": true, "injured": false},
+			"text": [
+				"You were limping a bit today. Tell {coach_first}. I didn't, at your age, and lost a whole summer.",
+				"Sore shins? That's how my stress fracture started. Don't be a hero."
+			],
+			"replies": [
+				{"id": "tell", "label": "I'll tell {coach_first}", "hint": "", "effects": {"relation": 3, "trust": 1},
+					"result": "Good. Smart is fast.", "result_from": "sender"},
+				{"id": "fine", "label": "It's nothing", "hint": "", "effects": {"relation": -1},
+					"result": "That's what I said too.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_newcomer", "thread": "group", "from": "partner:newcomer", "slot": "evening", "cooldown_days": 60,
+			"when": {},
+			"text": [
+				"Sorry to bother you. How do you do the A-skip? I always look like a broken giraffe.",
+				"Is it normal to be this tired after an 'easy' run? Asking for me.",
+				"What do I wear for winter training? My mum bought me a ski jacket."
+			],
+			"replies": [
+				{"id": "help", "label": "I'll show you on Thursday", "hint": "{from} will look up to you", "remember": true, "effects": {"relation": 5, "motivation": 1, "confidence": 1, "memory": "helped"},
+					"result": "Thank you!! You're the best.", "result_from": "sender"},
+				{"id": "coach", "label": "Ask {coach_first}", "hint": "", "effects": {"relation": -1},
+					"result": "Oh. OK. Sorry.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_newcomer_thanks", "thread": "group", "from": "partner:newcomer", "slot": "evening", "cooldown_days": 120,
+			"when": {"memory": ["helped"], "memory_days": {"helped": [14, 120]}},
+			"text": [
+				"I ran my first race without dying! Your tips helped. Thank you!",
+				"{coach_first} said my drills look better. I told him you taught me."
+			],
+			"replies": [
+				{"id": "proud", "label": "I'm proud of you!", "hint": "", "effects": {"relation": 4, "motivation": 2},
+					"result": "You're like a big sibling. A fast one.", "result_from": "sender"},
+				{"id": "nothing", "label": "That was all you", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "Partly you. Mostly you.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_quiet_long", "thread": "group", "from": "teammate:quiet", "slot": "evening", "cooldown_days": 45,
+			"when": {"tomorrow_tags": ["long"]},
+			"text": [
+				"Long run tomorrow? Same pace as last time. I don't talk much, you know that.",
+				"Tomorrow's long run. Forest loop? Quiet is good."
+			],
+			"replies": [
+				{"id": "yes", "label": "Forest loop, quiet pace", "hint": "", "effects": {"relation": 3, "stress": -1},
+					"result": "Good.", "result_from": "sender"},
+				{"id": "talk", "label": "I'll do the talking", "hint": "", "effects": {"relation": 1},
+					"result": "...OK.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_leader_pace", "thread": "group", "from": "teammate:leader", "slot": "evening", "cooldown_days": 40,
+			"when": {"tomorrow_tags": ["hard", "speed"]},
+			"text": [
+				"Tomorrow's reps: I'll lead the first half, you take the second. Deal?",
+				"Let's run tomorrow's session together. I'll set the pace, you just hang on."
+			],
+			"replies": [
+				{"id": "deal", "label": "Deal", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Even splits, no heroics.", "result_from": "sender"},
+				{"id": "own", "label": "I'll run my own pace", "hint": "", "effects": {"relation": -1},
+					"result": "Your loss. Literally.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_talker_gossip", "thread": "group", "from": "teammate:talker", "slot": "evening", "cooldown_days": 35,
+			"when": {},
+			"text": [
+				"Did you hear? {teammate} might switch to the 400. And {coach_first} was on the phone forever after practice. Something's going on.",
+				"OMG, {teammate} got new spikes, the bright green ones. They cost like a phone.",
+				"Don't tell anyone, but I think {coach_first} is getting a new group from the other club."
+			],
+			"replies": [
+				{"id": "spill", "label": "Tell me everything", "hint": "", "effects": {"relation": 3, "sleep": -1},
+					"result": "OK, so. It started on Tuesday...", "result_from": "sender"},
+				{"id": "nope", "label": "Not my business", "hint": "", "effects": {"relation": -1, "trust": 1},
+					"result": "Boring. But fair.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_ride", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 45,
+			"when": {"race_in_days": [1, 3]},
+			"text": [
+				"My mum is driving to {meet}. There's room for one more. Want a ride?",
+				"Going to {meet} by car, leaving early. Seat's free if you want it."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes please!", "hint": "", "effects": {"relation": 3, "stress": -1},
+					"result": "Pick-up at seven. Bring the playlist.", "result_from": "sender"},
+				{"id": "no", "label": "My family is driving me", "hint": "", "effects": {"relation": 1},
+					"result": "See you in the call room then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_pb", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 30,
+			"when": {"pb_days_ago": [0, 1]},
+			"text": [
+				"PB!! I saw the results. {coach_first} was smiling, which is rare.",
+				"{pb}! Now I have to train harder. Thanks a lot."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks! Your turn next", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "Working on it.", "result_from": "sender"},
+				{"id": "group", "label": "The group made me faster", "hint": "", "effects": {"relation": 3, "relation_thread": {"group": 1}},
+					"result": "Aww. Don't get soft on us.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_bad_race", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 30,
+			"when": {"race_outcome": ["bad"]},
+			"text": [
+				"Rough one today. Happens to everyone. I DNF'd at my first indoor race.",
+				"Don't look at the time too long. Tomorrow we're running anyway."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks, I needed that", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "See you at practice.", "result_from": "sender"},
+				{"id": "alone", "label": "Not in the mood", "hint": "", "effects": {"relation": -1},
+					"result": "OK. Tomorrow then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_chat", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 40,
+			"when": {},
+			"text": [
+				"Group chat poll: best post-session snack? Pulla, banana or chocolate milk?",
+				"Who left a single spike shoe in the changing room? It smells like a crime.",
+				"Saturday after the long run: café? The one with the big cinnamon buns."
+			],
+			"replies": [
+				{"id": "pulla", "label": "Pulla, obviously", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "Correct answer."},
+				{"id": "milk", "label": "Chocolate milk", "hint": "", "effects": {"relation": 2},
+					"result": "Recovery science agrees with you. Apparently."},
+				{"id": "skip", "label": "Muting this chat", "hint": "", "effects": {"relation": -1},
+					"result": "Rude.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_quitting", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 180, "important": true,
+			"when": {"weeks_in_career": [10, null], "month": [9, 10, 11, 3, 4]},
+			"text": [
+				"Can I tell you something? I'm thinking of quitting. School is too much, and I'm not getting faster.",
+				"I don't enjoy it any more. Maybe I'll stop after this season."
+			],
+			"replies": [
+				{"id": "stay", "label": "Don't! The group needs you", "hint": "", "effects": {"relation": 4, "motivation": 1},
+					"result": "...Maybe I'll try one more season.", "result_from": "sender"},
+				{"id": "listen", "label": "Talk to {coach_first}", "hint": "", "effects": {"relation": 2, "trust": 1},
+					"result": "Yeah. Maybe a lighter plan would help.", "result_from": "sender"},
+				{"id": "fine", "label": "Do what's right for you", "hint": "", "effects": {"relation": 3},
+					"result": "Thanks for not judging.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_injured_mate", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 120,
+			"when": {"injured": false, "weeks_in_career": [4, null]},
+			"weight": 0.5,
+			"text": [
+				"Bad news: stress fracture. Six weeks off. I'm going crazy already.",
+				"I rolled my ankle on the trail. Crutches for a week. Will you tell me what we did in practice?"
+			],
+			"replies": [
+				{"id": "visit", "label": "I'll keep you updated", "hint": "", "effects": {"relation": 4},
+					"result": "Thanks. Send pictures of the suffering.", "result_from": "sender"},
+				{"id": "sorry", "label": "Sorry, get well soon", "hint": "", "effects": {"relation": 1},
+					"result": "Thanks.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_kalevan", "dated": true, "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 300,
+			"when": {"days_to": {"kalevan_kisat": [0, 2]}},
+			"text": [
+				"Kalevan kisat this weekend! The men's 800 final is on Sunday. Watch it together at the clubhouse?",
+				"The national champs on TV! Group viewing at my place, the 800 m finals. Bring snacks."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes!", "hint": "", "effects": {"relation": 3, "motivation": 2},
+					"result": "Someday that's us on the screen.", "result_from": "sender"},
+				{"id": "home", "label": "I'll watch at home", "hint": "", "effects": {"motivation": 1},
+					"result": "Live chat during the final then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_ruotsi", "dated": true, "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 300,
+			"when": {"days_to": {"ruotsi_ottelu": [0, 2]}},
+			"text": [
+				"Ruotsi-ottelu this weekend! Finland against Sweden. The whole club is watching in the clubhouse.",
+				"Finnkampen! We HAVE to beat Sweden this year. Watching?"
+			],
+			"replies": [
+				{"id": "yes", "label": "Hyvä Suomi!", "hint": "", "effects": {"relation": 3, "motivation": 2},
+					"result": "Blue and white face paint, compulsory.", "result_from": "sender"},
+				{"id": "maybe", "label": "If I'm not too tired", "hint": "", "effects": {"relation": -1},
+					"result": "It's the Sweden match!", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_autumn_start", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 300,
+			"when": {"month": [9, 10], "phase": ["transition", "autumn_general"]},
+			"text": [
+				"Base training again. Long runs, hills, and darkness at five. Ready?",
+				"New season, new us. This year I'm going under 2:10. Write it down."
+			],
+			"replies": [
+				{"id": "ready", "label": "Ready. Let's go", "hint": "", "effects": {"relation": 2, "motivation": 2},
+					"result": "Headlamps on.", "result_from": "sender"},
+				{"id": "goal", "label": "My goal is bigger", "hint": "", "effects": {"relation": 1, "motivation": 1},
+					"result": "Oh really? Tell me in the spring.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_birthday_mate", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 200,
+			"when": {"weeks_in_career": [8, null]},
+			"weight": 0.5,
+			"text": [
+				"It's my birthday on Thursday. I'm bringing cake to practice. Don't tell {coach_first}, or we'll all be running it off.",
+				"Birthday cake after Saturday's session, my mum made it. You coming?"
+			],
+			"replies": [
+				{"id": "cake", "label": "Happy birthday! Cake!", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Saved you the biggest piece.", "result_from": "sender"},
+				{"id": "gift", "label": "I'll bring something too", "hint": "", "effects": {"relation": 4},
+					"result": "You don't have to! But OK, yes.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_camp_dream", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 200,
+			"when": {"month": [8, 9, 10], "weeks_in_career": [2, null]},
+			"text": [
+				"Have you seen the Pajulahti camps for 7-9 graders? A whole week with real coaches. My parents say it's expensive.",
+				"I heard the TF-juniorit camp people come to the big meets to watch. Imagine getting picked."
+			],
+			"replies": [
+				{"id": "dream", "label": "One day we'll both go", "hint": "", "effects": {"relation": 3, "motivation": 2},
+					"result": "Pinky promise.", "result_from": "sender"},
+				{"id": "focus", "label": "Let's just train well", "hint": "", "effects": {"relation": 1, "stress": -1},
+					"result": "True. One week at a time.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_dark", "thread": "group", "from": "partner", "slot": "morning", "cooldown_days": 60,
+			"when": {"month": [11, 12, 1], "today_tags": ["run"]},
+			"text": [
+				"Dark at three o'clock. Headlamps tonight, and stay on the lit trail, OK?",
+				"I can't remember the last time I saw the sun after school. Running in the dark again."
+			],
+			"replies": [
+				{"id": "together", "label": "Let's run together", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Two headlamps are better than one.", "result_from": "sender"},
+				{"id": "fine", "label": "I like the dark", "hint": "", "effects": {"relation": 1},
+					"result": "You're strange. See you there.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_indoor", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 300,
+			"when": {"month": [1, 2]},
+			"text": [
+				"Indoor season! The hall smells of rubber and nerves. Who's racing first?",
+				"The indoor bends are so tight. My elbows are ready."
+			],
+			"replies": [
+				{"id": "excited", "label": "Can't wait", "hint": "", "effects": {"relation": 2, "motivation": 2},
+					"result": "Same. Fast floor, fast times.", "result_from": "sender"},
+				{"id": "nervous", "label": "The bends scare me", "hint": "", "effects": {"relation": 2, "stress": 1},
+					"result": "Stay on the inside of lane one and you're fine.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_hills", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 50,
+			"when": {"month": [9, 10, 11, 3, 4], "today_tags": ["hard", "legs"]},
+			"text": [
+				"Those hills today. My calves are writing a complaint.",
+				"Eight hill reps and I could only feel my legs on the first four."
+			],
+			"replies": [
+				{"id": "worth", "label": "Worth it in the summer", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "That's what they always say.", "result_from": "sender"},
+				{"id": "dead", "label": "I'm dead too", "hint": "", "effects": {"relation": 3},
+					"result": "Foam roller party at mine.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_spikes", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 150,
+			"when": {"month": [3, 4, 5, 12, 1]},
+			"text": [
+				"Which spikes do you have? Mine are falling apart and I don't want to spend a fortune.",
+				"I bought new spikes and they feel like walking on nails. Is that normal at first?"
+			],
+			"replies": [
+				{"id": "advice", "label": "Here's what I use", "hint": "", "effects": {"relation": 3},
+					"result": "Thanks! Ordering them tonight.", "result_from": "sender"},
+				{"id": "coach", "label": "Ask {coach_first}", "hint": "", "effects": {"relation": 1},
+					"result": "Good idea.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_moose", "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 120,
+			"when": {"today_tags": ["long"], "month": [4, 5, 6, 8, 9, 10]},
+			"text": [
+				"Did you SEE that moose on the long run?! It just stood there looking at us.",
+				"Long run today and a deer ran across the path right in front of me. My heart rate is still up."
+			],
+			"replies": [
+				{"id": "yes", "label": "I thought we were done for", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "Best tempo of the year, though. Moose motivation.", "result_from": "sender"},
+				{"id": "missed", "label": "I missed it!", "hint": "", "effects": {"relation": 1},
+					"result": "Next time, look up from your watch.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_relay", "important": true, "thread": "group", "from": "partner", "slot": "evening", "cooldown_days": 300,
+			"when": {"month": [5, 6, 8], "weeks_in_career": [8, null]},
+			"text": [
+				"The club needs a relay team for the district meet. 4 × 400. We need you as the fourth. In?",
+				"Relay at the club meet next month! The coach said it's up to us who runs. You?"
+			],
+			"replies": [
+				{"id": "yes", "label": "I'm in", "hint": "", "effects": {"relation": 4, "relation_thread": {"group": 1}, "motivation": 2},
+					"result": "Team! We'll practise the changeovers on Thursday.", "result_from": "sender"},
+				{"id": "no", "label": "Not this time", "hint": "", "effects": {"relation": -2},
+					"result": "OK, we'll find someone.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "gr_coach_birthday", "thread": "group", "from": "teammate", "slot": "evening", "cooldown_days": 300,
+			"when": {"weeks_in_career": [10, null]},
+			"weight": 0.5,
+			"text": [
+				"It's {coach_first}'s birthday on Thursday! We're getting a card and a cake. Will you chip in two euros?",
+				"Secret: we're singing for {coach_first} after the session on Thursday. Birthday. Are you in?"
+			],
+			"replies": [
+				{"id": "yes", "label": "Of course", "hint": "{coach_first} will be touched", "effects": {"relation": 2, "trust": 1},
+					"result": "The coach went red and pretended to be annoyed. Everyone saw the smile."},
+				{"id": "no", "label": "I'll pass", "hint": "", "effects": {"relation": -1},
+					"result": "OK.", "result_from": "sender"}
+			]
+		}
+	]
+}

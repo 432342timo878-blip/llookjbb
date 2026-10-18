@@ -68,7 +68,7 @@ func _message_row() -> Control:
 	if open.is_empty():
 		return null
 	var person: Dictionary = ms.people.get(str(open.from), {})
-	var first := str(person.get("first_name", PeopleUI.name_of(ms, str(open.from))))
+	var first := StoryletSystem.short_name(person) if not person.is_empty() else PeopleUI.name_of(ms, str(open.from))
 	var key := "today_moment" if str(open.kind) == "moment" else "today_message"
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", UIKit.alert_style(Palette.ACCENT, 10))

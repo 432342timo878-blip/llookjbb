@@ -79,6 +79,10 @@ static func _apply_answer(a: Athlete, answer: Dictionary) -> void:
 		a.temperament = answer.temperament
 	if answer.has("family"):
 		a.family = answer.family
+	if answer.has("origin"):
+		a.origin = answer.origin
+	if answer.has("sport"):
+		a.old_sport = answer.sport
 
 
 # --- The points pool ------------------------------------------------------------------------------

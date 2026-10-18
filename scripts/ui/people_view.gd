@@ -69,6 +69,8 @@ func _list(with_selection: bool) -> Control:
 	for t in StoryletSystem.thread_ids():   # (a thread opened beside the list is marked; stacked pages have no selection)
 		if t == "coaches" and not CoachMarket.enabled and _ms.thread("coaches").is_empty():
 			continue   # (the coach market is off: tools)
+		if t == "rivals" and _ms.thread("rivals").is_empty() and _ms.people_for("rival").is_empty():
+			continue   # (session P1: shown once a rival has become a person)
 		if t == "school" and SchoolUI.system() != null:   # the School page instead of the empty thread (session S2)
 			col.add_child(_school_row(with_selection and current == "school"))
 			continue
@@ -122,11 +124,20 @@ func _school_row(selected: bool) -> Control:
 		margin.add_theme_constant_override("margin_" + side, 10)
 	var col := UIKit.vbox(2)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for l in [[str(u.row_title), "SubheadingLabel"], [sub, "MutedLabel"]]:
 		var lab := UIKit.wrapped(str(l[0]), str(l[1]))
 		lab.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_child(lab)
-	margin.add_child(col)
+	var row := UIKit.hbox(10)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(col)
+	var n := maxi(_waiting("school").size(), _ms.unread("school"))   # (session P1: a teacher wrote)
+	if n > 0:
+		var badge := UIKit.badge(str(n), Palette.ACCENT, 22.0)
+		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(badge)
+	margin.add_child(row)
 	card.add_child(margin)
 	var button := Button.new()
 	button.theme_type_variation = "CardOverlay"
@@ -236,6 +247,13 @@ func _school() -> Control:
 	var col := UIKit.vbox(12)
 	if Layout.stacked():
 		col.add_child(_back_button())
+	# The teachers' messages on top (session P1, user: on the School page, not a thread of its own): what waits for an answer
+	# and the latest exchanges.
+	if StoryletSystem.people_enabled or not _ms.thread("school").is_empty():
+		var box := UIKit.vbox(10)
+		box.add_child(UIKit.label(str(Data.cast.ui.school_messages), "CaptionLabel"))
+		_messages_into(box, "school", str(Data.cast.ui.school_messages_none), 3)
+		col.add_child(box)
 	col.add_child(SchoolView.new())
 	return col
 
@@ -262,8 +280,15 @@ func _thread(thread_id: String) -> Control:
 
 	if thread_id == "group":
 		col.add_child(_members())
+	elif thread_id in ["family", "friends", "rivals"] and not _ms.people_for(thread_id if thread_id != "rivals" else "rival").is_empty():
+		col.add_child(PeopleUI.roster(_ms, thread_id))   # (session P1: who they are, the relationship)
+	_messages_into(col, thread_id)
+	return col
 
-	# What waits for an answer, on top.
+
+## A thread's messages into `col`: what waits for an answer on top, then the exchanges newest first (or the empty note). The
+## thread is marked read.
+func _messages_into(col: Control, thread_id: String, empty_note := "", most := 0) -> void:
 	var waiting := _waiting(thread_id)
 	if not waiting.is_empty():
 		var box := UIKit.vbox(14)
@@ -277,15 +302,14 @@ func _thread(thread_id: String) -> Control:
 	if blocks.is_empty() and waiting.is_empty():
 		var empty := UIKit.vbox(4)
 		empty.add_child(UIKit.label(PeopleUI.ui("empty_head"), "CaptionLabel"))
-		empty.add_child(UIKit.wrapped(str(Data.moments.threads[thread_id].empty), ""))
+		empty.add_child(UIKit.wrapped(empty_note if empty_note != "" else str(Data.moments.threads[thread_id].empty), ""))
 		col.add_child(UIKit.panel(empty, 14))
-	for msgs in blocks:
+	for msgs in (blocks if most <= 0 else blocks.slice(0, most)):
 		col.add_child(PeopleUI.exchange(_ms, msgs))
 	# Opened = read (the new-message highlight shows this one time; the dot is gone when the page is shown again).
 	if _ms.unread(thread_id) > 0:
 		_ms.mark_read(thread_id)
 		changed.emit.call_deferred()
-	return col
 
 
 ## The training group's people: name, age, event and role.
@@ -296,7 +320,11 @@ func _members() -> Control:
 	var roles: Dictionary = Data.coaching.club.group.roles
 	for t in coach.get("group", []):
 		var line := UIKit.vbox(0)
-		line.add_child(UIKit.label("%s %s" % [t.first_name, t.last_name]))
+		var person: Dictionary = _ms.people.get("%s.%s" % [coach.id, t.id], {})
+		var name := "%s %s" % [t.first_name, t.last_name]
+		if bool(person.get("close", false)):   # (session P1: the close training partners who write)
+			name += "  ·  " + str(Data.cast.ui.partner_mark)
+		line.add_child(UIKit.wrapped(name, ""))
 		var event_name := str(Data.get_event(str(t.event)).get("name", t.event))
 		line.add_child(UIKit.wrapped(str(Data.coach_talk.profile.group_line).format({"age": int(Game.date.year) - int(t.birth_year),
 				"event": event_name, "role": str(roles.get(str(t.role), {}).get("word", ""))}), "MutedLabel"))

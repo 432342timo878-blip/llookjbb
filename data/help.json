@@ -106,10 +106,12 @@
   },
   "people": {
    "title": "People",
-   "version": 4,
+   "version": 5,
    "sections": [
-    {"heading": "The people around you", "text": "Messages from your coach and your training group; family and friends will write here in a later update. A number or a dot means something is new or waits for your answer. Tap a person to open the conversation."},
-    {"heading": "School", "text": "The School row opens your grades, tests and report cards, the two school settings (study effort and free time), the joint application in grade 9 and the school you go to after it.", "see": ["moods"]},
+    {"heading": "The people around you", "text": "Your coach, your training group, your family, your friends from school and, once you have raced someone a few times, your rivals. A number or a dot means something is new or waits for your answer. Tap a row to open the conversation."},
+    {"heading": "Who they are", "text": "At the top of a thread: who the people are and how you get on with each (Close, Good, Fine, Cool, Strained). Your family's attitude comes from your story: some are proud, some think grades come first. Your answers slowly change both."},
+    {"heading": "What an answer changes", "text": "Never your training. An answer can move your moods, how someone feels about you, give you a late night (a heavier next day) or nudge your schoolwork. The card after an answer says what changed.", "see": ["moods"]},
+    {"heading": "School", "text": "The School row opens your grades, tests and report cards, the two school settings, the joint application and the school after grade 9. Your teachers' messages are at the top of that page.", "see": ["moods"]},
     {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. At a sports lukio the school's morning-practice coach writes in your first week. Find a coach shows every coach you can see now."},
     {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"he will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
     {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one: the phase, the hard sessions and why, and one thing to focus on. It always stops Play week. A talk may end with a question. After a race he writes to you that evening."},
@@ -119,14 +121,15 @@
   },
   "school": {
    "title": "School",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "What school does", "text": "School changes how heavy your days are and how your grades go. It never changes what you train. A normal school week at Normal study effort and Normal free time is just your normal game."},
+    {"heading": "Messages from school", "text": "Your class teacher, PE teacher and study counsellor write at the top of this page: tests, the school's cross-country run, the work-experience week, the application. Some answers nudge your grades a little or cost you a late night."},
     {"heading": "Study effort", "text": "Light, Normal or Heavy. Heavy lifts your grades but makes school days heavier: more tiredness and more colds. Light does the opposite. The same two settings are in the Training tab."},
     {"heading": "Free time", "text": "Little, Normal or Lots. Lots of free time with friends lifts your motivation but means late nights on school days. Little means more rest, but life gets dull.", "see": ["moods"]},
     {"heading": "Focus subjects", "text": "Pick up to two subjects to push. They rise faster while the others slip a little. Change them any time: grades move slowly, so switching back and forth gains nothing."},
     {"heading": "Grades and tests", "text": "Each subject shows where you stand, written like a test: 8, 8+, 8½, 9-. Tap one for its latest tests. A week with more than two tests is a busy test week: heavier and more stressful."},
-    {"heading": "Report cards", "text": "In grades 8 and 9 you get a report card on the last school day before Christmas and at the end of the school year. Play stops to show it, and you choose how to handle the next term. In lukio each period has its results instead."},
+    {"heading": "Report cards", "text": "In grades 8 and 9 you get a report card on the last school day before Christmas and at the end of the school year. Play stops to show it, and you choose how to handle the next term. Your family reacts the next evening. In lukio each period has its results instead."},
     {"heading": "Tests and a race", "text": "When you have a race in a busy test week, a test on the race day itself, or a matriculation exam that week, play stops once. Race and risk the grades, study and scratch, or race and study on the bus: each has a price. Exam weeks nearly always count as busy."},
     {"heading": "Holidays", "text": "Breaks and the summer are lighter: you recover a little faster and feel less stressed. The week strip shades those days and the Calendar lists them. Pajulahti camp weeks are shown there too."},
     {"heading": "The joint application", "text": "In grade 9 you apply for upper secondary school: up to seven wishes in order, in February-March. A sports lukio counts your grades (0-10 points), your 800 m results (0-5) and its own test (0-5). Add schools, tap Info, reorder. Nothing chosen means your own town's lukio."},
@@ -151,10 +154,10 @@
   },
   "moment": {
    "title": "A message that stops the week",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "Goals and suggestions", "text": "Your coach also writes about your season goals, when one is met or the season is looked back on, and when he suggests a meet to race or a target. Nothing is decided without you.", "see": ["standards"]},
-    {"heading": "Why it stops", "text": "Your coach's Sunday talk always stops Play week, and so do messages where your answer changes something. Pick an answer to carry on."},
+    {"heading": "Why it stops", "text": "Your coach's Sunday talk always stops Play week. Other messages stop it when your answer really matters: a party the night before a race, the cottage week, your family on your report card. About one a week. Pick an answer to carry on."},
     {"heading": "Your coach suggests a change", "text": "He wants to change a coming day, or advises you to scratch from a race. OK lets him. Veto keeps your plan: a reason costs nothing, but many vetoes without one cost a little trust.", "see": ["coach_changes"]},
     {"heading": "The answers", "text": "The line under each button says what it may cost, like \"he will remember\". A talk without a question just needs \"Thanks, coach\"."},
     {"heading": "Later", "text": "The whole conversation stays in the People tab. What Play week stops for is a setting at the bottom of the Training tab."}

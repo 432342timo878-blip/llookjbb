@@ -17,6 +17,11 @@ var main_event := ""            # event id, e.g. "800m"
 var coach_id := ""              # the head coach: a coach record of CoachSystem (GDD 4.9.1); "" = not made yet (older saves)
 var temperament := ""           # from the creation answer "Before an important race..." (data/coaching.json temperaments); "" = not known
 var family := ""                # the creation answer about the family (background_questions.json `family`: the budget, a parent coach; C6); "" = not known
+## Two creation answers the people around the athlete are made from (session P1, Cast): who got them into athletics (`origin`:
+## pe_teacher, friends, ...) and the sport before (`old_sport`). NOT saved: StoryletSystem.ensure_cast copies them into the
+## cast when the career starts (so an athlete's save data stays as it was).
+var origin := ""
+var old_sport := ""
 
 var height_cm := 0.0
 var weight_kg := 0.0

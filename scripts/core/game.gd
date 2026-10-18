@@ -71,6 +71,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 	_week = null
 	systems = _make_systems()
 	(get_system("coach") as CoachSystem).ensure_head(athlete, date)   # the career's club coach (GDD 4.9.1)
+	(get_system("moments") as StoryletSystem).ensure_cast(athlete)   # the people around them (session P1; only with the people on)
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	rivals = Rivals.generate(athlete, rng)
@@ -390,7 +391,31 @@ func _make_race_note(rd: RaceDay) -> Dictionary:
 	if res.is_empty():
 		return {}
 	return {"meet": str(rd.meet.name), "key": str(rd.meet.key), "result": res, "story": rd.story.duplicate(),
-			"rounds": rd.player_results.duplicate(true), "beat_above": _beaten_above(rd)}
+			"rounds": rd.player_results.duplicate(true), "beat_above": _beaten_above(rd), "vs": _rivals_vs(rd)}
+
+
+## The rivals who ran a round with the player (session P1, the Rivals thread): [{id, beat}], `beat` = the player finished ahead
+## (or they did not finish and the player did). A rival met in several rounds counts by the last one.
+static func _rivals_vs(rd: RaceDay) -> Array:
+	var by_id := {}
+	for res in rd.all_results:
+		var mine := -1
+		for i in res.size():
+			if res[i].get("is_player", false):
+				mine = i
+		if mine < 0:
+			continue
+		var i_finished := str(res[mine].get("status", "")) == ""
+		for i in res.size():
+			var rival: Dictionary = res[i].get("rival", {})
+			if i == mine or rival.is_empty():
+				continue
+			var they_finished := str(res[i].get("status", "")) == ""
+			by_id[str(rival.id)] = i_finished and (i > mine or not they_finished)
+	var out := []
+	for rid in by_id:
+		out.append({"id": rid, "beat": by_id[rid]})
+	return out
 
 
 ## The mind's news (session M1): how many runners who went into a round with a faster season best (else personal best) than the

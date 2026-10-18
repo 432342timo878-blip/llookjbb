@@ -434,9 +434,19 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         `help_check` both layouts, `run_all_checks`, `training_balance -- 0` fingerprints identical.
         Left for later: compensation of a failed exam, the academy services' effects, school-specific optional courses (folded into the national ones), the lukio diploma courses,
         what the matriculation grades open after school (M4), the family's reaction to grades (P1), the balance (B1).
-  - [ ] **P1. The cast + first moments (ages 14–15):** family, friends, training group, teachers, rivals; Finnish life events;
-        ~100–150 storylets. *(Opus, high)* *(next)*
-        Check: `storylet_check` (rate, repeats, coverage per age).
+  - [x] **P1. The cast + first moments (ages 14–15)** *(done 2026-10-18, GDD 4.9.5 "Built (step P1)"; user: the core cast
+        (1-2 parents, a sibling only with that answer, a best friend + 1-2 friends, 3 close training partners, 3 school staff),
+        parents' attitude in words + reactions + moods (an 'against' family can come round), a Rivals thread of at most 3, a reply
+        can give a late night (life load tomorrow) and nudge the grades, Important only ~1 people stop a week, teachers' messages on
+        the School page, the confirmation camp as a choice in February)*: `Cast` + `data/cast.json`, ~150 storylets in
+        `data/storylets/family / friends / group / school_people / rivals.json`, `StoryletSystem.people_enabled` (only main.gd),
+        new senders / conditions / effects / placeholders, `dated` moments, the family's card and application talks, rival notes,
+        `PeopleUI.roster`. *(Opus, high)*
+        Check: `storylet_check` part 7 (rate, stops, repeats, coverage per storylet / age / person, save / load, neutral), layout
+        check (5 sizes), tour (54...), `help_check` both layouts, `run_all_checks`, `training_balance -- 0` identical.
+        Left for later: the training group's pull in hard sessions (B1), sleep as its own system (a late night is life load now),
+        the family budget's real money (M4), lukio staff's moments, ages 16-17, the move's goodbyes (P2), teammates quitting or
+        joining for real (P2).
   - [ ] **D2. Real schools (research + data, then a short build)** *(user 2026-10-18, after P1: "Upper secondary school
         (Sastamala)" is a placeholder from S3a, not research)*: for every game town the real general lukiot (with their published
         lowest accepted averages, 5 or 6 periods), the real vocational schools (athletics-friendly programmes) and the real

@@ -2674,6 +2674,8 @@ remembered flag when the storylet says so). The card is shown in the moment pane
 **Unanswered (user: a setting):** *Play week stops for:* **Important only (default)** / Every moment; a small moment left unanswered
 passes as "you didn't answer", a real outcome (friends notice a little).
 **Where:** the People tab (threads), the Today card (today's moment), a small people mark on the week strip.
+*Built in P1 (the cast, ~150 moments for ages 14-15, the Rivals thread, late nights and grades as real effects): see "Built
+(step P1)" below.*
 
 #### 4.9.6 Minigames: sessions played through (D1 / D2 kept: decisions, never dexterity)
 
@@ -3936,6 +3938,101 @@ per subject (a failed course is just retaken once); the academy services' effect
 (M4); the family's reaction to grades (P1); the balance over whole careers (B1: the lukio grade shift, the plan's year shares, the
 course load's weight and the exam thresholds are all estimates). **Unverified:** the lukio grade shift, one school's rules used for
 all, two schools' registration deadlines, the grade shares from a secondary source.
+
+#### Built (step P1, 2026-10-18): the cast + the first moments (ages 14-15)
+
+**Decisions with the user this session (all the recommended options):**
+1. **The core cast:** one or two parents (two in 75 % of careers), an older sibling only with "An older sibling runs", a best friend
+   from school (not an athlete) + 1-2 more friends, 3 close training partners picked from the coach's group (the rest of the group
+   stays listed and can still write as a teammate), class teacher + PE teacher + study counsellor: about 11-12 people, made once per
+   career from the career's own dice (the same career = the same people).
+2. **The parents' attitude shows in words, reactions and moods:** their texts differ by attitude, they react to report cards,
+   results and clashes in their own way, their thread shows a word ("Grades first", "Knows the sport · expects a lot"), and their
+   replies move the moods a little. A "sport is a waste of time" family can slowly come round (a counter of good signs → a chain:
+   *against* → *coming round* → *supportive*).
+3. **Rivals become people in a Rivals thread, at most 3:** a rival met twice becomes a person (the ones met most first); a short
+   message on the evening after a race you both ran (a nod, a jab), "the rival who always beats you" after three losses in a row,
+   ended by beating them. Never a stop. Youth rivals stay fictional.
+4. **A reply can give a late night and nudge the grades:** `sleep` = life load the next day (shown in the day's blocks as "A late
+   night yesterday"), `grades` = every academic subject's level a little (school drifts it back). The family budget stays recorded
+   only until money exists (M4).
+5. **Play week stops for Important only, ~1 a week:** important = a real clash (a party the night before a race, a gig, a sleepover,
+   the cottage week, the family's report-card talk, the application's results, a teammate thinking of quitting); the rest waits in
+   the threads.
+6. **Teachers' messages on the School page** (a MESSAGES FROM SCHOOL section at its top, the School row gets the dot), not a thread
+   of their own.
+7. **The confirmation camp (rippileiri) is a choice in February** of the year the athlete turns 15: a camp week in June, one in
+   July, the day confirmation school in town, or not at all; then the week comes with its moments (packing, the camp, the
+   confirmation party). Training stays the player's to plan.
+
+**Claude's defaults (not asked; say if you want them changed):** the people's mood points weigh 0.4 of the coach's
+(`cast.json mood_scale`; with 1.0 the moments pushed motivation to Keen in 71 % of weeks against M1's ~17 %, training quality up
+~1 %); `dated` moments (Christmas Eve, vappu, the birthday, the camp week, juhannus, the spring party, Kalevan kisat on TV) come on
+their day whenever they fit, before the day's roll; the partners are one of each role first (the racer, the joker, the veteran,
+the newcomer); the quiet one, the leader and the talker write as "teammate:<role>"; parents are called Mum / Dad in the texts and
+the threads (their first name in the roster); the family's report-card talk and application talk come the evening after (queued
+like a chain, so they wait for a stop token); a moment's mood lines on the result card are sized after the 0.4.
+
+**What was built:**
+- **Data:** `data/cast.json` (new): the family (two_parents, ages, Mum / Dad, the sibling), the 7 attitudes with the creation
+  answers they come from, adult names, the friends' traits (gamer, musician, artist, joker, scout, partygoer, old_team), the
+  partners' role order, the school staff per stage (the PE teacher "spotted you" with that answer), rivals (max 3, met_min 2,
+  note_chance 0.6), the relationship start per role and its words (Strained / Cool / Fine / Good / Close), mood_scale, sleep,
+  grades, the yearly calendar `life` (vappu, valentine, christmas, new_year, independence, juhannus, easter, school_start /
+  school_end, birthday, kalevan_kisat, ruotsi_ottelu, rippileiri), sport words, UI texts. `background_questions.json`: the answers
+  of "Who got you into athletics?" carry an `origin`, those of "What did you do before athletics?" a `sport`. Storylets: **149 in
+  five files by person** (`family.json` 48, `friends.json` 37, `group.json` 30, `school_people.json` 24, `rivals.json` 10), each with
+  2-4 replies, hints, real effects and 1-5 text variants (by attitude, stage, trait, memory); `moments.json`: the Rivals thread, the
+  threads' texts, the result card's sleep / schoolwork / thread / attitude lines, "stress ▲" drawn red; `school_life.json`: the
+  late-night line; `help.json`: `people` v5, `moment` v4, `school` v4.
+- **`Cast`** (`scripts/core/cast.gd`, static): `make` (family + friends), `make_school` (by stage, a new set at the path's school),
+  `pick_partners`, `attitude_for`, `relation_word`, the calendar `occurrence / days_to / days_after / nth_monday`. Its own dice.
+- **`StoryletSystem`** (session P1 additions): static `people_enabled` (OFF unless `main.gd`; it gates the cast and every real
+  storylet that is not a coach topic, so every tool plays exactly the old game); `ensure_cast` (from `Game.start_career`; the
+  creation answers `origin` / `old_sport` are kept in `cast_info`, not on the athlete, so its save data is unchanged), `_sync_people`
+  (the cast, the partners, the school staff by stage, the rivals); new senders, conditions (family, has, turns, days_to / days_after,
+  school_day, break, stage, test_today / test_tomorrow, tests_week, cards, card_days_ago / card_avg / card_change, app, app_result,
+  origin, old_sport; per sender: memory, memory_days, trait, rival_race, rival_streak, rival_wins), effects (sleep, grades,
+  attitude, memory / forget, relation_thread), placeholders ({mum}, {best}, {partner}, {rival}, {test_subject}, {avg}...);
+  `dated` storylets; queued topics `card` / `app`; rival notes (`_post_rival_note`, `rival_stats`); state saved only when there is
+  something (also before the first day). `SchoolSystem.nudge_grades`, the `late_night` part of the life load. `Game._rivals_vs`
+  (the race note's `vs`).
+- **UI:** the People list hides the Rivals row until a rival writes; `PeopleUI.roster` (who is in a thread: the family's attitude,
+  each person with their role / trait / club and the relationship word); the School page's messages (waiting + the latest 3); the
+  group's members marked "Training partner"; parents shown as "Mum (Jenni)"; the Today card and the mood causes use "Mum".
+- **Tools:** `storylet_check` part 7 (below); `layout_check` `_cast_views` and the tour `_cast_tour` (shots 54...) switch the people
+  on for their own part only (like the goals); `help_check` switches them off (its 40 weeks to a race would get extra stops);
+  `season_playtest` closes a moment's result card; `run_all_checks` gives `storylet_check` 1200 s.
+
+**Measured (`storylet_check -- 8 2 12`, ALL CHECKS PASSED; part 7 = 12 careers x 104 weeks, two of each family answer, every
+coach-recommended meet entered, health, school and the moods on, answers at random, ~7 min):**
+- The cast for every family answer (parents 1-2 with Mum / Dad, the sibling only with that answer, the attitude, the parent who ran,
+  the friends with the old-team friend, 3 partners, 3 staff, unique names), the same career = the same people, the global dice
+  untouched; the calendar (juhannus 25.6.2027 / 23.6.2028, Easter 28.3.2027, the school's last day 5.6.2027, the camp 14.6 / 12.7.2027).
+- **Rate 3.89 moments a week** (sd 0.88; 2: 3 %, 3: 34 %, 4: 34 %, 5: 28 %; never more than 6 a week or 1 a day); by age 14: 3.96,
+  15: 3.91, 16: 3.59 (the school's moments end with grade 9: P2 adds lukio); **people stops 0.66 a week** (most 2; the token
+  cap holds it under 1, and the rules saved from repeats answer the recurring ones); by person: group 1505, family 1453, friends 1362,
+  school 485, rivals 76; 36 rivals became people, 28 rival notes (about one a year per career: rivals rarely share a race);
+  155 late nights; no repeat inside a cooldown, never the same text twice in a row, nothing stuck; **139 of 149 storylets came**
+  (never: the sibling's PB message, the second application result, the best friend's "left out" chain (needs a falling friendship),
+  four rival follow-ups, two rare teacher talks).
+- **The moods with the people (random answers):** confidence OK 83 / Confident 16 %; motivation OK 43 / Keen 57 %; stress Calm 88 /
+  Busy 11 / Stressed 1 %; **mean training quality 1.0042** (M1 without the people: ~1.0005; at mood_scale 1.0 it was Keen 71 % +
+  Fired up 13 %). Flat in no week.
+- Save / load bit for bit with the people (school and moods on); a save before the first day keeps the cast; the people off = no
+  cast and none of their moments. **Neutral:** a year of the coach week with the people on (every moment a stop, 200 moments) =
+  206.798298350; `training_balance -- 0` identical in every part (206.798298350 / 14.102831594 / 1226.006524079);
+  `school_fingerprint` and `quick_fingerprint` unchanged (`run_all_checks`).
+- `layout_check` at 1280×720, 720×1280, 390×844, 1000×900, 844×390: no OVERFLOW / SQUEEZED / WRONG (70 cast views);
+  `help_check` 869 checks on the phone layout, 881 on the PC layout; the tour's new shots 54... (the family stop, its result card,
+  the People list, Family / Friends / Training group / Rivals, the School page's messages, "A late night yesterday" in the next
+  day's blocks) looked at.
+
+**Not built (later):** the training group's pull in hard sessions (a training effect: B1 with the balance); sleep as a system of
+its own (a late night is life load now); the family budget's real money (M4); lukio staff's moments, ages 16-17, the move's
+goodbyes and homesickness, a teammate really quitting or joining, wanhat / penkkarit / the driving licence (P2); the rivals'
+messages before a race ("see you at...") and more rival content; the final tuning of the people's mood weight (B1, with the whole
+picture).
 
 ### Other systems (to be designed)
 

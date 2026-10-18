@@ -254,6 +254,11 @@ func load_parts(d: Dictionary, session_ids: Array) -> Array:
 	if not model_enabled or neutral or Game.athlete == null:
 		return out
 	var ll: Dictionary = cfg().life_load
+	# A late night from a moment the evening before (session P1: a reply's `sleep`, StoryletSystem.late_night), any day.
+	var ms := Game.get_system("moments") as StoryletSystem
+	var late := ms.late_night(d) if ms != null else 0.0
+	if late > 0.0:
+		out.append({"id": "late_night", "value": late})
 	var info := SchoolCalendar.day(_town(), d)
 	if info.kind in ["holiday", "summer"]:
 		if float(ll.holiday_weekday) != 0.0:
@@ -1578,6 +1583,23 @@ func _lukio_subject(sid: String, s: Dictionary, rng: RandomNumberGenerator) -> v
 	var lo := float(cfg().grades.min)
 	var hi := float(cfg().grades.max)
 	subjects[sid] = {"natural": clampf(nat / n + shift + roll, lo, hi), "level": clampf(lvl / n + shift + roll, lo, hi)}
+
+
+## A moment's `grades` effect (session P1): every academic subject's level moves by `points` x data/cast.json
+## grades.grades_per_point; the natural level stays, so the drift takes it back over the weeks (studying for a test helps
+## that test). Nothing with the model off or neutral. Returns the change per subject.
+func nudge_grades(points: float) -> float:
+	if not model_enabled or neutral:
+		return 0.0
+	_ensure_started()
+	var shift := points * float(Data.cast.grades.grades_per_point)
+	var lo := float(cfg().grades.min)
+	var hi := float(cfg().grades.max)
+	for s in subject_list():
+		var sid := str(s.id)
+		if is_academic(sid) and subjects.has(sid):
+			subjects[sid].level = clampf(float(subjects[sid].level) + shift, lo, hi)
+	return shift
 
 
 func _shift_subject(sid: String, shift: float) -> void:

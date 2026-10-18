@@ -180,8 +180,8 @@ static func _test_names(ss: SchoolSystem, ids: Array) -> String:
 static func _life_lines(ss: SchoolSystem, info: Dictionary) -> Control:
 	var u: Dictionary = ui().blocks
 	var kind := str(info.school.kind)
-	if kind == "weekend":
-		return null
+	if kind == "weekend" and (info.played or ss.load_parts(info.date, info.sessions).is_empty()):
+		return null   # (a weekend shows only a late night of the evening before, session P1)
 	var col := UIKit.vbox(2)
 	col.add_child(UIKit.label(str(u.life_head), "CaptionLabel"))
 	var load := 0.0

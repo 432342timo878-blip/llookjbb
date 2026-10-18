@@ -100,6 +100,8 @@ func _run() -> void:
 			hub._on_event_answer(e.id, choice)
 			event_ms.append((Time.get_ticks_usec() - t0) / 1000.0)
 			await _frames(2)
+			if hub.has_method("_end_result_card"):   # (a moment's result card, e.g. the people's moments of session P1)
+				hub._end_result_card()
 			if kind == "diagnosis":
 				await _shot_once("after_diagnosis_today_card")
 			continue

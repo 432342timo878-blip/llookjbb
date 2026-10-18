@@ -24,10 +24,11 @@
 	"threads": {
 		"coach": {"name": "Coach", "empty": "Your coach writes to you here: a talk about the week every Sunday evening, and a message after a race."},
 		"coaches": {"name": "Other coaches", "empty": "Other coaches write to you here: their answers when you ask one to coach you, and offers after a breakthrough. Find a coach is below the list."},
-		"family": {"name": "Family", "empty": "Your family will write here about the weekend, school and money. They come in a later update."},
-		"friends": {"name": "Friends", "empty": "Your friends from school will write here. They come in a later update."},
+		"family": {"name": "Family", "empty": "Your family writes here: the weekend, school, races and the summer plans."},
+		"friends": {"name": "Friends", "empty": "Your friends from school write here: parties, plans and the rest of life."},
 		"group": {"name": "Training group", "empty": "Your training partners will write here as you get to know them."},
-		"school": {"name": "School", "empty": "Teachers and the study counsellor will write here. School comes in a later update."}
+		"school": {"name": "School", "empty": "Your teachers and the study counsellor write here."},
+		"rivals": {"name": "Rivals", "empty": "Runners you race again and again write to you here."}
 	},
 	"ui": {
 		"tab": "People",
@@ -64,6 +65,11 @@
 		"trust": "Trust in {who}",
 		"moods": {"confidence": "Confidence", "motivation": "Motivation", "stress": "Stress"},
 		"relation": "{who}",
+		"thread": "{thread}",
+		"sleep": "Sleep tonight",
+		"grades": "Schoolwork",
+		"attitude": "Your family now: {word}",
+		"bad_up": ["Stress"],
 		"remember": "{who} will remember this",
 		"up": "▲",
 		"down": "▼",
@@ -96,7 +102,7 @@
 		"max": 100
 	},
 	"effects": {
-		"known": ["trust", "relation", "flag", "unflag", "count", "proposal", "confidence", "motivation", "stress"],
-		"prepared": ["sleep", "life_load", "grades", "budget"]
+		"known": ["trust", "relation", "flag", "unflag", "count", "proposal", "confidence", "motivation", "stress", "sleep", "grades", "attitude", "memory", "forget", "relation_thread"],
+		"prepared": ["life_load", "budget"]
 	}
 }

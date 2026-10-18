@@ -12,7 +12,13 @@ extends SceneTree
 ## 4. save / load bit for bit with moments waiting and chains queued; a save without the moments state loads;
 ## 5. neutral: a year of the coach week with the test moments on (every moment a stop, answered at random) gives the
 ##    same attributes and fatigue as with the moments off, and training_balance's coach-row fingerprint.
-## Run: godot --headless --path . -s res://tools/storylet_check.gd [-- [careers for part 3, default 8] [seasons, default 2]]
+## 6. the coach's talk, the race message and the day's why (session C3);
+## 7. the people (session P1, data/cast.json, data/storylets/family / friends / group / school_people / rivals): the cast made
+##    from every family answer, the yearly calendar, the effects (a late night, grades, the attitude, memory, a whole thread),
+##    rivals becoming people, many seasons with the people on (rate, stops, repeats, nothing stuck, coverage per storylet, per
+##    age and per person), save / load bit for bit, people off = no cast and no people's moments, neutral = the fingerprint.
+## Run: godot --headless --path . -s res://tools/storylet_check.gd [-- [careers for part 3, default 8] [seasons, default 2]
+##      [careers for part 7, default 6 (one per family answer, ~4 min); 12 for the full coverage count, ~8 min]]
 ## NOTE: read stderr too: a SCRIPT ERROR does not change the "ALL CHECKS PASSED" line.
 
 var game
@@ -29,9 +35,21 @@ var _rng := RandomNumberGenerator.new()
 const CONDITIONS := ["age", "month", "weekday", "day_type", "weeks_in_career", "phase", "race_today", "race_tomorrow",
 		"race_in_days", "raced_days_ago", "pb_days_ago", "injured", "ill", "sore", "today_tags", "tomorrow_tags",
 		"tomorrow_rest", "flags", "flag_days", "counters", "seen", "not_seen", "answered", "trust", "relation", "chance",
-		"fatigue", "race_outcome", "mood"]
+		"fatigue", "race_outcome", "mood",
+		# session P1:
+		"family", "has", "turns", "days_to", "days_after", "school_day", "break", "stage", "test_today", "test_tomorrow",
+		"tests_week", "cards", "card_days_ago", "card_avg", "card_change", "app", "app_result", "origin", "old_sport",
+		"memory", "memory_days", "trait", "rival_race", "rival_streak", "rival_wins"]
 const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "teammate", "club", "meet", "race_days", "pb",
-		"weekday", "tomorrow"]
+		"weekday", "tomorrow",
+		# session P1:
+		"mum", "dad", "parent", "sibling", "best", "friend", "partner", "rival", "class_teacher", "pe_teacher", "counsellor",
+		"town", "test_subject", "avg", "old_sport", "family_word"]
+## Session P1: the senders of the cast (StoryletSystem.people_for) and their sub-selectors.
+const SENDERS := {"coach": [], "teammate": ["roles"], "partner": ["roles"], "family": [], "parent": ["mum", "dad", "athlete"],
+		"sibling": [], "best_friend": [], "friend": [], "friends": [], "school": ["class_teacher", "pe_teacher", "counsellor"],
+		"rival": []}
+const TOPICS := ["", "week", "race", "ack", "mood", "card", "app", "rival"]
 
 
 func _initialize() -> void:
@@ -73,6 +91,7 @@ func _run() -> void:
 	_talks()
 	MS.talks_enabled = false
 	MS.enabled = true
+	_people(nums[2] if nums.size() > 2 else 6)
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -103,7 +122,9 @@ func _data_checks() -> void:
 		if not mo.threads.has(str(s.get("thread", ""))):
 			problems.append("%s: unknown thread" % sid)
 		var from := str(s.get("from", "coach")).split(":")
-		if not from[0] in ["coach", "teammate"] or (from.size() > 1 and not roles.has(from[1])):
+		var subs: Array = SENDERS.get(from[0], [])
+		var sub_ok: bool = from.size() < 2 or (roles.has(from[1]) if subs == ["roles"] else from[1] in subs)
+		if not SENDERS.has(from[0]) or not sub_ok:
 			problems.append("%s: unknown sender '%s'" % [sid, s.get("from")])
 		if not str(s.get("slot", "evening")) in ["morning", "evening", "any"]:
 			problems.append("%s: unknown slot" % sid)
@@ -117,7 +138,7 @@ func _data_checks() -> void:
 				problems.append_array(_when_problems(sid + " variant", t.get("when", {})))
 		var replies: Array = s.get("replies", [])
 		var topic := str(s.get("topic", ""))
-		if not topic in ["", "week", "race", "ack", "mood"]:   # (mood: session M1)
+		if not topic in TOPICS:   # (mood: session M1; card, app, rival: session P1)
 			problems.append("%s: unknown topic '%s'" % [sid, topic])
 		if topic == "ack":   # (a talk without a topic: the single reply "Thanks, coach")
 			if replies.size() != 1:
@@ -970,3 +991,472 @@ func _talks() -> void:
 	_ok("with the talks switched off (the tools): Play week reaches Sunday night without a stop", game.advance_week() == game.WEEK_DONE)
 	MS.talks_enabled = true
 	H.model_enabled = true
+
+
+# --- 7. The people (session P1) ------------------------------------------------------------------------------------
+
+const P1_FILES := ["family.json", "friends.json", "group.json", "school_people.json", "rivals.json"]
+
+
+## A 14-year-old for part 7: `family` = the index of the family answer (-1 = from the seed); every third one was spotted by
+## a PE teacher (the answer index 0 of "Who got you into athletics?").
+func _p1_athlete(i: int, family := -1):
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5000 + i
+	var answers := {}
+	for q in data.background_questions:
+		answers[q.id] = rng.randi_range(0, q.answers.size() - 1)
+	if family >= 0:
+		answers["family"] = family
+	if i % 3 == 0:
+		answers["introduced_by"] = 0
+	var gender := "male" if i % 2 == 0 else "female"
+	var first: String = data.names[gender][rng.randi_range(0, data.names[gender].size() - 1)]
+	var last: String = data.names.surnames[rng.randi_range(0, data.names.surnames.size() - 1)]
+	return F.create({
+		"first_name": first, "last_name": last, "gender": gender, "hometown": "Tampere", "club_id": "tap",
+		"main_event": "800m", "birth_date": {"year": 2012, "month": rng.randi_range(1, 12), "day": rng.randi_range(1, 28)},
+		"answers": answers}, rng)
+
+
+func _p1_storylets() -> Array:
+	return data.storylets.filter(func(s): return str(s.file) in P1_FILES)
+
+
+func _people(careers: int) -> void:
+	print("\n== 7. The people (session P1): the cast, the calendar, the effects, rivals, %d careers x 2 seasons, save / load, neutral" % careers)
+	var MIND = load("res://scripts/core/mind_system.gd")
+	var SCH = load("res://scripts/core/school_system.gd")
+	var CA = load("res://scripts/core/cast.gd")
+	var cal = load("res://scripts/core/calendar.gd")
+	MS.include_test = false
+	MS.talks_enabled = false
+	MS.enabled = true
+	_people_data(CA)
+	MS.people_enabled = true
+	_people_cast(CA)
+	_people_calendar(CA)
+	MIND.neutral = false
+	SCH.neutral = false
+	_people_effects()
+	_people_rivals()
+	_people_seasons(careers, cal)
+	_people_save_load()
+	MIND.neutral = true
+	SCH.neutral = true
+	_people_neutral()
+	MS.people_enabled = false
+	_people_off()
+
+
+## 7a. The data: cast.json and the P1 storylets' references.
+func _people_data(CA) -> void:
+	var cast: Dictionary = data.cast
+	var p1 := _p1_storylets()
+	var per_file := {}
+	for s in p1:
+		per_file[s.file] = int(per_file.get(s.file, 0)) + 1
+	print("    P1 storylets: %d (%s)" % [p1.size(), ", ".join(per_file.keys().map(func(f): return "%s %d" % [f.trim_suffix(".json"), per_file[f]]))])
+	_ok("about 100-150 P1 storylets (%d)" % p1.size(), p1.size() >= 100 and p1.size() <= 160)
+	var faults := []
+	for q in data.background_questions:
+		if q.id == "family":
+			for ans in q.answers:
+				if not cast.attitudes.values().any(func(a): return str(ans.family) in a.from):
+					faults.append("family answer %s has no attitude" % ans.family)
+	var stage_ids := ["grade_8", "grade_9"]
+	for s in p1:
+		var whens := [s.get("when", {})]
+		for t in s.text:
+			if t is Dictionary:
+				whens.append(t.get("when", {}))
+		for r in s.replies:
+			whens.append(r.get("when", {}))
+			for key in ["attitude"]:
+				if r.get("effects", {}).has(key) and not cast.attitudes.has(str(r.effects[key])):
+					faults.append("%s: unknown attitude %s" % [s.id, r.effects[key]])
+		for w in whens:
+			for key in ["days_to", "days_after"]:
+				for ev in w.get(key, {}):
+					if not cast.life.has(ev):
+						faults.append("%s: unknown life event %s" % [s.id, ev])
+			for a in w.get("family", []):
+				if not cast.attitudes.has(a):
+					faults.append("%s: unknown attitude %s" % [s.id, a])
+			for st in w.get("stage", []):
+				if not st in stage_ids:
+					faults.append("%s: unknown stage %s" % [s.id, st])
+			for tr in w.get("trait", []):
+				if not cast.friends.trait_words.has(tr):
+					faults.append("%s: unknown trait %s" % [s.id, tr])
+		if not str(s.thread) in ["family", "friends", "group", "school", "rivals"]:
+			faults.append("%s: a P1 storylet in thread %s" % [s.id, s.thread])
+	for f in faults:
+		print("    " + f)
+	_ok("cast.json: every family answer has an attitude; the P1 storylets name known events, attitudes, stages and traits (%d faults)" % faults.size(), faults.is_empty())
+
+
+## 7b. The cast of a new career from every family answer.
+func _people_cast(CA) -> void:
+	var family_q: Dictionary = data.background_questions.filter(func(q): return q.id == "family")[0]
+	var faults := []
+	for fi in family_q.answers.size():
+		var a = _p1_athlete(fi, fi)
+		game.start_career(a, "repeat")
+		var ms = _ms()
+		ms._sync_people()
+		var fam_id := str(family_q.answers[fi].family)
+		var parents: Array = ms.people_for("parent")
+		var sib: Array = ms.people_for("sibling")
+		var friends: Array = ms.people_for("friends")
+		var best: Array = ms.people_for("best_friend")
+		var partners: Array = ms.people_for("partner")
+		var staff: Array = ms.people_for("school")
+		var line := "%s: %s, attitude %s; friends %s; partners %s; school %s" % [fam_id,
+				", ".join((parents + sib).map(func(p): return "%s (%s)" % [ms.person_name(p), p.first_name])), ms.family.get("attitude", ""),
+				", ".join(friends.map(func(p): return "%s %s" % [p.first_name, p.get("trait", "")])),
+				", ".join(partners.map(func(p): return "%s %s" % [p.first_name, p.role])),
+				", ".join(staff.map(func(p): return "%s %s" % [p.first_name, p.word]))]
+		print("    " + line)
+		if parents.size() < 1 or parents.size() > 2:
+			faults.append("%s: %d parents" % [fam_id, parents.size()])
+		if (sib.size() == 1) != (fam_id == "sibling"):
+			faults.append("%s: sibling %d" % [fam_id, sib.size()])
+		if str(ms.family.get("attitude", "")) != CA.attitude_for(fam_id):
+			faults.append("%s: attitude %s" % [fam_id, ms.family.get("attitude", "")])
+		if (fam_id == "athletics_parent") != parents.any(func(p): return bool(p.get("athlete_parent", false))):
+			faults.append("%s: the parent who ran" % fam_id)
+		if best.size() != 1 or friends.size() < 2 or friends.size() > 3:
+			faults.append("%s: friends %d (best %d)" % [fam_id, friends.size(), best.size()])
+		if (a.old_sport != "") != friends.any(func(p): return str(p.get("trait", "")) == "old_team"):
+			faults.append("%s: the old team friend (sport '%s')" % [fam_id, a.old_sport])
+		if partners.size() != mini(3, ms.people_for("teammate").size()):
+			faults.append("%s: %d partners" % [fam_id, partners.size()])
+		if staff.size() != 3:
+			faults.append("%s: %d school staff" % [fam_id, staff.size()])
+		if (a.origin == "pe_teacher") != staff.any(func(p): return bool(p.get("spotted", false))):
+			faults.append("%s: the PE teacher who spotted you (origin %s)" % [fam_id, a.origin])
+		var firsts := {}
+		for p in parents + sib + friends:
+			if firsts.has(p.first_name) or p.first_name == a.first_name:
+				faults.append("%s: the first name %s twice" % [fam_id, p.first_name])
+			firsts[p.first_name] = true
+		if parents.any(func(p): return str(p.get("call", "")) == ""):
+			faults.append("%s: a parent without Mum / Dad" % fam_id)
+	for f in faults:
+		print("    " + f)
+	_ok("every family answer: 1-2 parents with Mum / Dad, a sibling only with 'An older sibling runs', the attitude, the parent who ran, a best friend + 1-2 friends (the old team with a sport before), 3 training partners, 3 school staff (the PE teacher who spotted you), unique names (%d faults)" % faults.size(), faults.is_empty())
+	# The same career = the same people; the global dice untouched.
+	game.start_career(_p1_athlete(3, 2), "repeat")
+	var first_cast: String = JSON.stringify(_ms().people)
+	seed(4711)
+	var x1 := randi()
+	seed(4711)
+	game.start_career(_p1_athlete(3, 2), "repeat")
+	var second_cast: String = JSON.stringify(_ms().people)
+	_ok("the same career gets the same people", first_cast == second_cast)
+	seed(4711)
+	var plain := randi()
+	seed(4711)
+	CA.make(_p1_athlete(3, 2), {"origin": "", "old_sport": "football", "family": "sibling"})
+	CA.make_school(_p1_athlete(3, 2), "comp", "comprehensive", "pe_teacher")
+	_ok("making the cast does not touch the global dice", randi() == plain)
+	if x1 == 0:
+		pass
+
+
+## 7c. The yearly calendar.
+func _people_calendar(CA) -> void:
+	var cal = load("res://scripts/core/calendar.gd")
+	game.start_career(_p1_athlete(1, 2), "repeat")
+	var d := func(y, m, dd): return {"year": y, "month": m, "day": dd}
+	var ok := true
+	var checks := [
+		[CA.occurrence("juhannus", 2027), d.call(2027, 6, 25)], [CA.occurrence("juhannus", 2028), d.call(2028, 6, 23)],
+		[CA.occurrence("easter", 2027), d.call(2027, 3, 28)], [CA.occurrence("school_end", 2027), d.call(2027, 6, 5)],
+		[CA.occurrence("rippileiri", 2027, {"rippi_june": {}}), d.call(2027, 6, 14)],
+		[CA.occurrence("rippileiri", 2027, {"rippi_july": {}}), d.call(2027, 7, 12)]]
+	for c in checks:
+		if cal.date_key(c[0]) != cal.date_key(c[1]):
+			ok = false
+			print("    calendar: %s != %s" % [c[0], c[1]])
+	ok = ok and CA.occurrence("rippileiri", 2028, {"rippi_june": {}}).is_empty() and CA.occurrence("rippileiri", 2027, {}).is_empty()
+	ok = ok and CA.days_to("vappu", d.call(2027, 4, 28)) == 2 and CA.days_after("christmas", d.call(2027, 1, 2)) == 9
+	ok = ok and CA.days_to("christmas", d.call(2026, 12, 24)) == 0
+	_ok("the calendar: juhannus = the Friday 19-25 June, Easter, the school's last day, the confirmation camp of the year you turn 15, days to / after", ok)
+
+
+## 7d. The effects of a reply.
+func _people_effects() -> void:
+	game.start_career(_p1_athlete(2, 4), "repeat")
+	_play(3, false)
+	var ms = _ms()
+	var ss = game.get_system("school")
+	ms._sync_people()
+	var friend: Dictionary = ms.people_for("best_friend")[0]
+	var others: Array = ms.people_for("friend")
+	var tomorrow: Dictionary = game.add_days(game.date, 1)
+	var before: float = ss.life_load(tomorrow, [])
+	ms._apply({"sleep": -2}, friend, "check")
+	var parts: Array = ss.load_parts(tomorrow, [])
+	var late: Array = parts.filter(func(p): return p.id == "late_night")
+	_ok("a late night (sleep -2) = life load %.2f tomorrow (%.2f -> %.2f), shown as '%s'" % [late[0].value if not late.is_empty() else 0.0, before, ss.life_load(tomorrow, []), data.school_life.texts.pulls.late_night],
+			not late.is_empty() and is_equal_approx(float(late[0].value), 2.0 * float(data.cast.sleep.life_load_per_point)) and ss.load_parts(game.date, []).filter(func(p): return p.id == "late_night").is_empty())
+	var sid: String = str(ss.subject_list().filter(func(s): return ss.is_academic(str(s.id)))[0].id)
+	var lv: float = ss.level(sid)
+	ms._apply({"grades": 2}, friend, "check")
+	_ok("grades +2 = every academic level +%.2f (%.3f -> %.3f)" % [2 * float(data.cast.grades.grades_per_point), lv, ss.level(sid)],
+			is_equal_approx(ss.level(sid) - lv, 2 * float(data.cast.grades.grades_per_point)))
+	ms._apply({"attitude": "coming_round"}, friend, "check")
+	var att_ok: bool = ms.family.attitude == "coming_round"
+	ms._apply({"attitude": "no_such"}, friend, "check")
+	_ok("the family's attitude changes with a reply (an unknown one is ignored)", att_ok and ms.family.attitude == "coming_round")
+	ms._apply({"memory": "promised"}, friend, "check")
+	var ctx := _ctx()
+	_ok("the sender remembers: memory / !memory hold for them only", ms._sender_ok({"memory": ["promised"]}, ctx, friend)
+			and not ms._sender_ok({"memory": ["!promised"]}, ctx, friend)
+			and (others.is_empty() or not ms._sender_ok({"memory": ["promised"]}, ctx, others[0])))
+	var rel_before: float = others[0].relation if not others.is_empty() else 0.0
+	var best_before: float = friend.relation
+	ms._apply({"relation_thread": {"friends": 2}}, friend, "check")
+	_ok("relation_thread moves everyone else in the thread", others.is_empty() or (others[0].relation == rel_before + 2.0 and friend.relation == best_before))
+	var lines: Array = ms._changes_of({"sleep": -1, "grades": 2, "relation": 3, "relation_thread": {"friends": -1}, "attitude": "supportive"}, friend, true)
+	print("    result card: " + " | ".join(lines))
+	_ok("the result card says it in words: sleep, schoolwork, the person, the thread, the attitude, remembered",
+			lines.size() == 6 and lines.all(func(l): return not "{" in str(l)))
+	_ok("a parent is 'Mum' / 'Dad' in sentences", ms.people_for("parent").all(func(p): return ms.short_name(p) in ["Mum", "Dad"]))
+
+
+## 7e. Rivals become people; their record against you.
+func _people_rivals() -> void:
+	game.start_career(_p1_athlete(5, 2), "repeat")
+	var ms = _ms()
+	var pool: Array = game.rivals
+	for i in 5:
+		pool[i].met = 2 + i   # (the last ones met most)
+	ms._sync_people()
+	var rv: Array = ms.people_for("rival")
+	_ok("rivals met at least %d times become people, at most %d, the most met first (%s)" % [data.cast.rivals.met_min, data.cast.rivals.max,
+			", ".join(rv.map(func(p): return p.first_name))], rv.size() == int(data.cast.rivals.max)
+			and rv.all(func(p): return int(pool.filter(func(r): return str(r.id) == p.rival_id)[0].met) >= 4))
+	var p: Dictionary = rv[0]
+	var ctx := _ctx()
+	ctx.race_note = {"vs": [{"id": p.rival_id, "beat": false}], "result": {"place": 5, "field": 8}}
+	for k in 3:
+		ms._post_rival_note(ctx, _today() + k)
+	_ok("three losses in a row: their streak is 3, rival_race = lost", int(ms.rival_stats[p.rival_id].streak) == 3
+			and ms._sender_ok({"rival_streak": [3, null], "rival_race": ["lost"]}, ctx, p))
+	ctx.race_note = {"vs": [{"id": p.rival_id, "beat": true}], "result": {"place": 1, "field": 8}}
+	ms._post_rival_note(ctx, _today() + 4)
+	_ok("then a win: the streak resets, your wins 1, rival_race = beat", int(ms.rival_stats[p.rival_id].streak) == 0
+			and int(ms.rival_stats[p.rival_id].wins) == 1 and ms._sender_ok({"rival_race": ["beat"]}, ctx, p))
+	_ok("a rival's note is never a stop", game.pending_event().is_empty())
+
+
+## 7f. Many seasons with the people on: the rate, the stops, repeats, coverage.
+func _people_seasons(careers: int, cal) -> void:
+	var t0 := Time.get_ticks_msec()
+	C.neutral_club = false
+	SS.offers_enabled = true
+	var family_q: Dictionary = data.background_questions.filter(func(q): return q.id == "family")[0]
+	var week_counts := []
+	var week_stops := []
+	var by_age := {}
+	var by_thread := {}
+	var fired_ids := {}
+	var cooldown_bad := []
+	var variant_bad := 0
+	var per_day_bad := 0
+	var stuck := []
+	var rival_people := 0
+	var rival_notes := 0
+	var late_nights := 0
+	var answered := 0
+	var none := 0
+	var auto := 0
+	var moods := {}   # mood -> word id -> weeks (Sunday night, answers at random)
+	var quality_sum := 0.0   # the mind's training quality at each week's end (M1: ~1.0005 on average without the people)
+	var quality_n := 0
+	for c in careers:
+		game.start_career(_p1_athlete(200 + c, c % family_q.answers.size()))
+		for meet in cal.meets_between(game.date, game.add_days(game.date, 730)):
+			if cal.coach_recommends(game.athlete, meet, game.date):
+				game.enter(meet.key)
+		var ms = _ms()
+		ms.rng.seed = 131 + c
+		game.get_system("health").rng.seed = 161 + c
+		_answer_stops()
+		var weeks := 104
+		var start_monday: int = MS.day_no(cal.monday_of(game.START_DATE))
+		for w in weeks:
+			if not _play(7):
+				stuck.append("career %d week %d: the days did not move on" % [c, w])
+				break
+			late_nights += ms.late_nights.size()
+			var mind = game.get_system("mind")
+			if mind != null:
+				quality_sum += float(mind.training_quality())
+				quality_n += 1
+				for mood in ["confidence", "motivation", "stress"]:
+					var wid: String = str(mind.word(mood).id)
+					if not moods.has(mood):
+						moods[mood] = {}
+					moods[mood][wid] = int(moods[mood].get(wid, 0)) + 1
+		ms = _ms()
+		rival_people += ms.people.values().filter(func(p): return str(p.thread) == "rivals").size()
+		var per_week := {}
+		var stops_week := {}
+		var per_day := {}
+		var last_by := {}
+		var last_var := {}
+		for f in ms.fired:
+			var s: Dictionary = ms.storylet(f.storylet)
+			if not str(s.get("file", "")) in P1_FILES:
+				continue
+			fired_ids[f.storylet] = int(fired_ids.get(f.storylet, 0)) + 1
+			if last_by.has(f.storylet):
+				var gap: int = int(f.day) - int(last_by[f.storylet])
+				if bool(s.get("once", false)) or gap < int(s.get("cooldown_days", 14)):
+					cooldown_bad.append("%s again after %d days" % [f.storylet, gap])
+			last_by[f.storylet] = f.day
+			var unconditional: int = s.text.filter(func(t): return not t is Dictionary).size()
+			if unconditional == s.text.size() and s.text.size() > 1 and last_var.get(f.storylet, -1) == f.variant:
+				variant_bad += 1
+			last_var[f.storylet] = f.variant
+			if f.auto:
+				auto += 1
+				continue
+			var p: Dictionary = ms.people.get(str(f.from), {})
+			var th := str(p.get("thread", s.thread))
+			by_thread[th] = int(by_thread.get(th, 0)) + 1
+			if str(s.get("topic", "")) == "rival":
+				rival_notes += 1
+				continue   # (a rival's note sits outside the 3-5 a week, like the coach's race message)
+			var wk := floori((int(f.day) - start_monday) / 7.0)
+			per_week[wk] = int(per_week.get(wk, 0)) + 1
+			if f.stop:
+				stops_week[wk] = int(stops_week.get(wk, 0)) + 1
+			per_day[f.day] = int(per_day.get(f.day, 0)) + 1
+		for dd in per_day:
+			if per_day[dd] > int(data.moments.rate.max_per_day):
+				per_day_bad += 1
+		for wk in range(1, weeks):
+			week_counts.append(int(per_week.get(wk, 0)))
+			week_stops.append(int(stops_week.get(wk, 0)))
+			var age: int = game.athlete.age_on(game.add_days(game.START_DATE, 7 * wk))
+			if not by_age.has(age):
+				by_age[age] = [0, 0]
+			by_age[age][0] += int(per_week.get(wk, 0))
+			by_age[age][1] += 1
+		var today: int = MS.day_no(game.date)
+		for m in ms.pending():
+			if not m.stop and today > int(m.expires) + 1:
+				stuck.append("career %d: %s waits past its time" % [c, m.storylet])
+		for q in ms.queue:
+			if today > int(q.until) + 1:
+				stuck.append("career %d: chain %s past its window" % [c, q.get("id", q.get("topic", ""))])
+		if not game.pending_event().is_empty():
+			stuck.append("career %d: a stop event left waiting" % c)
+		for m in ms.moments:
+			if m.kind == "moment" and not m.auto and m.answer != "":
+				if m.answer == MS.NONE:
+					none += 1
+				else:
+					answered += 1
+	var secs := (Time.get_ticks_msec() - t0) / 1000.0
+	var mean := _mean(week_counts)
+	var stops := _mean(week_stops)
+	print("    %.0f s; %d weeks: moments a week mean %.2f (sd %.2f, %s), people stops a week %.2f (most in a week %d)" % [
+			secs, week_counts.size(), mean, _sd(week_counts), _dist(week_counts), stops, week_stops.max() if not week_stops.is_empty() else 0])
+	var ages := by_age.keys()
+	ages.sort()
+	for age in ages:
+		print("    age %d: %.2f moments a week over %d weeks" % [age, float(by_age[age][0]) / by_age[age][1], by_age[age][1]])
+	print("    by person: %s" % ", ".join(by_thread.keys().map(func(t): return "%s %d" % [t, by_thread[t]])))
+	print("    rivals who became people %d, rival notes %d, late nights %d, answered %d, unanswered %d, by a rule %d" % [rival_people, rival_notes, late_nights, answered, none, auto])
+	for mood in moods:
+		var total := 0
+		for wid in moods[mood]:
+			total += int(moods[mood][wid])
+		print("    %s (weeks, random answers): %s" % [mood, ", ".join(moods[mood].keys().map(func(w): return "%s %d%%" % [w, roundi(100.0 * moods[mood][w] / maxi(total, 1))]))])
+	var p1 := _p1_storylets()
+	var never: Array = p1.filter(func(s): return not fired_ids.has(s.id)).map(func(s): return s.id)
+	var ids: Array = fired_ids.keys()
+	ids.sort()
+	print("    fired: " + ", ".join(ids.map(func(i): return "%s %d" % [i, fired_ids[i]])))
+	print("    never fired (%d): %s" % [never.size(), ", ".join(never)])
+	_ok("rate with the people: 3-5 moments a week on average (%.2f)" % mean, mean >= 3.0 and mean <= 5.0)
+	_ok("never more than %d in a week (most %d) or %d in a day (%d days over)" % [data.moments.rate.max_per_week,
+			week_counts.max() if not week_counts.is_empty() else 0, data.moments.rate.max_per_day, per_day_bad],
+			week_counts.all(func(x): return x <= int(data.moments.rate.max_per_week)) and per_day_bad == 0)
+	_ok("Important only: at most ~1 people stop a week on average (%.2f)" % stops, stops <= 1.05)
+	for b in cooldown_bad.slice(0, 5):
+		print("    " + b)
+	_ok("no moment again inside its cooldown, no 'once' moment twice (%d)" % cooldown_bad.size(), cooldown_bad.is_empty())
+	_ok("never the same text twice in a row (%d)" % variant_bad, variant_bad == 0)
+	for s in stuck.slice(0, 5):
+		print("    " + s)
+	_ok("nothing stuck (%d)" % stuck.size(), stuck.is_empty())
+	var need := 0.85 if careers >= 12 else 0.75   # (the rare ones need many careers: run `-- 8 2 12` for the full count)
+	_ok("coverage: at least %d %% of the P1 storylets came (%d of %d)" % [roundi(need * 100), p1.size() - never.size(), p1.size()],
+			p1.size() - never.size() >= ceili(need * p1.size()))
+	_ok("every person writes: family, friends, group, school, rivals (%s)" % ", ".join(by_thread.keys()),
+			["family", "friends", "group", "school", "rivals"].all(func(t): return int(by_thread.get(t, 0)) > 0))
+	_ok("both ages 14 and 15 have 3-5 a week", [14, 15].all(func(a): return by_age.has(a) and float(by_age[a][0]) / by_age[a][1] >= 3.0 and float(by_age[a][0]) / by_age[a][1] <= 5.0))
+	_ok("the family's report card talk and the application talk came", fired_ids.keys().any(func(i): return str(i).begins_with("fam_card_"))
+			and fired_ids.keys().any(func(i): return str(i).begins_with("fam_app_")))
+	_ok("late nights happened (a reply's sleep) and moments were both answered and left", late_nights > 0 and answered > 0 and none > 0)
+	var q := quality_sum / maxi(quality_n, 1)
+	_ok("the moods stay calibrated: mean training quality %.4f (M1 without the people ~1.0005; within 1 %%)" % q, absf(q - 1.0) < 0.01)
+	var mot: Dictionary = moods.get("motivation", {})
+	var mot_total := 0
+	for wid in mot:
+		mot_total += int(mot[wid])
+	var flat_share := float(mot.get("flat", 0)) / maxi(mot_total, 1)
+	_ok("motivation Flat in under 10 %% of weeks (%.1f %%, GDD 4.9.7)" % (100.0 * flat_share), flat_share < 0.10)
+
+
+## 7g. Save / load with the people on, bit for bit; a save from before the first day keeps the cast.
+func _people_save_load() -> void:
+	C.neutral_club = false
+	SS.offers_enabled = true
+	game.start_career(_p1_athlete(77, 0))
+	saves.save("storylet_check_p1_day0")
+	var cast0: String = JSON.stringify(_ms().people)
+	saves.load_slot("storylet_check_p1_day0")
+	_ok("a save made before the first day keeps the cast (%d people) and the attitude" % _ms().people.size(),
+			JSON.stringify(_ms().people) == cast0 and str(_ms().family.get("attitude", "")) == "athletics" and not _ms().cast_info.is_empty())
+	_play_fixed(40)
+	saves.save("storylet_check_p1")
+	var state_before: String = JSON.stringify(_ms().to_dict())
+	_play_fixed(45)
+	var straight := _snapshot() + JSON.stringify(game.get_system("school").to_dict())
+	saves.load_slot("storylet_check_p1")
+	_ok("after loading: the same moments state (people, memory, late nights, rivals)", JSON.stringify(_ms().to_dict()) == state_before)
+	_play_fixed(45)
+	var after := _snapshot() + JSON.stringify(game.get_system("school").to_dict())
+	_ok("45 more days after loading = the same 45 days without saving (with the people, school and moods on)", after == straight)
+	if after != straight:
+		_diff(straight, after)
+	saves.delete("storylet_check_p1")
+	saves.delete("storylet_check_p1_day0")
+
+
+## 7h. Neutral: a year of the coach week with the people on (every moment a stop, answered at random), the mind and school
+## neutral = training_balance's coach-row fingerprint.
+func _people_neutral() -> void:
+	var on := _year(true)
+	print("    people on: %d moments, %d stops answered; attribute sum %.9f" % [on.moments, on.stops, on.sum])
+	_ok("the people's moments came in the neutral year (%d)" % on.moments, on.moments > 100)
+	_ok("training_balance's coach-row fingerprint with the people on (206.798298350): %.9f" % on.sum, "%.9f" % on.sum == "206.798298350")
+
+
+## 7i. The people switched off (the tools): no cast, none of the people's moments.
+func _people_off() -> void:
+	game.start_career(_p1_athlete(9, 2), "repeat")
+	_play(60, true)
+	var ms = _ms()
+	var p1 := _p1_storylets().map(func(s): return s.id)
+	_ok("people off: no cast, none of the people's moments in 60 days, nothing of P1 in the save",
+			ms.people_for("family").is_empty() and ms.people_for("friends").is_empty()
+			and not ms.fired.any(func(f): return f.storylet in p1) and not ms.to_dict().has("cast_info"))

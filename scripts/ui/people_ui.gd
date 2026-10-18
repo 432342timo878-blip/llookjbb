@@ -203,12 +203,49 @@ static func changes_panel(lines: Array) -> Control:
 	col.add_child(UIKit.label(str(cfg.head), "CaptionLabel"))
 	for line in lines:
 		var l := UIKit.wrapped(str(line), "")
+		var good_up: bool = not cfg.get("bad_up", []).any(func(b): return str(line).begins_with(str(b)))   # (stress ▲ is bad news)
 		if str(cfg.up) in str(line):
-			l.add_theme_color_override("font_color", Palette.RISK_LOW)
+			l.add_theme_color_override("font_color", Palette.RISK_LOW if good_up else Palette.RISK_HIGH)
 		elif str(cfg.down) in str(line):
-			l.add_theme_color_override("font_color", Palette.RISK_HIGH)
+			l.add_theme_color_override("font_color", Palette.RISK_HIGH if good_up else Palette.RISK_LOW)
 		col.add_child(l)
 	return UIKit.alert_panel(col, Palette.BORDER, 10)
+
+
+## Who is in a thread (session P1): the family's attitude on top, then each person with their role (a friend's trait, a rival's
+## club and races) and the relationship in a word (data/cast.json relation_words). Read only; nothing to hover.
+static func roster(ms: StoryletSystem, thread_id: String) -> Control:
+	var u: Dictionary = Data.cast.ui
+	var box := UIKit.vbox(8)
+	box.add_child(UIKit.label(str(u.people_head), "CaptionLabel"))
+	if thread_id == "family" and str(ms.family.get("attitude", "")) != "":
+		var att: Dictionary = Data.cast.attitudes.get(str(ms.family.attitude), {})
+		box.add_child(UIKit.wrapped(str(u.family_line).format({"word": str(att.get("word", ""))}), "SubheadingLabel"))
+		box.add_child(UIKit.wrapped(str(att.get("text", "")), "MutedLabel"))
+	var rivals := {}
+	for r in Game.rivals:
+		rivals[str(r.id)] = r
+	for p in ms.people_for(thread_id if thread_id != "rivals" else "rival"):
+		var row := UIKit.hbox(10)
+		var name := StoryletSystem.person_name(p)
+		row.add_child(avatar(name, 32.0))
+		var col := UIKit.vbox(0)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var title := name
+		if str(p.get("call", "")) != "":
+			title = str(u.you_call).format({"call": str(p.call), "first": str(p.first_name)})
+		col.add_child(UIKit.wrapped(title, ""))
+		var sub := str(p.get("word", ""))
+		if str(p.get("trait", "")) != "":
+			sub += " · " + str(Data.cast.friends.trait_words.get(str(p.trait), ""))
+		if thread_id == "rivals" and rivals.has(str(p.get("rival_id", ""))):
+			var r: Dictionary = rivals[str(p.rival_id)]
+			sub = str(u.rival_line).format({"club": str(Data.get_club(str(r.get("club_id", ""))).get("name", "")), "met": int(r.get("met", 0))})
+		sub += " · " + Cast.relation_word(ms.relation_of(p))
+		col.add_child(UIKit.wrapped(sub, "MutedLabel"))
+		row.add_child(col)
+		box.add_child(row)
+	return UIKit.panel(box, 14)
 
 
 ## A short text for a list row or the Today card: the first line, cut after `n` characters.

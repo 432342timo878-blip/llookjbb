@@ -178,7 +178,7 @@ func add(mood: String, delta: float, text: String) -> void:
 func from_moment(mood: String, points: float, p: Dictionary) -> void:
 	var n: Dictionary = cfg().news
 	var d := points * float(n.moment_point)
-	var who := str(p.get("first_name", ""))
+	var who := StoryletSystem.short_name(p)   # ("Mum" for a parent, session P1)
 	if str(p.get("role", "")) == "coach":
 		d *= coach_lift()
 	add(mood, d, str(cfg().causes.moment).format({"who": who}) if who != "" else str(cfg().causes.week))

@@ -30,6 +30,14 @@ static var talks_enabled := false
 ## Tools: use the test moments (storylet files with "test": true). A normal career uses them only when the Dev menu's
 ## Test moments switch is on for it (test_content, debug builds only).
 static var include_test := false
+## The people around the athlete and their moments (session P1, GDD 4.9.5): the family, friends, close training partners,
+## school staff and rivals (Cast, data/cast.json) and every real storylet that is not one of the coach's talk topics. OFF
+## unless the app shell switches it on (main.gd), like the talks: real moments stop Play week, so the tools that play days
+## keep exactly today's behaviour. storylet_check part 7 and the UI checks switch it on themselves.
+static var people_enabled := false
+
+## The coach's talk topics (sessions C3 / M1): real content that runs without the people (people_enabled off).
+const COACH_TOPICS := ["week", "race", "ack", "mood"]
 
 const NONE := "_none"   # the answer of a moment that passed unanswered
 const ACK := "talk_ack"  # the storylet of a week talk without a topic (data/storylets/week_talk.json)
@@ -54,6 +62,11 @@ var last_from := {}          # person id -> day number of their last moment
 var standing := {}           # group -> {reply, label, rule, since}: the player's rules
 var standing_history := {}   # group -> the last answers to that recurring choice, newest last
 var standing_declined := {}  # group -> true: "Not now" was answered; again_after identical answers needed
+# Session P1 (the cast; saved only once there is something):
+var family := {}             # {attitude} (data/cast.json attitudes; a reply's `attitude` effect changes it)
+var cast_info := {}          # the creation answers the cast was made from: {origin, old_sport, family}
+var late_nights := {}        # day number (as text) -> points of life load that day from a late night the evening before
+var rival_stats := {}        # rival id -> {beat, lost, streak (losses in a row), wins (wins in a row), races}
 ## Not saved, for the tools: every moment posted since the system was made [{day, storylet, variant, stop, auto, from}] and
 ## the chain follow-ups dropped because their conditions never held.
 var fired := []
@@ -77,13 +90,17 @@ static func day_no(d: Dictionary) -> int:
 
 # --- Content and settings -----------------------------------------------------------------------------------
 
-## The storylets this career can get: the real ones, and the test ones for the tools or with the Dev menu's switch.
+## The storylets this career can get: the real ones, and the test ones for the tools or with the Dev menu's switch. The people's
+## moments (every real storylet that is not a coach talk topic, session P1) only with `people_enabled`.
 func content() -> Array:
 	var test := include_test or (test_content and OS.is_debug_build())
-	var key := "%s|%d" % [test, Data.storylets.size()]
+	var key := "%s|%s|%d" % [test, people_enabled, Data.storylets.size()]
 	if key != _content_key:
 		_content_key = key
-		_content = Data.storylets.filter(func(s): return test or not bool(s.get("test", false)))
+		_content = Data.storylets.filter(func(s):
+			if bool(s.get("test", false)):
+				return test
+			return people_enabled or str(s.get("topic", "")) in COACH_TOPICS)
 		_by_id = {}
 		for s in Data.storylets:
 			_by_id[s.id] = s
@@ -141,6 +158,8 @@ func on_day_end(ctx: Dictionary) -> void:
 			_post_race_note(ctx, today)
 		if int(ctx.day) == 6 and ctx.get("week") != null:
 			_post_week_talk(ctx, today)
+	if people_enabled:
+		_people_evening(ctx, today)
 	_prune(today)
 
 
@@ -175,6 +194,8 @@ func _slot(slot: String, ctx: Dictionary, today: int) -> void:
 		return
 	if _fire_due_chain(slot, ctx, today):
 		return
+	if _fire_dated(slot, ctx, today):
+		return
 	if int(week.fired_day) == today or int(week.count) >= int(r.max_per_week):
 		return
 	if int(week.roll_day) != today:   # once a day: does today get a moment? (moments still to come / days left)
@@ -200,12 +221,29 @@ static func _slot_of(s: Dictionary) -> String:
 	return str(s.get("slot", "evening"))
 
 
-## A weighted pick among the storylets that fit now: {s, from (person)} or {}.
-func _pick(ctx: Dictionary, today: int, slots: Array) -> Dictionary:
+## Session P1: a moment of a day of the year (`dated`: Christmas Eve, vappu, the birthday, the camp week...) comes whenever it
+## fits, before the day's roll (like a chain follow-up), inside the day's and the week's limits. Only with the people on.
+func _fire_dated(slot: String, ctx: Dictionary, today: int) -> bool:
+	if not people_enabled:
+		return false
+	var r: Dictionary = Data.moments.rate
+	if int(week.fired_day) == today or int(week.count) >= int(r.max_per_week):
+		return false
+	var pick := _pick(ctx, today, ["morning", "any"] if slot == "morning" else ["evening", "any"], true)
+	if pick.is_empty():
+		return false
+	_post(pick.s, pick.from, ctx, today)
+	return true
+
+
+## A weighted pick among the storylets that fit now: {s, from (person)} or {}. `dated_only`: only the dated ones (P1).
+func _pick(ctx: Dictionary, today: int, slots: Array, dated_only := false) -> Dictionary:
 	var cands := []
 	var total := 0.0
 	for s in content():
 		if bool(s.get("chain_only", false)) or str(s.get("topic", "")) != "" or not _slot_of(s) in slots:
+			continue
+		if dated_only and not bool(s.get("dated", false)):
 			continue
 		if not _stop_allowed(s):
 			continue
@@ -259,8 +297,7 @@ func _senders(s: Dictionary, ctx: Dictionary, today: int) -> Array:
 	for p in people_for(str(s.get("from", "coach"))):
 		if last_from.has(p.id) and today - int(last_from[p.id]) < gap:
 			continue
-		var when: Dictionary = s.get("when", {})
-		if when.has("relation") and not _in_range(relation_of(p), when.relation):
+		if not _sender_ok(s.get("when", {}), ctx, p):
 			continue
 		if _valid_replies(s, ctx, p).size() < 2 or _valid_variants(s, ctx, p).is_empty():
 			continue
@@ -268,20 +305,39 @@ func _senders(s: Dictionary, ctx: Dictionary, today: int) -> Array:
 	return out
 
 
-## The people a `from` selector names: "coach", "teammate", "teammate:<role>" (family, friends, school: P1).
+## The people a `from` selector names: "coach", "teammate", "teammate:<role>" (anyone in the coach's group); session P1:
+## "partner" / "partner:<role>" (the close training partners), "family" (anyone), "parent" / "parent:mum" / "parent:dad" /
+## "parent:athlete" (the one who ran), "sibling", "best_friend", "friend" (the other friends), "friends" (any friend),
+## "school" / "school:<role>" (class_teacher, pe_teacher, counsellor), "rival".
 func people_for(selector: String) -> Array:
 	var parts := selector.split(":")
+	var sub := parts[1] if parts.size() > 1 else ""
 	var out := []
 	for p in people.values():
 		if not bool(p.active):
 			continue
+		var ok := false
 		match parts[0]:
 			"coach":
-				if p.role == "coach":
-					out.append(p)
+				ok = p.role == "coach"
 			"teammate":
-				if p.thread == "group" and (parts.size() < 2 or p.role == parts[1]):
-					out.append(p)
+				ok = p.thread == "group" and (sub == "" or p.role == sub)
+			"partner":
+				ok = p.thread == "group" and bool(p.get("close", false)) and (sub == "" or p.role == sub)
+			"family":
+				ok = p.thread == "family"
+			"parent":
+				ok = p.role in ["mum", "dad"] and (sub == "" or p.role == sub or (sub == "athlete" and bool(p.get("athlete_parent", false))))
+			"sibling", "best_friend", "friend":
+				ok = p.role == parts[0]
+			"friends":
+				ok = p.thread == "friends"
+			"school":
+				ok = p.thread == "school" and (sub == "" or p.role == sub)
+			"rival":
+				ok = p.thread == "rivals"
+		if ok:
+			out.append(p)
 	out.sort_custom(func(x, y): return str(x.id) < str(y.id))   # (dictionary order is not guaranteed after loading)
 	return out
 
@@ -293,19 +349,30 @@ func _fire_due_chain(slot: String, ctx: Dictionary, today: int) -> bool:
 	for q in queue.duplicate():
 		if int(q.due) > today:
 			continue
-		var s := storylet(str(q.id))
-		if s.is_empty() or today > int(q.until):
+		var topic := str(q.get("topic", ""))   # (session P1: "pick a fitting storylet of this topic", e.g. the family's card talk)
+		var s := storylet(str(q.get("id", ""))) if topic == "" else {}
+		if (topic == "" and s.is_empty()) or today > int(q.until):
 			queue.erase(q)
 			dropped_chains += 1
 			continue
-		var sl := _slot_of(s)
-		if sl != "any" and sl != slot:
-			continue
-		if int(week.fired_day) == today or int(week.count) >= int(r.max_per_week):
-			return false
-		if not _eligible(s, ctx, today):
-			continue
-		var senders := _senders(s, ctx, today)
+		var senders := []
+		if topic != "":
+			if int(week.fired_day) == today or int(week.count) >= int(r.max_per_week):
+				return false
+			var pick := _pick_queued_topic(topic, slot, ctx, today)
+			if pick.is_empty():
+				continue
+			s = pick.s
+			senders = pick.senders
+		else:
+			var sl := _slot_of(s)
+			if sl != "any" and sl != slot:
+				continue
+			if int(week.fired_day) == today or int(week.count) >= int(r.max_per_week):
+				return false
+			if not _eligible(s, ctx, today):
+				continue
+			senders = _senders(s, ctx, today)
 		if senders.is_empty():
 			continue
 		var nonstop := false
@@ -524,7 +591,36 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 			"confidence", "motivation", "stress":   # (session M1: points on the mood, scaled by the sender)
 				var mind := MindSystem.sys()
 				if mind:
-					mind.from_moment(key, float(v), p)
+					var pts := float(v)
+					if people_enabled and str(p.get("role", "")) != "coach":
+						pts *= float(Data.cast.mood_scale)   # (session P1: the people's moments weigh less than the coach's words)
+					mind.from_moment(key, pts, p)
+			"sleep":   # (session P1: negative = a late night: life load tomorrow, data/cast.json sleep)
+				if float(v) < 0.0:
+					var k := str(today + 1)
+					late_nights[k] = float(late_nights.get(k, 0.0)) - float(v) * float(Data.cast.sleep.life_load_per_point)
+			"grades":   # (session P1: every academic subject's level, SchoolSystem.nudge_grades)
+				var ss := SchoolSystem.sys()
+				if ss:
+					ss.nudge_grades(float(v))
+			"attitude":   # (session P1: the family's attitude, data/cast.json attitudes)
+				if Data.cast.attitudes.has(str(v)):
+					family.attitude = str(v)
+			"memory":   # (session P1: the sender remembers it, with the day)
+				if not p.is_empty():
+					if not p.has("memory"):
+						p.memory = {}
+					for name in (v if v is Array else [v]):
+						p.memory[str(name)] = today
+			"forget":
+				if not p.is_empty() and p.has("memory"):
+					for name in (v if v is Array else [v]):
+						p.memory.erase(str(name))
+			"relation_thread":   # (session P1: {thread: points} for everyone else in that thread, e.g. the friends)
+				for t in v:
+					for q in people.values():
+						if bool(q.active) and str(q.thread) == str(t) and q != p and q.get("role", "") != "coach":
+							q.relation = clampf(float(q.relation) + float(v[t]), float(Data.moments.relation.min), float(Data.moments.relation.max))
 			_:
 				if not key in Data.moments.effects.prepared:
 					push_warning("Moment effect '%s' is unknown (%s)" % [key, cause])
@@ -542,9 +638,17 @@ func _changes_of(effects: Dictionary, p: Dictionary, remember: bool) -> Array:
 	if MindSystem.sys() != null:
 		for mood in MindSystem.MOODS:
 			var mv := float(effects.get(mood, 0.0))
+			if people_enabled and str(p.get("role", "")) != "coach":
+				mv *= float(Data.cast.mood_scale)   # (session P1, as in _apply)
 			if mv != 0.0:
 				out.append(_change_line(str(cfg.moods[mood]), mv))
-	var who := str(p.first_name)
+	var ss := SchoolSystem.sys()
+	if ss != null and not SchoolSystem.neutral:   # (session P1: a late night and the grades)
+		if float(effects.get("sleep", 0.0)) < 0.0:
+			out.append(_change_line(str(cfg.sleep), float(effects.sleep)))
+		if float(effects.get("grades", 0.0)) != 0.0:
+			out.append(_change_line(str(cfg.grades), float(effects.grades)))
+	var who := short_name(p)
 	var trust := float(effects.get("trust", 0.0))
 	var rel := 0.0
 	if p.get("role", "") == "coach":
@@ -555,6 +659,12 @@ func _changes_of(effects: Dictionary, p: Dictionary, remember: bool) -> Array:
 		out.append(_change_line(str(cfg.trust).format({"who": who}), trust))
 	if rel != 0.0:
 		out.append(_change_line(str(cfg.relation).format({"who": who}), rel))
+	var others: Dictionary = effects.get("relation_thread", {})
+	for t in others:
+		if float(others[t]) != 0.0:
+			out.append(_change_line(str(cfg.thread).format({"thread": thread_name(str(t))}), float(others[t])))
+	if str(effects.get("attitude", "")) != "":
+		out.append(str(cfg.attitude).format({"word": Cast.attitude_word(str(effects.attitude))}))
 	if remember:
 		out.append(str(cfg.remember).format({"who": who}))
 	return out
@@ -642,6 +752,84 @@ func _post_race_note(ctx: Dictionary, today: int) -> void:
 		var topics := _pick_topics("race", ctx, today, p, 1)
 		if not topics.is_empty():
 			_post(topics[0], p, ctx, today, true, {"counted": false})
+
+
+# --- The people's evening (session P1) ---------------------------------------------------------------------------
+
+## The evening of a played day with the people on: the rivals' record after a race and maybe a message from one of them, the
+## family's talk after a report card or the application's results (queued for the next evening, a moment of the week).
+func _people_evening(ctx: Dictionary, today: int) -> void:
+	var note: Dictionary = ctx.get("race_note", {})
+	if not note.is_empty():
+		_post_rival_note(ctx, today)
+	var ss := SchoolSystem.sys()
+	if ss != null:
+		var wait := int(Data.moments.chain_wait_days)
+		if not ss.reports.is_empty() and day_no(Game.int_date(ss.reports.back().date)) == today and str(ss.reports.back().kind) != "period":
+			queue.append({"topic": "card", "due": today + 1, "until": today + 1 + wait, "after": ""})
+		var year := ss.app_year_now()
+		if year > 0 and Calendar.date_key(SchoolApplication.dates(year).results) == Calendar.date_key(ctx.date):
+			queue.append({"topic": "app", "due": today + 1, "until": today + 1 + wait, "after": ""})
+	for k in late_nights.keys():
+		if int(k) < today:
+			late_nights.erase(k)
+
+
+## After a race: every rival who ran it gets the result in `rival_stats`; rivals met often enough become people; with a chance
+## one of those who ran it writes (topic "rival": a nod, a jab, the rival who always beats you). Never a stop, outside the 3-5.
+func _post_rival_note(ctx: Dictionary, today: int) -> void:
+	var vs: Array = ctx.race_note.get("vs", [])
+	for x in vs:
+		var st: Dictionary = rival_stats.get(str(x.id), {"beat": 0, "lost": 0, "streak": 0, "wins": 0, "races": 0})
+		st.races = int(st.races) + 1
+		if bool(x.beat):
+			st.beat = int(st.beat) + 1
+			st.wins = int(st.wins) + 1
+			st.streak = 0
+		else:
+			st.lost = int(st.lost) + 1
+			st.streak = int(st.streak) + 1
+			st.wins = 0
+		rival_stats[str(x.id)] = st
+	_sync_people()
+	var ran := []
+	for x in vs:
+		var p: Dictionary = people.get("rv." + str(x.id), {})
+		if not p.is_empty() and bool(p.active):
+			ran.append(p)
+	if ran.is_empty() or rng.randf() >= float(Data.cast.rivals.note_chance):
+		return
+	var p: Dictionary = ran[rng.randi_range(0, ran.size() - 1)]
+	var pool := _pick_topics("rival", ctx, today, p, 1)
+	if not pool.is_empty():
+		_post(pool[0], p, ctx, today, true, {"counted": false})
+
+
+## A queued topic (the family's card talk): {s, senders} for a storylet of that topic that fits now in this slot, or {}.
+func _pick_queued_topic(topic: String, slot: String, ctx: Dictionary, today: int) -> Dictionary:
+	var cands := []
+	var total := 0.0
+	for s in content():
+		if str(s.get("topic", "")) != topic:
+			continue
+		var sl := _slot_of(s)
+		if sl != "any" and sl != slot:
+			continue
+		if not _eligible(s, ctx, today):
+			continue
+		var senders := _senders(s, ctx, today)
+		if senders.is_empty():
+			continue
+		cands.append({"s": s, "senders": senders})
+		total += float(s.get("weight", 1.0))
+	if cands.is_empty():
+		return {}
+	var x := rng.randf() * total
+	for c in cands:
+		x -= float(c.s.get("weight", 1.0))
+		if x < 0.0:
+			return c
+	return cands.back()
 
 
 # --- The coach's proposals (session C4) -------------------------------------------------------------------------
@@ -798,6 +986,8 @@ func _pick_topics(kind: String, ctx: Dictionary, today: int, p: Dictionary, n: i
 	var pool := []
 	for s in content():
 		if str(s.get("topic", "")) != kind or not _eligible(s, ctx, today):
+			continue
+		if not _sender_ok(s.get("when", {}), ctx, p):   # (session P1: a rival's race; the coach's topics ask nothing of him)
 			continue
 		if _valid_replies(s, ctx, p).size() < 2 or _valid_variants(s, ctx, p).is_empty():
 			continue
@@ -958,6 +1148,37 @@ func check_when(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
 			"race_outcome": ok = CoachTalk.race_outcome(ctx.get("race_note", {})) in v
 			"chance":
 				ok = rng.randf() < float(v)
+			# Session P1 (the cast and Finnish life):
+			"family": ok = str(family.get("attitude", "")) in v
+			"has":
+				for sel in v:
+					ok = ok and not people_for(str(sel)).is_empty()
+			"days_to":
+				for ev in v:
+					ok = ok and _in_range(Cast.days_to(str(ev), date, flags), v[ev])
+			"days_after":
+				for ev in v:
+					ok = ok and _in_range(Cast.days_after(str(ev), date, flags), v[ev])
+			"school_day": ok = (_school_day(date).get("kind", "") == "school") == bool(v)
+			"break": ok = str(_school_day(date).get("break", "")) in v
+			"stage":
+				var ss := SchoolSystem.sys()
+				ok = ss != null and str(ss.stage_of(date).id) in v
+			"test_today": ok = (_tests(date) > 0) == bool(v)
+			"test_tomorrow": ok = (_tests(Game.add_days(date, 1)) > 0) == bool(v)
+			"tests_week":
+				var ss := SchoolSystem.sys()
+				ok = ss != null and _in_range(ss.tests_in_week(Calendar.monday_of(date)), v)
+			"card_days_ago", "card_change", "card_avg", "cards": ok = _card_check(key, v, date)
+			"turns": ok = _in_range(int(date.year) - int(a.birth_date.get("year", 0)), v)   # (the age they turn this year)
+			"app":
+				var ss := SchoolSystem.sys()
+				ok = ss != null and ss.app_year_now() > 0 and ss.app_state(ss.app_year_now()) in v
+			"app_result": ok = _app_result() in v
+			"origin": ok = str(cast_info.get("origin", "")) in v
+			"old_sport": ok = (str(cast_info.get("old_sport", "")) != "") == bool(v)
+			"memory", "memory_days", "rival_race", "rival_streak", "rival_wins", "trait":
+				ok = p.is_empty() or _sender_key(key, v, ctx, p)   # (who sends it: checked per sender, _sender_ok)
 			_:
 				push_warning("Unknown moment condition '%s'" % key)
 				ok = false
@@ -971,6 +1192,113 @@ static func _in_range(x: float, r) -> bool:
 	if not r is Array or r.size() < 2:
 		return false
 	return (r[0] == null or x >= float(r[0])) and (r[1] == null or x <= float(r[1]))
+
+
+const SENDER_KEYS := ["relation", "memory", "memory_days", "rival_race", "rival_streak", "rival_wins", "trait"]
+
+
+## The conditions about who sends it (the relationship, their memory, a rival's race against you, a friend's trait): true
+## when `p` meets every one of them.
+func _sender_ok(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
+	for key in when:
+		if key in SENDER_KEYS and not _sender_key(key, when[key], ctx, p):
+			return false
+	return true
+
+
+func _sender_key(key: String, v, ctx: Dictionary, p: Dictionary) -> bool:
+	var mem: Dictionary = p.get("memory", {})
+	match key:
+		"relation":
+			return _in_range(relation_of(p), v)
+		"memory":
+			for f in v:
+				var name := str(f)
+				if (mem.has(name.substr(1)) if name.begins_with("!") else not mem.has(name)):
+					return false
+			return true
+		"memory_days":
+			for name in v:
+				if not mem.has(name) or not _in_range(day_no(ctx.date) - int(mem[name]), v[name]):
+					return false
+			return true
+		"trait":
+			return str(p.get("trait", "")) in v
+		"rival_race":   # "beat" (you finished ahead of them in the race that just ended) / "lost"
+			return _rival_result(ctx, p) in v
+		"rival_streak":
+			return _in_range(int(rival_stats.get(str(p.get("rival_id", "")), {}).get("streak", 0)), v)
+		"rival_wins":
+			return _in_range(int(rival_stats.get(str(p.get("rival_id", "")), {}).get("wins", 0)), v)
+	return true
+
+
+## "beat" / "lost" for a rival person in the race that just ended (the evening's race note), "" when they weren't in it.
+func _rival_result(ctx: Dictionary, p: Dictionary) -> String:
+	var rid := str(p.get("rival_id", ""))
+	for x in ctx.get("race_note", {}).get("vs", []):
+		if str(x.id) == rid:
+			return "beat" if bool(x.beat) else "lost"
+	return ""
+
+
+## The school calendar's day (SchoolCalendar.day) in the athlete's town; {} with the school model off.
+func _school_day(date: Dictionary) -> Dictionary:
+	var ss := SchoolSystem.sys()
+	return {} if ss == null else SchoolCalendar.day(ss.town(), date)
+
+
+func _tests(date: Dictionary) -> int:
+	var ss := SchoolSystem.sys()
+	return 0 if ss == null else ss.tests_on(date).size()
+
+
+## The latest report card: days since it (card_days_ago), its academic average (card_avg) and the change from the card before
+## (card_change; 0 for the first card).
+func _card_check(key: String, v, date: Dictionary) -> bool:
+	var ss := SchoolSystem.sys()
+	if ss == null or ss.reports.is_empty():
+		return false
+	var last: Dictionary = ss.reports.back()
+	match key:
+		"cards":   # (the number of report cards so far)
+			return _in_range(ss.reports.size(), v)
+		"card_days_ago":
+			return _in_range(Calendar.days_between(Game.int_date(last.date), date), v)
+		"card_avg":
+			return _in_range(float(last.academic_average), v)
+		"card_change":
+			var change := 0.0
+			if ss.reports.size() > 1:
+				change = float(last.academic_average) - float(ss.reports[ss.reports.size() - 2].academic_average)
+			return _in_range(change, v)
+	return false
+
+
+## How the latest application went: "first" (a place from the first wish), "other" (from another wish), "none" (no place),
+## "" (no results yet).
+func _app_result() -> String:
+	var ss := SchoolSystem.sys()
+	if ss == null:
+		return ""
+	var years := ss.applications.keys()
+	if years.is_empty():
+		return ""
+	years.sort()
+	var rows: Array = ss.applications[years.back()].get("results", [])
+	if rows.is_empty():
+		return ""
+	if str(rows[0].get("status", "")) == "yes":
+		return "first"
+	for r in rows:
+		if str(r.get("status", "")) == "yes":
+			return "other"
+	return "none"
+
+
+## The life load of a late night on day `d` (a reply's `sleep` the evening before; session P1): read by SchoolSystem.load_parts.
+func late_night(d: Dictionary) -> float:
+	return float(late_nights.get(str(day_no(d)), 0.0))
 
 
 func _phase(date: Dictionary) -> String:
@@ -1060,7 +1388,7 @@ func _fill(ctx: Dictionary, p: Dictionary) -> Dictionary:
 	var mates := people_for("teammate").filter(func(t): return t.id != p.get("id", ""))
 	var next := Game.next_race()
 	var pb := float(a.personal_bests.get(a.main_event, 0.0))
-	return {
+	var fill := {
 		"name": a.first_name, "full_name": a.full_name(), "from": str(p.get("first_name", "")),
 		"coach": person_name(coach[0]) if not coach.is_empty() else "",
 		"coach_first": str(coach[0].first_name) if not coach.is_empty() else "",
@@ -1070,24 +1398,141 @@ func _fill(ctx: Dictionary, p: Dictionary) -> Dictionary:
 		"pb": Calendar.format_time(pb) if pb > 0.0 else "",
 		"weekday": str(names[int(ctx.day)]), "tomorrow": str(names[(int(ctx.day) + 1) % 7]),
 	}
+	if people_enabled:
+		_fill_people(fill, ctx, p)
+	return fill
+
+
+## Session P1's placeholders: {from} is what the athlete calls the sender ("Mum"), {mum} / {dad} / {parent} (another parent
+## when a parent writes), {sibling}, {best}, {friend}, {partner} (a close training partner other than the sender), {rival},
+## {class_teacher}, {pe_teacher}, {counsellor}, {town}, {test_subject} (tomorrow's test, else today's), {avg} (the latest
+## report card's academic average), {old_sport}, {family_word}.
+func _fill_people(fill: Dictionary, ctx: Dictionary, p: Dictionary) -> void:
+	fill.from = short_name(p)
+	var pid := str(p.get("id", ""))
+	fill.mum = _first_of("parent:mum")
+	fill.dad = _first_of("parent:dad")
+	fill.parent = _first_of("parent", pid)
+	if fill.parent == "":
+		fill.parent = _first_of("parent")
+	fill.sibling = _first_of("sibling")
+	fill.best = _first_of("best_friend")
+	fill.friend = _first_of("friend", pid)
+	var partners := people_for("partner").filter(func(q): return q.id != pid)
+	fill.partner = short_name(partners[rng.randi_range(0, partners.size() - 1)]) if not partners.is_empty() else fill.teammate
+	fill.rival = _first_of("rival", pid)
+	fill.class_teacher = _first_of("school:class_teacher")
+	fill.pe_teacher = _first_of("school:pe_teacher")
+	fill.counsellor = _first_of("school:counsellor")
+	var ss := SchoolSystem.sys()
+	fill.town = ss.town() if ss != null else str(Game.athlete.hometown)
+	fill.test_subject = ""
+	fill.avg = ""
+	if ss != null:
+		for d in [Game.add_days(ctx.date, 1), ctx.date]:
+			var t := ss.tests_on(d)
+			if not t.is_empty():
+				fill.test_subject = ss.subject_name(str(t[0]))
+				break
+		if not ss.reports.is_empty():
+			fill.avg = "%.1f" % float(ss.reports.back().academic_average)
+	fill.old_sport = str(Data.cast.get("sport_words", {}).get(str(cast_info.get("old_sport", "")), ""))
+	fill.family_word = Cast.attitude_word(str(family.get("attitude", "")))
 
 
 # --- People and threads ----------------------------------------------------------------------------------------
 
-## Keeps the people in step with the career: the head coach (C1's record) and his training group. Family, friends and
-## school people come with P1 (their threads are there, empty). People who are no longer around stay, inactive, so old
+## Keeps the people in step with the career: the head coach (C1's record) and his training group; with `people_enabled`
+## (session P1) also the cast: the family and the friends (made once), the close training partners of the group, the staff of
+## the school the athlete goes to now, the rivals who became people. People who are no longer around stay, inactive, so old
 ## messages keep their names.
 func _sync_people() -> void:
 	var cs := Game.get_system("coach") as CoachSystem
 	var head: Dictionary = cs.head() if cs else {}
 	for p in people.values():
 		p.active = false
-	if head.is_empty():
+	if not head.is_empty():
+		var parts := str(head.name).split(" ", false, 1)
+		_person(str(head.id), "coach", "coach", parts[0], parts[1] if parts.size() > 1 else "")
+		for t in head.get("group", []):
+			_person("%s.%s" % [head.id, t.id], "group", str(t.role), str(t.first_name), str(t.last_name))
+	if not people_enabled or Game.athlete == null:
 		return
-	var parts := str(head.name).split(" ", false, 1)
-	_person(str(head.id), "coach", "coach", parts[0], parts[1] if parts.size() > 1 else "")
-	for t in head.get("group", []):
-		_person("%s.%s" % [head.id, t.id], "group", str(t.role), str(t.first_name), str(t.last_name))
+	ensure_cast(Game.athlete)
+	for p in people.values():
+		if str(p.thread) in ["family", "friends"]:
+			p.active = true
+	if not head.is_empty():   # the close training partners
+		var close := Cast.pick_partners(str(head.id), head.get("group", []))
+		for t in head.get("group", []):
+			var pid := "%s.%s" % [head.id, t.id]
+			people[pid].close = pid in close
+	_sync_school()
+	_sync_rivals()
+
+
+## The family and the friends of a career, once (session P1): from the creation answers (`a.origin` / `old_sport` are not
+## saved with the athlete, so they are kept here). Called by Game.start_career and, for an older save, on the first day.
+func ensure_cast(a: Athlete) -> void:
+	if not people_enabled or a == null or not cast_info.is_empty():
+		return
+	cast_info = {"origin": a.origin, "old_sport": a.old_sport, "family": a.family}
+	family = {"attitude": Cast.attitude_for(a.family)}
+	for p in Cast.make(a, cast_info):
+		if not people.has(p.id):
+			people[p.id] = p
+
+
+## The staff of the school the athlete goes to now (grades 8-9: the comprehensive school; after it the path's school).
+func _sync_school() -> void:
+	var ss := SchoolSystem.sys()
+	if ss == null:
+		return
+	var stage := ss.stage_of(Game.date)
+	if not bool(stage.get("subjects", false)):
+		return   # (no school now: after the last year, or a gap)
+	var kind := "comprehensive" if str(stage.id) in ["grade_8", "grade_9"] else "secondary"
+	var key := "comp"
+	if kind == "secondary":
+		var path := ss.current_path()
+		key = "%s_%d" % [str(path.get("school", "")) if str(path.get("school", "")) != "" else str(path.get("kind", "sec")), int(path.get("start_year", 0))]
+	var made := false
+	for p in people.values():
+		if str(p.id).begins_with("sch.%s." % key):
+			p.active = true
+			made = true
+	if not made:
+		for p in Cast.make_school(Game.athlete, key, kind, str(cast_info.get("origin", ""))):
+			people[p.id] = p
+
+
+## Rivals met often enough become people (data/cast.json rivals: at most `max`, the ones met most first); a rival stays a
+## person while they are in the rival pool.
+func _sync_rivals() -> void:
+	var rc: Dictionary = Data.cast.rivals
+	var in_pool := {}
+	for r in Game.rivals:
+		in_pool[str(r.id)] = r
+	var n := 0
+	for p in people.values():
+		if str(p.thread) == "rivals" and in_pool.has(str(p.get("rival_id", ""))):
+			p.active = true
+			n += 1
+	if n >= int(rc.max):
+		return
+	var cands := Game.rivals.filter(func(r): return int(r.get("met", 0)) >= int(rc.met_min) and not people.has("rv." + str(r.id)))
+	cands.sort_custom(func(x, y): return int(x.met) > int(y.met) or (int(x.met) == int(y.met) and str(x.id) < str(y.id)))
+	for r in cands.slice(0, int(rc.max) - n):
+		people["rv." + str(r.id)] = {"id": "rv." + str(r.id), "thread": "rivals", "role": "rival", "rival_id": str(r.id),
+				"first_name": str(r.first_name), "last_name": str(r.last_name), "gender": Game.athlete.gender,
+				"word": str(rc.word), "relation": Cast.relation_start("rival"), "active": true, "memory": {}}
+
+
+func _first_of(sel: String, avoid := "") -> String:
+	for q in people_for(sel):
+		if str(q.id) != avoid:
+			return short_name(q)
+	return ""
 
 
 func _person(pid: String, thread: String, role: String, first: String, last: String) -> void:
@@ -1107,10 +1552,20 @@ func relation_of(p: Dictionary) -> float:
 	return float(p.get("relation", Data.moments.relation.start))
 
 
+## The name shown for a person: their full name, or what the athlete calls them (a parent: "Mum", session P1).
 static func person_name(p: Dictionary) -> String:
 	if p.is_empty():
 		return ""
+	if str(p.get("call", "")) != "":
+		return str(p.call)
 	return ("%s %s" % [p.first_name, p.last_name]).strip_edges()
+
+
+## The short name in a sentence: "Mum" for a parent, else the first name.
+static func short_name(p: Dictionary) -> String:
+	if p.is_empty():
+		return ""
+	return str(p.call) if str(p.get("call", "")) != "" else str(p.get("first_name", ""))
 
 
 static func thread_name(thread: String) -> String:
@@ -1207,25 +1662,48 @@ func pending() -> Array:
 # --- Save / load ---------------------------------------------------------------------------------------------------
 
 func to_dict() -> Dictionary:
+	var d := {}
 	if started_day < 0:
-		var d := {}
 		if test_content:
 			d.test_content = true
 		if stop_setting != "":
 			d.stop_setting = stop_setting
-		return d
-	return {"rng_seed": str(rng.seed), "rng_state": str(rng.state), "stop_setting": stop_setting,
-			"test_content": test_content, "started_day": started_day, "seen": seen, "flags": flags, "counters": counters,
-			"people": people, "threads": threads, "moments": moments, "queue": queue, "week": week,
-			"stop_tokens": stop_tokens, "last_from": last_from, "standing": standing, "standing_history": standing_history,
-			"standing_declined": standing_declined.keys(), "next": _next}
+		if not cast_info.is_empty():   # (session P1: the cast is made when the career starts, before the first day)
+			d.people = people
+	else:
+		d = {"rng_seed": str(rng.seed), "rng_state": str(rng.state), "stop_setting": stop_setting,
+				"test_content": test_content, "started_day": started_day, "seen": seen, "flags": flags, "counters": counters,
+				"people": people, "threads": threads, "moments": moments, "queue": queue, "week": week,
+				"stop_tokens": stop_tokens, "last_from": last_from, "standing": standing, "standing_history": standing_history,
+				"standing_declined": standing_declined.keys(), "next": _next}
+	# Session P1 (only when there is something, so a career without the people saves exactly as before):
+	if not cast_info.is_empty():
+		d.cast_info = cast_info
+		d.family = family
+	if not late_nights.is_empty():
+		d.late_nights = late_nights
+	if not rival_stats.is_empty():
+		d.rival_stats = rival_stats
+	return d
 
 
 ## JSON makes every number a float: counts, days and dates back to ints.
 func from_dict(d: Dictionary) -> void:
 	stop_setting = str(d.get("stop_setting", ""))
 	test_content = bool(d.get("test_content", false))
+	cast_info = d.get("cast_info", {})
+	family = d.get("family", {})
+	late_nights = {}
+	var ln: Dictionary = d.get("late_nights", {})
+	for k in ln:
+		late_nights[str(k)] = float(ln[k])
+	rival_stats = d.get("rival_stats", {})
+	for st in rival_stats.values():
+		for k in st:
+			st[k] = int(st[k])
 	if not d.has("started_day"):
+		people = d.get("people", {})
+		_people_numbers()
 		return
 	rng.seed = str(d.rng_seed).to_int()
 	rng.state = str(d.rng_state).to_int()
@@ -1242,8 +1720,7 @@ func from_dict(d: Dictionary) -> void:
 	for k in counters:
 		counters[k] = int(counters[k])
 	people = d.get("people", {})
-	for p in people.values():
-		p.relation = float(p.relation)
+	_people_numbers()
 	threads = d.get("threads", {})
 	for t in threads.values():
 		for x in t:
@@ -1274,3 +1751,14 @@ func from_dict(d: Dictionary) -> void:
 	for g in d.get("standing_declined", []):
 		standing_declined[str(g)] = true
 	_next = int(d.get("next", 1))
+
+
+## JSON makes every number a float: a person's relationship stays a float, their memory days and birth year back to ints.
+func _people_numbers() -> void:
+	for p in people.values():
+		p.relation = float(p.relation)
+		if p.has("birth_year"):
+			p.birth_year = int(p.birth_year)
+		var mem: Dictionary = p.get("memory", {})
+		for k in mem:
+			mem[k] = int(mem[k])

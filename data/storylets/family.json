@@ -1,0 +1,738 @@
+{
+	"_note": "The FAMILY's moments (session P1, GDD 4.9.5; format in README.md). Senders: parent / parent:mum / parent:dad / parent:athlete (the one who ran) / sibling / family. The family's attitude (data/cast.json attitudes, condition `family`) decides which moments fit and which text variant is used; a reply's `attitude` effect can change it (the 'against' family comes round slowly). Topics: `card` (the evening after a report card, queued by StoryletSystem) and `app` (after the application's results). Moments never change what is trained: a reply moves moods, relationships, a late night (sleep), the grades or a remembered flag. Ages 14-16 (P2 adds 16-17). Every person is fictional.",
+	"storylets": [
+		{
+			"id": "fam_dinner_late", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 45,
+			"when": {"age": [14, 16], "day_type": "weekday", "today_tags": ["hard", "long"]},
+			"text": [
+				"Dinner was at six. It's cold now. Is it going to be like this every training day?",
+				"We waited for you with dinner again. Can you tell us when practice runs late?",
+				{"text": "You came home at eight and ate standing up. Athletes need proper meals, you know that better than anyone.", "when": {"family": ["athletics", "top"]}}
+			],
+			"replies": [
+				{"id": "sorry", "label": "Sorry, I'll text when I'm late", "hint": "{from} will appreciate it", "effects": {"relation": 2},
+					"result": "Thank you. That's all we ask.", "result_from": "sender"},
+				{"id": "warm", "label": "Can you keep a plate warm for me?", "hint": "", "effects": {"relation": 1},
+					"result": "Fine. Microwave, second shelf.", "result_from": "sender"},
+				{"id": "annoyed", "label": "Practice is practice", "hint": "{from} won't like the tone", "effects": {"relation": -2},
+					"result": "And dinner is dinner. We'll talk about this.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_lift", "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 50,
+			"when": {"age": [14, 16], "day_type": "weekday", "month": [1, 2, 3, 10, 11, 12], "today_tags": ["run"]},
+			"text": [
+				"I have a meeting tonight, I can't drive you to practice. Can you sort it out yourself?",
+				"The car is at the garage today. How are you getting to practice?"
+			],
+			"replies": [
+				{"id": "bus", "label": "I'll take the bus", "hint": "a long day", "effects": {"relation": 1, "stress": 1},
+					"result": "Thanks. Take a warm hat.", "result_from": "sender"},
+				{"id": "partner", "label": "I'll ask {partner}'s family", "hint": "{partner} will help out", "effects": {"relation": 1},
+					"result": "Good thinking. Say thank you from us.", "result_from": "sender"},
+				{"id": "bike", "label": "I'll cycle, it's a warm-up", "hint": "", "effects": {"motivation": 1},
+					"result": "In this weather? Lights on, then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_shoes", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 150,
+			"when": {"age": [14, 16], "weeks_in_career": [6, null]},
+			"text": [
+				"Your running shoes have holes in them. How much do proper ones cost these days?",
+				"I saw your shoes in the hall. Those are finished. Do you need new ones?"
+			],
+			"replies": [
+				{"id": "good", "label": "The good ones, please", "hint": "costs the family", "effects": {"relation": -1, "motivation": 1, "budget": -1},
+					"result": "That much? All right. Look after them.", "result_from": "sender"},
+				{"id": "cheap", "label": "Cheaper ones will do", "hint": "{from} will be relieved", "effects": {"relation": 2},
+					"result": "That's sensible of you. Thank you.", "result_from": "sender"},
+				{"id": "wait", "label": "They'll last a few more weeks", "hint": "", "effects": {},
+					"result": "Tell me when they don't.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_grandparents", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 60,
+			"when": {"age": [14, 16], "weekday": [3, 4], "race_in_days": [3, null]},
+			"text": [
+				"We're going to see Grandma on Sunday. She asks about your running every time. Coming?",
+				"Grandpa turns 75 on Sunday. The whole family will be there. You're coming, right?"
+			],
+			"replies": [
+				{"id": "go", "label": "Of course I'm coming", "hint": "{from} will be pleased", "effects": {"relation": 3, "motivation": 1},
+					"result": "They'll want to hear everything about your races.", "result_from": "sender"},
+				{"id": "run_there", "label": "I'll come and run there", "hint": "", "effects": {"relation": 1},
+					"result": "Bring your shoes then. The forest road is nice there."},
+				{"id": "skip", "label": "I'd rather stay and train", "hint": "{from} will be disappointed", "effects": {"relation": -3},
+					"result": "She won't be around forever, you know.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_race_watch", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "race_in_days": [1, 4], "family": ["supportive", "sporty", "athletics", "top", "puzzled", "coming_round"]},
+			"text": [
+				"{meet} is coming up. Should we come and watch?",
+				"Can we come to {meet}? I promise not to shout too loud.",
+				{"text": "I'll be at {meet}. I want to see how you run the first lap.", "when": {"family": ["athletics"]}}
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, come!", "hint": "", "effects": {"relation": 2, "confidence": 1},
+					"result": "We'll be in the stands. Wave at us.", "result_from": "sender"},
+				{"id": "nervous", "label": "Please don't, I get nervous", "hint": "", "effects": {"relation": -1, "stress": -1},
+					"result": "All right. Text us the result.", "result_from": "sender"},
+				{"id": "quiet", "label": "Only if you stay quiet", "hint": "", "effects": {"relation": 1},
+					"result": "Quiet as mice. Mostly.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_race_good", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 20,
+			"when": {"age": [14, 16], "race_outcome": ["pb", "good"]},
+			"text": [
+				"We saw the result! Well done. Pizza on Friday?",
+				{"text": "{pb}! I ran faster at your age, but not by much. Proud of you.", "when": {"family": ["athletics"], "race_outcome": ["pb"]}},
+				{"text": "A good race. Champions don't celebrate small steps for long, but tonight you can.", "when": {"family": ["top"]}},
+				{"text": "My colleagues saw it on the club's page. I told them: that's my kid. Well done!", "when": {"family": ["puzzled"]}},
+				{"text": "The neighbour saw your result in the paper. So, well done, I suppose.", "when": {"family": ["against", "coming_round"]}}
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks! It felt good", "hint": "", "effects": {"relation": 2, "confidence": 1},
+					"result": "You've earned it.", "result_from": "sender"},
+				{"id": "more", "label": "I can go faster", "hint": "", "effects": {"relation": 1, "motivation": 1},
+					"result": "We know you can.", "result_from": "sender"},
+				{"id": "shrug", "label": "It was OK", "hint": "", "effects": {},
+					"result": "OK? It was better than OK.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_race_bad", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 20,
+			"when": {"age": [14, 16], "race_outcome": ["bad"]},
+			"text": [
+				"I saw the result. Do you want to talk, or do you want ice cream?",
+				{"text": "What happened on the second lap? You went too early. I could see it from the stands.", "when": {"family": ["athletics"]}},
+				{"text": "One bad race. Your grandfather used to say: lose, learn, come back.", "when": {"family": ["top", "sporty", "supportive"]}},
+				{"text": "Maybe this is a sign to concentrate on school for a while?", "when": {"family": ["against"]}}
+			],
+			"replies": [
+				{"id": "talk", "label": "Let's talk", "hint": "{from} listens", "effects": {"relation": 2, "confidence": 1},
+					"result": "Come to the kitchen. I'll put the kettle on.", "result_from": "sender"},
+				{"id": "alone", "label": "I want to be alone", "hint": "", "effects": {"stress": -1},
+					"result": "All right. We're here when you want.", "result_from": "sender"},
+				{"id": "snap", "label": "Just leave it", "hint": "{from} will be hurt", "effects": {"relation": -2},
+					"result": "Fine. I was only trying to help.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_athlete_tips", "thread": "family", "from": "parent:athlete", "slot": "evening", "cooldown_days": 40,
+			"when": {"age": [14, 16], "family": ["athletics"], "weeks_in_career": [3, null]},
+			"text": [
+				"In my day we ran 10 × 400 every Tuesday, no matter what. Is your coach giving you enough speed work?",
+				"I watched your session from the fence. Your arms cross in front when you get tired. Want me to show you?",
+				"When I was your age my coach made us run the stadium stairs until we couldn't feel our legs. Different times."
+			],
+			"replies": [
+				{"id": "listen", "label": "Show me", "hint": "{from} loves this", "effects": {"relation": 3},
+					"result": "Saturday in the yard, then. Bring your spikes.", "result_from": "sender"},
+				{"id": "coach", "label": "{coach_first} has a plan", "hint": "{coach_first} will hear about it", "effects": {"relation": -1, "trust": 1},
+					"result": "Of course. I'm just saying.", "result_from": "sender"},
+				{"id": "argue", "label": "Training has changed since then", "hint": "{from} may take it badly", "effects": {"relation": -2, "stress": 1},
+					"result": "Hmph. Some things never change.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_athlete_expects", "thread": "family", "from": "parent:athlete", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "family": ["athletics"], "raced_days_ago": [0, 2]},
+			"text": [
+				"Your split at 400 was too slow. You can't win from that far back.",
+				"Good, but you left something in the tank. I could see it."
+			],
+			"replies": [
+				{"id": "right", "label": "You're right", "hint": "", "effects": {"relation": 2, "confidence": -1},
+					"result": "Next time, then.", "result_from": "sender"},
+				{"id": "plan", "label": "It was the plan", "hint": "", "effects": {"trust": 1},
+					"result": "Then it's your coach's plan I disagree with.", "result_from": "sender"},
+				{"id": "enough", "label": "Can I just enjoy it?", "hint": "{from} will think about it", "remember": true, "effects": {"relation": -1, "memory": "asked_to_ease_off", "stress": -1},
+					"result": "...Yes. You're right. Sorry.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_top_standards", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 45,
+			"when": {"age": [14, 16], "family": ["top"]},
+			"text": [
+				"Champions train when nobody is watching. Did you do your stretching today?",
+				"I made the national team because I never missed a session. Remember that.",
+				"Your room is a mess. Discipline starts at home."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, I did it all", "hint": "", "effects": {"relation": 2},
+					"result": "Good. That's the way.", "result_from": "sender"},
+				{"id": "fair", "label": "I'm doing my best", "hint": "", "effects": {"relation": 1, "stress": -1},
+					"result": "I know. I just want it for you.", "result_from": "sender"},
+				{"id": "pressure", "label": "It's a lot of pressure", "hint": "{from} will remember", "remember": true, "effects": {"relation": -1, "memory": "said_pressure", "stress": -1},
+					"result": "...I didn't mean it like that. We'll ease off.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_against_waste", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 40,
+			"when": {"age": [14, 16], "family": ["against"]},
+			"text": [
+				"Is all this running going to get you anywhere? Your cousin is learning to code.",
+				"Six practices a week. What about your future?",
+				"Nobody makes a living from running around a track in Finland."
+			],
+			"replies": [
+				{"id": "show", "label": "Watch my next race", "hint": "", "effects": {"relation": 1, "count": {"family_warmth": 1}},
+					"result": "...Maybe. If it doesn't clash with anything.", "result_from": "sender"},
+				{"id": "grades", "label": "My grades are fine too", "hint": "", "effects": {"relation": 1, "stress": 1},
+					"result": "They had better stay fine.", "result_from": "sender"},
+				{"id": "fight", "label": "It's my life", "hint": "{from} will not let it go", "effects": {"relation": -4, "stress": 2, "motivation": 1},
+					"result": "Not while you live under this roof.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_against_tests", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 30, "important": true,
+			"when": {"age": [14, 16], "family": ["against", "coming_round"], "tests_week": [2, null], "school_day": true},
+			"text": [
+				"You have tests this week. Maybe skip practice until they're done?",
+				"Tests first, running later. Promise me you'll study tonight."
+			],
+			"replies": [
+				{"id": "study", "label": "I'll study tonight, I promise", "hint": "grades ▲ · a late night", "effects": {"relation": 3, "grades": 2, "sleep": -1, "count": {"family_warmth": 1}},
+					"result": "Good. I'll make you tea.", "result_from": "sender"},
+				{"id": "both", "label": "I can do both", "hint": "", "effects": {"relation": -1, "stress": 1},
+					"result": "We'll see the results.", "result_from": "sender"},
+				{"id": "no", "label": "Practice isn't the problem", "hint": "{from} will be angry", "effects": {"relation": -3, "stress": 2},
+					"result": "We'll see who's right when the grades come.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_against_softens", "thread": "family", "from": "parent", "slot": "evening", "once": true, "important": true,
+			"when": {"age": [14, 17], "family": ["against"], "counters": {"family_warmth": [3, null]}},
+			"text": [
+				"I read about you in the local paper today. Your name was there. I didn't know you were that good. Why didn't you tell us?"
+			],
+			"replies": [
+				{"id": "tried", "label": "I tried to", "hint": "", "effects": {"relation": 4, "attitude": "coming_round", "motivation": 2},
+					"result": "...I know. Maybe I should come to a race.", "result_from": "sender"},
+				{"id": "come", "label": "Come to my next race", "hint": "", "effects": {"relation": 5, "attitude": "coming_round", "confidence": 1},
+					"result": "All right. Tell me when.", "result_from": "sender"},
+				{"id": "cold", "label": "You never asked", "hint": "", "effects": {"relation": 1, "attitude": "coming_round"},
+					"result": "That's fair. I'm asking now.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_coming_round", "thread": "family", "from": "parent", "slot": "evening", "once": true,
+			"when": {"family": ["coming_round"], "race_in_days": [2, 10], "seen": ["fam_against_softens"]},
+			"text": [
+				"When is {meet}? I took the day off. Don't tell your aunt, she thinks I'm at the dentist."
+			],
+			"replies": [
+				{"id": "glad", "label": "I'm really glad", "hint": "", "effects": {"relation": 4, "attitude": "supportive", "motivation": 2},
+					"result": "Me too. I should have come before.", "result_from": "sender"},
+				{"id": "nervous", "label": "Now I'm nervous", "hint": "", "effects": {"relation": 2, "attitude": "supportive", "stress": 1},
+					"result": "Don't be. I'll be the one in the blue jacket.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_puzzled", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 60,
+			"when": {"age": [14, 16], "family": ["puzzled"]},
+			"text": [
+				"Your coach's message said 'threshold run'. What does that mean? Is it dangerous?",
+				"Why do you run in circles for an hour and call it 'easy'?",
+				"What is a PB? Your aunt asked and I didn't know."
+			],
+			"replies": [
+				{"id": "explain", "label": "Let me explain", "hint": "{from} will love it", "effects": {"relation": 3, "motivation": 1},
+					"result": "Oh! So that's why you're always hungry.", "result_from": "sender"},
+				{"id": "later", "label": "It's complicated", "hint": "", "effects": {"relation": -1},
+					"result": "Everything is complicated with you two. You and your coach.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_sporty_trip", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 50,
+			"when": {"age": [14, 16], "family": ["sporty", "supportive"], "weekday": [3, 4], "race_in_days": [3, null]},
+			"text": [
+				{"text": "Skiing on Saturday? The tracks at the lake are finally open.", "when": {"month": [1, 2, 3]}},
+				{"text": "A hike on Saturday? The national park, sandwiches, the whole family.", "when": {"month": [5, 6, 8, 9, 10]}},
+				{"text": "Ice skating on the lake on Saturday? The ice is thick enough now.", "when": {"month": [12, 1, 2]}}
+			],
+			"replies": [
+				{"id": "join", "label": "Count me in", "hint": "fun · your legs may feel it", "effects": {"relation": 3, "motivation": 2},
+					"result": "Great! I'll pack the cocoa.", "result_from": "sender"},
+				{"id": "train", "label": "I have training, sorry", "hint": "", "effects": {"relation": -1},
+					"result": "Next time then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_screen", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 40,
+			"when": {"age": [14, 16], "day_type": "weekday", "tomorrow_tags": ["hard", "speed"]},
+			"text": [
+				"I saw the light under your door at midnight again. Phone off at ten, please.",
+				"You were on your phone until one o'clock. You have a hard session tomorrow, don't you?"
+			],
+			"replies": [
+				{"id": "ok", "label": "OK, phone off at ten", "hint": "", "effects": {"relation": 2, "stress": -1},
+					"rule": "Phone off at ten on school nights", "result": "Thank you. Sleep is training too, your coach says.", "result_from": "sender"},
+				{"id": "one_more", "label": "Just one more video", "hint": "a late night", "effects": {"relation": -1, "sleep": -1},
+					"result": "That's what you said yesterday.", "result_from": "sender"}
+			],
+			"standing": "phone_night"
+		},
+		{
+			"id": "fam_ill", "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 30,
+			"when": {"age": [14, 16], "ill": true},
+			"text": [
+				"You're staying in bed today. I've told the school. Do you want soup?",
+				"Fever. Bed. No arguments. I'll bring you tea."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks, I'll rest", "hint": "", "effects": {"relation": 2, "stress": -1},
+					"result": "Good. Sleep as much as you can.", "result_from": "sender"},
+				{"id": "worry", "label": "But I'll lose fitness!", "hint": "", "effects": {"stress": 1},
+					"result": "A few days in bed is better than a few weeks ill.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_injured", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "injured": true},
+			"text": [
+				"How is the leg? You've been quiet all week.",
+				"I know you hate this. Do you want to do something together while you can't run? A film?"
+			],
+			"replies": [
+				{"id": "film", "label": "A film would be nice", "hint": "", "effects": {"relation": 3, "motivation": 1, "stress": -1},
+					"result": "You choose. No sports films.", "result_from": "sender"},
+				{"id": "down", "label": "I just want to run", "hint": "", "effects": {"relation": 1},
+					"result": "I know. It will pass.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_sibling_race", "thread": "family", "from": "sibling", "slot": "evening", "cooldown_days": 45,
+			"when": {"age": [14, 16], "weekday": [2, 3, 4], "month": [1, 2, 5, 6, 7, 8]},
+			"text": [
+				"I race on Saturday. Come and watch? You can carry my bag, little one.",
+				"Saturday, 1500 m. If you come, I'll run faster. Probably."
+			],
+			"replies": [
+				{"id": "go", "label": "I'll be there", "hint": "{from} will owe you one", "effects": {"relation": 3, "motivation": 1},
+					"result": "Bring snacks.", "result_from": "sender"},
+				{"id": "no", "label": "I have my own training", "hint": "", "effects": {"relation": -1},
+					"result": "Fine. I'll tell you how I won.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_sibling_pb", "thread": "family", "from": "sibling", "slot": "evening", "cooldown_days": 30,
+			"when": {"age": [14, 16], "pb_days_ago": [0, 1]},
+			"text": [
+				"{pb}, huh. At your age I ran faster. Not for long though, I can see that.",
+				"OK, that was fast. Don't let it go to your head. {parent} already told everyone."
+			],
+			"replies": [
+				{"id": "coming", "label": "I'm coming for your PB", "hint": "", "effects": {"relation": 1, "motivation": 2},
+					"result": "Ha. Good luck with that.", "result_from": "sender"},
+				{"id": "thanks", "label": "Thanks, really", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "...You're welcome. Don't make it weird.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_sibling_advice", "thread": "family", "from": "sibling", "slot": "evening", "cooldown_days": 60,
+			"when": {"age": [14, 16], "race_in_days": [1, 3]},
+			"text": [
+				"Before {meet}: don't look at the others in the call room. Look at your shoes. Works for me.",
+				"Tip for {meet}: the first 100 always feels easy. It's a trap."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Good tip, thanks", "hint": "", "effects": {"relation": 2, "confidence": 1},
+					"result": "Free of charge. This time.", "result_from": "sender"},
+				{"id": "know", "label": "I know, I know", "hint": "", "effects": {"relation": -1},
+					"result": "Fine, Mr Know-It-All.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_birthday", "dated": true, "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 300,
+			"when": {"days_to": {"birthday": [0, 0]}},
+			"text": [
+				"Happy birthday! There's cake tonight. And a present that might be shoe-shaped.",
+				"Happy birthday, {name}! Who would have believed you'd be this tall. Cake after practice."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thank you!", "hint": "", "effects": {"relation": 3, "motivation": 2},
+					"result": "Don't eat all the cake at once.", "result_from": "sender"},
+				{"id": "friends", "label": "Can my friends come too?", "hint": "", "effects": {"relation": 1, "relation_thread": {"friends": 2}, "sleep": -1},
+					"result": "Yes, but they go home at ten.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_christmas", "dated": true, "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 300,
+			"when": {"days_to": {"christmas": [0, 0]}},
+			"text": [
+				"Merry Christmas! Sauna at four, then dinner. You're not going running today, are you?",
+				"Christmas Eve. The rice porridge is on. If you go for a run, be back before the Christmas peace is declared on TV."
+			],
+			"replies": [
+				{"id": "short", "label": "Just a short morning run", "hint": "", "effects": {"relation": 1},
+					"result": "Go, then. The ham waits for no one.", "result_from": "sender"},
+				{"id": "rest", "label": "No, today is family", "hint": "", "effects": {"relation": 3, "motivation": 1, "stress": -1},
+					"result": "That's the best present.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_new_year", "dated": true, "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 300,
+			"when": {"days_to": {"new_year": [0, 0]}},
+			"text": [
+				"New Year's Eve! Fireworks at midnight. Are you staying up?",
+				"Tonight we melt tin and see your future. Staying up until midnight, athlete?"
+			],
+			"replies": [
+				{"id": "up", "label": "Of course I'm staying up", "hint": "a late night", "effects": {"relation": 2, "motivation": 1, "sleep": -1},
+					"result": "Good. The tin will show a medal shape, I'm sure.", "result_from": "sender"},
+				{"id": "bed", "label": "I'll watch and go to bed", "hint": "", "effects": {"relation": 1},
+					"result": "Sensible. Happy new year in advance.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_juhannus", "dated": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300, "important": true,
+			"when": {"days_to": {"juhannus": [2, 6]}},
+			"text": [
+				"Juhannus at the cottage! We leave on Thursday, back on Sunday. Bonfire, sauna, the lake. You're coming?",
+				"Midsummer at the cottage again. The whole family. It wouldn't be juhannus without you."
+			],
+			"replies": [
+				{"id": "go", "label": "I'm coming, I'll run there", "hint": "plan your own training there", "effects": {"relation": 3, "motivation": 2, "sleep": -1},
+					"result": "Great! The gravel road round the lake is 7 km.", "result_from": "sender"},
+				{"id": "stay", "label": "I'll stay home and train", "hint": "{from} will be sad", "effects": {"relation": -3, "motivation": -1},
+					"result": "Alone at juhannus? Well, it's your choice.", "result_from": "sender"},
+				{"id": "part", "label": "I'll come on Saturday", "hint": "", "effects": {"relation": 1},
+					"result": "Take the bus, then. We'll pick you up.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_cottage_week", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300, "important": true,
+			"when": {"age": [14, 16], "month": [6, 7], "days_after": {"juhannus": [1, 7]}},
+			"text": [
+				"We've booked the cottage for a week in July. No internet, the lake, Grandpa's boat. A whole week?",
+				"The cottage week is in July again. Your cousins are coming. Are you in for the whole week?"
+			],
+			"replies": [
+				{"id": "week", "label": "The whole week!", "hint": "plan your own training there", "effects": {"relation": 4, "motivation": 2, "stress": -2, "flag": "cottage_week"},
+					"result": "Wonderful. Pack your running shoes, the forest roads are endless.", "result_from": "sender"},
+				{"id": "weekend", "label": "Just the weekend", "hint": "", "effects": {"relation": 1, "flag": "cottage_weekend"},
+					"result": "Better than nothing.", "result_from": "sender"},
+				{"id": "no", "label": "I need to train at home", "hint": "{from} will be disappointed", "effects": {"relation": -3},
+					"result": "Your coach will be happy, at least.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_cottage_there", "dated": true, "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 300,
+			"when": {"month": [7], "flags": ["cottage_week"], "flag_days": {"cottage_week": [10, 40]}},
+			"text": [
+				"Cottage week! The water is 21 degrees. The sauna is warm by six. Morning run first?",
+				"Morning at the cottage. Fog on the lake. Grandpa is already fishing."
+			],
+			"replies": [
+				{"id": "run", "label": "Run first, then swim", "hint": "", "effects": {"motivation": 2, "stress": -1},
+					"result": "The forest road is soft and quiet. Perfect."},
+				{"id": "fish", "label": "Fishing with Grandpa", "hint": "", "effects": {"relation": 3, "stress": -2},
+					"result": "Two perch and a lot of silence. Grandpa's favourite kind of morning."}
+			]
+		},
+		{
+			"id": "fam_rippi_choice", "thread": "family", "from": "parent", "slot": "evening", "once": true, "important": true,
+			"when": {"turns": [15, 15], "month": [2]},
+			"text": [
+				"Rippikoulu registration closes this month. Most of your class goes to a summer camp. Which one do you want? June, July, or the day school in town?",
+				"The church sent the confirmation school letter. A camp week in June or July, or the day school here in town. Your friends are choosing now."
+			],
+			"replies": [
+				{"id": "june", "label": "The June camp", "hint": "a week away in June", "effects": {"flag": "rippi_june", "relation": 1, "motivation": 1},
+					"result": "June it is. Your coach should know.", "result_from": "sender"},
+				{"id": "july", "label": "The July camp", "hint": "a week away in July", "effects": {"flag": "rippi_july", "relation": 1, "motivation": 1},
+					"result": "July, then. After juhannus.", "result_from": "sender"},
+				{"id": "day", "label": "The day school in town", "hint": "you sleep at home", "effects": {"flag": "rippi_day"},
+					"result": "Fine. Evenings in June, then.", "result_from": "sender"},
+				{"id": "none", "label": "I don't want to go", "hint": "", "effects": {"flag": "rippi_none", "relation": -1},
+					"result": "It's your decision. Your grandmother will ask, though.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_rippi_leaving", "dated": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"when": {"days_to": {"rippileiri": [1, 2]}, "flags": ["!rippi_day"]},
+			"text": [
+				"Camp starts on Monday. Have you packed? Running shoes too, I suppose.",
+				"Your camp bag is in the hall. A week without you. The house will be quiet."
+			],
+			"replies": [
+				{"id": "ready", "label": "Packed and ready", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "Call us. Or at least text.", "result_from": "sender"},
+				{"id": "nervous", "label": "A bit nervous", "hint": "", "effects": {"relation": 2, "stress": 1},
+					"result": "Everyone is. You'll come back with friends for life.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_rippijuhlat", "dated": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"when": {"days_after": {"rippileiri": [6, 30]}, "flags": ["!rippi_none"]},
+			"text": [
+				"Your confirmation party is on Saturday. Twenty relatives, coffee and cake. Wear the nice shirt.",
+				"Rippijuhlat on Saturday! Grandma is making her cake. Your uncle will ask about your running all afternoon."
+			],
+			"replies": [
+				{"id": "fine", "label": "I'll be the perfect host", "hint": "", "effects": {"relation": 3, "motivation": 1, "budget": 1},
+					"result": "And there may be a few envelopes for you.", "result_from": "sender"},
+				{"id": "race", "label": "Can it end before my run?", "hint": "", "effects": {"relation": -1},
+					"result": "It's your party. Stay until the cake, at least.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_application_talk", "thread": "family", "from": "parent", "slot": "evening", "once": true,
+			"when": {"stage": ["grade_9"], "month": [1, 2]},
+			"text": [
+				"The joint application opens soon. Have you thought about where you want to go?",
+				{"text": "Urheilulukio would make sense. Morning practice, coaching. I wish I'd had that.", "when": {"family": ["athletics", "top"]}},
+				{"text": "A good general lukio first, sport second. That's what we think.", "when": {"family": ["against", "coming_round"]}}
+			],
+			"replies": [
+				{"id": "sports", "label": "A sports lukio", "hint": "", "effects": {"flag": "wants_sports_lukio", "motivation": 1},
+					"result": "Then your grades need to hold this spring.", "result_from": "sender"},
+				{"id": "general", "label": "A general lukio here", "hint": "", "effects": {"flag": "wants_general_lukio", "relation": 1},
+					"result": "Close to home. Good.", "result_from": "sender"},
+				{"id": "unsure", "label": "I don't know yet", "hint": "", "effects": {"stress": 1},
+					"result": "Talk to {counsellor}, the study counsellor. That's what they're there for.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_card_good", "topic": "card", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 30, "important": true, "expires_days": 3,
+			"when": {"cards": [2, null], "card_change": [0.1, null]},
+			"text": [
+				{"text": "Your report card! Up from last time. We're proud of you, school and sport both.", "when": {"family": ["supportive", "sporty", "puzzled"]}},
+				{"text": "Better grades than last time. Good. Discipline in one place shows in the other.", "when": {"family": ["top", "athletics"]}},
+				{"text": "The grades went up. Fine. If running helps you study, keep running.", "when": {"family": ["against", "coming_round"]}}
+			],
+			"replies": [
+				{"id": "proud", "label": "I worked hard for it", "hint": "", "effects": {"relation": 3, "confidence": 1, "count": {"family_warmth": 1}},
+					"result": "We could see it.", "result_from": "sender"},
+				{"id": "luck", "label": "The tests were easy", "hint": "", "effects": {"relation": 1},
+					"result": "Don't be modest.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_card_same", "topic": "card", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 30, "expires_days": 3,
+			"when": {"cards": [2, null], "card_change": [-0.1, 0.1]},
+			"text": [
+				"Report card day. About the same as before. Average {avg}. Happy with it?",
+				{"text": "Same as last time. Steady. That's fine, as long as it stays there.", "when": {"family": ["against", "coming_round", "top"]}}
+			],
+			"replies": [
+				{"id": "happy", "label": "Yes, it's fine", "hint": "", "effects": {"relation": 1},
+					"result": "Then so are we.", "result_from": "sender"},
+				{"id": "better", "label": "I want better next time", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "We'll help however we can.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_card_down", "topic": "card", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 30, "important": true, "expires_days": 3,
+			"when": {"cards": [2, null], "card_change": [null, -0.1]},
+			"text": [
+				{"text": "Your grades dropped. Is it the training? We need to talk about this.", "when": {"family": ["supportive", "sporty", "puzzled", "athletics"]}},
+				{"text": "Lower grades. A top athlete is good at managing time. Are you?", "when": {"family": ["top"]}},
+				{"text": "This is what we were afraid of. Grades down, running up. Something has to change.", "when": {"family": ["against", "coming_round"]}}
+			],
+			"replies": [
+				{"id": "promise", "label": "I'll study more this term", "hint": "grades ▲ a little · stress ▲", "effects": {"relation": 2, "grades": 2, "stress": 1},
+					"result": "Good. We'll check in after the first tests.", "result_from": "sender"},
+				{"id": "explain", "label": "One bad term, that's all", "hint": "", "effects": {"relation": -1},
+					"result": "Then show us next time.", "result_from": "sender"},
+				{"id": "defend", "label": "Running isn't the reason", "hint": "{from} may not believe you", "effects": {"relation": -3, "stress": 2},
+					"result": "Then what is?", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_card_first", "topic": "card", "thread": "family", "from": "parent", "slot": "evening", "once": true, "expires_days": 3,
+			"when": {"cards": [1, 1]},
+			"weight": 2,
+			"text": [
+				"Your first report card of the year! Average {avg}. How do you feel about it?",
+				{"text": "First report card: {avg}. Not bad for someone who trains six times a week.", "when": {"family": ["supportive", "sporty", "athletics", "top"]}},
+				{"text": "{avg}. We expected more, honestly. We'll see how the spring goes.", "when": {"family": ["against"], "card_avg": [null, 8.0]}}
+			],
+			"replies": [
+				{"id": "good", "label": "I'm happy with it", "hint": "", "effects": {"relation": 1, "confidence": 1},
+					"result": "Good.", "result_from": "sender"},
+				{"id": "more", "label": "I can do better", "hint": "", "effects": {"relation": 2, "motivation": 1},
+					"result": "We believe you.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_app_first", "topic": "app", "thread": "family", "from": "parent", "slot": "evening", "once": true, "important": true, "expires_days": 3,
+			"when": {"app_result": ["first"]},
+			"text": [
+				"You got your first choice! Congratulations! We'll have cake. And then we'll need to talk about the practical side.",
+				{"text": "Your first choice! I'm so proud. This is where it starts for real.", "when": {"family": ["athletics", "top"]}}
+			],
+			"replies": [
+				{"id": "happy", "label": "I can't believe it!", "hint": "", "effects": {"relation": 3, "confidence": 2, "motivation": 2},
+					"result": "Believe it. You earned this.", "result_from": "sender"},
+				{"id": "scared", "label": "Happy, and a bit scared", "hint": "", "effects": {"relation": 3, "stress": 1, "motivation": 1},
+					"result": "That's normal. We'll figure it out together.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_app_other", "topic": "app", "thread": "family", "from": "parent", "slot": "evening", "once": true, "important": true, "expires_days": 3,
+			"when": {"app_result": ["other"]},
+			"text": [
+				"Not your first choice, but you have a place. It's a good school. How do you feel?",
+				"The results are out. Not the first wish, but a place. Sometimes the second road is the right one."
+			],
+			"replies": [
+				{"id": "ok", "label": "It's OK, really", "hint": "", "effects": {"relation": 2, "confidence": -1},
+					"result": "We think so too.", "result_from": "sender"},
+				{"id": "sad", "label": "I'm disappointed", "hint": "", "effects": {"relation": 2, "confidence": -2},
+					"result": "Of course you are. Give it a few days.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_app_none", "topic": "app", "thread": "family", "from": "parent", "slot": "evening", "once": true, "important": true, "expires_days": 3,
+			"when": {"app_result": ["none"]},
+			"text": [
+				"No place this time. I'm so sorry. We'll look at the other options together tomorrow, OK?",
+				{"text": "No place. I told you the grades matter. But we'll find a way. We always do.", "when": {"family": ["against", "coming_round"]}}
+			],
+			"replies": [
+				{"id": "together", "label": "Thanks for being there", "hint": "", "effects": {"relation": 4, "confidence": -1},
+					"result": "Always.", "result_from": "sender"},
+				{"id": "angry", "label": "It's not fair", "hint": "", "effects": {"relation": 1, "confidence": -2, "motivation": 1},
+					"result": "No, it isn't. Use it.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_chores", "thread": "family", "from": "parent", "slot": "morning", "cooldown_days": 45,
+			"when": {"age": [14, 16], "day_type": "weekend"},
+			"text": [
+				"Your turn to vacuum today. And your room looks like a sports shop exploded.",
+				"Dishes, laundry, your spikes on the kitchen table. Before or after your session?",
+				{"text": "Chore list for today: you vacuum, {sibling} does the dishes. No swapping.", "when": {"has": ["sibling"]}}
+			],
+			"replies": [
+				{"id": "now", "label": "I'll do it now", "hint": "", "effects": {"relation": 2},
+					"result": "Thank you. That was quick.", "result_from": "sender"},
+				{"id": "after", "label": "After training, promise", "hint": "", "effects": {"relation": -1},
+					"rule": "Chores after training", "result": "I'll hold you to that.", "result_from": "sender"}
+			],
+			"standing": "chores"
+		},
+		{
+			"id": "fam_food", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 70,
+			"when": {"age": [14, 16], "weeks_in_career": [2, null]},
+			"text": [
+				"What should I cook for a runner? More pasta? Your coach must have a list.",
+				"I read that athletes need more protein. Is that true? Should I buy that powder?",
+				"You eat like a horse these days. Is that normal?"
+			],
+			"replies": [
+				{"id": "normal", "label": "Normal food is fine, just more", "hint": "", "effects": {"relation": 2},
+					"result": "More, I can do.", "result_from": "sender"},
+				{"id": "ask", "label": "I'll ask {coach_first}", "hint": "", "effects": {"relation": 1, "trust": 1},
+					"result": "Good. Tell me what they say.", "result_from": "sender"},
+				{"id": "pasta", "label": "Pasta every day!", "hint": "", "effects": {"relation": 1, "motivation": 1},
+					"result": "Not every day.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_sauna", "thread": "family", "from": "family", "slot": "evening", "cooldown_days": 50,
+			"when": {"age": [14, 16], "weekday": [5], "race_tomorrow": false},
+			"text": [
+				"Saturday sauna is warm. Come before the water runs out.",
+				"Sauna's ready. Then sausages. That's the plan for tonight."
+			],
+			"replies": [
+				{"id": "yes", "label": "Coming!", "hint": "", "effects": {"relation": 2, "stress": -1},
+					"result": "Löyly, a cold shower, the evening news. A proper Saturday."},
+				{"id": "later", "label": "Later, I'm tired", "hint": "", "effects": {"relation": -1},
+					"result": "The last turn is the coolest one anyway.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_grandma_call", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 90,
+			"when": {"age": [14, 16], "raced_days_ago": [1, 10]},
+			"text": [
+				"Grandma called. She read your result in the local paper and cut it out. Call her back?",
+				"Grandma wants to know when your next race is. She wants to come and watch, with a thermos."
+			],
+			"replies": [
+				{"id": "call", "label": "I'll call her now", "hint": "", "effects": {"relation": 3, "motivation": 1},
+					"result": "She talked for forty minutes. Mostly happy."},
+				{"id": "text", "label": "I'll send her a picture", "hint": "", "effects": {"relation": 1},
+					"result": "She'll print it out. You know she will.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_tv_athletics", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 60,
+			"when": {"age": [14, 16], "month": [7, 8, 9, 2, 3]},
+			"text": [
+				"There's athletics on TV tonight, the big championships. The 800 m final is at nine. Watch it together?",
+				"The championships are on. I don't understand half of it, but I'll watch the 800 m with you."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes! I'll explain everything", "hint": "", "effects": {"relation": 3, "motivation": 2},
+					"result": "You explained the bell lap three times. It was worth it."},
+				{"id": "phone", "label": "I'll watch on my phone", "hint": "", "effects": {"motivation": 1},
+					"result": "Suit yourself.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_ski_trip", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "month": [1, 2], "family": ["sporty", "supportive", "top", "athletics", "puzzled", "coming_round"]},
+			"text": [
+				"We could go to Lapland in the winter break. Four days, skiing, the northern lights maybe. Interested?",
+				"Ski trip in the winter break? Levi, a cabin, cross-country trails right outside the door."
+			],
+			"replies": [
+				{"id": "go", "label": "Yes, Lapland!", "hint": "plan your own training there", "effects": {"relation": 4, "motivation": 2, "stress": -2, "budget": -1},
+					"result": "Booked. Bring wool socks.", "result_from": "sender"},
+				{"id": "stay", "label": "I'd rather train at home", "hint": "", "effects": {"relation": -2},
+					"result": "Next year, then.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_autumn_break", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "month": [10], "school_day": true},
+			"text": [
+				"The autumn break is coming. Do you want to go to Grandma's in the country for a few days?",
+				"Autumn break plans? We thought about a few days at the cottage. Mushrooms and quiet."
+			],
+			"replies": [
+				{"id": "go", "label": "Sounds nice", "hint": "plan your own training there", "effects": {"relation": 3, "stress": -2},
+					"result": "Good. The forest roads are lovely in October.", "result_from": "sender"},
+				{"id": "home", "label": "I'll stay in town", "hint": "", "effects": {"relation": -1, "relation_thread": {"friends": 1}},
+					"result": "OK, your friends will be happy.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_summer_trip", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"when": {"age": [14, 16], "month": [5]},
+			"text": [
+				"Summer holiday plan: a week in Tallinn and Pärnu in July. Hotel, beach, old town. You're coming?",
+				"We're taking the ferry to Stockholm for a few days in July. Want to come?"
+			],
+			"replies": [
+				{"id": "go", "label": "Yes, I'm coming", "hint": "plan your own training there", "effects": {"relation": 3, "motivation": 1, "budget": -1},
+					"result": "Pack your running shoes. The beach is good for easy runs.", "result_from": "sender"},
+				{"id": "meets", "label": "Can we avoid race weekends?", "hint": "", "effects": {"relation": 1, "trust": 1},
+					"result": "Show me your race calendar and we'll pick a week.", "result_from": "sender"},
+				{"id": "stay", "label": "I'll stay with Grandma", "hint": "", "effects": {"relation": -1},
+					"result": "If that's what you want.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "fam_summer_job", "important": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"when": {"turns": [15, 16], "month": [3, 4]},
+			"text": [
+				"The town has summer job vouchers for 15-year-olds. Two weeks of work, your own money. Want to look for one?",
+				"Your cousin got a summer job with the town's voucher. Maybe you could try too? The kiosk at the beach is hiring."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, I'll apply", "hint": "a busy summer · your own money", "effects": {"relation": 2, "motivation": 1, "flag": "summer_job", "budget": 1},
+					"result": "Good. Two weeks in June, mornings only. You can train in the evenings.", "result_from": "sender"},
+				{"id": "no", "label": "Summer is for training", "hint": "", "effects": {"relation": -1},
+					"result": "Your choice. Next year, then.", "result_from": "sender"}
+			]
+		}
+	]
+}

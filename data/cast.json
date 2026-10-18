@@ -1,0 +1,93 @@
+{
+	"_note": "The people around the athlete (GDD 4.9.5, session P1; Cast + StoryletSystem). Made once per career from the career's own dice (the athlete's name and birth date: same career = same people; the global dice are never touched) when StoryletSystem.people_enabled is on (only main.gd switches it on: the tools never get the cast). Everyone is fictional. family: one or two parents (two_parents = the share of careers with two at home) with the ATTITUDE of the creation answer 'What is your family's sporting background?' (attitudes.<id>.from lists the answers; '' = an older save: `default`); with the answer 'An older sibling runs' an older sibling who runs. friends: a best friend from school who is not an athlete + `others` more, each with a trait; with a previous sport (the creation answer) one of the others is from the old team. partners: the close training partners picked from the coach's training group (C1), by `prefer` (role order); the rest of the group stays listed and can still write as 'teammate'. school: the staff of the athlete's school stage (comprehensive = grades 8-9; secondary = after grade 9, by name only until P2). rivals: a rival met `met_min` times in races becomes a person in the Rivals thread, at most `max` (the ones met most first); `note_chance` = how often one of them writes on the evening after a race you both ran. relation_start = each role's relationship 0-100 at the start; relation_words = the word shown for a relationship (upper limits). life = the yearly calendar the moments' `days_to` / `days_after` conditions read (fixed dates, juhannus = the Friday between 19 and 25 June, easter, the school year's first and last day from SchoolCalendar, the athlete's birthday, a meet of competitions.json by id, the confirmation camp from the choice). mood_scale: a reply's confidence / motivation / stress points from anyone but the coach are multiplied by this before MindSystem.from_moment (measured in storylet_check part 7: with 1.0 the moments pushed motivation to Keen in 71 % of weeks against M1's ~17 %, training quality up ~1 %; the coach's words keep their M1 weight). sleep: a reply's `sleep` points (negative = a late night) become life load on the NEXT day (`life_load_per_point`, data/school_life.json texts.pulls.late_night); grades: a reply's `grades` points move every academic subject's level by `grades_per_point` (school drifts it back over the weeks).",
+	"version": 1,
+	"family": {
+		"two_parents": 0.75,
+		"parent_age": [38, 52],
+		"call": {"male": "Dad", "female": "Mum"},
+		"role": {"male": "dad", "female": "mum"},
+		"word": {"male": "Parent", "female": "Parent"},
+		"athlete_word": "Parent, ran at a good level",
+		"sibling": {"from": "sibling", "age_gap": [2, 4], "word": "Older sibling, runs", "events": {"800m": 2, "1500m": 2, "400m": 1}},
+		"default": "sporty"
+	},
+	"attitudes": {
+		"athletics": {"from": ["athletics_parent"], "word": "Knows the sport · expects a lot", "text": "One of your parents ran at a good level. They know what a 400 m split means and they notice everything.", "athlete_parent": true},
+		"top": {"from": ["top_parent"], "word": "High standards", "text": "A parent was a top athlete in another sport. Discipline is a family value, and so are results."},
+		"supportive": {"from": ["sibling"], "word": "Proud of you", "text": "Your family is behind you. They drive you to meets and ask how it went."},
+		"sporty": {"from": ["sporty"], "word": "Happy you move", "text": "A sporty family at a relaxed level: they like that you train, as long as you enjoy it."},
+		"puzzled": {"from": ["not_sporty"], "word": "Supportive, a bit lost", "text": "Your family is kind about it, but sport is a foreign language to them."},
+		"against": {"from": ["against"], "word": "Grades first", "text": "Your family thinks sport is a waste of time. Results and good grades might change their minds, slowly."},
+		"coming_round": {"from": [], "word": "Coming round", "text": "Your family has started to take your running seriously. They still ask about your grades first."}
+	},
+	"parent_names": {
+		"male": ["Mika", "Jari", "Juha", "Timo", "Janne", "Marko", "Petri", "Antti", "Sami", "Ville", "Tuomas", "Jukka", "Pasi", "Teemu", "Mikko", "Kari", "Jussi", "Harri", "Tero", "Ari", "Toni", "Lauri"],
+		"female": ["Minna", "Sari", "Heidi", "Johanna", "Tiina", "Anna", "Katja", "Laura", "Susanna", "Riikka", "Hanna", "Elina", "Satu", "Jenni", "Marjo", "Kati", "Maria", "Mari", "Sanna", "Paula", "Niina", "Piia"]
+	},
+	"friends": {
+		"others": [1, 2],
+		"best_word": "Best friend",
+		"word": "Friend",
+		"best_traits": {"gamer": 3, "musician": 2, "artist": 2, "joker": 2, "scout": 1},
+		"traits": {"gamer": 2, "musician": 1, "partygoer": 3, "joker": 2, "scout": 1},
+		"trait_words": {
+			"gamer": "Gamer",
+			"musician": "Plays in a band",
+			"artist": "Draws all the time",
+			"joker": "Class clown",
+			"scout": "Scout",
+			"partygoer": "Knows every party",
+			"old_team": "From your old team"
+		},
+		"old_team_share": 1.0
+	},
+	"partners": {"count": 3, "word": "Training partner", "prefer": ["racer", "joker", "veteran", "newcomer", "talker", "quiet", "leader"]},
+	"school": {
+		"comprehensive": [
+			{"role": "class_teacher", "word": "Class teacher"},
+			{"role": "pe_teacher", "word": "PE teacher"},
+			{"role": "counsellor", "word": "Study counsellor"}
+		],
+		"secondary": [
+			{"role": "class_teacher", "word": "Group supervisor"},
+			{"role": "pe_teacher", "word": "PE teacher"},
+			{"role": "counsellor", "word": "Study counsellor"}
+		],
+		"spotted_word": "PE teacher, spotted you",
+		"age": [28, 60]
+	},
+	"rivals": {"max": 3, "met_min": 2, "note_chance": 0.6, "word": "Rival", "pb_word": "PB {pb}"},
+	"relation_start": {"mum": 70, "dad": 70, "sibling": 60, "best_friend": 70, "friend": 55, "partner": 50, "class_teacher": 50, "pe_teacher": 55, "counsellor": 50, "rival": 40},
+	"relation_words": [[20, "Strained"], [40, "Cool"], [60, "Fine"], [80, "Good"], [101, "Close"]],
+	"sport_words": {"football": "football", "ice_hockey": "hockey", "floorball": "floorball", "pesapallo": "pesäpallo", "basketball": "basketball", "skiing": "skiing", "orienteering": "orienteering", "swimming": "swimming", "gymnastics": "gymnastics", "dance": "dance", "martial_arts": "judo"},
+	"mood_scale": 0.4,
+	"sleep": {"life_load_per_point": 0.75},
+	"grades": {"grades_per_point": 0.05},
+	"life": {
+		"_note": "Events of the year for the moments' conditions days_to / days_after {event: [min, max]} (0 = today). kind fixed = month + day every year; juhannus = midsummer eve (the Friday between 19 and 25 June); easter = Easter Sunday; school_start / school_end = the first / last school day of the school year (SchoolCalendar, the athlete's town); birthday = the athlete's; meet = a meet of competitions.json by id (the nearest year it is held); rippileiri = the confirmation camp week the player chose (camps: the Monday it starts, `nth` Monday of `month` in the year the athlete turns 15; the flag of the choice names it).",
+		"vappu": {"kind": "fixed", "month": 4, "day": 30},
+		"valentine": {"kind": "fixed", "month": 2, "day": 14},
+		"christmas": {"kind": "fixed", "month": 12, "day": 24},
+		"new_year": {"kind": "fixed", "month": 12, "day": 31},
+		"independence": {"kind": "fixed", "month": 12, "day": 6},
+		"juhannus": {"kind": "juhannus"},
+		"easter": {"kind": "easter"},
+		"school_start": {"kind": "school_start"},
+		"school_end": {"kind": "school_end"},
+		"birthday": {"kind": "birthday"},
+		"kalevan_kisat": {"kind": "meet", "id": "kalevan_kisat"},
+		"ruotsi_ottelu": {"kind": "meet", "id": "ruotsi_ottelu"},
+		"rippileiri": {"kind": "rippileiri", "camps": {"rippi_june": {"month": 6, "nth": 2}, "rippi_july": {"month": 7, "nth": 2}, "rippi_day": {"month": 6, "nth": 1}}, "turns": 15}
+	},
+	"ui": {
+		"people_head": "IN THIS THREAD",
+		"relation": "{word}",
+		"family_line": "Your family: {word}",
+		"you_call": "{call} ({first})",
+		"rival_line": "{club} · met {met} times",
+		"partner_mark": "Training partner",
+		"school_messages": "MESSAGES FROM SCHOOL",
+		"school_messages_none": "Nothing from your teachers yet.",
+		"rivals_empty": "Runners you race again and again write to you here."
+	}
+}

@@ -1,0 +1,153 @@
+{
+	"_note": "The RIVALS' moments (session P1, GDD 4.9.5; format in README.md). A rival met in data/cast.json rivals.met_min races becomes a person in the Rivals thread (at most rivals.max). Topic `rival`: on the evening after a race you both ran, with the chance rivals.note_chance one of them writes (StoryletSystem._post_rival_note; never a stop, outside the 3-5 a week). Sender conditions: rival_race beat (you finished ahead of them) / lost, rival_streak = their wins over you in a row, rival_wins = your wins over them in a row; their memory remembers 'nemesis' (the rival who always beats you: started after three losses in a row, ended by beating them). Youth rivals are fictional (minors).",
+	"storylets": [
+		{
+			"id": "rv_first", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 2, "expires_days": 3,
+			"when": {"memory": ["!met_up"]},
+			"weight": 3,
+			"text": [
+				"Hey, it's {from}. We keep ending up in the same races, so I thought I'd say hi. Good race today.",
+				"{from} here, from today's race. That's the third time we race, I think? Respect."
+			],
+			"replies": [
+				{"id": "hi", "label": "Hi! Good race to you too", "hint": "", "effects": {"relation": 3, "memory": "met_up"},
+					"result": "See you at the next one.", "result_from": "sender"},
+				{"id": "cool", "label": "Next time I'll beat you", "hint": "{from} will remember", "remember": true, "effects": {"relation": 1, "memory": ["met_up", "trash_talk"], "motivation": 1},
+					"result": "Ha. We'll see.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_nod_beat", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 2, "expires_days": 3,
+			"when": {"rival_race": ["beat"], "memory": ["met_up", "!nemesis"]},
+			"text": [
+				"You got me today. That last 100 was strong. Next time.",
+				"OK, today was yours. Enjoy it, it won't last.",
+				"Good race. I died in the home straight. You didn't."
+			],
+			"replies": [
+				{"id": "gracious", "label": "Thanks, you pushed me", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "Same to you.", "result_from": "sender"},
+				{"id": "cocky", "label": "Get used to it", "hint": "{from} will remember", "remember": true, "effects": {"relation": -2, "memory": "trash_talk", "confidence": 1},
+					"result": "Oh, it's like that? Fine.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_nod_lost", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 2, "expires_days": 3,
+			"when": {"rival_race": ["lost"], "rival_streak": [1, 2], "memory": ["met_up"]},
+			"text": [
+				"Good race today. You were close at the bell.",
+				"Thanks for the pace in the first lap, ha. Seriously, good run.",
+				{"text": "Told you. But you were closer than last time.", "when": {"memory": ["trash_talk"]}}
+			],
+			"replies": [
+				{"id": "next", "label": "Next time it's mine", "hint": "", "effects": {"relation": 1, "motivation": 2},
+					"result": "Looking forward to it.", "result_from": "sender"},
+				{"id": "congrats", "label": "Congrats, you were better", "hint": "", "effects": {"relation": 3},
+					"result": "Thanks. You're getting faster, I can feel it.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_nemesis", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 30, "expires_days": 3,
+			"when": {"rival_race": ["lost"], "rival_streak": [3, null], "memory": ["!nemesis"]},
+			"weight": 3,
+			"text": [
+				"That's three in a row now. Not that I'm counting. OK, I'm counting.",
+				"Again! You should try going earlier. Or later. Or not at all, ha."
+			],
+			"replies": [
+				{"id": "fire", "label": "I WILL beat you", "hint": "{from} is now your rival for real", "remember": true, "effects": {"relation": -1, "motivation": 3, "confidence": -1, "memory": "nemesis"},
+					"result": "Can't wait.", "result_from": "sender"},
+				{"id": "respect", "label": "You're just better right now", "hint": "", "effects": {"relation": 3, "confidence": -1, "memory": "nemesis"},
+					"result": "Right now. Yeah. Don't stop.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_nemesis_again", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 2, "expires_days": 3,
+			"when": {"rival_race": ["lost"], "memory": ["nemesis"]},
+			"text": [
+				"Same story. I'm starting to feel bad for you. A little.",
+				"Close today. Closer than ever. Still mine, though.",
+				"You know what I'm going to say."
+			],
+			"replies": [
+				{"id": "soon", "label": "Enjoy it while it lasts", "hint": "", "effects": {"motivation": 2, "confidence": -1},
+					"result": "Every time you say that.", "result_from": "sender"},
+				{"id": "quiet", "label": "(Don't answer)", "hint": "", "effects": {"stress": -1},
+					"result": "You put the phone away and think about the bell lap."}
+			]
+		},
+		{
+			"id": "rv_nemesis_beaten", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 2, "expires_days": 3,
+			"when": {"rival_race": ["beat"], "memory": ["nemesis"]},
+			"weight": 5,
+			"text": [
+				"...OK. You finally did it. I didn't see you coming in the last 50. Congratulations. Really.",
+				"Well. That happened. Enjoy it. I'm going to train twice as hard now."
+			],
+			"replies": [
+				{"id": "yes", "label": "FINALLY!", "hint": "", "effects": {"relation": 2, "confidence": 3, "motivation": 2, "forget": "nemesis", "flag": "beat_nemesis"},
+					"result": "You read it three times before you put the phone down. You beat {from}."},
+				{"id": "gracious", "label": "You made me better", "hint": "{from} will remember this", "remember": true, "effects": {"relation": 6, "confidence": 2, "forget": "nemesis", "memory": "respect", "flag": "beat_nemesis"},
+					"result": "...Same. See you at the next one.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_streak_win", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 30, "expires_days": 3,
+			"when": {"rival_race": ["beat"], "rival_wins": [3, null], "memory": ["met_up", "!nemesis"]},
+			"text": [
+				"Three times in a row you've beaten me. What are you doing in training? Asking for a friend.",
+				"OK, you're the one to beat now. I'll be on your shoulder next time."
+			],
+			"replies": [
+				{"id": "share", "label": "Lots of long runs, honestly", "hint": "", "effects": {"relation": 4},
+					"result": "Boring. And effective. Thanks.", "result_from": "sender"},
+				{"id": "secret", "label": "Secret recipe", "hint": "", "effects": {"relation": -1, "confidence": 1},
+					"result": "I'll find out.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_pb", "topic": "rival", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 20, "expires_days": 3,
+			"when": {"race_outcome": ["pb"], "memory": ["met_up"]},
+			"weight": 2,
+			"text": [
+				"{pb}, that's a big PB! You're getting dangerous.",
+				"Saw your time. Great run. Now I have to go faster too."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks! See you out there", "hint": "", "effects": {"relation": 3, "confidence": 1},
+					"result": "See you out there.", "result_from": "sender"},
+				{"id": "warn", "label": "There's more to come", "hint": "", "effects": {"relation": 1, "motivation": 1},
+					"result": "That's what I'm afraid of.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_training_q", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 90,
+			"when": {"memory": ["met_up"]},
+			"weight": 0.5,
+			"text": [
+				"Random question: how many kilometres do you run in a week? My coach says I do too little.",
+				"Do you do strength training? Mine says it's the secret. I'm not convinced."
+			],
+			"replies": [
+				{"id": "honest", "label": "Answer honestly", "hint": "", "effects": {"relation": 3},
+					"result": "Thanks. Good to compare.", "result_from": "sender"},
+				{"id": "vague", "label": "\"Enough\"", "hint": "", "effects": {"relation": -1},
+					"result": "Mysterious. OK.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rv_injured", "thread": "rivals", "from": "rival", "slot": "evening", "cooldown_days": 120,
+			"when": {"injured": true, "memory": ["met_up"]},
+			"text": [
+				"Heard you're injured. Sorry. Races are boring without you. Get well.",
+				"Someone said you're out for a while. Racing isn't the same. Come back soon."
+			],
+			"replies": [
+				{"id": "thanks", "label": "Thanks, that means a lot", "hint": "", "effects": {"relation": 4, "motivation": 2},
+					"result": "Don't get too fast while resting, ha.", "result_from": "sender"},
+				{"id": "soon", "label": "I'll be back, be ready", "hint": "", "effects": {"relation": 2, "motivation": 2},
+					"result": "Always ready.", "result_from": "sender"}
+			]
+		}
+	]
+}

@@ -255,6 +255,7 @@
  "texts": {
   "_note": "Lines of the stress / motivation rows (MindSystem.pulls, the MIND panel) and of the news. {n} = a count.",
   "pulls": {
+   "late_night": "A late night yesterday",
    "decision_bus": "Studying on the bus this week",
    "holiday": "School holiday: time to rest",
    "effort_heavy": "Heavy study effort",
