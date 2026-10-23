@@ -511,15 +511,15 @@ func on_day_start(ctx):
 	game.systems.erase(sys)
 
 
-## The week strip, day editor, Today card and Report (M2 step 2): they build without errors, the planned load
-## shown for a day is what the engine then plays, and a day change gives the same strip data after save/load.
+## The week planner, day editor and Report (M2 step 2; session L1a: the planner replaced the week strip and the Today card): they
+## build without errors, the planned load shown for a day is what the engine then plays, and a day change gives the same day data
+## after save/load.
 func _check_ui_models() -> void:
-	print("-- UI models (week strip, day editor, Today card, Report)")
+	print("-- UI models (week planner, day editor, Report)")
 	_new_career(8)
 	var DI = load("res://scripts/ui/day_info.gd")
-	var Strip = load("res://scripts/ui/week_strip.gd")
+	var Planner = load("res://scripts/ui/week_planner.gd")
 	var Editor = load("res://scripts/ui/day_editor.gd")
-	var Card = load("res://scripts/ui/today_card.gd")
 	var Report = load("res://scripts/ui/report_view.gd")
 	var DayInfoClass = load("res://scripts/ui/day_info.gd")
 	var meet := {}
@@ -554,17 +554,15 @@ func _check_ui_models() -> void:
 			list.append(DI.of(game.current_week(), d))
 		return _json(list)
 	var before: String = week_json.call()
-	var strip = Strip.new()
-	strip.refresh()
-	_ok("strip has 7 cells", strip.get_child_count() == 7)
+	var planner = Planner.new()   # (session L1a: the planner replaced the week strip and the Today card)
+	root.add_child(planner)
+	_ok("the week planner builds (7 days in its week)", planner.get_child_count() >= 1)
 	var editor = Editor.new()
 	var built := 0
 	for d in 7:
 		editor.show_day(d)
 		built += 1 if editor.get_child_count() >= 2 else 0
 	_ok("day editor builds for all 7 days (played, changed, rest, plain)", built == 7)
-	var card = Card.new()
-	_ok("Today card builds", card.get_child_count() == 1)   # one padded column: the top part is a button, the health part its own taps
 	var info: Dictionary = DayInfoClass.of(game.current_week(), 0)
 	_ok("day info has the health fields (empty with the health model off)", info.has("sore") and info.sore == 0
 			and info.health.is_empty() and info.limited == false and info.tier == "")
@@ -575,11 +573,10 @@ func _check_ui_models() -> void:
 	saves.save("ui")
 	game.date = game.START_DATE.duplicate()
 	_ok("load", saves.load_slot("ui"))
-	_ok("the strip data comes back the same after save/load", week_json.call() == before)
+	_ok("the planner's day data comes back the same after save/load", week_json.call() == before)
 	saves.delete("ui")
-	strip.free()
+	planner.free()
 	editor.free()
-	card.free()
 
 
 # --- Helpers -------------------------------------------------------------------------------------

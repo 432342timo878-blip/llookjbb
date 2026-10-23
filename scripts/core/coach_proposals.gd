@@ -15,6 +15,14 @@ extends GameSystem
 ## A veto with a reason is free; from the third silent one within four weeks each costs a little trust (user 2026-10-11).
 ## Static off switch `enabled` (like StoryletSystem.talks_enabled): OFF unless the app shell (main.gd) switches it on, so the
 ## balance tools play exactly as before; tools/verdict_check.gd and training_balance part 2e test it on.
+## SESSION L1a (GDD 4.10 decision 1, "L1's questions" 3 and 7): his changes are NOTES ON THE PLANNER DAYS, never stops. When the
+## week is made (on_week_start: the Sunday planner opens on it) he looks at the whole week once (plan_notes): lighter days when
+## something catches his eye, a heavier day when you are fresh (the talk's old "fresh" topic), at most max_per_week notes, each
+## only when HE judges the change a Good idea (his judgement is not "Fine"). A note is answered on the planner (answer_note):
+## "accept" (Make it easy / Do it) puts it in by = "coach"; "veto_<reason>" (Keep mine) is the Veto with its rules. A note still
+## open when its day comes passes with no trust cost (status "none"). Mid-week he no longer proposes; only his "scratch?" advice
+## for a race when something is sore or injured is still a stop (a real warning). The setting is Ask me first (= notes) / Never
+## (he only writes in his thread); "always" from older saves reads as "ask".
 
 static var enabled := false
 
@@ -46,9 +54,10 @@ static func texts() -> Dictionary:
 	return Data.coach_talk.proposal
 
 
-## "ask" / "always" / "never".
+## "ask" (his notes on the planner) / "never". ("always" of an older save reads as "ask": the planner never changes itself.)
 func setting() -> String:
-	return mode if mode != "" else str(cfg().default_mode)
+	var m := mode if mode != "" else str(cfg().default_mode)
+	return "ask" if m == "always" else m
 
 
 func set_setting(m: String) -> void:
@@ -58,14 +67,15 @@ func set_setting(m: String) -> void:
 
 # --- The day loop -----------------------------------------------------------------------------------------------
 
-## Morning: he looks at today and the days after it.
+## Morning: a note still open for today passes (no trust cost); his scratch advice for a race in his look-ahead.
 func on_day_start(ctx: Dictionary) -> void:
 	if not enabled or Game.athlete == null:
 		return
+	_pass_open_notes(ctx.date)
 	_look(ctx, int(ctx.day))
 
 
-## Evening: did you train on through his warning ("Never")? Then he looks from tomorrow.
+## Evening: did you train on through his warning ("Never")? Then he looks from tomorrow (the scratch advice only).
 func on_day_end(ctx: Dictionary) -> void:
 	if not enabled or Game.athlete == null:
 		return
@@ -74,20 +84,173 @@ func on_day_end(ctx: Dictionary) -> void:
 		_look(ctx, int(ctx.day) + 1)
 
 
+## The week is made (the Sunday planner shows it): his notes for it.
+func on_week_start(w: WeekSim) -> void:
+	if not enabled or Game.athlete == null or w == null:
+		return
+	plan_notes(w)
+
+
+# --- His notes on the planner (session L1a) -------------------------------------------------------------------------
+
+## He looks at the whole coming week once: the lighter changes when something catches his eye (soreness, fatigue, a race close,
+## each through his noise), else a heavier one when you are fresh (fatigue at most `notes.fresh_fatigue`, nothing sore or injured).
+## Per day the change HE thinks best, kept when he thinks it a Good idea (total >= propose_min_w as he sees it); the best
+## max_per_week of them become notes (one per day), and a race day in the week with something sore gets his scratch advice.
+func plan_notes(w: WeekSim) -> void:
+	var today := StoryletSystem.day_no(Game.date)
+	_week_check(StoryletSystem.day_no(w.monday) + w.day, w.day)
+	var cs := Game.get_system("coach") as CoachSystem
+	if cs == null or cs.head().is_empty() or int(week.get("count", 0)) >= int(cfg().max_per_week):
+		return
+	var first := w.day
+	var ctx := {"date": Game.date.duplicate(), "day": w.day, "week": w}
+	var coach := CoachVerdict.head_view()
+	var lm := float(coach.attributes.get("load_management", 10))
+	if _scratch_advice(ctx, w, first, 6, coach, lm, today, false):
+		pass
+	# A request from a reply in his thread (a mood topic: "I'm tired" asks for a lighter week; older saves: the talk's) is answered
+	# here, on the next Sunday: he looks that way whatever caught his eye.
+	requests = requests.filter(func(r): return today - int(r.day) <= int(cfg().request_days))
+	var asked := ""
+	if not requests.is_empty():
+		asked = str(requests.back().kind)
+		requests.clear()
+	var race_soon := _race_within(w, first, 6 + int(cfg().trigger.race_days))
+	var dir := ""
+	if asked == "lighter_week" or (asked == "" and _caught_eye(lm, race_soon)):
+		dir = "lighter"
+	elif asked == "more_load" or _fresh():
+		dir = "heavier"
+	if dir == "":
+		return
+	var found := []
+	for d in range(first, 7):
+		if not _free_day(w, d):
+			continue
+		var cur := CoachVerdict.day_now(w, d)
+		var soon := _race_within(w, d + 1, d + int(cfg().trigger.race_days))
+		var best := {}
+		for cand in candidates(w, d, dir, soon):
+			var j := CoachVerdict.judge(CoachVerdict.day_change({d: cur}, {d: cand}, "day_changed", [], "proposal"), coach)
+			if j.verdict == CoachVerdict.GOOD and float(j.seen.total) >= float(cfg().propose_min_w) \
+					and (best.is_empty() or float(j.seen.total) > float(best.j.seen.total)):
+				best = {"d": d, "cur": cur, "cand": cand, "j": j}
+		if not best.is_empty():
+			found.append(best)
+	found.sort_custom(func(x, y): return float(x.j.seen.total) > float(y.j.seen.total))
+	for b in found:
+		if int(week.get("count", 0)) >= int(cfg().max_per_week):
+			break
+		_propose(dir, w, [{"d": b.d, "from": b.cur, "to": b.cand}], b.j, ctx, today, {"note": true})
+
+
+## Fresh enough that he would add work (the talk's old "you look fresh" topic): fatigue at most notes.fresh_fatigue, nothing sore,
+## no injury or illness.
+func _fresh() -> bool:
+	if Game.athlete.fatigue > float(cfg().notes.fresh_fatigue):
+		return false
+	var h := Game.get_system("health") as HealthSystem
+	if h != null and HealthSystem.model_enabled and h.started:
+		if not h.injuries.is_empty():
+			return false
+		for area in HealthSystem.areas():
+			if h.soreness_level(area.id) >= 1:
+				return false
+	return true
+
+
+## The notes of the week starting `monday` that still wait for an answer (oldest first).
+func open_notes(monday: Dictionary) -> Array:
+	var key := Calendar.date_key(monday)
+	return list.filter(func(p): return bool(p.get("note", false)) and p.status == "asked" and Calendar.date_key(p.monday) == key)
+
+
+## Every note of the week starting `monday` (answered or not), for the planner's days.
+func notes_of(monday: Dictionary) -> Array:
+	var key := Calendar.date_key(monday)
+	return list.filter(func(p): return bool(p.get("note", false)) and Calendar.date_key(p.monday) == key)
+
+
+## The planner's answer to a note: "accept" or "veto_<reason id>" (Keep mine; "veto_none" = no reason). Returns {result (his
+## reply), changes (lines)} like on_reply; the player's words and his reply go into his thread (already read).
+func answer_note(proposal_id: String, reply_id: String) -> Dictionary:
+	var p := proposal(proposal_id)
+	if p.is_empty() or p.status != "asked" or not bool(p.get("note", false)):
+		return {}
+	var label := ""
+	for r in _replies(p):
+		if str(r.id) == reply_id:
+			label = str(r.label)
+	var res := on_reply(proposal_id, reply_id)
+	var ms := Game.get_system("moments") as StoryletSystem
+	if ms != null and not res.is_empty():
+		if label != "":
+			ms.player_says(label)
+		ms.coach_says(str(res.get("result", "")), true)
+	return res
+
+
+## A note whose (first) day has come without an answer passes: the plan stays, no trust cost.
+func _pass_open_notes(today: Dictionary) -> void:
+	var key := Calendar.date_key(today)
+	for p in list:
+		if bool(p.get("note", false)) and p.status == "asked" and Calendar.date_key(p.days[0].date) <= key:
+			p.status = "none"
+
+
+## The note's title on the planner day ("Thu: tempo → easy run?") and its line (his reason, the number and the cost), from
+## data/coach_talk.json proposal.note.
+func note_text(p: Dictionary) -> Dictionary:
+	var t: Dictionary = texts().note
+	var x: Dictionary = p.days[0]
+	var day := str(Data.moments.day_names[int(x.d)]).substr(0, 3)
+	if p.kind == "scratch":
+		return {"title": str(t.scratch_title).format({"day": day, "meet": p.meet_name}), "text": str(p.said)}
+	var from := _short_day(x.from)
+	var to := _short_day(x.to)
+	var title := str(t.title).format({"day": day, "from": from.to_lower(), "to": to.to_lower()})
+	if from == to:
+		title = str(t.title_level).format({"day": day, "to": Training.intensity(str(x.to.intensity)).name.to_lower()})
+	return {"title": title, "text": str(p.said)}
+
+
+## A day's sessions in the planner's words ("tempo", "easy run", "rest").
+static func _short_day(day: Dictionary) -> String:
+	var ids: Array = day.get("sessions", [])
+	if ids.is_empty():
+		return str(texts().note.rest)
+	var names := []
+	for id in ids:
+		names.append(Icons.session_short(str(id)))
+	return " + ".join(names)
+
+
+## The two buttons of a note: [accept label, keep label] (data/coach_talk.json proposal.note).
+func note_buttons(p: Dictionary) -> Array:
+	var t: Dictionary = texts().note
+	match str(p.kind):
+		"scratch":
+			return [str(t.accept_scratch), str(t.keep_scratch)]
+		"heavier":
+			return [str(t.accept_heavier), str(t.keep)]
+	return [str(t.accept), str(t.keep)]
+
+
 func _week_check(today: int, weekday: int) -> void:
 	var monday := today - weekday
 	if int(week.get("monday", -1)) != monday:
 		week = {"monday": monday, "count": 0}
 
 
-## One look from day `first` of this week.
+## One look from day `first` of this week. Since session L1a only his "scratch?" advice for a race in his look-ahead while something
+## is sore or injured (a real warning: a stop); his other changes are the Sunday notes (plan_notes).
 func _look(ctx: Dictionary, first: int) -> void:
 	var w: WeekSim = ctx.get("week")
 	if w == null:
 		return
 	var today := StoryletSystem.day_no(ctx.date)
 	_week_check(today, int(ctx.day))
-	requests = requests.filter(func(r): return today - int(r.day) <= int(cfg().request_days))
 	if last_day == today or int(week.count) >= int(cfg().max_per_week):
 		return
 	if setting() == "ask" and not Game.pending_event().is_empty():
@@ -100,27 +263,7 @@ func _look(ctx: Dictionary, first: int) -> void:
 	var last_d := mini(6, first + look_ahead(lm) - 1)
 	if first > last_d:
 		return
-	if not requests.is_empty() and int(ctx.day) == first:   # (a request waits for a morning)
-		_fulfil_request(ctx, w, first, coach, today)
-		return
-	if _scratch_advice(ctx, w, first, last_d, coach, lm, today):
-		return
-	var race_soon := _race_within(w, first, last_d + int(cfg().trigger.race_days))
-	if not _caught_eye(lm, race_soon):
-		return
-	var best := {}
-	for d in range(first, last_d + 1):
-		if not _free_day(w, d):
-			continue
-		var cur := CoachVerdict.day_now(w, d)
-		var soon := _race_within(w, d + 1, d + int(cfg().trigger.race_days))
-		for cand in candidates(w, d, "lighter", soon):
-			var j := CoachVerdict.judge(CoachVerdict.day_change({d: cur}, {d: cand}, "day_changed", [], "proposal"), coach)
-			if j.verdict == CoachVerdict.GOOD and float(j.seen.total) >= float(cfg().propose_min_w) \
-					and (best.is_empty() or float(j.seen.total) > float(best.j.seen.total)):
-				best = {"d": d, "cur": cur, "cand": cand, "j": j}
-	if not best.is_empty():
-		_propose("lighter", w, [{"d": best.d, "from": best.cur, "to": best.cand}], best.j, ctx, today)
+	_scratch_advice(ctx, w, first, last_d, coach, lm, today)
 
 
 ## How many days ahead a coach with this load management looks (data proposals.look_ahead).
@@ -255,84 +398,21 @@ static func _hardest(ids: Array) -> String:
 	return best
 
 
-# --- Requests from the Sunday talk ----------------------------------------------------------------------------
+# --- Requests from a reply in his thread -----------------------------------------------------------------------
 
-## A reply of the week talk asked for a lighter week or for more (storylet effect "proposal"): he looks at it the next morning.
+## A reply asked for a lighter week or for more (storylet effect "proposal": a mood topic): his next Sunday notes answer it.
 func request(kind: String) -> void:
 	if not enabled or not kind in texts().request_names:
 		return
 	requests.append({"kind": kind, "day": StoryletSystem.day_no(Game.date)})
 
 
-## The oldest request: lighter = the two heaviest days left made Easy (or one), more = the best step up he sees. He goes along
-## unless he thinks it Pointless or Risky; then he says why in a message.
-func _fulfil_request(ctx: Dictionary, w: WeekSim, first: int, coach: Dictionary, today: int) -> void:
-	var req: Dictionary = requests.pop_front()
-	var kind := str(req.kind)
-	var free := []
-	for d in range(first, 7):
-		if _free_day(w, d) and not w.session_ids(d).is_empty():
-			free.append(d)
-	if free.is_empty():
-		return
-	var options := []   # [{set: {d: {sessions, intensity}}, from: {d: ...}}]
-	if kind == "lighter_week":
-		var by_load := free.duplicate()
-		by_load.sort_custom(func(x, y): return _day_load(w, x) > _day_load(w, y))
-		var heavy := by_load.filter(func(d): return w.intensity(d) != "easy")
-		if heavy.size() >= 2:
-			options.append([heavy[0], heavy[1]])
-		if not heavy.is_empty():
-			options.append([heavy[0]])
-	var best := {}
-	var fallback := {}
-	if kind == "lighter_week":
-		for days in options:
-			var base := {}
-			var cand := {}
-			for d in days:
-				base[d] = CoachVerdict.day_now(w, d)
-				cand[d] = {"sessions": base[d].sessions.duplicate(), "intensity": "easy"}
-			var j := CoachVerdict.judge(CoachVerdict.day_change(base, cand, "day_changed", [], "request"), coach)
-			fallback = {"base": base, "cand": cand, "j": j} if fallback.is_empty() else fallback
-			if j.verdict in [CoachVerdict.GOOD, CoachVerdict.FINE] and (best.is_empty() or float(j.seen.total) > float(best.j.seen.total)):
-				best = {"base": base, "cand": cand, "j": j}
-	else:
-		for d in free:
-			var cur := CoachVerdict.day_now(w, d)
-			for cand in candidates(w, d, "heavier"):
-				var j := CoachVerdict.judge(CoachVerdict.day_change({d: cur}, {d: cand}, "day_changed", [], "request"), coach)
-				if fallback.is_empty() or float(j.seen.total) > float(fallback.j.seen.total):
-					fallback = {"base": {d: cur}, "cand": {d: cand}, "j": j}
-				if j.verdict in [CoachVerdict.GOOD, CoachVerdict.FINE] and (best.is_empty() or float(j.seen.total) > float(best.j.seen.total)):
-					best = {"base": {d: cur}, "cand": {d: cand}, "j": j}
-	var what := str(texts().request_names[kind]).format({})
-	if best.is_empty():
-		var ms := Game.get_system("moments") as StoryletSystem
-		if ms != null and not fallback.is_empty():
-			ms.coach_says(str(texts().request_no).format({"what": what}) + " " + _reason(fallback.j))
-		return
-	var days := []
-	var keys: Array = best.cand.keys()
-	keys.sort()
-	for d in keys:
-		days.append({"d": d, "from": best.base[d], "to": best.cand[d]})
-	_propose("lighter" if kind == "lighter_week" else "heavier", w, days, best.j, ctx, today,
-			{"request": kind, "prefix": str(texts().request_yes).format({"what": what})})
-
-
-static func _day_load(w: WeekSim, d: int) -> float:
-	var total := 0.0
-	for id in w.session_ids(d):
-		total += Training.session_load(Game.athlete, Data.get_session(id))
-	return total * float(Training.intensity(w.intensity(d)).load)
-
-
 # --- Scratch advice -------------------------------------------------------------------------------------------
 
 ## A race day within his look-ahead while something is sore or an injury is active: when racing looks Risky to him (scratching
-## a Good idea), his "scratch?" advice. Never scratched by itself: in Ask me first and Always it asks, in Never it is a message.
-func _scratch_advice(ctx: Dictionary, w: WeekSim, first: int, last_d: int, coach: Dictionary, lm: float, today: int) -> bool:
+## a Good idea), his "scratch?" advice. Never scratched by itself: in Ask me first it asks, in Never it is a message. `stop` = false:
+## a note on the planner (the Sunday look) instead of a stop.
+func _scratch_advice(ctx: Dictionary, w: WeekSim, first: int, last_d: int, coach: Dictionary, lm: float, today: int, stop := true) -> bool:
 	var h := Game.get_system("health") as HealthSystem
 	if h == null or not HealthSystem.model_enabled or not h.started:
 		return false
@@ -352,7 +432,7 @@ func _scratch_advice(ctx: Dictionary, w: WeekSim, first: int, last_d: int, coach
 			continue
 		var easy := {"sessions": [str(cfg().easy_session)], "intensity": "easy"}
 		_propose("scratch", w, [{"d": d, "from": {"sessions": [], "intensity": WeekSim.NORMAL, "race": true}, "to": easy}], j, ctx,
-				today, {"meet": str(w.races[d].key), "meet_name": str(w.races[d].name)})
+				today, {"meet": str(w.races[d].key), "meet_name": str(w.races[d].name), "note": not stop})
 		return true
 	return false
 
@@ -382,6 +462,10 @@ func _propose(kind: String, w: WeekSim, days: Array, j: Dictionary, ctx: Diction
 	fired.append(p)
 	var ms := Game.get_system("moments") as StoryletSystem
 	var prefix := str(extra.get("prefix", ""))
+	if bool(extra.get("note", false)) and setting() == "ask":   # (session L1a: a note on the planner day, no message, no stop)
+		p.note = true
+		p.status = "asked"
+		return p
 	match setting():
 		"ask":
 			p.status = "asked"

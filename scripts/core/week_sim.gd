@@ -139,10 +139,20 @@ func end_week() -> Dictionary:
 		_notes.append("A full week off. Good for recovery, but fitness slowly fades.")
 
 	var changes_done := Training._apply_progression(a, _stimulus, monday, coach_effect)
+	# Session L1a: the week's sessions done by the one definition (session_count) for the planner's "7/7 sessions done", day by day.
+	var counted := {"planned": 0, "done": 0, "extra": 0, "days": []}
+	for r in played:
+		if str(r.get("race", "")) != "":
+			continue
+		var n := session_count(int(r.day), r)
+		counted.planned += int(n.planned)
+		counted.done += int(n.done)
+		counted.extra += int(n.extra)
+		counted.days.append({"day": int(r.day), "planned": int(n.planned), "done": int(n.done)})
 	return {
 		"monday": monday, "sessions": _sessions, "load": _load,
 		"fatigue_start": _fatigue_start, "fatigue_end": a.fatigue, "fatigue_peak": _fatigue_peak,
-		"fatigue_avg": fatigue_avg, "changes": changes_done, "notes": _notes, "races": _raced,
+		"fatigue_avg": fatigue_avg, "changes": changes_done, "notes": _notes, "races": _raced, "count": counted,
 	}
 
 

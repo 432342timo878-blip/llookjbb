@@ -449,21 +449,26 @@ func _realism() -> void:
 	_ok("a safe goal comes off most of the time, a dream rarely (judging 10)", true)
 
 
-## The answers of the suggestion checks: the first suggestion is accepted, the second declined, the rest by the defaults.
+## The answers of the suggestion checks: the first suggestion is accepted, the second declined, the rest by the defaults. Session
+## L1a: a suggestion is a card on the Sunday planner (a moment waiting for it, no stop): answered there, after each played day.
 func _suggest_answers(counter: Dictionary) -> Callable:
 	return func(e: Dictionary) -> String:
-		if str(e.get("kind", "")) == "moment":
-			var m: Dictionary = game.get_system("moments").moment(str(e.get("moment", "")))
-			if str(m.get("kind", "")) == "suggest":
-				counter.n = int(counter.n) + 1
-				if int(counter.n) == 1:
-					counter["first_moment"] = m.duplicate(true)   # (the moment itself is dropped from the list after 28 days)
-				return "accept" if int(counter.n) == 1 else "decline"
 		return _answer_all(e)
 
 
+func _answer_planner_suggests(counter: Dictionary) -> void:
+	var ms = game.get_system("moments")
+	for m in ms.waiting():
+		if str(m.get("kind", "")) != "suggest":
+			continue
+		counter.n = int(counter.n) + 1
+		if int(counter.n) == 1:
+			counter["first_moment"] = m.duplicate(true)   # (the moment itself is dropped from the list after 28 days)
+		ms.answer(str(m.id), "accept" if int(counter.n) == 1 else "decline")
+
+
 func _suggests() -> void:
-	print("== 7. Coach suggests (a career of 18 weeks: Ask me first, then Never, then Always)")
+	print("== 7. Coach suggests (a career of 18 weeks: Ask me first (a card on the Sunday planner), then Never, then Ask left open)")
 	CS.enabled = true
 	CP.enabled = true
 	_career(4, "balanced", 10, "balanced")
@@ -478,6 +483,7 @@ func _suggests() -> void:
 	while Cal.date_key(game.date) < 20270309 and guard < 200:
 		guard += 1
 		_play(ans)
+		_answer_planner_suggests(counter)
 	print("    suggestions: %s" % [sg.list.map(func(s): return "%s %s (%s, %s)" % [Cal.format_day(s.date), s.meet_name, ",".join(s.reasons), s.status])])
 	_ok("he suggested something within the 18 weeks (one needs a reason: a gap, a tune-up, a limit)", sg.list.size() >= 1)
 	var months := {}
@@ -492,7 +498,9 @@ func _suggests() -> void:
 	var first: Dictionary = sg.list[0] if not sg.list.is_empty() else {}
 	if not first.is_empty():
 		var fm: Dictionary = counter.get("first_moment", {})
-		_ok("a suggestion is a moment of kind 'suggest' that stopped Play week (Ask me first)", str(fm.get("kind", "")) == "suggest" and bool(fm.get("stop", false)))
+		_ok("a suggestion is a moment of kind 'suggest' that waits on the planner, posted on a Sunday evening, no stop (Ask me first)",
+				str(fm.get("kind", "")) == "suggest" and bool(fm.get("planner", false)) and not bool(fm.get("stop", true))
+				and Cal.weekday(game.int_date(fm.date)) == 6)
 		_ok("the first one was accepted: the meet is entered%s" % (" and a target" if str(first.kind) == "target" else ""),
 				str(first.status) == "accepted" and str(first.meet) in game.entries
 				and (str(first.kind) != "target" or str(first.meet) in game.season.targets(2026)))
@@ -505,8 +513,8 @@ func _suggests() -> void:
 			again_ok = again_ok and str(s.meet) in sg.declined and not str(s.meet) in game.entries and same.size() == 1
 		_ok("a declined meet is never suggested again and is not entered", again_ok)
 	_ok("the Calendar mark: an answered suggestion no longer shows", sg.list.all(func(s): return sg.open_for(str(s.meet)).is_empty() or str(s.status) in ["asked", "noticed"]))
-	# Never: he only writes it, nothing is entered; Always: a message, no stop, nothing entered
-	for mode in ["never", "always"]:
+	# Never: he only writes it, nothing is entered; Ask left open (session L1a; it was "Always"): a card, no stop, nothing entered
+	for mode in ["never", "ask"]:
 		_career(5, "balanced", 10, "balanced")
 		game.get_system("proposals").set_setting(mode)
 		sg = game.get_system("suggests")
@@ -521,8 +529,10 @@ func _suggests() -> void:
 		var last: Dictionary = sg.list[-1] if not sg.list.is_empty() else {}
 		_ok("%s: %d suggestion(s), the open one is %s and nothing was entered by himself (%d entries as at the start)" % [mode, sg.list.size(), st, entered0],
 				not last.is_empty() and str(last.status) == st and sg.list.all(func(s): return str(s.status) in [st, "over"]) and game.entries.size() == entered0)
-		if mode == "always" and not last.is_empty():
-			_ok("Always: his message is a moment that did not stop Play week", not bool(game.get_system("moments").moment(str(last.moment)).get("stop", true)))
+		if mode == "ask" and not last.is_empty():
+			var lm: Dictionary = game.get_system("moments").moment(str(last.moment))
+			_ok("left open: his card did not stop Play week and passed unanswered (the suggestion stays open)",
+					not bool(lm.get("stop", false)) and str(last.status) == "asked")
 			var open: Dictionary = sg.open_for(str(last.meet))
 			_ok("and the Calendar shows it with his reason: %s" % sg.calendar_text(open), not open.is_empty() and sg.calendar_text(open) != "")
 			sg.decline_from_calendar(str(last.meet))

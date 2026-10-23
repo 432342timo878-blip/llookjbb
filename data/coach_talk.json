@@ -521,10 +521,26 @@
 			"raced": "You race {meet}"
 		},
 		"settings": {
-			"head": "Let the coach adjust my days",
-			"ask": {"name": "Ask me first", "text": "{He} {v:sends|send} you {his} change as a message with OK / Veto, and Play week stops for it."},
-			"always": {"name": "Always, tell me", "text": "{He} {v:changes|change} the day {himself} and {v:tells|tell} you in a message. You can veto it in the day."},
-			"never": {"name": "Never", "text": "{He} {v:changes|change} nothing, but {he} {v:notices|notice}: {he} {v:says|say} what {he} would have changed, and ignoring a real warning costs a little trust."}
+			"head": "The coach's notes",
+			"ask": {"name": "Show them on the planner", "text": "On Sunday {he} {v:writes|write} a note on a day {he} would change, with Make it easy / Keep mine. Nothing changes unless you say so."},
+			"never": {"name": "Don't write notes", "text": "{He} {v:writes|write} no notes, but {he} {v:notices|notice}: {he} {v:says|say} in {his} thread what {he} would have changed, and ignoring a real warning costs a little trust."}
+		},
+		"note": {
+			"_note": "Session L1a (GDD 4.10 decision 1): his change as a note on a planner day. title: {day} = Mon..Sun, {from} / {to} = the day's sessions in the planner's short words; title_level = same sessions, another intensity. The text under it is his reason (verdict.reasons). accept / keep = the two buttons (keep = the Veto: its reasons follow).",
+			"title": "{day}: {from} → {to}?",
+			"title_level": "{day}: make it {to}?",
+			"scratch_title": "{day}: scratch {meet}?",
+			"rest": "rest",
+			"accept": "Make it easy",
+			"accept_heavier": "Do it",
+			"accept_scratch": "Scratch",
+			"keep": "Keep mine",
+			"keep_scratch": "Race it",
+			"keep_why": "Why keep it? A reason costs nothing; many silent ones cost trust.",
+			"none": "No reason",
+			"accepted": "Changed: {day} is now {to}.",
+			"kept": "You kept your plan.",
+			"passed": "Not answered: your plan stayed."
 		},
 		"ui": {
 			"changed_head": "CHANGED BY {COACH}",

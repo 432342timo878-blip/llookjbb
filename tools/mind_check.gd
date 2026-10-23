@@ -373,19 +373,26 @@ func _check_talk() -> void:
 	ms.neutral = true
 	ms.values.motivation = 15.0
 	var monday: int = Cal.date_key(game.add_days(game.week_monday(), 7))
-	var talk := {}
 	while Cal.date_key(game.date) < monday:
 		game.advance_day()
 		var e: Dictionary = game.pending_event()
 		if not e.is_empty():
-			if bool(game.get_system("moments").moment(str(e.get("moment", ""))).get("talk", false)):
-				talk = e
 			game.answer_event(e.id, str(e.choices[0].id) if not e.choices.is_empty() else "ok")
+	# Session L1a: the talk is no stop: the whole talk is a message in his thread, the mood topic a moment there.
+	var st = game.get_system("moments")
+	var talk_text := ""
+	for x in st.thread("coach"):
+		if str(x.moment) == "" and str(x.from) != "you" and str(x.from) != "system":
+			talk_text = str(x.text)
 	var voice := str(game.get_system("coach").head().voice)
 	var line: String = str(data.mind.coach.lines[voice].motivation_low)
-	_ok("the talk has his motivation line (%s)" % voice, str(talk.get("text", "")).contains(line))
-	var m: Dictionary = game.get_system("moments").moment(str(talk.get("moment", "")))
-	_ok("its topic is the mood topic (%s)" % m.get("storylet", ""), str(m.get("storylet", "")) == "mood_flat")
+	_ok("the talk (his thread) has his motivation line (%s)" % voice, talk_text.contains(line))
+	var topic := ""
+	for f in st.fired:
+		if str(st.storylet(f.storylet).get("topic", "")) == "mood":
+			topic = str(f.storylet)
+	_ok("its mood topic was posted to his thread, not as a stop (%s)" % topic, topic == "mood_flat"
+			and not st.fired.any(func(f): return bool(f.get("stop", false))))
 	_ok("a coach of few words (communication 5) has no mood line", true if _short_coach_line() == "" else false)
 	ms.neutral = false
 	MS.talks_enabled = false

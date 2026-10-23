@@ -1,44 +1,48 @@
 extends Control
-## Career home screen: athlete header with today's date, Next day (plays one day) and Play week (plays to
-## Sunday night or until something needs the player), the week strip (Mon–Sun of this week; tap a day to
-## open the day editor), and tabs (Overview / Training / Calendar / Rankings / Report / People). Wide layout on PC
-## (tabs on top, the day editor as a side panel); on a phone the content is stacked, the tabs sit in a bar
-## at the bottom, within thumb reach, and the day editor is a bottom sheet. Stop events show as a
-## full-screen dimmed decision panel (a moment, e.g. the coach's Sunday talk, as a message).
+## Career home screen (session L1a, GDD 4.10 decision 1 + "L1's questions" 1-3, the look of GDD 5 "The look (V1)"): one 56 px header
+## bar (avatar, name, a meta line, the tabs on PC, today's date, "?" and the menu with Save / Main menu) and the tabs This week /
+## Season / Calendar / People / Career / Rankings. THIS WEEK is the Sunday planner (WeekPlanner): the one place where the week is
+## shown and changed, with Play week and Next day; its "Last week in full" opens the old report as a page. Season is the old
+## Training tab (the season plan), Career the old Overview's athlete, goals and attributes (K1 fills it). PC: tabs in the header,
+## the day editor (a tap on a planner day) as a side panel; phone: a bottom tab bar with icons (Rankings is a page of Career), Play
+## week sticky above it, the day editor as a bottom sheet. Stop events show as a full-screen dimmed decision panel; mid-week they
+## come only for real things (a niggle, injury or illness, a race day, a clash left open, a story beat).
 
-## id, tab text, short tab text (phone)
-const VIEWS := [["overview", "Overview", "Overview"], ["training", "Training", "Training"],
-		["calendar", "Calendar", "Calendar"], ["rankings", "Rankings", "Rankings"], ["report", "Report", "Report"],
-		["people", "People", "People"]]
+## The tabs (texts and icons in data/planner.json ui.tabs). The phone's bottom bar has all but Rankings.
+const VIEWS := ["week", "season", "calendar", "people", "career", "rankings"]
+const PHONE_VIEWS := ["week", "season", "calendar", "people", "career"]
+## Old view ids (tools, older code) -> their place now; pages that belong to a tab -> that tab.
+const ALIASES := {"overview": "week", "training": "season"}
+const TAB_OF := {"report": "week", "progress": "career", "rankings": "rankings"}
 const SIDE_PANEL_WIDTH := 480.0       # the day editor's side panel on PC (a bit less on a short, wide window)
-const TAB_BAR_WIDTH := 690.0          # what the six tabs need next to the side panel (110 px each)
+const TAB_BAR_WIDTH := 690.0          # what the planner's week needs next to the side panel
 const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
 		"September", "October", "November", "December"]
 
-var _view := "overview"
+var _view := "week"
 var _tabs := {}   # view id -> tab Button
 var _margin: MarginContainer
 var _scroll: ScrollContainer
 var _content: VBoxContainer
 var _name_label: Label
-var _save_button: Button
 var _info_label: Label
 var _date_label: Label
 var _event_overlay: ColorRect   # full-screen dimmed layer for stop events
-var _strip: WeekStrip
+var _planner: WeekPlanner       # This week (null on the other tabs)
+var _sticky: Control            # phone: Play week above the bottom bar (This week only)
+var _play_confirm: Control      # "2 choices waiting: Show me / Play anyway" (null when closed)
+var _menu: PopupMenu            # the header menu: Save, Main menu
 var _editor: DayEditor          # the day editor; lives in the side panel (PC) or the bottom sheet (phone)
 var _selected_day := -1         # the day open in the editor, -1 = none
 var _side: PanelContainer       # PC: the side panel around the editor (null on a phone)
 var _side_scroll: ScrollContainer
 var _sheet: Control             # phone: the dimmed layer + bottom sheet around the editor (null on PC)
 var _sheet_scroll: ScrollContainer
-var _today_card: TodayCard      # on Overview only
-var _overview_columns := 0      # columns the wide Overview was built with (0 = not built yet)
+var _overview_columns := 0      # columns the wide Career page was built with (0 = not built yet)
 var _phase_open := ""           # Training tab: the season phase open in the PhaseEditor ("" = the season view)
 var _people_page := ""          # People tab: "" = the list (PC: the coach thread), a thread id, or "profile"
 var _people_dot: Control        # the mark on the People tab: something unread or waiting for an answer
 var _result_event := {}         # a moment just answered whose result card (what changed) is showing over the page
-var _strip_caption: Label       # above the week strip: the season plan's phase and week (empty in repeat mode)
 # Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
 # (Close goes back to the day); phone: a HelpOverlay sheet. `_help_stack` is what is open ([] = closed), kept across
 # layout switches.
@@ -57,8 +61,8 @@ func _exit_tree() -> void:
 func _ready() -> void:
 	Router.layout_changed.connect(func(_c): _build_shell(); _show(_view); _show_pending_event())
 	_build_shell()
-	# Coming back from a race that ended the week: show how the week went.
-	_show("report" if Game.open_report and not Game.last_report.is_empty() else "overview")
+	# (Coming back from a race that ended the week: the planner shows how it went in its left column.)
+	_show("week")
 	Game.open_report = false
 	_show_pending_event()
 
@@ -79,6 +83,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	elif key == KEY_F1:
 		if _event_overlay == null or not _event_overlay.visible:
 			_toggle_help()
+	elif key == KEY_ESCAPE and _play_confirm != null:
+		_close_play_confirm()
 	elif key == KEY_ESCAPE and not _help_stack.is_empty():
 		_close_help()
 	elif key == KEY_ESCAPE and _selected_day >= 0:
@@ -97,8 +103,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			print(health.debug_text())
 
 
-## Header, week strip, tab bar, scrolling content, day editor. Rebuilt when the window switches between
-## wide and phone layout (an open day stays open).
+## The header bar, the tabs (PC: in the header; phone: the bottom bar), the scrolling content, the day editor. Rebuilt when the
+## window switches between wide and phone layout (an open day stays open).
 func _build_shell() -> void:
 	if _margin:
 		_margin.queue_free()
@@ -107,22 +113,26 @@ func _build_shell() -> void:
 	_side = null
 	_sheet = null
 	_sheet_scroll = null
-	_margin = MarginContainer.new()
+	_margin = MarginContainer.new()   # (the whole hub: the header bar full width, the page under it with V1's margins)
 	_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	Layout.page_margin(_margin)
 	add_child(_margin)
-	var column := UIKit.vbox(10 if Layout.compact else 16)
-	_margin.add_child(column)
+	var outer := UIKit.vbox(0)
+	_margin.add_child(outer)
+	var page := MarginContainer.new()
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var side_m := 12 if Layout.compact else 14
+	page.add_theme_constant_override("margin_left", side_m)
+	page.add_theme_constant_override("margin_right", side_m)
+	page.add_theme_constant_override("margin_top", 10 if Layout.compact else 14)
+	page.add_theme_constant_override("margin_bottom", 8 if Layout.compact else 14)
+	var column := UIKit.vbox(10)
 
-	column.add_child(_build_header())
-	_strip_caption = UIKit.label("", "CaptionLabel")
-	_strip_caption.clip_text = true
-	_strip_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_child(_strip_caption)
-	_strip = WeekStrip.new()
-	_strip.selected = _selected_day
-	_strip.day_pressed.connect(_on_day_pressed)
-	column.add_child(_strip)
+	_tabs.clear()
+	_people_dot = null
+	var bar := _build_tabs()
+	outer.add_child(_build_header(bar))
+	outer.add_child(page)
+	page.add_child(column)
 	_editor = DayEditor.new()
 	_editor.changed.connect(_on_day_changed)
 	_editor.close_requested.connect(_close_day)
@@ -136,45 +146,27 @@ func _build_shell() -> void:
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(_content)
 
-	_tabs.clear()
-	_people_dot = null
-	var group := ButtonGroup.new()
-	var bar := UIKit.hbox(2 if Layout.compact else 4)
-	for v in VIEWS:
-		var b := Button.new()
-		b.text = v[2] if Layout.compact else v[1]
-		b.toggle_mode = true
-		b.button_group = group
-		b.theme_type_variation = "BottomTabButton" if Layout.compact else "TabButton"
-		b.custom_minimum_size = Vector2(0 if Layout.compact else 110, 48 if Layout.compact else 44)
-		if Layout.compact:
-			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			b.add_theme_font_size_override("font_size", 14)   # (six tabs share the phone's width)
-		b.pressed.connect(func():
-			_phase_open = ""   # a tab button opens the tab at its top level (the season view, not a phase)
-			_people_page = ""
-			_show(v[0]))
-		bar.add_child(b)
-		_tabs[v[0]] = b
-		if v[0] == "people":   # a dot while something is unread or waits for an answer
-			_people_dot = UIKit.dot(Palette.ACCENT, 10)
-			_people_dot.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-			_people_dot.position = Vector2(-14, 4)
-			b.add_child(_people_dot)
+	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	if Layout.compact:
 		column.add_child(_scroll)
-		column.add_child(HSeparator.new())
-		column.add_child(bar)
+		_sticky = MarginContainer.new()   # Play week, sticky above the bottom bar (This week only)
+		column.add_child(_sticky)
+		var bottom := PanelContainer.new()
+		var style := StyleBoxFlat.new()
+		style.bg_color = Palette.TOP_BAR
+		style.border_color = Palette.DIVIDER
+		style.border_width_top = 1
+		style.content_margin_top = 2
+		bottom.add_theme_stylebox_override("panel", style)
+		bottom.add_child(bar)
+		outer.add_child(bottom)
 		_build_sheet()
 	else:
-		var left := UIKit.vbox(16)
-		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		left.add_child(bar)
-		left.add_child(HSeparator.new())
-		left.add_child(_scroll)
-		var body := UIKit.hbox(16)
+		_sticky = null
+		var body := UIKit.hbox(12)
 		body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		body.add_child(left)
+		_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.add_child(_scroll)
 		_build_side_panel()
 		body.add_child(_side)
 		column.add_child(body)
@@ -185,124 +177,249 @@ func _build_shell() -> void:
 	_refresh_header()
 
 
-func _build_header() -> Control:
-	_name_label = UIKit.label("", "TitleLabel")
-	_info_label = UIKit.wrapped("")
-	_date_label = UIKit.label("", "SubheadingLabel")
-	var next_day := UIKit.button("Day" if Layout.compact else "Next day", true, 140)
-	next_day.pressed.connect(_on_advance.bind(false))
-	var play_week := UIKit.button("Week" if Layout.compact else "Play week", false, 140)
-	play_week.pressed.connect(_on_advance.bind(true))
-	var save := UIKit.button("Save", false, 110)
-	_save_button = save
-	save.pressed.connect(_save)
-	var short := Layout.compact or Layout.logical_width < 1280.0   # (a short, wide window: phone sideways)
-	var menu := UIKit.button("Menu" if short else "Main menu", false, 110 if short else 140)
-	menu.pressed.connect(Router.go.bind("main_menu"))
-	_help_button = HelpButton.new(_help_entry())
-	_help_button.pressed.connect(_toggle_help)
+## The tab buttons: PC = text tabs that sit in the header bar; phone = the bottom bar, an icon over each short name (GDD 5: 20 px).
+func _build_tabs() -> Control:
+	var group := ButtonGroup.new()
+	var texts: Dictionary = Data.planner.ui.tabs
+	var bar := UIKit.hbox(0 if Layout.compact else 2)
+	for v in (PHONE_VIEWS if Layout.compact else VIEWS):
+		var t: Dictionary = texts[v]
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_group = group
+		if Layout.compact:
+			b.theme_type_variation = "BottomTabButton"
+			b.text = str(t.short)
+			b.icon = Icons.texture(str(t.icon))
+			b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+			b.add_theme_constant_override("icon_max_width", 20)
+			b.add_theme_font_size_override("font_size", 13)
+			b.custom_minimum_size = Vector2(0, 60)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		else:
+			b.theme_type_variation = "TabButton"
+			b.text = str(t.name)
+			b.custom_minimum_size = Vector2(0, 56)
+			b.add_theme_font_size_override("font_size", 15)
+		b.pressed.connect(func():
+			_phase_open = ""   # a tab button opens the tab at its top level (the season view, not a phase)
+			_people_page = ""
+			_show(v))
+		bar.add_child(b)
+		_tabs[v] = b
+		if v == "people":   # a dot while something is unread or waits for an answer
+			_people_dot = UIKit.dot(Palette.ACCENT, 8)
+			_people_dot.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			_people_dot.position = Vector2(-14 if Layout.compact else -4, 8)
+			b.add_child(_people_dot)
+	return bar
 
-	if Layout.compact:
-		# Name + ? + Save + Menu on top, then the info line, then today's date with the time buttons.
-		var box := UIKit.vbox(6)
-		var top := UIKit.hbox(8)
-		_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_name_label.clip_text = true
-		top.add_child(_name_label)
-		top.add_child(_help_button)
-		save.custom_minimum_size.x = 76
-		menu.custom_minimum_size.x = 76
-		top.add_child(save)
-		top.add_child(menu)
-		box.add_child(top)
-		box.add_child(_info_label)
-		var actions := UIKit.hbox(8)
-		_date_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_date_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		actions.add_child(_date_label)
-		next_day.custom_minimum_size.x = 100
-		play_week.custom_minimum_size.x = 100
-		actions.add_child(next_day)
-		actions.add_child(play_week)
-		box.add_child(actions)
-		return box
 
-	var row := UIKit.hbox(16)
-	var titles := UIKit.vbox(2)
-	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+## The one 56 px header bar (GDD 5 "Spacing and density"): the avatar, the name and a meta line, the tabs (PC), today's date (PC),
+## the "?" and the menu (Save, Main menu). Full width, on TOP_BAR with a divider under it.
+func _build_header(tabs: Control) -> Control:
+	_name_label = UIKit.label("", "NameLabel")
 	_name_label.clip_text = true   # a long name ends in "…" rather than pushing the buttons off the window
 	_name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_info_label = UIKit.label("", "WhyLabel")
+	_info_label.clip_text = true
+	_info_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_date_label = UIKit.label("", "ItemLabel")
+	_date_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_help_button = HelpButton.new(_help_entry())
+	_help_button.pressed.connect(_toggle_help)
+	_help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var menu := Button.new()
+	menu.icon = Icons.texture("menu")
+	menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu.add_theme_constant_override("icon_max_width", 18)
+	menu.custom_minimum_size = Vector2(44, 44)
+	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	menu.pressed.connect(func(): _open_menu(menu))
+
+	var bar := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.TOP_BAR
+	style.border_color = Palette.DIVIDER
+	style.border_width_bottom = 1
+	style.content_margin_left = 12 if Layout.compact else 16
+	style.content_margin_right = 12 if Layout.compact else 16
+	bar.add_theme_stylebox_override("panel", style)
+	var row := UIKit.hbox(12)
+	row.custom_minimum_size.y = 56 if not Layout.compact else 60
+	var a := Game.athlete
+	var initials := (a.first_name.left(1) + a.last_name.left(1)) if a != null else ""
+	var avatar := WeekPlanner._avatar(initials, Palette.SURFACE_2, 36.0)
+	avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(avatar)
+	var titles := UIKit.vbox(0)
+	titles.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	titles.add_child(_name_label)
 	titles.add_child(_info_label)
 	row.add_child(titles)
-	_date_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_date_label.custom_minimum_size.y = 44
-	_date_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(_date_label)
-	for b in [next_day, play_week, save, menu, _help_button]:
-		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		row.add_child(b)
-	return row
+	if Layout.compact:
+		titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_date_label.visible = false   # (the phone shows the date in the meta line)
+		row.add_child(_date_label)
+	else:
+		titles.custom_minimum_size.x = 200
+		titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		titles.size_flags_stretch_ratio = 0.6
+		tabs.size_flags_vertical = Control.SIZE_FILL
+		row.add_child(tabs)
+		var gap := UIKit.spacer()
+		gap.size_flags_stretch_ratio = 0.4
+		row.add_child(gap)
+		row.add_child(_date_label)
+	row.add_child(_help_button)
+	row.add_child(menu)
+	bar.add_child(row)
+	return bar
 
 
-## The Save button and Ctrl+S: a new snapshot save, and "Saved ✓" on the button for a moment.
+## The header menu: Save (a new snapshot, like Ctrl+S) and Main menu.
+func _open_menu(at: Control) -> void:
+	if _menu != null and is_instance_valid(_menu):
+		_menu.queue_free()
+	_menu = PopupMenu.new()
+	var u: Dictionary = Data.planner.ui
+	_menu.add_item(str(u.menu_save), 0)
+	_menu.add_item(str(u.menu_main), 1)
+	_menu.id_pressed.connect(func(id: int):
+		if id == 0:
+			_save()
+		else:
+			Router.go("main_menu"))
+	add_child(_menu)
+	var r := at.get_global_rect()
+	_menu.popup(Rect2i(Vector2i(int(r.position.x + r.size.x - 180.0), int(r.end.y)), Vector2i(180, 0)))
+
+
+## The menu's Save and Ctrl+S: a new snapshot save, and "Saved ✓" in the header for a moment.
 func _save() -> void:
 	SaveGame.save_snapshot()
-	if not is_instance_valid(_save_button):
+	var where := _info_label if Layout.compact else _date_label
+	if not is_instance_valid(where):
 		return
-	_save_button.text = "Test: not saved" if Game.dev_test else "Saved ✓"
+	where.text = "Test: not saved" if Game.dev_test else str(Data.planner.ui.menu_saved)
 	get_tree().create_timer(1.5).timeout.connect(func():
-		if is_instance_valid(_save_button):
-			_save_button.text = "Save")
+		if is_instance_valid(where):
+			_refresh_header())
 
 
-## Next day (`week` = false) or Play week. A race day opens the race screen; a finished week shows its report.
+## Play week / Next day from the planner. With choices still open, Play week asks once ("L1's questions" 3): Show me / Play
+## anyway (what is left keeps the plan; an unanswered note costs nothing).
+func _on_play_pressed(week: bool) -> void:
+	var n := WeekPlanner.open_choices().size()
+	if week and n > 0:
+		_open_play_confirm(n)
+		return
+	_on_advance(week)
+
+
+func _open_play_confirm(n: int) -> void:
+	_close_play_confirm()
+	var u: Dictionary = Data.planner.ui
+	var layer := ColorRect.new()
+	layer.color = Color(0.03, 0.035, 0.05, 0.62)
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed:
+			_close_play_confirm())
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", ThemeBuilder.panel_box(16))
+	var box := UIKit.vbox(12)
+	box.custom_minimum_size.x = minf(420.0, Layout.logical_width - 56.0)
+	box.add_child(UIKit.wrapped(WeekPlanner.choices_text(n), "CardHeading"))
+	box.add_child(UIKit.wrapped(str(u.confirm_text), "BodyLabel"))
+	var row := UIKit.hbox(8)
+	var show := UIKit.button(str(u.show_me), false, 0.0)
+	var go := UIKit.button(str(u.play_anyway), true, 0.0)
+	for b in [show, go]:
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(b)
+	show.pressed.connect(func():
+		_close_play_confirm()
+		_show_choices())
+	go.pressed.connect(func():
+		_close_play_confirm()
+		_on_advance(true))
+	box.add_child(row)
+	card.add_child(box)
+	center.add_child(card)
+	add_child(layer)
+	_play_confirm = layer
+	_raise_overlays()
+
+
+func _close_play_confirm() -> void:
+	if _play_confirm != null and is_instance_valid(_play_confirm):
+		_play_confirm.queue_free()
+	_play_confirm = null
+
+
+## "Show me": the planner scrolls to the cards that wait.
+func _show_choices() -> void:
+	if _view != "week":
+		_show("week")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(_planner) and is_instance_valid(_planner.callouts_anchor):
+		_scroll.ensure_control_visible(_planner.callouts_anchor)
+
+
+## Next day (`week` = false) or Play week. A race day opens the race screen; at the end of a week the planner shows the next one
+## (its left column is the week just played).
 func _on_advance(week: bool) -> void:
 	var result := Game.advance_week() if week else Game.advance_day()
 	if result == Game.RACE:
 		Router.go("race")
 		return
+	Game.open_report = false
 	_refresh_week_ui()
-	if Game.open_report:
-		Game.open_report = false
-		_show("report")
-	else:
-		_show(_view)
+	_show(_view)
 	_show_pending_event()
 
 
 func _refresh_header() -> void:
 	var a := Game.athlete
 	var club := Data.get_club(a.club_id)
+	var u: Dictionary = Data.planner.ui
 	_name_label.text = a.full_name()
-	_info_label.text = "%s · %d years · %s · %s" % [
-		Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", ""), a.hometown]
+	var meta := "%s · %d · %s" % [Data.get_event(a.main_event).name, a.age_on(Game.date), club.get("name", a.hometown)]
+	if Layout.compact:
+		var w := Game.current_week()
+		var state := str(u.header_plan) if w.day == 0 else str(u.header_play).format({"n": w.day + 1})
+		meta = "%s · %s" % [DayInfo.short_day(Game.date), state]
 	if Game.dev_test:
-		_info_label.text = "TEST CAREER (Dev menu, never saved) · " + _info_label.text
+		meta = "TEST CAREER (Dev menu, never saved) · " + meta
+	_info_label.text = meta
 	_date_label.text = Calendar.format_day(Game.date)
-	# The season plan's caption over the week strip (GDD 4.8 UI): "General base · week 3 of 10 · lighter week".
-	var caption := SeasonUI.week_caption()
-	_strip_caption.text = caption.to_upper()
-	_strip_caption.visible = caption != ""
 	if is_instance_valid(_people_dot):   # the People tab's dot: something new, or waiting for your answer
 		var ms := PeopleUI.system()
 		_people_dot.visible = ms != null and (ms.unread_total() > 0 or not ms.pending().is_empty())
 
 
-## After days were played or an event was answered: header, week strip and the open day.
-## If a new week has begun, the day editor closes (its day belonged to the old week).
+## After days were played or an event was answered: the header and the open day. If a new week has begun, the day editor closes
+## (its day belonged to the old week).
 func _refresh_week_ui() -> void:
 	_refresh_header()
-	if _selected_day >= 0 and _strip.monday != Game.week_monday():
+	if _selected_day >= 0 and _open_monday != Calendar.date_key(Game.week_monday()):
 		_selected_day = -1
-		_strip.selected = -1
 		_apply_editor_visibility()
-	_strip.refresh()
 	if _selected_day >= 0:
 		_editor.refresh()
 
 
-# --- Week strip and day editor -----------------------------------------------------------------
+# --- The planner's days and the day editor -----------------------------------------------------------------
+
+var _open_monday := -1   # the date key of the week the open day belongs to
+
 
 func _on_day_pressed(day: int) -> void:
 	if day == _selected_day:
@@ -313,27 +430,32 @@ func _on_day_pressed(day: int) -> void:
 
 func _open_day(day: int) -> void:
 	_selected_day = day
+	_open_monday = Calendar.date_key(Game.week_monday())
 	_editor.show_day(day)
-	_strip.selected = day
-	_strip.refresh()
 	if _help != null and not _help_stack.is_empty():
 		_close_help()   # PC: tapping a day brings the day editor back over the help
 	_apply_editor_visibility()
+	_mark_open_day()
 	_raise_overlays()
 
 
 func _close_day() -> void:
 	_selected_day = -1
-	_strip.selected = -1
-	_strip.refresh()
 	_apply_editor_visibility()
+	_mark_open_day()
 
 
-## A day change was made in the editor: the strip and the Today card show it too.
+## PC: the planner marks the day open in the editor (it was not rebuilt when the side panel was already open).
+func _mark_open_day() -> void:
+	if not Layout.compact and _view == "week" and is_instance_valid(_planner) and not _planner.is_queued_for_deletion() \
+			and _planner.selected != _selected_day:
+		_rebuild_view()
+
+
+## A day change was made in the editor: the planner shows it (its days, notes, facts).
 func _on_day_changed() -> void:
-	_strip.refresh()
-	if is_instance_valid(_today_card):
-		_today_card.refresh()
+	if _view == "week":
+		_rebuild_view()
 
 
 ## The side panel (PC) shows the help when it is open, else the day editor; the phone sheet only the day editor
@@ -349,11 +471,12 @@ func _apply_editor_visibility() -> void:
 		_side.visible = open or help_here
 	if _sheet:
 		_sheet.visible = open
-	if _view == "overview" and _overview_columns != 0 and not Layout.compact \
+	if _view == "career" and _overview_columns != 0 and not Layout.compact \
 			and _overview_columns != _wanted_overview_columns():
 		_relayout_overview()
-	# The Training pages and the People tab were built for the other width (side panel opened or closed): build them again.
-	if (_view == "training" or _view == "people") and not Layout.compact and _content.get_child_count() > 0 \
+	# The planner, the Season pages and the People tab were built for the other width (side panel opened or closed): build them
+	# again (the planner shows only its week beside the side panel).
+	if _view in ["week", "season", "people"] and not Layout.compact and _content.get_child_count() > 0 \
 			and _side_is_open() != _built_side_open:
 		_rebuild_view()
 
@@ -363,22 +486,22 @@ func _side_is_open() -> bool:
 	return _selected_day >= 0 or (_help != null and not _help_stack.is_empty())
 
 
-## Columns of the wide Overview: 4 need about 1150 logical px, which the side panel takes away.
+## Columns of the wide Career page: 4 need about 1150 logical px, which the side panel takes away.
 func _wanted_overview_columns() -> int:
 	var side_open := _selected_day >= 0 or (_help != null and not _help_stack.is_empty())
-	var width := Layout.logical_width - 96.0 - (_side_width() + 16.0 if side_open else 0.0)
+	var width := Layout.logical_width - 28.0 - (_side_width() + 12.0 if side_open else 0.0)
 	return 4 if width >= 1150.0 else 2
 
 
-## Width of the side panel: 480, or less when the window is too narrow to keep the tabs beside it.
+## Width of the side panel: 480, or less when the window is too narrow to keep the planner's week beside it.
 func _side_width() -> float:
-	return clampf(Layout.logical_width - 96.0 - 16.0 - TAB_BAR_WIDTH, 380.0, SIDE_PANEL_WIDTH)
+	return clampf(Layout.logical_width - 28.0 - 12.0 - TAB_BAR_WIDTH, 380.0, SIDE_PANEL_WIDTH)
 
 
-## Rebuilds the Overview for a new width and keeps its scroll position.
+## Rebuilds the Career page for a new width and keeps its scroll position.
 func _relayout_overview() -> void:
 	var at := _scroll.scroll_vertical
-	_show("overview")
+	_show("career")
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_scroll.scroll_vertical = at
@@ -586,24 +709,39 @@ func _on_event_answer(event_id: String, choice: String) -> void:
 
 
 func _show(view: String) -> void:
+	view = str(ALIASES.get(view, view))
 	_view = view
-	_tabs[view if _tabs.has(view) else "overview"].button_pressed = true   # ("progress" is a page of the Overview tab)
-	# PC with the side panel open: pages with wide rows (Training) build their stacked, phone-like layout.
+	var tab := str(TAB_OF.get(view, view))
+	if Layout.compact and tab == "rankings":
+		tab = "career"   # (Rankings is a page of Career on a phone)
+	if _tabs.has(tab):
+		_tabs[tab].button_pressed = true
+	# PC with the side panel open: pages with wide rows (Season) build their stacked, phone-like layout.
 	Layout.side_open = not Layout.compact and _side_is_open()
 	_built_side_open = Layout.side_open
 	_scroll.scroll_vertical = 0
 	for child in _content.get_children():
 		child.queue_free()
+	_planner = null
+	if _sticky != null:
+		for child in _sticky.get_children():
+			child.queue_free()
 	match view:
-		"overview": _build_profile(Game.athlete)
-		"training": _build_training()
+		"week": _build_week()
+		"season": _build_training()
 		"calendar": _build_calendar()
-		"rankings": _build_rankings()
-		"report": _content.add_child(ReportView.new())
+		"rankings":
+			if Layout.compact:
+				_content.add_child(_back_button("career"))
+			_build_rankings()
+		"report":
+			_content.add_child(_back_button("week"))
+			_content.add_child(ReportView.new())
 		"people": _build_people()
+		"career": _build_profile(Game.athlete)
 		"progress":
 			var page := ProgressView.new()
-			page.back_pressed.connect(func(): _show("overview"))
+			page.back_pressed.connect(func(): _show("career"))
 			_content.add_child(page)
 	# The header "?" belongs to what is shown now; help opened with it follows to the new tab / page.
 	var help_id := _help_entry()
@@ -615,9 +753,36 @@ func _show(view: String) -> void:
 
 # --- Help (GDD 5 "Help") ------------------------------------------------------------------------
 
-## The help entry of what the hub shows: the tab, and in the Training tab which of its three pages.
+## This week: the planner, with Play week (PC: in its right column; phone: sticky above the bottom bar).
+func _build_week() -> void:
+	_planner = WeekPlanner.new()
+	_planner.selected = _selected_day
+	_planner.day_pressed.connect(_on_day_pressed)
+	_planner.play_pressed.connect(_on_play_pressed)
+	_planner.changed.connect(func():
+		_refresh_week_ui()
+		_rebuild_view())
+	_planner.report_pressed.connect(func(): _show("report"))
+	_planner.moment_answered.connect(func(e: Dictionary):
+		if MomentEventPanel.has_result(e):   # what the answer changed, as after a stop moment (GDD 4.9.5)
+			_result_event = e
+			_show_pending_event())
+	_content.add_child(_planner)
+	if _sticky != null:
+		_sticky.add_child(WeekPlanner.play_block(_on_play_pressed))
+
+
+## "◀ Back" to a tab (the report page of This week, Rankings inside Career on a phone).
+func _back_button(to: String) -> Control:
+	var b := UIKit.button(str(Data.planner.ui.back), false, 120)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	b.pressed.connect(func(): _show(to))
+	return b
+
+
+## The help entry of what the hub shows: the tab, and in the Season tab which of its three pages.
 func _help_entry() -> String:
-	if _view == "training":
+	if _view == "season":
 		if Game.season.mode != SeasonPlan.PHASES:
 			return "training_repeat"
 		return "phase_editor" if _phase_open != "" else "training_season"
@@ -678,6 +843,8 @@ func _apply_help() -> void:
 
 ## The stop-event layer above the page, and any help above that.
 func _raise_overlays() -> void:
+	if _play_confirm != null and is_instance_valid(_play_confirm):
+		move_child(_play_confirm, -1)
 	if _event_overlay:
 		move_child(_event_overlay, -1)
 	for c in get_children():
@@ -685,29 +852,19 @@ func _raise_overlays() -> void:
 			move_child(c, -1)
 
 
-# --- Overview ---------------------------------------------------------------------------
+# --- Career (the old Overview's athlete, goals and attributes; K1 fills the tab) --------------------------------
 
 func _build_profile(a: Athlete) -> void:
-	_today_card = TodayCard.new()
-	_today_card.pressed.connect(func(): _open_day(Calendar.weekday(Game.date)))
-	_today_card.message_pressed.connect(_open_people)
-	_content.add_child(_today_card)
+	if Layout.compact:   # (Rankings is a page of Career on a phone)
+		var rankings := UIKit.button(str(Data.planner.ui.rankings_button), false, 0.0)
+		rankings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rankings.pressed.connect(func(): _show("rankings"))
+		_content.add_child(rankings)
 	var goals_panel := GoalsUI.overview_panel(func():   # the season goals (session C5); with none set, a button asks the coach
 		_refresh_week_ui()
 		_show_pending_event())
-	var mind_panel := MindUI.overview_panel()   # the moods (session M1): beside the goals on a wide screen, under them otherwise
-	if goals_panel != null and mind_panel != null and not Layout.stacked():
-		var pair := UIKit.hbox(16)
-		goals_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		mind_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		goals_panel.size_flags_stretch_ratio = 1.4
-		pair.add_child(goals_panel)
-		pair.add_child(mind_panel)
-		_content.add_child(pair)
-	else:
-		for p in [goals_panel, mind_panel]:
-			if p != null:
-				_content.add_child(p)
+	if goals_panel != null:
+		_content.add_child(goals_panel)
 
 	var columns: Container   # wide: a grid of 4 (2 when the width is short, e.g. with the side panel open)
 	if Layout.compact:
@@ -763,10 +920,6 @@ func _build_profile(a: Athlete) -> void:
 		for p in attribute_panels:
 			columns.add_child(p)
 	_content.add_child(columns)
-
-	# The long explanations (week strip markers, attributes, saving) are in the help (data/help.json, "overview").
-	_content.add_child(UIKit.wrapped("Plan your week under Training, tap a day in the week strip to change it, then press "
-			+ "Next day or Play week. The ? at the top explains what you see on each screen.", "MutedLabel"))
 
 
 # --- Training plan ----------------------------------------------------------------------
@@ -901,7 +1054,7 @@ func _build_training_repeat() -> void:
 			("Your plan repeats every week until you change it. Up to %d sessions a day; an empty day is a rest day. "
 			% Training.MAX_SESSIONS_PER_DAY)
 			+ "Easy, Normal or Hard sets how hard you do the day's sessions. "
-			+ "To change just one day of this week, tap it in the week strip above."))
+			+ "To change just one day of this week, tap it in This week."))
 	var level_notes := []
 	for level in Training.INTENSITIES:
 		if level != WeekSim.NORMAL:
@@ -912,7 +1065,7 @@ func _build_training_repeat() -> void:
 
 	var summary := UIKit.vbox(8)
 	var refresh_summary := func(): _fill_plan_summary(summary, a)
-	# After every edit of the weekly plan: the injury limits go into this week again, the week strip and the
+	# After every edit of the weekly plan: the injury limits go into this week again, the planner and the
 	# open day follow the plan, and the summary (with load vs normal and risk) is worked out again.
 	var on_plan_edited := func():
 		_after_plan_change()

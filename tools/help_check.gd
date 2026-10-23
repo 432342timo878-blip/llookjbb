@@ -85,23 +85,24 @@ func _run() -> void:
 	game.advance_day()
 	hub._refresh_week_ui()
 
-	# A moment that stops the week (the coach's Sunday talk) is a message with its own "?" (session C3).
+	# A moment that stops the week is a message with its own "?" (session C3). Since session L1a the Sunday talk is no stop (its line
+	# is on the planner); the coach's "scratch?" advice while hurt still is: posted here as his stop message.
 	var ms = game.get_system("moments")
-	var talk_ctx := {"date": game.date.duplicate(), "day": 6, "day_type": "weekday", "week": game.current_week()}
-	ms._post_week_talk(talk_ctx, ms.day_no(game.date))
+	ms.post_proposal("p_help", "I'd scratch from the race tomorrow and run easy instead.",
+			[{"id": "accept", "label": "Scratch", "hint": ""}, {"id": "veto_none", "label": "Race anyway, no reason", "hint": ""}], true)
 	hub._refresh_week_ui()
 	hub._show_pending_event()
 	await _frames(4)
-	_check(game.pending_event().get("kind", "") == "moment", "the coach's week talk is a stop event of kind moment")
+	_check(game.pending_event().get("kind", "") == "moment", "the coach's scratch advice is a stop event of kind moment")
 	await _press_help(hub._event_overlay, "moment panel", "moment", false)
 	_check(_overlay_on_top(hub), "the moment's help sheet is above the stop-event layer")
 	_close_overlays(hub)
 	game.answer_event(game.pending_event().id, str(game.pending_event().choices[0].id))
 	hub._show_pending_event()
 
-	# The hub: each tab, and the Training tab's three pages.
-	for v in [["overview", "overview"], ["progress", "progress"], ["calendar", "calendar"], ["rankings", "rankings"],
-			["report", "report"], ["people", "people"], ["training", "training_season"]]:
+	# The hub: each tab and page (session L1a: This week = the planner, Career, Last week in full), and the Season tab's three pages.
+	for v in [["week", "week"], ["career", "career"], ["progress", "progress"], ["calendar", "calendar"], ["rankings", "rankings"],
+			["report", "report"], ["people", "people"], ["season", "training_season"]]:
 		hub._show(v[0])
 		await _frames(3)
 		await _press_help(hub, "hub " + v[0], v[1], true)
@@ -139,8 +140,8 @@ func _run() -> void:
 	hub._show("training")
 	await _frames(3)
 
-	# Help follows the tab: opened on Overview, then Calendar is shown.
-	hub._show("overview")
+	# Help follows the tab: opened on This week, then Calendar is shown.
+	hub._show("week")
 	await _frames(2)
 	hub._toggle_help()
 	hub._show("calendar")
@@ -149,8 +150,8 @@ func _run() -> void:
 	hub._toggle_help()
 	_check(hub._help_stack.is_empty(), "the header ? closes the help again")
 
-	# The day editor (tomorrow), its "?", and the help covering it: Close returns to the day.
-	hub._show("overview")
+	# The day editor (tomorrow, a tap on a planner day), its "?", and the help covering it: Close returns to the day.
+	hub._show("week")
 	hub._open_day(2)
 	await _frames(4)
 	await _press_help(hub._editor, "day editor", "day_editor", false, hub)
@@ -166,29 +167,29 @@ func _run() -> void:
 	_check(hub._help_stack.is_empty() and hub._editor.visible and (hub._side.visible if pc else hub._sheet.visible),
 			"closing the help shows the day editor again")
 	# Escape: the help first, then the day.
-	hub._open_help("overview", true)
+	hub._open_help("week", true)
 	_key(hub, KEY_ESCAPE)
 	_check(hub._help_stack.is_empty() and hub._selected_day == 2, "Esc closes the help first, the day stays open")
 	_key(hub, KEY_F1)
-	_check(hub._help_stack == ["overview"], "F1 opens the help of the tab")
+	_check(hub._help_stack == ["week"], "F1 opens the help of the tab")
 	_key(hub, KEY_ESCAPE)
 	hub._close_day()
 
 	# See also and Back (PC side slot).
-	hub._open_help("overview", true)
+	hub._open_help("week", true)
 	await _frames(2)
 	var see: Button = _find_button_prefix(hub, "See also: Race form")
-	_check(see != null, "Overview help has a See also: Race form button")
+	_check(see != null, "This week's help has a See also: Race form button")
 	if see:
 		see.pressed.emit()
 		await _frames(2)
-		_check(hub._help_stack == ["overview", "form"], "See also opens the topic (stack %s)" % [hub._help_stack])
-		var back: Button = _find_button_prefix(hub, "◀  Back to Overview")
+		_check(hub._help_stack == ["week", "form"], "See also opens the topic (stack %s)" % [hub._help_stack])
+		var back: Button = _find_button_prefix(hub, "◀  Back to This week")
 		_check(back != null, "a topic has ◀ Back to the screen's help")
 		if back:
 			back.pressed.emit()
 			await _frames(2)
-			_check(hub._help_stack == ["overview"], "Back returns to the screen's help")
+			_check(hub._help_stack == ["week"], "Back returns to the screen's help")
 	hub._close_help()
 
 	# The health stop panels (health model on for these two).

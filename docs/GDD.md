@@ -4245,6 +4245,25 @@ and indoor, Godot 2D / 2.5D techniques, free (CC0) runner art (R6); (3) camps: d
 (the school health survey, Kouluterveyskysely) to set how often late nights and romance happen (P2); (7) the youth path: when weights,
 double days and altitude camps start (SUL's youth path) (T1); (8) real schools (D2, already planned).
 
+#### L1's questions (user, 2026-10-23; each the recommended option)
+
+1. **Tabs:** This week / Season / Calendar / People / Career / Rankings. **This week replaces Overview and Report**: it is the
+   planner, its left column is last week's report, a played day shows its log on a tap. The Overview's athlete card, attributes, goals
+   and progress move to a first **Career** tab (K1 fills it). Phone bar: Week / Season / Calendar / People / Career, Rankings inside
+   Career.
+2. **The week strip goes**; the header is the one 56 px bar. **Next day stays** as a small secondary button beside Play week.
+3. **Play week with choices open asks once**: "Show me / Play anyway". An unanswered note keeps the player's plan **with no trust
+   cost** (only a pressed *Keep mine* is the Veto with its rules); a normal week with nothing open stays two clicks.
+4. **L1 is split** into L1a (the kit, the planner, the one weekly stop, the stop rule, one week view, tabs, help) and L1b (the slots +
+   habits, the Training tab as the season plan, save version 5, the slot mechanism). ROADMAP has both.
+5. **People moments wait for Sunday** until L3 sorts them: a moment that would have stopped mid-week waits and shows on the planner as
+   a card with its replies (it counts in "N choices waiting"; unanswered it passes when the next week starts). Everything else is a
+   quiet message. No people stops mid-week.
+6. **The talk's topics:** the coach's one line goes in the planner's left column; a topic whose reply changed the week (sore, tired,
+   fresh: the `proposal` effect) becomes his note on a day; the other topics are a message in his thread, answered there, never a stop.
+7. **The coach's setting** becomes *Coach's notes: Show on the planner / Don't write notes*; "Always" goes (saves with it load as Show).
+   "Coach suggests" works the same way: notes on the planner, never entered by himself.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

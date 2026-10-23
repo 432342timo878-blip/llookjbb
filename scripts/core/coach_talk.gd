@@ -126,6 +126,23 @@ static func week_talk(ctx: Dictionary, fill: Dictionary, rng: RandomNumberGenera
 	return "\n\n".join(paras)
 
 
+## The coach's one line on the Sunday planner (session L1a; GDD 5 "How text is cut down" 5: at most ~25 words): his comment on the
+## week just played (the one thing that mattered most) and the one thing for the coming week. A coach of few words says only one.
+## `ctx` = the Sunday day-end context (`week` = the week just played).
+static func planner_line(ctx: Dictionary, fill: Dictionary) -> String:
+	var w: WeekSim = ctx.week
+	var last := _last_week(w)
+	var plan := _next_week()
+	var sit := _situation(last)
+	var comment := str(voice().comment[sit]).format(fill) if sit != "" else ""
+	var focus := _focus(last, plan, _race_ahead(plan)).format(fill)
+	if comment == "":
+		return focus
+	if level() == "short":
+		return comment
+	return comment + " " + focus
+
+
 ## What the week that was just played looked like: {done, planned, feel, sore [area names], injuries [names],
 ## races [{meet, result, outcome}], fatigue (average)}.
 static func _last_week(w: WeekSim) -> Dictionary:

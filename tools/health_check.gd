@@ -494,8 +494,7 @@ func _check_health_ui() -> void:
 	var UI = load("res://scripts/ui/health_ui.gd")
 	var Panels = load("res://scripts/ui/health_event_panel.gd")
 	var DI = load("res://scripts/ui/day_info.gd")
-	var Strip = load("res://scripts/ui/week_strip.gd")
-	var Card = load("res://scripts/ui/today_card.gd")
+	var Planner = load("res://scripts/ui/week_planner.gd")
 	var WS = load("res://scripts/core/week_sim.gd")
 	var Tr = load("res://scripts/core/training.gd")
 	_new_career(23, 14)
@@ -578,13 +577,15 @@ func _check_health_ui() -> void:
 		if info.limited and info.tier == "niggle":
 			limited_days += 1
 	_ok("coming days the injury changed carry the marker (%d)" % limited_days, limited_days >= 1)
-	var strip = Strip.new()
-	strip.refresh()
-	_ok("the week strip builds with health markers", strip.get_child_count() == 7)
-	strip.free()
-	var card = Card.new()
-	_ok("the Today card builds with an injury and soreness", card.get_child_count() == 1)
-	card.free()
+	# (session L1a: the planner replaced the week strip and the Today card)
+	var planner = Planner.new()
+	root.add_child(planner)   # (it builds when it enters the tree)
+	_ok("the week planner builds with an injury and soreness", planner.get_child_count() >= 1)
+	var bars: Array = Planner.area_bars(2, false)
+	_ok("the body column: the two most strained areas as bars, shins among them (%d)" % bars.size(),
+			bars.size() == 2 and bars.any(func(b): return _has_text(b, "Shins")))
+	_ok("an active injury shows in the body column", _has_text(planner, "Shin splints"))
+	planner.free()
 
 	# The styled events: a diagnosis and the "sore" warning.
 	health.injuries.clear()
@@ -756,6 +757,16 @@ func _made(control) -> bool:
 		return false
 	control.free()
 	return true
+
+
+## Some Label under `node` contains `text` (the UI pieces' words).
+func _has_text(node: Node, text: String) -> bool:
+	if node is Label and (node as Label).text.contains(text):
+		return true
+	for c in node.get_children():
+		if _has_text(c, text):
+			return true
+	return false
 
 
 func _new_career(seed_value: int, health_seed: int) -> void:

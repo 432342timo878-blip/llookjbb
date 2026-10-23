@@ -4,6 +4,33 @@ class_name ThemeBuilder
 const FONT_REGULAR := preload("res://assets/fonts/Inter-Regular.ttf")
 const FONT_SEMIBOLD := preload("res://assets/fonts/Inter-SemiBold.ttf")
 const FONT_BOLD := preload("res://assets/fonts/Inter-Bold.ttf")
+# V1 (GDD 5 "Type"): Barlow Condensed for numbers only (OFL, assets/fonts/BarlowCondensed-LICENSE.txt).
+const NUM_SEMIBOLD := preload("res://assets/fonts/BarlowCondensed-SemiBold.ttf")
+const NUM_BOLD := preload("res://assets/fonts/BarlowCondensed-Bold.ttf")
+const NUM_EXTRABOLD := preload("res://assets/fonts/BarlowCondensed-ExtraBold.ttf")
+
+static var _number_fonts := {}
+static var _section_font: FontVariation
+
+
+## A Barlow Condensed face with tabular figures (OpenType `tnum`), so digits line up in columns (GDD 5: L1 checks the font has
+## it: tools/v1_check.gd measures "1" and "8").
+static func number_font(base: Font) -> FontVariation:
+	if not _number_fonts.has(base):
+		var f := FontVariation.new()
+		f.base_font = base
+		f.opentype_features = {TextServerManager.get_primary_interface().name_to_tag("tnum"): 1}
+		_number_fonts[base] = f
+	return _number_fonts[base]
+
+
+## Inter Bold with +1 px between letters: the section labels ("LAST WEEK").
+static func section_font() -> FontVariation:
+	if _section_font == null:
+		_section_font = FontVariation.new()
+		_section_font.base_font = FONT_BOLD
+		_section_font.spacing_glyph = 1
+	return _section_font
 
 
 ## `compact` = phone portrait: slightly larger body text, smaller title.
@@ -21,13 +48,37 @@ static func build(compact := false) -> Theme:
 	_label_variation(theme, "MutedLabel", FONT_REGULAR, 16 if compact else 15, Palette.TEXT_MUTED)
 	_label_variation(theme, "CaptionLabel", FONT_SEMIBOLD, 13, Palette.TEXT_FAINT)
 	_label_variation(theme, "AttrValueLabel", FONT_BOLD, 17 if compact else 16, Palette.TEXT)
+	# V1's scale (GDD 5 "Type", PC / compact) for the new screens (the planner first); the old variations above keep their sizes
+	# until the restyle session.
+	_label_variation(theme, "DisplayNumber", number_font(NUM_EXTRABOLD), 48 if compact else 64, Palette.TEXT)
+	_label_variation(theme, "BigNumber", number_font(NUM_BOLD), 26 if compact else 22, Palette.TEXT)
+	_label_variation(theme, "ChipNumber", number_font(NUM_BOLD), 18 if compact else 16, Palette.TEXT)
+	_label_variation(theme, "NameLabel", FONT_BOLD, 22 if compact else 20, Palette.TEXT)
+	_label_variation(theme, "CardHeading", FONT_SEMIBOLD, 18 if compact else 15, Palette.TEXT)
+	_label_variation(theme, "BodyLabel", FONT_REGULAR, 17 if compact else 14, Palette.TEXT)
+	_label_variation(theme, "ItemLabel", FONT_SEMIBOLD, 16 if compact else 13, Palette.TEXT)
+	_label_variation(theme, "WhyLabel", FONT_REGULAR, 14 if compact else 12, Palette.TEXT_MUTED)
+	_label_variation(theme, "SectionLabel", section_font(), 13 if compact else 12, Palette.TEXT_MUTED)
 
 	theme.set_stylebox("panel", "PanelContainer", _box(Palette.SURFACE_PANEL, Palette.BORDER))
 	theme.set_stylebox("panel", "Panel", _box(Palette.SURFACE_PANEL, Palette.BORDER))
 
-	_button(theme, "Button", Palette.SURFACE_2, Palette.SURFACE_3, Palette.BG, Palette.TEXT)
+	_button(theme, "Button", Palette.SURFACE_2, Palette.SURFACE_3, Palette.BG, Palette.TEXT, Palette.BORDER)
 	theme.set_type_variation("PrimaryButton", "Button")
 	_button(theme, "PrimaryButton", Palette.ACCENT, Palette.ACCENT_HOVER, Palette.ACCENT_PRESSED, Color.WHITE)
+	theme.set_font("font", "PrimaryButton", FONT_BOLD)
+	# V1: a flat button that is only its content (a planner day, a chip, a slot): the hover tint and the focus ring.
+	theme.set_type_variation("FlatButton", "Button")
+	var flat := StyleBoxFlat.new()
+	flat.bg_color = Color.TRANSPARENT
+	flat.set_corner_radius_all(Palette.RADIUS_RAISED)
+	var flat_hover := flat.duplicate() as StyleBoxFlat
+	flat_hover.bg_color = Color(1, 1, 1, 0.04)
+	for state in ["normal", "pressed", "disabled"]:
+		theme.set_stylebox(state, "FlatButton", flat)
+	for state in ["hover", "hover_pressed"]:
+		theme.set_stylebox(state, "FlatButton", flat_hover)
+	theme.set_stylebox("focus", "FlatButton", _focus_box())
 
 	# Selectable option (gender, answers, events): highlighted border when chosen.
 	theme.set_type_variation("ToggleButton", "Button")
@@ -85,6 +136,19 @@ static func _tab_buttons(theme: Theme) -> void:
 		theme.set_color("font_pressed_color", type, Palette.TEXT)
 		theme.set_color("font_hover_pressed_color", type, Palette.TEXT)
 		theme.set_color("font_disabled_color", type, Palette.TEXT_FAINT)
+		# V1: the phone's bottom bar has an icon over each name; the chosen tab's icon and name are ACCENT (GDD 5).
+		for state in ["icon_normal_color", "icon_focus_color", "icon_disabled_color"]:
+			theme.set_color(state, type, Palette.TEXT_MUTED)
+		theme.set_color("icon_hover_color", type, Palette.TEXT)
+		for state in ["icon_pressed_color", "icon_hover_pressed_color"]:
+			theme.set_color(state, type, Palette.ACCENT if on_top else Palette.TEXT)
+		if on_top:
+			theme.set_color("font_pressed_color", type, Palette.ACCENT)
+			theme.set_color("font_hover_pressed_color", type, Palette.ACCENT)
+	# (the bottom bar: no line over the chosen tab, its colour says it)
+	var plain := _tab_box(Color.TRANSPARENT, false, true)
+	theme.set_stylebox("pressed", "BottomTabButton", plain)
+	theme.set_stylebox("hover_pressed", "BottomTabButton", plain)
 
 
 static func _tab_box(bg: Color, selected: bool, line_on_top: bool) -> StyleBoxFlat:
@@ -132,11 +196,12 @@ static func _label_variation(theme: Theme, name: String, font: Font, size: int, 
 	theme.set_color("font_color", name, color)
 
 
-static func _button(theme: Theme, type: String, normal: Color, hover: Color, pressed: Color, text: Color) -> void:
-	theme.set_stylebox("normal", type, _box(normal))
-	theme.set_stylebox("hover", type, _box(hover))
-	theme.set_stylebox("pressed", type, _box(pressed))
-	theme.set_stylebox("disabled", type, _box(Palette.SURFACE))
+## V1 buttons (GDD 5 "Panels and cards"): radius 6; the secondary (default) button has a BORDER line.
+static func _button(theme: Theme, type: String, normal: Color, hover: Color, pressed: Color, text: Color, line := Color.TRANSPARENT) -> void:
+	for pair in [["normal", normal], ["hover", hover], ["pressed", pressed], ["disabled", Palette.SURFACE]]:
+		var box := _box(pair[1], line)
+		box.set_corner_radius_all(Palette.RADIUS_RAISED)
+		theme.set_stylebox(pair[0], type, box)
 	theme.set_stylebox("focus", type, _focus_box())
 	theme.set_font("font", type, FONT_SEMIBOLD)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
@@ -155,6 +220,56 @@ static func _box(bg: Color, border := Color.TRANSPARENT) -> StyleBoxFlat:
 	if border.a > 0.0:
 		box.border_color = border
 		box.set_border_width_all(1)
+	return box
+
+
+# --- V1 style boxes (GDD 5 "Panels and cards": three levels, never more than two nested) -----------------------------------
+
+## Panel: SURFACE, 1 px BORDER, radius 8, padding 12. A column or a block of the screen.
+static func panel_box(padding := 12, bg := Palette.SURFACE, line := Palette.BORDER) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.set_corner_radius_all(Palette.RADIUS)
+	if line.a > 0.0:
+		box.border_color = line
+		box.set_border_width_all(1)
+	box.set_content_margin_all(padding)
+	return box
+
+
+## Raised: SURFACE_2, radius 6, no border. Chips, facts, rows inside a panel.
+static func raised_box(padding := 10, bg := Palette.SURFACE_2) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.set_corner_radius_all(Palette.RADIUS_RAISED)
+	box.content_margin_left = padding
+	box.content_margin_right = padding
+	box.content_margin_top = padding - 3
+	box.content_margin_bottom = padding - 3
+	return box
+
+
+## Callout: a panel with a 3 px left edge in its meaning colour (WARN = the coach's note, PEOPLE = an invitation, ACCENT = needs
+## you). The only cards with buttons.
+static func callout_box(edge: Color, padding := 12) -> StyleBoxFlat:
+	# (one border colour per StyleBoxFlat: a faint tint of the colour all round, and CalloutCard draws the 3 px left edge in full)
+	var box := panel_box(padding, Palette.SURFACE, edge.lerp(Palette.BORDER, 0.65))
+	box.border_width_left = 3
+	box.content_margin_left = padding + 2
+	return box
+
+
+## Strap (race and results only, broadcast shapes): radius 0-2, skewed -8 degrees.
+static func strap_box(bg := Palette.LEAD, skew := true) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.set_corner_radius_all(2)
+	if skew:
+		box.skew = Vector2(-0.14, 0.0)   # tan(8 degrees)
+	box.content_margin_left = 10
+	box.content_margin_right = 10
+	box.content_margin_top = 3
+	box.content_margin_bottom = 3
 	return box
 
 

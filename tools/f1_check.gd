@@ -223,18 +223,20 @@ func _hub_pronouns(hub: Control) -> void:
 	hub._refresh_week_ui()
 	var leftovers := []
 	var training := ""
-	for v in ["overview", "training", "calendar", "rankings", "report", "people"]:
+	# (session L1a: the tabs This week / Season / Calendar / People / Career / Rankings and the report page)
+	for v in ["week", "season", "calendar", "rankings", "report", "people", "career"]:
 		hub._show(v)
 		await _frames(4)
 		for t in _texts(hub):
 			if t.contains("{he") or t.contains("{He") or t.contains("{his") or t.contains("{His") or t.contains("{him") or t.contains("{v:"):
 				leftovers.append("%s: %s" % [v, t.substr(0, 80)])
-			if v == "training":
+			if v == "season":
 				training += t + "\n"
 	for x in leftovers.slice(0, 5):
 		print("        " + x)
 	_ok("no pronoun placeholder is left in any hub tab (%d)" % leftovers.size(), leftovers.is_empty())
-	_ok("the Training tab's standing orders say 'She sends you her change'", training.contains("She sends you her change"))
+	_ok("the Season tab's standing orders say 'she writes a note on a day she would change'",
+			training.contains("she writes a note on a day she would change"))
 
 
 # --- 3, 4 -------------------------------------------------------------------------------------------------

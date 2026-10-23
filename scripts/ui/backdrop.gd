@@ -5,6 +5,9 @@ extends ColorRect
 const SHADER := preload("res://ui/backdrop.gdshader")
 const FOLDER := "res://assets/backgrounds/"
 const EXTENSIONS := ["jpg", "jpeg", "png", "webp"]
+## V1 (GDD 5 "Backdrop", session L1a): data screens get the plain BG; the photo belongs to the big moments (main menu, race intro,
+## career start, the season review).
+const PLAIN_SCREENS := ["career_hub"]
 
 var _material := ShaderMaterial.new()
 
@@ -25,6 +28,12 @@ func _update_size() -> void:
 
 ## Photo for this screen id, falling back to default.*, falling back to the plain gradient.
 func show_for(screen_id: String) -> void:
+	if screen_id in PLAIN_SCREENS:
+		material = null
+		color = Palette.BG
+		return
+	material = _material
+	color = Color.WHITE
 	var tex := _find_photo(screen_id)
 	if tex == null:
 		tex = _find_photo("default")

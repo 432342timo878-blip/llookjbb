@@ -393,14 +393,29 @@ class Watcher extends RefCounted:
 					bad.append("%s: %s changes a played day or a race day" % [where, p.id])
 
 
+## Session L1a: the coach's notes on the planner, answered by `pick(p) -> "accept" / "veto_<reason>" / "" (left open)` before each
+## day is played (the planner is where they are answered). Returns the notes answered.
+func _answer_notes(pick: Callable) -> Array:
+	var cp = game.get_system("proposals")
+	var out := []
+	for p in cp.open_notes(game.week_monday()):
+		var a: String = pick.call(p)
+		if a == "":
+			continue
+		cp.answer_note(str(p.id), a)
+		out.append({"p": p, "pick": a})
+	return out
+
+
 func _proposals_ask() -> void:
-	print("\n== 4. Proposals through the game: 'Ask me first' (%d weeks, health, moments and the Sunday talk on)" % weeks)
+	print("\n== 4. The coach's notes through the game (%d weeks, health, moments and the Sunday talk on; session L1a)" % weeks)
 	P.enabled = true
 	MS.talks_enabled = true
 	H.model_enabled = true
-	var results := {"accept": 0, "veto": 0, "silent": 0, "none": 0}
-	var checks := {"accepted_ok": 0, "accepted_bad": 0, "vetoed_ok": 0, "vetoed_bad": 0, "scratched_ok": 0, "scratched_bad": 0}
-	var counts := {"trust_drops": 0, "requests": 0}   # (a lambda copies plain numbers: counters live in a dictionary)
+	var results := {"accept": 0, "veto": 0, "silent": 0, "open": 0}
+	var checks := {"accepted_ok": 0, "accepted_bad": 0, "vetoed_ok": 0, "vetoed_bad": 0, "passed_ok": 0, "passed_bad": 0,
+			"scratched_ok": 0, "scratched_bad": 0}
+	var counts := {"trust_drops": 0, "note_stops": 0}   # (a lambda copies plain numbers: counters live in a dictionary)
 	var total := 0
 	var bad := []
 	var truths := {}
@@ -411,45 +426,62 @@ func _proposals_ask() -> void:
 		var watcher := Watcher.new()
 		watcher.cp = cp
 		watcher.game = game
+		var left := []   # notes left open: their day must keep the plan, the trust untouched
+		# A stop of his is now only the scratch advice (a real warning); every other proposal is a note.
 		var answer := func(e: Dictionary) -> String:
 			var ms = game.get_system("moments")
 			var m: Dictionary = ms.moment(str(e.get("moment", "")))
 			if m.get("kind", "") != "proposal":
-				for c in e.choices:
-					if str(c.id) in ["bothers", "lighter", "more"]:
-						counts.requests += 1
-						return str(c.id)   # (ask for a lighter week / more when the talk offers it)
 				return _answer_any(e)
-			watcher.check("posted")
 			var p: Dictionary = cp.proposal(str(m.proposal))
+			if p.kind != "scratch":
+				counts.note_stops += 1
 			var ids: Array = e.choices.map(func(c): return str(c.id))
 			var pick: String = ids[posmod(str(p.id).hash(), ids.size())]
-			var trust_before: float = game.get_system("coach").trust()
-			var week = game.current_week()
 			game.answer_event(e.id, pick)
-			if game.get_system("coach").trust() < trust_before - 0.5:
-				counts.trust_drops += 1
-			var kind := "accept" if pick == "accept" else ("silent" if pick == "veto_none" else "veto")
-			results[kind] += 1
 			for x in p.days:
-				if p.kind == "scratch":
-					var gone: bool = not str(p.meet) in game.entries
-					checks["scratched_ok" if gone == (pick == "accept") else "scratched_bad"] += 1
-					continue
-				var d := int(x.d)
-				var by: Dictionary = week.changed_by(d)
-				if pick == "accept":
-					var ok: bool = by.values().all(func(who): return who == "coach") and week.session_ids(d) == x.to.sessions \
-							and week.intensity(d) == str(x.to.intensity)
-					checks["accepted_ok" if ok else "accepted_bad"] += 1
-				else:
-					var ok2: bool = not by.values().has("coach") and (by.values().has("injury")
-							or (week.session_ids(d) == x.from.sessions and week.intensity(d) == str(x.from.intensity)))
-					checks["vetoed_ok" if ok2 else "vetoed_bad"] += 1
+				var gone: bool = not str(p.meet) in game.entries
+				checks["scratched_ok" if gone == (pick == "accept") else "scratched_bad"] += 1
 			return "__answered"
 		for day in weeks * 7:
-			var r: String = game.advance_day()
 			watcher.check("day")
+			var trust_before: float = game.get_system("coach").trust()
+			var week = game.current_week()
+			var answered := _answer_notes(func(p):
+				var opts := ["accept", "veto_fine", "veto_none", ""]
+				return opts[posmod(str(p.id).hash(), opts.size())])
+			if game.get_system("coach").trust() < trust_before - 0.5:
+				counts.trust_drops += 1
+			for x in answered:
+				var p: Dictionary = x.p
+				var pick: String = x.pick
+				results["accept" if pick == "accept" else ("silent" if pick == "veto_none" else "veto")] += 1
+				for dx in p.days:
+					var d := int(dx.d)
+					var by: Dictionary = week.changed_by(d)
+					if pick == "accept":
+						var ok: bool = by.values().all(func(who): return who == "coach") and week.session_ids(d) == dx.to.sessions \
+								and week.intensity(d) == str(dx.to.intensity)
+						checks["accepted_ok" if ok else "accepted_bad"] += 1
+					else:
+						var ok2: bool = not by.values().has("coach") and (by.values().has("injury")
+								or (week.session_ids(d) == dx.from.sessions and week.intensity(d) == str(dx.from.intensity)))
+						checks["vetoed_ok" if ok2 else "vetoed_bad"] += 1
+			for p in cp.open_notes(game.week_monday()):
+				if not left.has(p):
+					left.append(p)
+			# A note left open whose day has come: it passed (status none), the day kept its plan, no trust lost to it.
+			for p in left.duplicate():
+				var dx: Dictionary = p.days[0]
+				if Cal.date_key(dx.date) > Cal.date_key(game.date):
+					continue
+				left.erase(p)
+				results.open += 1
+				var w = game.current_week()
+				var same_week: bool = Cal.date_key(w.monday) == Cal.date_key(p.monday)
+				var kept: bool = not same_week or not w.changed_by(int(dx.d)).values().has("coach")
+				checks["passed_ok" if (kept and p.status in ["none", "asked"]) else "passed_bad"] += 1
+			var r: String = game.advance_day()
 			if r == game.RACE:
 				game.finish_race()
 			var guard := 0
@@ -461,33 +493,39 @@ func _proposals_ask() -> void:
 					game.answer_event(e.id, a)
 		bad += watcher.bad
 		total += cp.fired.size()
-		# At most max_per_week a week and one a day.
+		# At most max_per_week a week, one note a day.
 		var per_week := {}
 		var per_day := {}
 		for p in cp.fired:
 			var mon: int = Cal.date_key(p.monday)
 			per_week[mon] = int(per_week.get(mon, 0)) + 1
-			per_day[int(p.day)] = int(per_day.get(int(p.day), 0)) + 1
+			var dk: int = Cal.date_key(p.days[0].date)
+			per_day[dk] = int(per_day.get(dk, 0)) + 1
 		var most_week: int = per_week.values().max() if not per_week.is_empty() else 0
 		var most_day: int = per_day.values().max() if not per_day.is_empty() else 0
 		var kinds := {}
+		var notes := 0
 		for p in cp.fired:
 			kinds[p.kind] = int(kinds.get(p.kind, 0)) + 1
 			truths[p.truth] = int(truths.get(p.truth, 0)) + 1
-		print("     career %d: %d proposals in %d weeks (%s), at most %d a week, %d a day; requests in the talk %d" % [
-				k + 1, cp.fired.size(), weeks, kinds, most_week, most_day, counts.requests])
-		_ok("career %d: at most %d a week and one a day" % [k + 1, int(data.coaching.proposals.max_per_week)],
+			if bool(p.get("note", false)):
+				notes += 1
+		print("     career %d: %d proposals in %d weeks (%s; %d notes), at most %d a week, %d on a day" % [
+				k + 1, cp.fired.size(), weeks, kinds, notes, most_week, most_day])
+		_ok("career %d: at most %d a week, one on a day" % [k + 1, int(data.coaching.proposals.max_per_week)],
 				most_week <= int(data.coaching.proposals.max_per_week) and most_day <= 1)
 	for b in bad.slice(0, 5):
 		print("     " + b)
-	_ok("proposals came (%d)" % total, total > 0)
-	print("     what his proposals really were (the truth): %s" % _shares(truths, total))
-	_ok("his proposals are mostly right (Good or Fine in truth >= 70 %)",
+	_ok("notes came (%d)" % total, total > 0)
+	_ok("a note is never a stop (only his scratch advice still stops: %d other stops)" % counts.note_stops, counts.note_stops == 0)
+	print("     what his notes really were (the truth): %s" % _shares(truths, total))
+	_ok("his notes are mostly right (Good or Fine in truth >= 70 %)",
 			float(int(truths.get(V.GOOD, 0)) + int(truths.get(V.FINE, 0))) / maxi(1, total) >= 0.7)
 	_ok("only unplayed non-race days (scratch advice only races to come)", bad.is_empty())
 	print("     answers %s; %s; trust lost to silent vetoes %d times" % [results, checks, counts.trust_drops])
-	_ok("OK puts the change into the day (by the coach)", checks.accepted_bad == 0 and checks.accepted_ok > 0)
-	_ok("a veto keeps the plan", checks.vetoed_bad == 0 and checks.vetoed_ok > 0)
+	_ok("Make it easy puts the change into the day (by the coach)", checks.accepted_bad == 0 and checks.accepted_ok > 0)
+	_ok("Keep mine keeps the plan", checks.vetoed_bad == 0 and checks.vetoed_ok > 0)
+	_ok("a note left open passes with the plan kept and no trust lost", checks.passed_bad == 0 and checks.passed_ok > 0)
 	_ok("a scratch is done only on OK", checks.scratched_bad == 0)
 	# The silent-veto rule by itself.
 	var cp2 = game.get_system("proposals")
@@ -503,55 +541,26 @@ func _proposals_ask() -> void:
 			absf(t1 - t0) < 0.001 and absf((t1 - t2) - float(data.coaching.proposals.veto.silent_cost)) < 0.001 and line.size() == 1)
 
 
+## 4b (session L1a): "Always, tell me" is gone: the planner never changes itself. An older save's "always" reads as notes: he writes
+## notes and never puts a change in by himself.
 func _proposals_always() -> void:
-	print("\n== 4b. 'Always, tell me': he changes the day, Veto in the day editor puts the plan back")
+	print("\n== 4b. An older save's 'Always': notes, never a change by himself (session L1a)")
 	P.enabled = true
 	MS.talks_enabled = true
 	_career(30, "phases", "ambitious")
 	var cp = game.get_system("proposals")
+	cp.mode = "always"   # (as an older save loads it)
+	_ok("'always' reads as Ask me first (notes)", cp.setting() == "ask")
 	cp.set_setting("always")
-	var applied := 0
-	var applied_ok := 0
-	var vetoed := 0
-	var vetoed_ok := 0
-	var seen := 0
-	var asked_scratch := 0
+	_ok("'always' can no longer be chosen", cp.mode == "always" and not "always" in data.coaching.proposals.modes)
 	for day in weeks * 7:
 		_play(_answer_any)
-		while seen < cp.fired.size():
-			var p: Dictionary = cp.fired[seen]
-			seen += 1
-			if p.kind == "scratch":
-				asked_scratch += 1 if p.status in ["asked", "accepted", "vetoed", "none"] else 0
-				continue
-			if p.status != "applied":
-				continue
-			var w = game.current_week()
-			for x in p.days:
-				var d := int(x.d)
-				if Cal.date_key(p.monday) != Cal.date_key(w.monday) or not w.can_change(d):
-					continue
-				applied += 1
-				var info: Dictionary = load("res://scripts/ui/day_info.gd").of(w, d)
-				if info.by.values().has("coach") and not cp.applied_for(x.date).is_empty():
-					applied_ok += 1
-				if applied % 2 == 0:
-					vetoed += 1
-					var lines: Array = cp.veto(x.date, "fine" if applied % 4 == 0 else "none")
-					if not w.changed_by(d).values().has("coach") and cp.applied_for(x.date).is_empty() and not lines.is_empty():
-						vetoed_ok += 1
-	print("     %d changes applied (%d shown as the coach's), %d vetoed (%d back to plan), scratch advice asked %d" % [
-			applied, applied_ok, vetoed, vetoed_ok, asked_scratch])
-	_ok("he changed days himself", applied > 0)
-	_ok("each shows as changed by the coach", applied_ok == applied)
-	_ok("Veto in the day editor puts the plan back", vetoed_ok == vetoed)
-	var scratch_applied: int = cp.fired.filter(func(p): return p.kind == "scratch" and p.status == "applied").size()
-	_ok("a race is never scratched by itself", scratch_applied == 0)
-	var msgs := 0
-	for x in game.get_system("moments").thread("coach"):
-		if str(x.text).contains(str(data.coach_talk.proposal.applied_end)):
-			msgs += 1
-	_ok("he tells you in the thread (%d messages)" % msgs, msgs > 0)
+	var applied: int = cp.fired.filter(func(p): return p.status == "applied").size()
+	var notes: int = cp.fired.filter(func(p): return bool(p.get("note", false))).size()
+	print("     %d proposals, %d of them notes, %d applied by himself" % [cp.fired.size(), notes, applied])
+	_ok("he wrote notes", notes > 0)
+	_ok("he changed no day by himself", applied == 0)
+	_ok("a race is never scratched by itself", cp.fired.filter(func(p): return p.kind == "scratch" and p.status == "applied").is_empty())
 
 
 ## Part 4c: the day before a race with shin splints (a niggle that racing can make worse) and painful legs: a coach of 20's
@@ -590,7 +599,7 @@ func _scratch_advice() -> void:
 	print("     scratch %s, as he sees it: %s (train %+.2f risk %+.2f form %+.2f race %+.2f)" % [
 			meet.name, jt.verdict, jt.seen.train, jt.seen.risk, jt.seen.form, jt.seen.race])
 	_ok("with shin splints scratching even a target race is a Good idea", jt.verdict == V.GOOD)
-	for mode in ["ask", "always", "never"]:
+	for mode in ["ask", "never"]:   # (session L1a: "always" is gone)
 		cp.set_setting(mode)
 		cp.list = []
 		cp.week = {}
@@ -612,7 +621,7 @@ func _scratch_advice() -> void:
 		if e.is_empty():
 			continue
 		print("     \"%s\"" % e.text)
-		var pick := "accept" if mode == "ask" else "veto_race"
+		var pick := "accept"
 		game.answer_event(e.id, pick)
 		w = game.current_week()
 		if pick == "accept":
@@ -676,12 +685,12 @@ func _save_load() -> void:
 	MS.talks_enabled = true
 	_career(50, "phases", "ambitious")
 	var cp = game.get_system("proposals")
-	cp.set_setting("always")
+	cp.set_setting("ask")
 	var days := 0
-	while (cp.fired.size() < 3 or cp.list.filter(func(p): return p.status == "applied").is_empty()) and days < weeks * 7:
+	while (cp.fired.size() < 3 or cp.list.filter(func(p): return p.status == "accepted").is_empty()) and days < weeks * 7:
+		_answer_notes(func(p): return "accept")   # (session L1a: his notes, answered on the planner)
 		_play(_answer_any)
 		days += 1
-	cp.set_setting("ask")
 	saves.save("verdict_check")
 	var before: String = JSON.stringify(cp.to_dict())
 	var after_play := _play_on(21)

@@ -75,11 +75,17 @@ func _run() -> void:
 		await _frames(8)
 		var tag := "%dx%d" % [size.x, size.y]
 		print("size ", tag, " compact=", main.get_node("/root/Router") != null and Layout.compact, " logical=", root.content_scale_size)
-		for view in ["overview", "progress", "training", "calendar", "rankings", "report", "people"]:
+		# (session L1a: This week = the planner, Season = the old Training tab, Career = the old Overview, the report a page of This week)
+		for view in ["week", "career", "progress", "season", "calendar", "rankings", "report", "people"]:
 			hub._show(view)
 			await _frames(4)
 			await _shot("%s_%s" % [tag, view])
 			_check_overflow(hub, "%s %s" % [tag, view])
+			if view == "week":   # the planner scrolled to its end (the cards, the facts; on a phone the mind and Play week)
+				hub._scroll.scroll_vertical = 100000
+				await _frames(4)
+				await _shot("%s_week_end" % tag)
+				hub._scroll.scroll_vertical = 0
 			if view == "report":   # and the folded days opened
 				var fold := _find_button_prefix(main, "▸  Day by day")
 				if fold:
@@ -182,13 +188,11 @@ func _health_views(main: Node, game, data, tag: String) -> void:
 	_start_problem(health, data, game, "shin_splints")
 	_start_problem(health, data, game, "cold")
 	health._apply_restrictions(game.current_week())
-	hub._show("overview")
+	hub._show("week")   # (session L1a: the planner's body column: the injuries and the most strained areas as bars)
 	hub._refresh_week_ui()
 	await _frames(5)
-	hub._today_card.open_area("achilles")
-	await _frames(5)
-	await _shot("%s_health_today_card" % tag)
-	_check_overflow(hub, "%s health_today_card" % tag)
+	await _shot("%s_health_planner" % tag)
+	_check_overflow(hub, "%s health_planner" % tag)
 	hub._open_day(today)
 	await _frames(6)
 	await _shot("%s_health_editor_limits" % tag)
@@ -911,17 +915,21 @@ func _cast_views(main: Node, game, tag: String) -> void:
 	var ctx := {"date": game.date.duplicate(), "day": 2, "day_type": "weekday", "week": game.current_week()}
 	var today: int = MS.day_no(game.date)
 	var parent: Dictionary = ms.people_for("parent")[0]
-	ms.set_stop_mode("all")
-	ms._post(ms.storylet("fam_card_down"), parent, ctx, today, false, {"counted": false})
-	ms.set_stop_mode("important")
+	# Session L1a: a family moment that matters waits on the Sunday planner as a card (no stop); answered there, the result card.
+	var fm: Dictionary = ms._post(ms.storylet("fam_card_down"), parent, ctx, today, false, {"counted": false})
+	if not fm.is_empty() and not bool(fm.get("planner", false)):
+		ms._wait_for_planner(fm)
 	hub._refresh_week_ui()
-	hub._show_pending_event()
+	hub._show("week")
 	await _frames(6)
-	await _shot("%s_cast_stop" % tag)
-	_check_overflow(hub, "%s cast_stop" % tag)
-	var e: Dictionary = game.pending_event()
-	if not e.is_empty():
-		hub._on_event_answer(e.id, "promise")
+	hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+	await _frames(3)
+	await _shot("%s_cast_planner_card" % tag)
+	_check_overflow(hub, "%s cast_planner_card" % tag)
+	if not fm.is_empty():
+		ms.answer(str(fm.id), "promise")
+		hub._result_event = {"kind": "moment", "moment": str(fm.id), "date": game.date.duplicate(), "source": "moments"}
+		hub._show_pending_event()
 		await _frames(6)
 		await _shot("%s_cast_result" % tag)
 		_check_overflow(hub, "%s cast_result" % tag)
@@ -1921,14 +1929,25 @@ func _walk_overflow(node: Node, label: String, count: Array) -> void:
 			count[0] += 1
 			if count[0] <= 5:
 				print("  OVERFLOW ", label, ": ", c.get_path(), " rect ", r, " clip ", clip)
-		# A wrapping label squeezed to a sliver (beside an expanding control it can get no width and wraps letter by letter).
+		# A wrapping label squeezed to a sliver (beside an expanding control it can get no width and wraps letter by letter). A label
+		# marked "fit_words" (session L1a: the planner's narrow day columns) is fine as long as its longest word fits.
 		if c is Label and (c as Label).autowrap_mode != TextServer.AUTOWRAP_OFF and (c as Label).text.length() > 3 \
-				and r.size.x < 60.0:
+				and r.size.x < 60.0 and not (c.has_meta("fit_words") and _longest_word(c as Label) <= r.size.x + 1.0):
 			count[0] += 1
 			if count[0] <= 5:
 				print("  SQUEEZED ", label, ": ", c.get_path(), " width ", r.size.x, " \"", (c as Label).text.left(30), "\"")
 	for child in node.get_children():
 		_walk_overflow(child, label, count)
+
+
+## The width of a label's longest word in its own font (session L1a, the SQUEEZED rule for "fit_words" labels).
+func _longest_word(l: Label) -> float:
+	var font: Font = l.get_theme_font("font")
+	var size: int = l.get_theme_font_size("font_size")
+	var most := 0.0
+	for w in l.text.split(" ", false):
+		most = maxf(most, font.get_string_size(w, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x)
+	return most
 
 
 func _frames(n: int) -> void:

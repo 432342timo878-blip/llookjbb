@@ -36,6 +36,7 @@ var school_life: Dictionary = {}       # data/school_life.json: the school model
 var application: Dictionary = {}       # data/application.json: the joint application after grade 9, the test day, results, moving (session S3a)
 var lukio: Dictionary = {}             # data/lukio.json: lukio courses and the matriculation exams (session S3b)
 var cast: Dictionary = {}              # data/cast.json: the people around the athlete (family, friends, partners, school, rivals; session P1)
+var planner: Dictionary = {}           # data/planner.json: the Sunday week planner's texts, the sessions' short names and icons (session L1a)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -81,6 +82,7 @@ func _ready() -> void:
 	application = _load("res://data/application.json")
 	lukio = _load("res://data/lukio.json")
 	cast = _load("res://data/cast.json")
+	planner = _load("res://data/planner.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()

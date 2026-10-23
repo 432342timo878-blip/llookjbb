@@ -493,6 +493,15 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         restyled properly later. Open points for L1's own questions: the tab names (the mock-up shows This week / Season / Calendar /
         People / Career / Rankings: where Overview and Report go), whether the week strip stays in the header of other tabs, and what Play
         week does with choices still open ("2 choices waiting"). The mock-up's 32 px in-card buttons become 44 px (the rule stays).
+        **Split (user, 2026-10-23, like S3a / S3b; the answers are in GDD 4.10 "L1's questions"):**
+    - [ ] **L1a. The kit + the planner + the one weekly stop:** the V1 kit; the Sunday planner (PC + phone) as the This week tab;
+          the talk's popup and the proposals' stops go (the coach's line + notes on days); people moments wait for Sunday; the
+          mid-week stop rule; one week view (no week strip; Overview + Report fold into This week and a first Career tab); help.
+          *(Opus, high)*
+    - [ ] **L1b. The slots + standing habits:** the 9 free-time slots and the habits that fill them (replacing study effort / free
+          time; the neutral habit in `lab` = Normal / Normal), the Training tab → the season plan with the habits, save version 5,
+          the "something lands on a slot" mechanism proven with a couple of existing moments (L3 sorts the rest, P2 brings the new
+          people's invitations). *(Opus, high)*
   - [ ] **L2. Causes visible** (decision 2): body bars with % and warning lines, Form with its factors, moods with causes, the week report
         column (one "done"), the "what this race did" card (incl. a scratch), effects as words + what they do with numbers on a tap.
         *(Opus, high)*

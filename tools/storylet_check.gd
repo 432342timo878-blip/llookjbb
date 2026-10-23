@@ -428,20 +428,30 @@ func _rules() -> void:
 	_ok("the player's own lines and the game's lines are never 'new'; a reply's result from the sender is read at once",
 			ms.thread("coach").filter(func(x): return x.from == "you" or x.from == "system").all(func(x): return x.read))
 
-	# The two settings.
+	# Session L1a ("L1's questions" 5): no people stops mid-week. An important moment waits for the Sunday planner: no stop event,
+	# listed in waiting(), it expires on the coming Sunday and passes as "you didn't answer" on the Monday after it.
+	var cal = load("res://scripts/core/calendar.gd")
 	var m5 := _force("test_coach_injury")
-	_ok("Important only: an important moment is a stop event (title '%s')" % game.pending_event().get("title", ""),
-			m5.stop and game.pending_event().get("moment", "") == m5.id)
-	game.answer_event(game.pending_event().id, "ok")
-	_ok("a stop answered 'ok' (tools) = no answer", ms.moment(m5.id).answer == MS.NONE and game.pending_event().is_empty())
+	var sunday: int = _today() - cal.weekday(game.date) + 6
+	_ok("an important moment waits for the planner: no stop event, in waiting(), it expires on the coming Sunday",
+			not m5.stop and bool(m5.get("planner", false)) and game.pending_event().is_empty()
+			and ms.waiting().any(func(x): return x.id == m5.id) and int(m5.expires) == sunday)
+	ms.answer(m5.id, str(m5.replies[0].id))
+	_ok("answered on the planner: answered, no longer waiting", ms.moment(m5.id).answer == str(m5.replies[0].id)
+			and not ms.waiting().any(func(x): return x.id == m5.id))
+	var m6 := _force("test_coach_injury")
+	var guard := 0
+	while _today() <= sunday + 1 and guard < 10:   # (Monday's morning resolves it)
+		guard += 1
+		game.advance_day()
+		_answer_stops()
+	_ok("on the Sunday it still waits; the Monday after, it passed unanswered (no stop on the way)",
+			ms.moment(m6.id).answer == MS.NONE and game.pending_event().is_empty())
 	ms.set_stop_mode("all")
-	var m6 := _force("test_group_weekend")
-	_ok("Every moment: a small moment stops too", m6.stop and game.pending_event().get("moment", "") == m6.id)
-	ms.answer(m6.id, "yes")
-	_ok("answered from the thread, its event is answered too", game.pending_event().is_empty() and ms.moment(m6.id).answer == "yes")
+	var m7 := _force("test_group_weekend")
+	_ok("the cut setting 'Every moment' makes no moment stop", not m7.stop and game.pending_event().is_empty())
+	ms.answer(m7.id, "yes")
 	ms.set_stop_mode("important")
-	ms.set_stop_mode("nonsense")
-	_ok("an unknown setting is ignored", ms.stop_mode() == "important")
 
 	# Standing orders.
 	var p1 := _force("test_group_party")
@@ -519,13 +529,11 @@ func _seasons(careers: int, seasons: int) -> void:
 	var none := 0
 	var answered := 0
 	for c in careers:
-		var every := c % 4 == 3   # every fourth career on "Every moment"
+		var every := false   # (session L1a: the setting "Every moment" is cut; no moment stops, the important ones wait for Sunday)
 		game.start_career(_athlete(100 + c))
 		var ms = _ms()
 		ms.rng.seed = 31 + c
 		game.get_system("health").rng.seed = 61 + c
-		if every:
-			ms.set_stop_mode("all")
 		_answer_stops()
 		var weeks := seasons * 52
 		for w in weeks:
@@ -558,8 +566,10 @@ func _seasons(careers: int, seasons: int) -> void:
 				continue
 			var wk := floori((int(f.day) - start_monday) / 7.0)
 			per_week[wk] = int(per_week.get(wk, 0)) + 1
-			if f.stop:
+			if f.stop or bool(f.get("planner", false)):   # (session L1a: an important moment waits for the planner instead of stopping)
 				stops_week[wk] = int(stops_week.get(wk, 0)) + 1
+			if f.stop and not bool(f.get("talk", false)):
+				stuck.append("career %d: %s stopped Play week (no people stops since L1a)" % [c, f.storylet])
 			per_day[f.day] = int(per_day.get(f.day, 0)) + 1
 		for d in per_day:
 			if per_day[d] > int(data.moments.rate.max_per_day):
@@ -593,7 +603,7 @@ func _seasons(careers: int, seasons: int) -> void:
 	var secs := (Time.get_ticks_msec() - t0) / 1000.0
 	var mean := _mean(week_counts)
 	var stops := _mean(week_stops)
-	print("    %.0f s; Important only: %d weeks, moments a week mean %.2f (sd %.2f, %s), people stops a week %.2f (most in a week: %d)" % [
+	print("    %.0f s; %d weeks, moments a week mean %.2f (sd %.2f, %s), waiting for the planner a week %.2f (most in a week: %d)" % [
 			secs, week_counts.size(), mean, _sd(week_counts), _dist(week_counts), stops, week_stops.max() if not week_stops.is_empty() else 0])
 	if not all_counts.is_empty():
 		print("    Every moment: %d weeks, moments a week %.2f, stops a week %.2f (every moment stops)" % [all_counts.size(), _mean(all_counts), _mean(all_stops)])
@@ -612,7 +622,7 @@ func _seasons(careers: int, seasons: int) -> void:
 	_ok("never more than %d in a week (most %d) or %d in a day (%d days over)" % [data.moments.rate.max_per_week,
 			week_counts.max() if not week_counts.is_empty() else 0, data.moments.rate.max_per_day, per_day_bad],
 			(week_counts + all_counts).all(func(x): return x <= int(data.moments.rate.max_per_week)) and per_day_bad == 0)
-	_ok("Important only: at most ~1 people stop a week on average (%.2f)" % stops, stops <= 1.05)
+	_ok("at most ~1 moment a week waits for the planner on average (%.2f), none stops Play week" % stops, stops <= 1.05)
 	if not all_counts.is_empty():
 		_ok("Every moment: every moment stops", _mean(all_counts) == _mean(all_stops))
 	for b in cooldown_bad.slice(0, 5):
@@ -822,35 +832,28 @@ func _talks() -> void:
 	var CT = load("res://scripts/core/coach_talk.gd")
 	var cal = load("res://scripts/core/calendar.gd")
 
-	# The talk always stops Play week on Sunday evening.
+	# Session L1a ("L1's questions" 6): the Sunday talk is no stop. Play week reaches Sunday night; the coach's one line is kept for
+	# the coming week's planner, the whole talk is a message in his thread (read: the planner showed it), a topic whose reply changed
+	# the week (the `proposal` effect) is never posted (his notes do that), the other topics are moments in his thread, not stops.
 	game.start_career(_athlete(7))
 	var ms = _ms()
 	var r: String = game.advance_week()
-	var e: Dictionary = game.pending_event()
-	var m: Dictionary = ms.moment(str(e.get("moment", "")))
-	_ok("Play week stops on the first Sunday evening for the coach's talk (%s)" % e.get("title", ""),
-			r == game.STOP and e.get("kind", "") == "moment" and bool(m.get("talk", false)) and m.stop
-			and cal.weekday(e.date) == 6 and str(e.title).ends_with("Week talk"))
-	var paragraphs: int = str(m.get("text", "")).split("\n\n").size()
-	_ok("it has the open, the review, the preview (and focus + close from normal detail): %d paragraphs, no placeholder left" % paragraphs,
-			paragraphs >= 3 and not "{" in str(m.get("text", "")))
-	# (A second topic may have been posted after it in the same evening: then that one is the newest.)
-	_ok("it is in the coach thread, unread, waiting for an answer, and the Today card would show a moment waiting",
-			ms.thread("coach").any(func(x): return x.moment == m.id and not x.read) and ms.unread("coach") >= 1
-			and ms.pending().any(func(p): return p.id == m.id) and ms.newest_open().kind == "moment")
-	var sunday: int = MS.day_no(e.date)
-	var marks: Dictionary = ms.marks_between(sunday - 6, sunday)
-	_ok("the week strip's people mark: Sunday has a message, unread", marks.has(sunday) and int(marks[sunday].unread) >= 1)
-	_ok("a talk without a topic has the single reply \"Thanks, coach\"; with one, the topic's replies",
-			(m.storylet == MS.ACK and m.replies.size() == 1) or (m.storylet != MS.ACK and m.replies.size() >= 2))
-	game.answer_event(e.id, str(e.choices[0].id))
-	_ok("answering it: the moment is answered, your line is in the thread, no stop left",
-			ms.moment(m.id).answer == str(e.choices[0].id) and ms.thread("coach").any(func(x): return x.from == "you" and x.moment == m.id)
-			and game.pending_event().is_empty())
-	ms.mark_read("coach")
-	_ok("opening the thread marks it read", ms.unread("coach") == 0)
+	var line: String = ms.line_for(game.week_monday())
+	_ok("Play week reaches Sunday night with no stop for the talk (%s)" % r, r == game.WEEK_DONE and game.pending_event().is_empty())
+	var words: int = line.split(" ", false).size()
+	_ok("the coach's line for the planner: %d words, at most ~30, no placeholder (\"%s\")" % [words, line],
+			line != "" and words <= 30 and not "{" in line)
+	var talk_msgs: Array = ms.thread("coach").filter(func(x): return x.moment == "" and x.from != "you" and x.from != "system")
+	var full: String = str(talk_msgs.back().text) if not talk_msgs.is_empty() else ""
+	var paragraphs: int = full.split("\n\n").size()
+	_ok("the whole talk is in his thread, already read: open, review, preview (+ focus, close): %d paragraphs, no placeholder" % paragraphs,
+			paragraphs >= 3 and not "{" in full and bool(talk_msgs.back().read))
+	_ok("no talk moment and no topic that changes the week was posted",
+			not ms.moments.any(func(x): return bool(x.get("talk", false)))
+			and not ms.fired.any(func(f): return MS._changes_week(ms.storylet(f.storylet))))
+	_ok("the line belongs to its week only (the next Monday's planner has none yet)", ms.line_for(game.add_days(game.week_monday(), 7)) == "")
 
-	# Twelve weeks: one talk stop every Sunday, nothing stuck, the topics fit, the global dice untouched.
+	# Twelve weeks: a line every Sunday, never a talk stop, nothing stuck, the topics fit, the global dice untouched.
 	var talks := 1
 	var with_topic := 0
 	var second_topics := 0
@@ -859,42 +862,35 @@ func _talks() -> void:
 	for w in 12:
 		var rr: String = game.advance_week()
 		var guard := 0
-		var talk_stops := 0
-		while guard < 20:
+		while guard < 20 and rr != game.WEEK_DONE:
 			guard += 1
 			if rr == game.RACE:
 				_run_race()
 				races_run += 1
-				rr = game.advance_week() if game.pending_event().is_empty() else game.STOP
-				continue
-			if rr != game.STOP:
-				break
-			var ev: Dictionary = game.pending_event()
-			var was_talk: bool = str(ev.get("kind", "")) == "moment" and bool(ms.moment(str(ev.moment)).get("talk", false))
-			if was_talk:
-				talk_stops += 1
-				if ms.moment(str(ev.moment)).storylet != MS.ACK:
-					with_topic += 1
-			game.answer_event(ev.id, str(ev.choices[0].id) if not ev.choices.is_empty() else "ok")
-			if was_talk:
-				break   # (the talk is the last thing of the week: Sunday evening)
-			rr = game.advance_week()
-		talks += talk_stops
-		if talk_stops != 1:
+			elif rr == game.STOP:
+				var ev: Dictionary = game.pending_event()
+				if str(ev.get("kind", "")) == "moment" and bool(ms.moment(str(ev.moment)).get("talk", false)):
+					stuck = true
+				game.answer_event(ev.id, str(ev.choices[0].id) if not ev.choices.is_empty() else "ok")
+			rr = game.advance_week() if game.pending_event().is_empty() else game.STOP
+		if ms.line_for(game.week_monday()) != "":
+			talks += 1
+		else:
 			stuck = true
 	var bad_topics := []
 	for f in ms.fired:
-		if bool(f.get("talk", false)):
-			continue
-		var topic := str(ms.storylet(f.storylet).get("topic", ""))
+		var s: Dictionary = ms.storylet(f.storylet)
+		var topic := str(s.get("topic", ""))
+		if topic in ["week", "mood"]:
+			with_topic += 1
 		if topic == "week":
 			second_topics += 1
-		if not topic in ["", "week", "race"]:
+		if not topic in ["", "week", "race", "mood"] or bool(f.get("stop", false)):
 			bad_topics.append(f.storylet)
-	_ok("13 Sundays, 13 talks, each exactly one stop (%d, %d races on the way), nothing stuck" % [talks, races_run], talks == 13 and not stuck)
-	_ok("only the right kinds of moment were posted (%s)" % ", ".join(bad_topics), bad_topics.is_empty())
-	print("    talks with a topic %d of 12, second topics posted %d" % [with_topic, second_topics])
-	_ok("some talks have a topic, some do not", with_topic > 0 and with_topic < 12)
+	_ok("13 Sundays, 13 lines, no talk stop (%d, %d races on the way), nothing stuck" % [talks, races_run], talks == 13 and not stuck)
+	_ok("only the right kinds of moment were posted, none of them a stop (%s)" % ", ".join(bad_topics), bad_topics.is_empty())
+	print("    topics posted to the thread %d (week topics %d) in 12 weeks" % [with_topic, second_topics])
+	_ok("some Sundays post a topic to the thread", with_topic > 0)
 
 	# The coach's detail and voice: communication short / normal / full, the four personalities.
 	var lengths := {}
@@ -1344,8 +1340,10 @@ func _people_seasons(careers: int, cal) -> void:
 				continue   # (a rival's note sits outside the 3-5 a week, like the coach's race message)
 			var wk := floori((int(f.day) - start_monday) / 7.0)
 			per_week[wk] = int(per_week.get(wk, 0)) + 1
-			if f.stop:
+			if f.stop or bool(f.get("planner", false)):   # (session L1a: an important moment waits for the planner instead of stopping)
 				stops_week[wk] = int(stops_week.get(wk, 0)) + 1
+			if f.stop and not bool(f.get("talk", false)):
+				stuck.append("career %d: %s stopped Play week (no people stops since L1a)" % [c, f.storylet])
 			per_day[f.day] = int(per_day.get(f.day, 0)) + 1
 		for dd in per_day:
 			if per_day[dd] > int(data.moments.rate.max_per_day):
@@ -1399,7 +1397,7 @@ func _people_seasons(careers: int, cal) -> void:
 	_ok("never more than %d in a week (most %d) or %d in a day (%d days over)" % [data.moments.rate.max_per_week,
 			week_counts.max() if not week_counts.is_empty() else 0, data.moments.rate.max_per_day, per_day_bad],
 			week_counts.all(func(x): return x <= int(data.moments.rate.max_per_week)) and per_day_bad == 0)
-	_ok("Important only: at most ~1 people stop a week on average (%.2f)" % stops, stops <= 1.05)
+	_ok("at most ~1 moment a week waits for the planner on average (%.2f), none stops Play week" % stops, stops <= 1.05)
 	for b in cooldown_bad.slice(0, 5):
 		print("    " + b)
 	_ok("no moment again inside its cooldown, no 'once' moment twice (%d)" % cooldown_bad.size(), cooldown_bad.is_empty())

@@ -67,6 +67,7 @@ var family := {}             # {attitude} (data/cast.json attitudes; a reply's `
 var cast_info := {}          # the creation answers the cast was made from: {origin, old_sport, family}
 var late_nights := {}        # day number (as text) -> points of life load that day from a late night the evening before
 var rival_stats := {}        # rival id -> {beat, lost, streak (losses in a row), wins (wins in a row), races}
+var planner_line := {}       # session L1a: the coach's one line for the planner: {monday (date key of the week it is for), text}
 ## Not saved, for the tools: every moment posted since the system was made [{day, storylet, variant, stop, auto, from}] and
 ## the chain follow-ups dropped because their conditions never held.
 var fired := []
@@ -268,9 +269,10 @@ func _pick(ctx: Dictionary, today: int, slots: Array, dated_only := false) -> Di
 	return {"s": chosen.s, "from": senders[rng.randi_range(0, senders.size() - 1)]}
 
 
-## With "Important only" an important moment needs a stop token, and none comes while another stop event waits.
+## An important moment needs a stop token (about one a week), and none comes while another stop event waits. (Session L1a: it
+## waits for the planner instead of stopping; the setting "Every moment" is cut.)
 func _stop_allowed(s: Dictionary) -> bool:
-	if not bool(s.get("important", false)) or stop_mode() != "important":
+	if not bool(s.get("important", false)):
 		return true
 	return stop_tokens >= 1.0 and Game.pending_event().is_empty()
 
@@ -434,14 +436,30 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 		week.fired_day = today
 		week.count = int(week.count) + 1
 	var important := bool(s.get("important", false)) and not nonstop
-	if talk or stop_mode() == "all" or important:
-		if not talk and stop_mode() == "important":
-			stop_tokens -= 1.0
+	if talk:
+		_post_event(m, p)
+	elif important:   # (session L1a, "L1's questions" 5: no people stops mid-week; it waits for the Sunday planner instead)
+		stop_tokens -= 1.0
 		if counted:
 			week.stops = int(week.stops) + 1
-		_post_event(m, p)
-	fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": m.stop, "auto": false, "from": p.id, "talk": talk})
+		_wait_for_planner(m)
+	fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": m.stop, "auto": false, "from": p.id, "talk": talk,
+			"planner": bool(m.get("planner", false))})
 	return m
+
+
+## Session L1a: a moment that would have stopped Play week waits for the Sunday planner: it shows there as a card with its replies
+## (it counts in "N choices waiting") and, unanswered, passes as "you didn't answer" when the next week starts (it expires on the
+## coming Sunday, so the Monday morning after it resolves it).
+func _wait_for_planner(m: Dictionary) -> void:
+	var d: Dictionary = m.date
+	m.planner = true
+	m.expires = day_no(d) - Calendar.weekday(d) + 6
+
+
+## The moments waiting for the planner (session L1a), oldest first.
+func waiting() -> Array:
+	return moments.filter(func(m): return m.answer == "" and bool(m.get("planner", false)))
 
 
 func _post_event(m: Dictionary, p: Dictionary) -> void:
@@ -724,18 +742,41 @@ func _post_week_talk(ctx: Dictionary, today: int) -> void:
 	var mood_topic := _pick_topics("mood", ctx, today, p, 1)
 	if not mood_topic.is_empty():
 		topics = mood_topic + topics.slice(0, 1)
-	var s: Dictionary = topics[0] if not topics.is_empty() else storylet(ACK)
-	if s.is_empty():
-		return
-	var text := CoachTalk.week_talk(ctx, _fill(ctx, p), rng)
+	# Session L1a ("L1's questions" 6): no popup. His one line goes on the planner, the whole talk into his thread (read: the planner
+	# showed it), a topic whose reply changed the week (a `proposal` effect: sore, tired, fresh) is his note on a day instead
+	# (CoachProposals.plan_notes), the other topics are moments in his thread, answered there, never a stop.
+	var fill := _fill(ctx, p)
+	var text := CoachTalk.week_talk(ctx, fill, rng)
 	var mind := MindSystem.sys()
 	if mind:
 		var line := mind.coach_line(str(Coaches.id_of(Game.athlete)), str(Game.athlete.first_name))
 		if line != "":
 			text += "\n\n" + line
-	_post(s, p, ctx, today, false, {"prefix": text, "talk": true, "counted": false})
-	if topics.size() > 1:
-		_post(topics[1], p, ctx, today, true, {"counted": false})
+	_start_threads()
+	_message("coach", str(p.id), text, "", ctx.date)
+	threads.coach.back().read = true
+	planner_line = {"monday": Calendar.date_key(Game.add_days(ctx.date, 1)), "text": CoachTalk.planner_line(ctx, fill)}
+	for t in topics:
+		if not _changes_week(t):
+			_post(t, p, ctx, today, true, {"counted": false})
+
+
+## A week topic one of whose replies asks for a lighter or heavier week (the `proposal` effect: sore, tired, fresh): the coach's notes
+## do that now. (A mood topic stays: its "lighter week" reply is a request his next Sunday notes answer, CoachProposals.plan_notes.)
+static func _changes_week(s: Dictionary) -> bool:
+	if str(s.get("topic", "")) != "week":
+		return false
+	for r in s.get("replies", []):
+		if r.get("effects", {}).has("proposal"):
+			return true
+	return false
+
+
+## The coach's one line for the planner of the week starting `monday` ("" when he said none: the first week).
+func line_for(monday: Dictionary) -> String:
+	if int(planner_line.get("monday", -1)) != Calendar.date_key(monday):
+		return ""
+	return str(planner_line.get("text", ""))
 
 
 ## The evening after a race: a message from the coach (not a stop): the result, his Race-story line, a closing word; with a
@@ -896,6 +937,8 @@ func post_custom(kind: String, ref: String, text: String, replies: Array, stop: 
 	_message(thread, str(p.id), text, m.id, Game.date)
 	if stop:
 		_post_event(m, p)
+	elif bool(opts.get("planner", false)):   # (session L1a: a card on the Sunday planner, e.g. "Coach suggests")
+		_wait_for_planner(m)
 	return m
 
 
@@ -1069,8 +1112,6 @@ func _note_standing(group: String, s: Dictionary, reply_id: String, m: Dictionar
 	_next += 1
 	moments.append(offer)
 	_message(m.thread, "system", text, offer.id, Game.date)
-	if stop_mode() == "all":
-		_post_event(offer, {})
 
 
 func _resolve_rule(m: Dictionary, reply_id: String, today: int) -> void:
@@ -1705,6 +1746,8 @@ func to_dict() -> Dictionary:
 		d.late_nights = late_nights
 	if not rival_stats.is_empty():
 		d.rival_stats = rival_stats
+	if not planner_line.is_empty():
+		d.planner_line = planner_line
 	return d
 
 
@@ -1722,6 +1765,9 @@ func from_dict(d: Dictionary) -> void:
 	for st in rival_stats.values():
 		for k in st:
 			st[k] = int(st[k])
+	planner_line = d.get("planner_line", {})
+	if planner_line.has("monday"):
+		planner_line.monday = int(planner_line.monday)
 	if not d.has("started_day"):
 		people = d.get("people", {})
 		_people_numbers()

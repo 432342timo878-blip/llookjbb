@@ -5,6 +5,8 @@ extends RefCounted
 ## Never" (session C4; CoachProposals.setting / set_setting, texts in data/coach_talk.json proposal.settings) and the rules saved
 ## from repeated answers, each with Remove. Reads and changes StoryletSystem (stop_mode / set_stop_mode, standing_orders /
 ## clear_rule) and CoachProposals only.
+## Session L1a (GDD 4.10 cut list): "Play week stops for" is gone (moments never stop: they wait for the Sunday planner), and the
+## coach's setting is "The coach's notes: Show them on the planner / Don't write notes".
 
 
 static func build() -> Control:
@@ -13,20 +15,6 @@ static func build() -> Control:
 	if ms == null:
 		return box
 	box.add_child(UIKit.label(PeopleUI.ui("standing_head"), "CaptionLabel"))
-	box.add_child(UIKit.label(PeopleUI.ui("standing_stops"), "SubheadingLabel"))
-	var text := UIKit.wrapped(str(Data.moments.settings.stops[ms.stop_mode()].text))
-	var group := ButtonGroup.new()
-	var row := UIKit.flex(8)
-	for mode in Data.moments.settings.stops:
-		var b := UIKit.toggle(str(Data.moments.settings.stops[mode].name), group)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.button_pressed = ms.stop_mode() == mode
-		b.pressed.connect(func():
-			ms.set_stop_mode(str(mode))
-			text.text = CoachSystem.words(str(Data.moments.settings.stops[str(mode)].text)))
-		row.add_child(b)
-	box.add_child(row)
-	box.add_child(text)
 
 	var cp := Game.get_system("proposals") as CoachProposals
 	if cp != null:

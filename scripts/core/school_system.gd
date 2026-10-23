@@ -809,9 +809,24 @@ func _ask_meet_test(today: Dictionary) -> void:
 	for e in Game.events:   # (one at a time)
 		if str(e.source) == id and str(e.get("kind", "")) == "school_week" and e.answer == "":
 			return
+	var card := meet_test_card(today)
+	if card.is_empty():
+		return
+	var e := Game.post_event(id, str(card.title), str(card.text), card.choices, true)
+	e.kind = "school_week"
+	e.monday = int(card.monday)
+	e.meet = str(card.meet)
+
+
+## The meet-and-tests decision as it would be asked today: {title, text, choices [{id, label, detail}], monday (date key), meet (key),
+## day (the race's weekday)}, or {} when this week has no clash or it was settled. Session L1a: the Sunday planner shows it as a card
+## (settle_week answers it there), so the Monday stop only comes when it was left open.
+func meet_test_card(today: Dictionary) -> Dictionary:
+	if not bool(stage_of(today).get("subjects", false)):
+		return {}
 	var clash := meet_test_clash(today)
 	if clash.is_empty():
-		return
+		return {}
 	var c: Dictionary = cfg().decisions.meet_test
 	var meet: Dictionary = clash.meet
 	var when := str(c.when_today) if int(clash.day) == Calendar.days_between(Calendar.monday_of(today), today) \
@@ -821,10 +836,8 @@ func _ask_meet_test(today: Dictionary) -> void:
 	var choices := []
 	for o in c.options:
 		choices.append({"id": str(o.id), "label": str(o.label), "detail": str(o.detail)})
-	var e := Game.post_event(id, str(c.title), text, choices, true)
-	e.kind = "school_week"
-	e.monday = Calendar.date_key(Calendar.monday_of(today))
-	e.meet = str(meet.key)
+	return {"title": str(c.title), "text": text, "choices": choices, "monday": Calendar.date_key(Calendar.monday_of(today)),
+			"meet": str(meet.key), "day": int(clash.day)}
 
 
 ## The report card day: a stop with the card, then the choice for the next term (the final certificate: just Continue).
@@ -900,10 +913,17 @@ func _answer_result(e: Dictionary, choice: String) -> void:
 
 
 func _answer_week(e: Dictionary, choice: String) -> void:
+	settle_week(int(e.monday), str(e.meet), choice)
+
+
+## The meet-and-tests decision for the week whose Monday has date key `monday_key` (the stop's answer, or session L1a: settled on
+## the Sunday planner before the week, so no stop comes on Monday). An unknown choice = the default (race and risk it).
+func settle_week(monday_key: int, meet_key: String, choice: String) -> void:
 	var c: Dictionary = cfg().decisions.meet_test
 	var o := option_of(choice)
 	if o.is_empty():   # (a tool's "ok", or an old answer: the default = race and risk it)
 		o = option_of(str(c.default))
+	var e := {"monday": monday_key, "meet": meet_key}
 	week_choices[str(int(e.monday))] = str(o.id)
 	var keys := week_choices.keys()
 	keys.sort_custom(func(a, b): return int(a) < int(b))

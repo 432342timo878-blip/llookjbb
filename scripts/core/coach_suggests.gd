@@ -36,8 +36,9 @@ static func sys() -> CoachSuggests:
 
 # --- The day loop ----------------------------------------------------------------------------------------------------
 
-## Monday morning: does he suggest something this month?
-func on_day_start(ctx: Dictionary) -> void:
+## Sunday evening (session L1a: the planner of the coming week shows it; it was Monday morning before): does he suggest something
+## this month? (`look_weekday` 6 = Sunday, looked at in the evening, after the day.)
+func on_day_end(ctx: Dictionary) -> void:
 	if not enabled or Game.athlete == null or int(ctx.day) != int(cfg().look_weekday):
 		return
 	_expire(ctx.date)
@@ -46,9 +47,7 @@ func on_day_start(ctx: Dictionary) -> void:
 		return
 	var cp := Game.get_system("proposals") as CoachProposals
 	var mode := cp.setting() if cp != null else "ask"
-	if mode == "ask" and not Game.pending_event().is_empty():
-		return
-	var monday := StoryletSystem.day_no(ctx.date) - int(ctx.day)
+	var monday := StoryletSystem.day_no(ctx.date) - int(ctx.day) + 7   # (the coming week's)
 	if cp != null and int(cp.week.get("count", 0)) >= int(Data.coaching.proposals.max_per_week) and int(cp.week.get("monday", -1)) == monday:
 		return
 	var cs := Game.get_system("coach") as CoachSystem
@@ -196,23 +195,19 @@ func _suggest(best: Dictionary, ctx: Dictionary, mode: String, cp: CoachProposal
 		list.pop_front()
 	last_month = int(ctx.date.year) * 12 + int(ctx.date.month)
 	if cp != null:
-		var monday := StoryletSystem.day_no(ctx.date) - int(ctx.day)
+		var monday := StoryletSystem.day_no(ctx.date) - int(ctx.day) + 7   # (the coming week's: he looks on Sunday evening)
 		if int(cp.week.get("monday", -1)) != monday:   # (his suggestion counts as one of his two a week)
 			cp.week = {"monday": monday, "count": 0}
 		cp.week["count"] = int(cp.week.get("count", 0)) + 1
 	fired.append(s)
 	var ms := Game.get_system("moments") as StoryletSystem
-	var end_key := "ask_end" if mode == "ask" else ("always_end" if mode == "always" else "noticed_end")
+	var end_key := "ask_end" if mode == "ask" else "noticed_end"
 	var text := _text(s, end_key)
 	match mode:
-		"ask":
+		"ask":   # (session L1a: a card on the planner, no stop; the Calendar marks it too)
 			s.status = "asked"
 			if ms != null:
-				s.moment = str(ms.post_custom("suggest", s.id, text, _replies(s), true).get("id", ""))
-		"always":
-			s.status = "asked"
-			if ms != null:
-				s.moment = str(ms.post_custom("suggest", s.id, text, _replies(s), false).get("id", ""))
+				s.moment = str(ms.post_custom("suggest", s.id, text, _replies(s), false, {"planner": true}).get("id", ""))
 		_:
 			s.status = "noticed"
 			if ms != null:

@@ -24,6 +24,8 @@ func _ok(what: String, passed: bool) -> void:
 func _run() -> void:
 	load("res://scripts/core/save_game.gd").DIR = "user://tool_saves/"
 	load("res://scripts/core/game_config.gd").use("lab", {"health": true})
+	# Fixed dice (session L1a): with the clock's dice an injury now and then overrode the coach's day and the check failed by chance.
+	load("res://scripts/core/game_config.gd").fixed_seed = 11
 	game = root.get_node("/root/Game")
 	data = root.get_node("/root/Data")
 	game.autosave = false
