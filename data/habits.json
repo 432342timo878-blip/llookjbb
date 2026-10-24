@@ -1,0 +1,112 @@
+{
+ "_note": "The free-time slots and the standing habits (GDD 4.10 decision 6, session L1b; scripts/core/habit_system.gd). A week has 9 free-time slots: the evening of every school day (Mon-Fri) and the free part of Saturday and Sunday (the afternoon and the evening after training), 7 in this file's lists (index 0 = Monday ... 6 = Sunday). Each slot holds an activity. The standing HABITS fill the slots of every week; the player changes a slot for one week on the planner (or in the day editor) and the habits in the Season tab. The habits replace the school's two old weekly settings (study effort, free time): what those did (grades, the life load of school days, the motivation and stress pulls) now comes from the slots. NEUTRAL = IDENTICAL: the default habit (`default`) has exactly the `neutral` counts and no school-night late or early evening, so every effect below is exactly 0 and the game is the old Normal / Normal to the last digit. Every size is Claude's first guess (estimated), started from the old settings' numbers and tuned in B1 after the user's playtest 3.",
+ "slots": [
+  {"id": "mon", "name": "Monday evening", "short": "Mon eve", "kind": "evening"},
+  {"id": "tue", "name": "Tuesday evening", "short": "Tue eve", "kind": "evening"},
+  {"id": "wed", "name": "Wednesday evening", "short": "Wed eve", "kind": "evening"},
+  {"id": "thu", "name": "Thursday evening", "short": "Thu eve", "kind": "evening"},
+  {"id": "fri", "name": "Friday evening", "short": "Fri eve", "kind": "evening"},
+  {"id": "sat", "name": "Saturday", "short": "Sat", "kind": "day"},
+  {"id": "sun", "name": "Sunday", "short": "Sun", "kind": "day"}
+ ],
+ "activities": {
+  "_note": "The activities of a slot (user 2026-10-24: friends / family / study / rest; a partner and a hobby come with P2). `does` = what it does in words (the picker and the Season tab); the sizes are in `effects`.",
+  "study": {"name": "Study", "icon": "book-open", "does": "Homework and revision. More study evenings than usual lift your grades; a lot of study makes school days heavier."},
+  "rest": {"name": "Rest", "icon": "bed", "does": "Home early, to bed early. Before a school day, that day is lighter."},
+  "friends": {"name": "Friends", "icon": "users", "does": "Time with friends lifts motivation. On a school night it is a late night: the next day weighs more."},
+  "family": {"name": "Family", "icon": "house", "does": "Time at home with the family: stress eases a little."}
+ },
+ "order": ["study", "rest", "friends", "family"],
+ "default": ["study", "study", "study", "study", "friends", "friends", "family"],
+ "neutral": {"study": 4, "friends": 2, "family": 1},
+ "effects": {
+  "_note": "Counts are over the week's 7 slot entries (Mon-Sun). GRADES: each school day's grade target moves by (study slots - neutral.study) x study_grade_per_slot, kept inside +-study_grade_max (the old Light / Heavy shifts were -1 / +1). LIFE LOAD on each school day (x the stage's scale when positive, as before): + (study - neutral.study) x study_load_per_slot when above the neutral count (the old Heavy = +1.0); a school day after a FRIENDS evening: + late_friends (the old Lots was +0.75 every school day); a school day after a REST evening: early_rest (the old Little was -0.5). Weekends and holidays get none of these (a late night before them costs nothing; an invitation's late night does: its own `sleep` effect, data/cast.json sleep). MOTIVATION (the Sunday drift's pull): (friends - neutral.friends) x motivation_per_friend (the old Lots / Little were +4 / -4). STRESS: - (family - neutral.family) x stress_per_family, only above the neutral count.",
+  "study_grade_per_slot": 0.5,
+  "study_grade_max": 1.0,
+  "study_load_per_slot": 0.5,
+  "late_friends": 0.75,
+  "early_rest": -0.5,
+  "motivation_per_friend": 2.0,
+  "stress_per_family": 2.0
+ },
+ "from_old": {
+  "_note": "Save version 5: an older save's two settings become these habits (`effort|free_time`), the nearest a 9-slot week gives (heavy = study at the weekend too, light = two rest evenings, lots = Sunday with friends too, little = a quiet weekend).",
+  "light|little": ["study", "rest", "study", "rest", "rest", "rest", "family"],
+  "light|normal": ["study", "rest", "study", "rest", "friends", "friends", "family"],
+  "light|lots": ["study", "friends", "study", "rest", "friends", "friends", "friends"],
+  "normal|little": ["study", "study", "study", "study", "rest", "rest", "family"],
+  "normal|normal": ["study", "study", "study", "study", "friends", "friends", "family"],
+  "normal|lots": ["study", "study", "study", "study", "friends", "friends", "friends"],
+  "heavy|little": ["study", "study", "study", "study", "rest", "study", "study"],
+  "heavy|normal": ["study", "study", "study", "study", "friends", "study", "study"],
+  "heavy|lots": ["study", "study", "study", "study", "friends", "friends", "study"]
+ },
+ "card": {
+  "_note": "The report card's next-term choice (S2's keep / harder / ease) edits the habits by one slot: `more` turns the first slot of `more_from` that is not study into study, `less` turns the last study slot of `less_from` into rest.",
+  "more_from": ["sun", "sat", "fri", "mon", "tue", "wed", "thu"],
+  "less_from": ["thu", "wed", "tue", "mon", "sun", "sat", "fri"],
+  "keep": {"label": "Keep my evenings", "detail": "{study} study slots a week."},
+  "harder": {"label": "One more study evening", "detail": "{slot}: {from} → study. Grades rise, school days get a little heavier."},
+  "ease": {"label": "One study evening fewer", "detail": "{slot}: study → rest. Grades slide, school takes less out of you."},
+  "changed": "You changed your habits: {slot} is {to} now."
+ },
+ "texts": {
+  "_note": "The mood rows' lines (MindSystem.pulls) and the life-load parts (school_life.json texts.pulls has the part lines: slot_friends, slot_rest, slot_study).",
+  "motivation_up": "Time with friends ({n} slots a week)",
+  "motivation_down": "Little time with friends ({n} slots a week)",
+  "stress_family": "Time with the family ({n} slots a week)"
+ },
+ "summary": {
+  "_note": "The one line under the habits (the Season tab) and the School page's line.",
+  "grades_up": "Grades rise",
+  "grades_down": "Grades slide",
+  "grades_hold": "Grades hold",
+  "motivation_up": "motivation ▲",
+  "motivation_down": "motivation ▼",
+  "motivation_hold": "motivation steady",
+  "stress_down": "stress ▼",
+  "school_days": "school days {word}",
+  "school_line": "Your evenings: {study} study slots a week · {grades}"
+ },
+ "invites": {
+  "_note": "Invitations (GDD 4.10 decision 6 'Invitations land in the slots'): a storylet with an `invite` part (data/storylets/README.md) is posted on Sunday evening, when the planner opens, into a slot of the coming week whose day fits its `when` (checked for that day: `race_tomorrow` = the day after the slot). At most max_per_week a week, with chance `chance` a week, and like the moments that waited for Sunday it needs the week's stop token (so the planner's cards don't grow). Go = the slot becomes the invitation (its `activity`) and its reply's effects come on that evening (a `sleep` effect = a late night for the next day); Stay home = the slot keeps its activity, the reply's effects come that evening too; unanswered by that evening it passes as 'you didn't answer'. An invitation is not one of Play week's 'choices waiting' (user 2026-10-24): it never makes Play week ask.",
+  "chance": 0.7,
+  "max_per_week": 1
+ },
+ "ui": {
+  "_note": "Every text the slots show: the planner's chips and picker, the invitation card, the day editor's evening, the Season tab's habits, the School page's line.",
+  "section_head": "YOUR HABITS",
+  "section_text": "Your free time after training: every evening, and Saturday and Sunday. Each week plays like this unless you change a slot on the planner.",
+  "back_to_default": "Back to the default",
+  "habit_word": "your habit",
+  "changed_word": "this week only",
+  "picker_title": "{slot}: {activity}",
+  "picker_habit": "Back to my habit ({activity})",
+  "picker_close": "Close",
+  "picker_played": "This slot is over.",
+  "clash_race": "A late night before {day}'s race.",
+  "clash_hard": "A late night before {day}'s hard session.",
+  "late_school": "A late night: {day} is a school day and weighs more.",
+  "invite_title": "{slot}: {title}",
+  "invite_go": "Go",
+  "invite_stay": "Stay home",
+  "invite_going": "You're going. {slot} is {activity}.",
+  "invite_staying": "You stay home. {slot} stays {activity}.",
+  "invite_change": "Change my mind",
+  "invite_leave": "If you leave it, you stay home.",
+  "price_sleep_1": "A late night",
+  "price_sleep_2": "A very late night",
+  "price_race": "{sleep} before {day}'s race.",
+  "price_session": "{sleep}: {day}'s {session} after it.",
+  "price_rest": "{sleep}, but {day} is a rest day.",
+  "price_school": "{sleep} before a school day.",
+  "price_grades": "Grades ▲ a little.",
+  "price_stay": "Stay home: {change}.",
+  "price_none": "Nothing else changes.",
+  "evening_line": "{activity} ({how})",
+  "evening_invite": "{title} ({how})",
+  "editor_head": "FREE TIME",
+  "school_button": "Change my habits",
+  "chip_more": "invitation"
+ }
+}

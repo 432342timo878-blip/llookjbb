@@ -466,10 +466,10 @@ func pulls(mood: String, week = null) -> Array:
 			if amb > float(hb.ambition_above) and Game.season != null and Game.season.mode == SeasonPlan.PHASES \
 					and Game.season.variant(Game.season.plan_year(Game.week_monday())) == "steady":
 				out.append({"text": str(pt.held_back), "delta": (amb - float(hb.ambition_above)) * float(hb.per_point)})
-			# School's free time (S1): time with friends lifts it, little free time drags it.
-			var school_m := SchoolSystem.sys()
-			if school_m != null:
-				out.append_array(school_m.motivation_pulls())
+			# The free-time slots (session L1b, where the school's free time setting was): time with friends lifts it, little drags it.
+			var hs_m := HabitSystem.sys()
+			if hs_m != null:
+				out.append_array(hs_m.motivation_pulls(_ahead if not _ahead.is_empty() else Game.week_monday()))
 		"stress":
 			if injured:
 				out.append({"text": str(pt.injured), "delta": float(d.injured)})
@@ -488,6 +488,10 @@ func pulls(mood: String, week = null) -> Array:
 			var school := SchoolSystem.sys()
 			if school != null:
 				out.append_array(school.stress_pulls(_ahead if not _ahead.is_empty() else Game.week_monday()))
+			# Family slots ease it (session L1b; only above the default habit's one).
+			var hs_s := HabitSystem.sys()
+			if hs_s != null:
+				out.append_array(hs_s.stress_pulls(_ahead if not _ahead.is_empty() else Game.week_monday()))
 	return out
 
 

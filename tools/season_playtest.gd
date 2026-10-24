@@ -264,6 +264,7 @@ func _print_loop(midweek: Dictionary, planner_stops: Dictionary, clicks: Diction
 		plan += int(planner_stops.get(wk, 0))
 		all_clicks.append(int(clicks.get(wk, 0)))
 		monday = _game.add_days(monday, 7)
+	print("Clicks by week: %s" % [all_clicks])   # (session L1b: to compare two runs week by week)
 	all_clicks.sort()
 	print("\n== The loop (session L1a)")
 	print("Mid-week stops a week (races included): %.2f; weeks with none: %d of %d; stops at the planner a week: %.2f" % [
@@ -273,6 +274,12 @@ func _print_loop(midweek: Dictionary, planner_stops: Dictionary, clicks: Diction
 		total += c
 	print("Clicks a week: average %.2f, median %d, most %d" % [total / float(maxi(1, weeks)), all_clicks[all_clicks.size() / 2] if not all_clicks.is_empty() else 0,
 			all_clicks.back() if not all_clicks.is_empty() else 0])
+	# Session L1b: the invitations that landed in the slots (each a planner card until answered).
+	var inv: Array = _game.get_system("moments").fired.filter(func(f): return bool(f.get("invite", false)))
+	var by := {}
+	for f in inv:
+		by[str(f.storylet)] = int(by.get(str(f.storylet), 0)) + 1
+	print("Invitations in the slots: %d in %d weeks %s" % [inv.size(), weeks, JSON.stringify(by)])
 
 
 ## Week by week: the stops by kind and the moments that only waited in the threads (no stop).

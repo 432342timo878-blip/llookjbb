@@ -2580,7 +2580,8 @@ service incl. the Defence Forces' sports school): a later design with money (M4)
 - **Starting grade level from the school answer:** "Top of the class" ~9.0, "Good grades through hard work" ~8.5 (costs more effort to
   keep), "Doing fine" ~7.5, "Struggling a bit" ~6.8, "Couldn't care less" ~6.3 (averages; subjects spread around them).
 - **Two weekly life settings** (per school period, beside the training plan): **study effort** Light / Normal / Heavy (grades drift
-  down / hold / rise) and **free time** Little / Normal / Lots (motivation vs rest).
+  down / hold / rise) and **free time** Little / Normal / Lots (motivation vs rest). *Replaced in L1b by the free-time slots and the
+  standing habits (GDD 4.10 "Built (step L1b)"): the default habit = Normal / Normal.*
 - **Life load:** each school day adds load from the stage, exam weeks and the two settings; it shows as slower fatigue recovery, a
   little more chance of colds, mildly more injury risk in exam weeks (Mann 2016: 3× injury restrictions in high academic-stress weeks,
   US college football; Hamlin 2019: injuries and illness peak at exam periods, NZ university athletes 18–22; older than ours, so a mild
@@ -4328,6 +4329,89 @@ double days and altitude camps start (SUL's youth path) (T1); (8) real schools (
 11. **Not in L1a (L1b):** the free-time slots and habits (the day editor's "study effort / free time" lines stay), the Training tab as
     the season plan with the habits, save version 5. A moment that waits for Sunday can be about a day that has passed ("Thursday
     evening, the library?"): L3's sort fixes the content.
+
+#### Built (step L1b, 2026-10-24): the free-time slots, the standing habits, invitations, save version 5
+
+**The user's answers (2026-10-24, each the recommended option):** (1) per-evening effects (below); (2) the default habit for a
+14-year-old in grade 8 = **Mon–Thu study, Fri + Sat friends, Sun family**, which is also the neutral habit (`lab`); (3) **one slot per
+weekend day** (the afternoon and evening after training: 9 slots as agreed, not the mock-up's day + evening); (4) a tap on a slot chip
+opens a **small picker** (the four activities, back to the habit); (5) the Season tab shows the habits as **a week grid + what it adds
+up to**; (6) the first invitations: **the weekend party, the party before a race, the group work**; (7) an invitation left
+unanswered = **you didn't go**; (8) the School page shows **a read-only line** and the report card's choice **edits the habits by one
+slot**. Measured afterwards (below), the user chose (9): **an invitation does not make Play week ask** ("Show me / Play anyway")
+and is not one of the "N choices waiting": a careful player's week stays two clicks.
+
+1. **The slots** (`HabitSystem`, GameSystem id `habits`, after School; `data/habits.json`): 7 entries, index = weekday (Mon–Fri =
+   the evening, Sat / Sun = the free part of the day). Activities **study / rest / friends / family** (a partner and a hobby: P2).
+   What they do, sizes = Claude's first guesses started from the old settings' numbers (B1 tunes them after playtest 3):
+   - **Study:** the week's study slots against the neutral 4 move each school day's grade target by 0.5 a slot (capped ±1 = the old
+     Heavy / Light); more than 4 also add 0.5 life load a slot to every school day (6 = the old Heavy's +1.0).
+   - **Rest:** a school day after a rest evening −0.5 (the old Little).
+   - **Friends:** a school day after a friends evening +0.75, a late night (the old Lots); before Saturday / Sunday it costs
+     nothing. Motivation's Sunday pull: (friends − 2) × 2 (the old Lots / Little were ±4).
+   - **Family:** stress −2 a slot above the neutral one.
+   The default habit gives exactly 0 everywhere: `training_balance -- 0` coach row 206.798298350 / 14.102831594 / 1226.006524079,
+   races 73182f4e…, school 55076d77… (grades 8–9 42fd3635… / 01dd20d7…) all identical. The school fingerprint runs with the school
+   free, so the slot code ran there. The slots' life load and pulls follow the school's switches (`effects_on`: off with the school
+   model off or neutral); the grade shift works whenever the school does, as the old effort did. `SchoolSystem.to_dict` keeps its
+   `"effort"` / `"free_time"` keys with what the habits amount to (`effort_word` / `free_word`), so a school state saves
+   byte-identically.
+2. **This week vs every week:** `set_slot(i, act)` changes this week only (only days not played; the habit's own activity = no
+   change), `reset_slot`; `set_habit` changes every week (and drops a one-week change it now matches). Played evenings are
+   remembered (`history`, the last 9 days) so Monday reads Sunday's "last night" and a later habit change never rewrites a played
+   day. Life-load part ids `slot_study` / `slot_friends` / `slot_rest` (texts in `school_life.json texts.pulls`). A week's activities
+   are cached (`_week_entry`, cleared by `touch()` on any change and by StoryletSystem when an invitation changes): the life load is
+   asked many times a day (the coach's simulations); measured 0.25 ms a call (0.20 before L1b).
+3. **The planner** (`HabitsUI.chip`): PC = a 44 px chip at the bottom of each day column (a faint moon / sun marker, the activity's
+   icon and name), phone = a 44 px icon button on the right of each day row. **Faint unless something landed on it:** an invitation
+   (PEOPLE, party icon, its chip text "Party?", "Eino?", "Library?"), a **clash** = the evening costs sleep (friends before a school
+   day, or an open / accepted invitation with a `sleep` effect) before a race (`clash` "race") or a hard session (intensity Hard or a
+   session tagged `hard`): WARN with a warning icon. A tap opens **the picker** (`HabitsUI.picker`: PC first among the cards, phone
+   under its day; "This week only · A late night before Friday's hard session." or what the activity does, the four activities 2 × 2,
+   Back to my habit, Close). The day editor has the same as **FREE TIME** (`HabitsUI.editor_box`) and the day's blocks' evening line
+   names the slot ("Friends (your habit)").
+4. **The Season tab** = the season plan, then **YOUR HABITS** (`HabitsUI.section`: PC a row per slot with four 44 px toggles; a
+   phone / beside the side panel a chip per row that opens the four under it; the line "Grades hold · motivation steady · school days
+   normal"; Back to the default), the mental plan (until L3), the standing orders. The school's two settings are gone from it.
+5. **Invitations** (GDD 4.10 decision 6): a storylet with `invite` {days, activity, go, title, chip} (README in `data/storylets`) is
+   never picked by the day; on `on_week_start` (Sunday evening, when the planner opens) one may land in a slot still to come
+   (`habits.json invites`: chance 0.7 a week, at most 1, and the week's stop token, like the moments that waited for Sunday), its
+   `when` checked for that day. On the planner it is a PEOPLE card (`HabitsUI.invite_card`) with **its price**: the late night and
+   the day after it ("A late night before Saturday's race." / "A late night: Sunday's long run after it." / "…, but Sunday is a
+   rest day."), grades, and what staying home costs the friendship ("Stay home: Elmeri ▼ somewhat."), plus "If you leave it, you stay
+   home." An answer only **plans** it (`planned`; Change my mind = `unplan`); it **happens on its evening** (`_resolve_invitations`:
+   the reply's effects then, a `sleep` = a late night for the next day); unanswered = "you didn't answer" that evening. A standing
+   rule plans it at once. Going makes the slot the invitation's activity (the picker hides the four activities meanwhile). The three
+   storylets were rewritten for a day ahead ("on {weekday}", no "tonight"), which fixes L1a's known problem of a moment about an
+   evening that had passed. L3 sorts the other ~150; P2 brings the new people's invitations.
+6. **The School page** shows "Your evenings: 4 study slots a week · Grades hold", the summary line and **Change my habits** (opens
+   the Season tab; `HabitsUI.hub_ref`, a weak reference). **The report card's choice:** Keep my evenings / One more study evening
+   ("Sunday: family → study", the first non-study slot of Sun, Sat, Fri, Mon…) / One study evening fewer (the last study slot of
+   Thu, Wed… becomes rest); "keep" stays first, so the school fingerprint's "first choice" answer changes nothing.
+7. **Save version 5:** the `habits` system state (habits, this week's changes, the played slots). An older save's study effort /
+   free time become the table's habits (`habits.json from_old`: e.g. Normal / Little = Mon–Thu study, Fri + Sat rest, Sun family)
+   and read back as the same words. The user's three saves (copies, version 4) load in the real game, show those habits, build the
+   planner and the Season tab's section and play 7 days (`saves_check -- <copies> 7 real`).
+8. **Help:** `week` v2 (Free time, Invitations, Amber evenings), `training_season` v11 / `training_repeat` v9 (Your habits instead of
+   School life), `day_editor` v7 (Free time), `school` v6 (Your evenings; the report card's choice), `people` v7 (Invitations),
+   new topic `habits`. `help_check` passes in both layouts (918 / 931 checks).
+9. **Checks:** new `tools/habits_check.gd` (in `run_all_checks`: the data, the neutral habit, each activity, this week's changes,
+   played days, save / load + version-4 saves, the report card, invitations end to end, the clash marks, 26 weeks with the people on:
+   9 invitations, at most one a week, each settled on its evening). Changed: `school_check` (the slots instead of the settings),
+   `coach_check` (any save version from 4), `storylet_check` part 7 (invitations are counted on their own: outside the 3–5 moments
+   a week and the one a day, at most one a week), `layout_check` (`_slot_views`, all five sizes clean), the tour (`_slots_tour`, shots
+   56…), `season_playtest` (clicks by week, invitations), `saves_check` (the habits). `training_balance` part 2h's "Heavy / Lots" row
+   now plays the matching habits (lighter than the old flat settings: fatigue-sum 1228.04 instead of 1240.99, grades 9.27 instead of
+   9.43); every other row is identical.
+10. **Measured** (`season_playtest`, the whole 2026-27 season through the real hub, same seed against the commit before L1b):
+    phone 390×844, seed 2, policy `careful`: **0.33 mid-week stops a week (0.33 before), 36 of 52 weeks straight through, clicks a week
+    2.46 average / median 2 (2.48 / 2 before)**, 14 invitations. Before choice (9) an invitation alone on the planner cost a "Play
+    anyway" in 2–4 weeks a season (average up to 2.63). PC 1280×720, seed 1, policy `player` (answers every card): 0.44 mid-week stops
+    a week (0.37 on the old code in the same run; the health dice differ because late nights change the life load: 3 sore warnings
+    instead of 1), 4.1 clicks a week (4.3), 13 invitations. The planner builds in ~130 ms (~105 before: the seven slot buttons).
+11. **Not in L1b / for later:** a late night before a race adds life load to the race day (more tired after it, a little more risk)
+    but does not slow the race itself (a race session's question, B1 / R7); "the third skip and he stops asking" (friendships that
+    fade) is P2; the sizes above wait for playtest 3 (memory: feel it before tuning).
 
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 

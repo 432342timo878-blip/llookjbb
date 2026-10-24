@@ -18,6 +18,7 @@ var MI
 var C
 var H
 var WP
+var HS
 var _fails := 0
 var _n := 10
 
@@ -38,6 +39,7 @@ func _run() -> void:
 	C = load("res://scripts/core/coach_system.gd")
 	H = load("res://scripts/core/health_system.gd")
 	WP = load("res://scripts/core/week_plan.gd")
+	HS = load("res://scripts/core/habit_system.gd")
 	# Lab (no injuries, a club coach of 10s) with the school and the moods free: the parts pin the neutral settings where needed.
 	load("res://scripts/core/game_config.gd").use("lab", {"mind_neutral": false, "school_neutral": false})
 	game.autosave = false
@@ -83,8 +85,15 @@ func _check_data() -> void:
 	for id in ["top", "hard_work", "fine", "struggling", "dont_care"]:
 		starts.append(float(s.answers[id].start))
 	_ok("the starting averages are the GDD's 9.0 / 8.5 / 7.5 / 6.8 / 6.3", starts == [9.0, 8.5, 7.5, 6.8, 6.3])
-	_ok("Normal / Normal adds nothing (effort, free time and the normal shift are 0)", float(s.life_load.effort.normal) == 0.0
-			and float(s.life_load.free_time.normal) == 0.0 and float(s.grades.effort_shift.normal) == 0.0)
+	# (session L1b: the two settings became the free-time slots; the default habit is the old Normal / Normal)
+	var hd: Array = data.habits.default
+	var counts := {}
+	for act in hd:
+		counts[act] = int(counts.get(act, 0)) + 1
+	_ok("the default habit adds nothing: the neutral counts (4 study, 2 friends, 1 family), no grade shift, the old table's normal|normal",
+			int(counts.get("study", 0)) == int(data.habits.neutral.study) and int(counts.get("friends", 0)) == int(data.habits.neutral.friends)
+			and int(counts.get("family", 0)) == int(data.habits.neutral.family) and HS.shift_for(4) == 0.0
+			and data.habits.from_old["normal|normal"] == hd and hd[3] == "study" and hd[6] == "family")
 	_ok("yläkoulu has no exam weeks (user 2026-10-17: only single tests)", s.stages.list[0].exam_weeks.is_empty()
 			and s.stages.list[1].exam_weeks.is_empty())
 
@@ -205,13 +214,17 @@ func _check_life_load_numbers() -> void:
 			and ss.life_load(mon, ["easy_run", "tempo_run"]) == 1.5 and ss.life_load(sat, ["easy_run", "tempo_run"]) == 0.0)
 	_ok("a weekday of the Christmas break: -1 (relief); a weekend: 0", ss.life_load(_d("2026-12-22"), []) == -1.0 and ss.life_load(sat, []) == 0.0)
 	_ok("summer weekday: -1", ss.life_load(_d("2027-07-06"), []) == -1.0)
-	ss.set_effort("heavy")
-	ss.set_free_time("lots")
-	_ok("Heavy effort + Lots of free time on a school day: +1.75; on a holiday still -1", ss.life_load(mon, []) == 1.75 and ss.life_load(_d("2026-12-22"), []) == -1.0)
-	ss.set_effort("light")
-	ss.set_free_time("little")
-	_ok("Light + Little: -1.0", ss.life_load(mon, []) == -1.0)
-	_ok("grade 9 scales the positive parts x1.1 (a double day 1.65)", is_equal_approx(ss.life_load(_d("2027-11-08"), ["easy_run", "tempo_run"]) + 1.0, 1.65))
+	# Session L1b: the free-time slots (habits; the first career day is Mon 2 Nov, so Sunday 8 Nov is a later week's habit).
+	var hs = game.get_system("habits")
+	hs.set_habits(["study", "study", "study", "study", "study", "study", "study"])
+	_ok("study in all 7 slots: a school day +1.5 (3 study slots over 4, x 0.5); a holiday still -1", ss.life_load(mon, []) == 1.5
+			and ss.life_load(_d("2026-12-22"), []) == -1.0 and ss.life_load(sat, []) == 0.0)
+	hs.set_habits(["study", "rest", "study", "study", "friends", "friends", "friends"])
+	_ok("after a friends evening (Sunday) a school day +0.75, after a rest evening (Tuesday) -0.5, after study 0; 3 study slots add nothing",
+			ss.life_load(mon, []) == 0.75 and ss.life_load(_d("2026-11-11"), []) == -0.5 and ss.life_load(_d("2026-11-10"), []) == 0.0)
+	_ok("... a late Friday or Saturday costs nothing (no school the next day)", ss.life_load(sat, []) == 0.0 and ss.life_load(_d("2026-11-15"), []) == 0.0)
+	hs.reset_habits()
+	_ok("grade 9 scales the positive parts x1.1 (a double day 1.65)", is_equal_approx(ss.life_load(_d("2027-11-08"), ["easy_run", "tempo_run"]), 1.65))
 	_ok("effects at 0: keep +0, colds x1, injuries x1", SC.keep_shift(0.0) == 0.0 and SC.illness_mult(0.0) == 1.0 and SC.injury_mult(0.0) == 1.0)
 	_ok("an exam day (2 points): keep +0.01, colds x1.15, injuries x1.15; a holiday (-1): colds x0.925, injuries x1",
 			is_equal_approx(SC.keep_shift(2.0), 0.01) and is_equal_approx(SC.illness_mult(2.0), 1.15) and is_equal_approx(SC.injury_mult(2.0), 1.15)
@@ -396,11 +409,10 @@ func _check_tests_and_cards() -> void:
 
 ## A year of the coach's repeating week (health off, moods free): the stress word after each Sunday night (= the week ahead) with
 ## what that week is. Returns {weeks: [{word, value, kind}]}.
-func _stress_year(effort: String, free_time: String) -> Array:
+func _stress_year(habits: Array) -> Array:
 	game.start_career(_athlete(), "repeat")
 	var ss = game.get_system("school")
-	ss.set_effort(effort)
-	ss.set_free_time(free_time)
+	game.get_system("habits").set_habits(habits)   # (session L1b: the free-time slots instead of the two settings)
 	var out := []
 	for w in 52:
 		_play_weeks(1)
@@ -442,14 +454,14 @@ func _stress_summary(name: String, weeks: Array) -> Dictionary:
 
 func _check_stress() -> void:
 	print("-- 9. stress through a year (moods free, health off; the word after each Sunday = the week ahead)")
-	var normal := _stress_summary("Normal / Normal:", _stress_year("normal", "normal"))
-	var heavy := _stress_summary("Heavy / Lots:", _stress_year("heavy", "lots"))
-	var light := _stress_summary("Light / Little:", _stress_year("light", "little"))
-	_ok("holiday weeks are calmer than school weeks (Normal / Normal)", normal.has("holiday") and normal.has("school")
+	var normal := _stress_summary("the default habit:", _stress_year(data.habits.default))
+	var heavy := _stress_summary("study every slot:", _stress_year(STUDY_ALL))
+	var light := _stress_summary("rest Mon-Thu, no study:", _stress_year(REST_WEEK))
+	_ok("holiday weeks are calmer than school weeks (the default habit)", normal.has("holiday") and normal.has("school")
 			and normal.holiday.sum / normal.holiday.n < normal.school.sum / normal.school.n)
-	_ok("busy test weeks are more stressful than other school weeks (Normal / Normal)", normal.has("busy")
+	_ok("busy test weeks are more stressful than other school weeks (the default habit)", normal.has("busy")
 			and normal.busy.sum / normal.busy.n > normal.school.sum / normal.school.n)
-	_ok("Heavy / Lots is more stressful than Normal / Normal, Light / Little calmer",
+	_ok("studying every slot is more stressful than the default, rest evenings calmer",
 			heavy.school.sum / heavy.school.n > normal.school.sum / normal.school.n and light.school.sum / light.school.n < normal.school.sum / normal.school.n)
 	# Exam weeks (none in yläkoulu by the user's choice; S3's lukio has them): the machinery, with three exam weeks forced into the data.
 	var stage: Dictionary = data.school_life.stages.list[0]
@@ -465,11 +477,11 @@ func _check_stress() -> void:
 			exam_days == [20261207, 20261208, 20261209, 20261210, 20261211, 20270222, 20270223, 20270224, 20270225, 20270226,
 			20270524, 20270525, 20270526, 20270527, 20270528])
 	var parts: Array = ss.load_parts(_d("2026-12-08"), [])
-	_ok("an exam day at Normal / Normal: an exam part of 2 (plus its tests: %s)" % [parts],
+	_ok("an exam day with the default habit: an exam part of 2 (plus its tests: %s)" % [parts],
 			parts.any(func(p): return str(p.id) == "exam" and float(p.value) == 2.0))
-	var exam_n := _stress_summary("exams, Normal / Normal:", _stress_year("normal", "normal"))
-	var exam_h_weeks := _stress_year("heavy", "lots")
-	var exam_h := _stress_summary("exams, Heavy / Lots:", exam_h_weeks)
+	var exam_n := _stress_summary("exams, the default habit:", _stress_year(data.habits.default))
+	var exam_h_weeks := _stress_year(STUDY_ALL)
+	var exam_h := _stress_summary("exams, study every slot:", exam_h_weeks)
 	var stressed := 0
 	var stressed_exam := 0
 	for w in exam_h_weeks:
@@ -477,12 +489,17 @@ func _check_stress() -> void:
 			stressed += 1
 			if str(w.kind) == "exam":
 				stressed_exam += 1
-	_ok("exam weeks raise stress to Busy or more at Normal / Normal (avg %.1f vs %.1f in other school weeks)" % [
+	_ok("exam weeks raise stress to Busy or more with the default habit (avg %.1f vs %.1f in other school weeks)" % [
 			exam_n.exam.sum / exam_n.exam.n, exam_n.school.sum / exam_n.school.n],
 			exam_n.has("exam") and exam_n.exam.sum / exam_n.exam.n >= 35.0 and exam_n.exam.sum / exam_n.exam.n > exam_n.school.sum / exam_n.school.n + 10.0)
-	_ok("Stressed or worse mostly in exam weeks (Heavy / Lots: %d of %d Stressed weeks are exam weeks)" % [stressed_exam, stressed],
+	_ok("Stressed or worse mostly in exam weeks (study every slot: %d of %d Stressed weeks are exam weeks)" % [stressed_exam, stressed],
 			stressed > 0 and stressed_exam * 2 > stressed)
 	stage.exam_weeks = keep
+
+
+## Habits of the checks (session L1b): study in every slot; rest Monday to Thursday with no study at all.
+const STUDY_ALL := ["study", "study", "study", "study", "study", "study", "study"]
+const REST_WEEK := ["rest", "rest", "rest", "rest", "friends", "friends", "family"]
 
 
 # --- 10. The moods' and the health model's hooks -----------------------------------------------------------------------------------
@@ -492,16 +509,22 @@ func _check_hooks() -> void:
 	var ss = _fresh()
 	ss._schedules[2026] = {}
 	var mind = game.get_system("mind")
-	_ok("Normal / Normal in a normal week: no school lines under stress or motivation",
-			not mind.pulls("stress").any(func(p): return str(p.text).contains("study") or str(p.text).contains("free time"))
-			and ss.stress_pulls(_d("2026-11-09")).is_empty() and ss.motivation_pulls().is_empty())
-	ss.set_effort("heavy")
-	ss.set_free_time("lots")
-	var lines: Array = ss.stress_pulls(_d("2026-11-09"))
-	print("    Heavy / Lots, a normal week: %s" % [lines])
-	_ok("Heavy / Lots: stress pulls 'Heavy study effort' +8.6 and 'late nights' +6.4; motivation +4", lines.size() == 2
-			and is_equal_approx(float(lines[0].delta), 5.0 / 7.0 * 12.0) and is_equal_approx(float(lines[1].delta), 5.0 * 0.75 / 7.0 * 12.0)
-			and float(ss.motivation_pulls()[0].delta) == 4.0)
+	var hs = game.get_system("habits")
+	var mon := _d("2026-11-09")
+	_ok("the default habit in a normal week: no school or slot lines under stress or motivation",
+			not mind.pulls("stress").any(func(p): return str(p.text).contains("study") or str(p.text).contains("friends"))
+			and ss.stress_pulls(mon).is_empty() and hs.motivation_pulls(mon).is_empty() and hs.stress_pulls(mon).is_empty())
+	# Session L1b: study in six slots and Sunday with friends (a late Sunday before Monday's school).
+	hs.set_habits(["study", "study", "study", "study", "study", "study", "friends"])
+	var lines: Array = ss.stress_pulls(mon)
+	print("    six study slots + Sunday with friends, a normal week: %s; motivation %s" % [lines, hs.motivation_pulls(mon)])
+	_ok("six study slots + friends on Sunday: stress pulls 'extra study' +8.6 and 'out with friends last night' +1.3; motivation -2 (one friends slot)",
+			lines.size() == 2 and str(lines[0].text).contains("study") and is_equal_approx(float(lines[0].delta), 5.0 * 1.0 / 7.0 * 12.0)
+			and is_equal_approx(float(lines[1].delta), 0.75 / 7.0 * 12.0) and float(hs.motivation_pulls(mon)[0].delta) == -2.0)
+	hs.set_habits(["study", "study", "study", "study", "friends", "family", "family"])
+	_ok("two family slots ease stress (-2), and the mind's stress row lists it", float(hs.stress_pulls(mon)[0].delta) == -2.0
+			and float(hs.motivation_pulls(mon)[0].delta) == -2.0)
+	hs.set_habits(["study", "study", "study", "study", "study", "study", "friends"])
 	var xmas: Array = ss.stress_pulls(_d("2026-12-21"))
 	_ok("the Christmas break week pulls stress down ('School holiday')", xmas.size() == 1 and float(xmas[0].delta) < 0.0)
 	# The health model reads the day's life load: a heavy school day makes a cold more likely (the multiplier it uses).
@@ -543,8 +566,19 @@ func _check_save_load() -> void:
 		print("    without saving: %s\n    after the load: %s" % [s_end.left(500), s_again.left(500)])
 	_ok("a loaded game goes on exactly as without saving (athlete and school: grades, tests, the Christmas card)", a_again == a_end and s_again == s_end)
 	var ss2 = game.get_system("school")
-	_ok("the settings and the focus are saved", ss2.effort == "heavy" and ss2.free_time == "little" and ss2.focus == ["maths", "english"])
+	var hs2 = game.get_system("habits")
+	_ok("the habits (Heavy / Little = study at the weekend, a quiet Friday) and the focus are saved", ss2.effort_word() == "heavy"
+			and ss2.free_word() == "little" and hs2.habits == data.habits.from_old["heavy|little"] and ss2.focus == ["maths", "english"])
 	_ok("the Christmas card is in the save", ss2.reports.size() == 1 and str(ss2.reports[0].kind) == "christmas")
+	# A save from before version 5 (session L1b): no habits, the school's two settings: they become the nearest habits.
+	var old: Dictionary = game.to_dict()
+	old.systems.erase("habits")
+	old.systems.school.effort = "light"
+	old.systems.school.free_time = "lots"
+	game.from_dict(_parse(_json(old)))
+	_ok("a version-4 save's Light / Lots become the habits of the table (light|lots), and read back as Light / Lots",
+			game.get_system("habits").habits == data.habits.from_old["light|lots"] and game.get_system("school").effort_word() == "light"
+			and game.get_system("school").free_word() == "lots")
 	# An older save: no school state, no school_answer (only school_level).
 	var st: Dictionary = game.to_dict()
 	st.systems.erase("school")
@@ -576,8 +610,10 @@ func _check_switches() -> void:
 	ss2.set_effort("heavy")
 	ss2.set_free_time("lots")
 	_play_weeks(3)
+	var hs3 = game.get_system("habits")
 	_ok("neutral: no life load even at Heavy / Lots or on a holiday, no pulls, no news", ss2.life_load(_d("2026-11-10"), ["easy_run", "tempo_run"]) == 0.0
-			and ss2.life_load(_d("2026-12-22"), []) == 0.0 and ss2.stress_pulls(_d("2026-12-21")).is_empty() and ss2.motivation_pulls().is_empty()
+			and ss2.life_load(_d("2026-12-22"), []) == 0.0 and ss2.stress_pulls(_d("2026-12-21")).is_empty()
+			and hs3.motivation_pulls(_d("2026-12-21")).is_empty() and hs3.stress_pulls(_d("2026-12-21")).is_empty()
 			and ss2.week_news(_d("2026-11-30")).is_empty())
 	_ok("neutral: the grades still drift (Heavy) and the day log has no school fields", ss2.started and ss2.average(true) > 9.0
 			and not game.day_log.any(func(e): return e.has("school")))
@@ -700,8 +736,10 @@ func _check_decisions() -> void:
 	_ok("the card panel handles it, and the report is the one just made", not card.is_empty() and panel.handles(card) and ss2.reports.size() == 1 and int(card.index) == 0)
 	if not card.is_empty():
 		game.answer_event(card.id, "harder")
-		_ok("'Study harder' sets the study effort to Heavy", ss2.effort == "heavy")
-		_ok("... and it says so in the day's events", game.events.any(func(x): return str(x.source) == "school" and str(x.text).contains("heavy")))
+		var hs_card = game.get_system("habits")
+		_ok("'One more study evening' turns Sunday (family) into study: 5 study slots, grades rise (session L1b)",
+				hs_card.habit(6) == "study" and ss2.effort_word() == "heavy" and ss2.study_shift(game.date) > 0.0)
+		_ok("... and it says so in the day's events", game.events.any(func(x): return str(x.source) == "school" and str(x.text).contains("Sunday")))
 	var ss3 = _fresh()
 	var card2: Dictionary = {}
 	while Cal.date_key(game.date) <= 20261219 and card2.is_empty():
@@ -713,7 +751,7 @@ func _check_decisions() -> void:
 			game.answer_event(p.id, "ok")
 	if not card2.is_empty():
 		game.answer_event(card2.id, "ok")
-		_ok("an unknown answer = keep going (the effort stays Normal)", ss3.effort == "normal")
+		_ok("an unknown answer = keep going (the habits stay the default)", game.get_system("habits").is_default() and ss3.effort_word() == "normal")
 	# The final certificate: Continue only.
 	var a2 = _athlete()
 	a2.birth_date = {"year": 2011, "month": 5, "day": 1}

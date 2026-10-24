@@ -60,7 +60,7 @@ $checks = @(
 	@{ name = "dev_menu_check"; args = "--headless -s res://tools/dev_menu_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "race_rounds"; args = "--headless -s res://tools/race_rounds.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "commentary_check"; args = "--headless -s res://tools/commentary_check.gd -- 24 0"; marker = "ALL CHECKS PASSED"; limit = 600 },
-	@{ name = "playtest_fix_check"; args = "--headless -s res://tools/playtest_fix_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
+	@{ name = "playtest_fix_check"; args = "--headless -s res://tools/playtest_fix_check.gd"; marker = "ALL CHECKS PASSED"; limit = 1200 },   # (L1b: ~11-14 min on the user's PC, also before L1b)
 	@{ name = "coach_check"; args = "--headless -s res://tools/coach_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "storylet_check"; args = "--headless -s res://tools/storylet_check.gd"; marker = "ALL CHECKS PASSED"; limit = 1200 },
 	@{ name = "verdict_check"; args = "--headless -s res://tools/verdict_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
@@ -68,6 +68,7 @@ $checks = @(
 	@{ name = "mind_check"; args = "--headless -s res://tools/mind_check.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "market_check"; args = "--headless -s res://tools/market_check.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "school_check"; args = "--headless -s res://tools/school_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
+	@{ name = "habits_check (the free-time slots, habits, invitations)"; args = "--headless -s res://tools/habits_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "load_check (every script loads)"; args = "--headless -s res://tools/load_check.gd"; marker = "LOAD OK"; limit = 180 },
 	# The races: 60 fixed races (quick and watched, every plan, mix and voice) must give the same hash as before session C5. An
 	# engine change that is MEANT to change the races changes it: run tools/quick_fingerprint.gd and put the new hash here.

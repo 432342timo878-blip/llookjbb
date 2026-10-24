@@ -69,6 +69,38 @@ Read the paragraphs below with these in mind; they win where they disagree.
     of Sunday. `SchoolSystem.meet_test_card / settle_week`. `WeekSim.end_week` report `count` {planned, done, extra, days}.
   - **Tools:** `tools/planner_shot.gd -- <out> [weeks] [seed]` (windowed: screenshots of the planner in a real career);
     `season_playtest.gd` prints "The loop" (mid-week stops incl. races, weeks without one, stops at the planner, clicks a week).
+- **Session L1b (the free-time slots + standing habits + invitations, save version 5; GDD 4.10 "Built (step L1b)"; these win over the
+  paragraphs below about the school's two settings (study effort / free time), SaveGame's version and the Training tab):**
+  - **`HabitSystem`** (`scripts/core/habit_system.gd`, GameSystem id `habits`, after School in `Game.systems`; `data/habits.json`):
+    `habits` (7 activities Mon..Sun: study / rest / friends / family), `week_slots` (this week only, `week_key`), `history` (played
+    days' slots). API: `habit / set_habit / set_habits / reset_habits / is_default / from_old(effort, free)`; `week_slot / changed /
+    can_change / set_slot / reset_slot`; `activity_on(date)` (played = history, this week = changes + an invitation you go to, later =
+    habit); `grade_shift(d)` (study slots vs neutral 4), `load_parts(d, scale, school_day)` (`slot_study` / `slot_friends` /
+    `slot_rest`), `motivation_pulls(monday)`, `stress_pulls(monday)` (family), `effort_word / free_word` (the old words: the
+    school's to_dict keeps "effort" / "free_time" with them, so its state saves byte-identically), `summary()`, `habit_load()`,
+    `more_study / less_study` (the report card), `slot_info(w, d)` (the planner: activity, changed, invite, late, clash race / hard,
+    next day, highlight), `invitation_on(d)` / `going(inv)` / `invite_sleep(inv)`. A week's activities are cached (`_week_entry`
+    by Monday, cleared when `(today, _rev)` changes): **anything that changes a slot calls `HabitSystem.touch()`** (StoryletSystem
+    does for invitations). Effects follow the school's switches (`effects_on`); the default habit = exactly 0. No dice.
+  - **SchoolSystem:** `effort` / `free_time` vars are gone; `target(sid, shift)` + `study_shift(d)` + `_drift(d)`; `load_parts` adds
+    the habits' parts where the settings were; `motivation_pulls` / `settings_load` / `setting_name` removed (MindSystem asks
+    HabitSystem for motivation and family stress); `set_effort` / `set_free_time` remain for tools (they set `from_old` habits);
+    `_post_card` / `_answer_card` edit the habits by one slot (texts `habits.json card`).
+  - **Invitations** (StoryletSystem): a storylet's `invite` {days, activity, go, title, chip}; `_pick` skips them; `on_week_start` ->
+    `_post_invitations(w)` (habits.json invites, the stop token); `_post(..., {"invite": true})` sets `m.invite`, `m.slot_day`,
+    `m.planned`, `expires` = the slot day; `answer()` only plans an invitation, `unplan(id)`; `_resolve_invitations(today)` in
+    `on_day_end`; `invitation_on(d)`, `invitations(monday)`; `waiting()` leaves out planned ones. `WeekPlanner.open_choices()`
+    leaves out invitations (user: they never make Play week ask). Storylets: `fr_party_weekend`, `fr_party_race`, `sch_group_work`.
+  - **UI:** `HabitsUI` (`scripts/ui/habits_ui.gd`): `chip`, `picker`, `invite_card`, `price_lines`, `evening_text`, `editor_box`,
+    `section` (Season tab, `open_row` for the phone), `school_line` (+ `hub_ref` weak reference / `open_season`; never a static
+    lambda: one bound to the hub crashed the game on quit). `WeekPlanner`: `open_slot` / `open_slot_week` (static), `_slot_chip`,
+    `_slot_picker`, `_invites`; PC day column = the tap area + the chip under it; phone row = the tap area + the icon button on the
+    right; invitations and the picker under their day on a phone. Day editor `_add_free_time`. Season tab: `_build_training` = plan,
+    YOUR HABITS, mental plan, standing orders (the school settings panel is gone; `SchoolUI.settings_panel` deleted).
+  - **SaveGame version 5**; `Game.from_dict` makes the habits from the school's old "effort" / "free_time" when a save has no
+    `habits` state.
+  - **Tools:** new `tools/habits_check.gd` (in run_all_checks); `layout_check` `_slot_views`, the tour `_slots_tour` (56…),
+    `season_playtest` prints "Clicks by week" and the invitations, `saves_check` checks the habits of older saves.
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

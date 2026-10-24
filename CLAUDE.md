@@ -9,7 +9,7 @@ tools, numbers: **read the paragraph of a system when you work on it**; it holds
 
 **User:** no programming experience: explain how to run and test things in plain steps; Claude writes all code.
 
-**Status (2026-10-18):** M1 done (character creation, training, calendar, saves, the 800 m race, rankings, responsive UI). M2 part 1
+**Status (2026-10-24):** M1 done (character creation, training, calendar, saves, the 800 m race, rankings, responsive UI). M2 part 1
 done (day-by-day mode, health, season periodization, race realism R1–R5 + commentary R4, meet formats, the multi-year check and the
 talent balance). M2 part 2 built so far: the coaching + school + people design (GDD 4.9), sessions C1–C6 (coach model, moments,
 People tab + Sunday talk, proposals + Veto, goals + race advice, the coach market), M1 (the mind), D1 (research data), S1–S3b (school,
@@ -20,9 +20,10 @@ micromanagement clicker") led to the redesign **GDD 4.10 "plan → play → see"
 UI: one Sunday planner, mid-week stops only for real decisions, causes visible, people as state + free-time slots). F1 (the 11
 playtest bugs) done (GDD 4.10 "Built (step F1)"; coach texts say `{he}` / `{his}`, never a bare "he"). V1 (the look) done: **GDD 5
 "The look (V1)"** is the style guide for every new or restyled screen (dark "Stadium Night", condensed numbers, TV-style race card;
-mock-ups in `docs/v1/`). L1 was split (user, 2026-10-23): **L1a done** (the V1 kit, the Sunday week planner = the This week tab,
-the coach's notes, moments wait for Sunday, the new tabs; GDD 4.10 "Built (step L1a)"). Next, in `docs/ROADMAP.md` order: L1b (the
-slots + habits, save v5) → L2–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+mock-ups in `docs/v1/`). **L1 done** in two sessions (user, 2026-10-23): L1a (the V1 kit, the Sunday week planner = the This week
+tab, the coach's notes, moments wait for Sunday, the new tabs; GDD 4.10 "Built (step L1a)") and L1b (the 9 free-time slots + standing
+habits replacing the school's two settings, invitations in the slots, save v5; "Built (step L1b)"). Next, in `docs/ROADMAP.md` order:
+L2–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -35,7 +36,7 @@ only at senior level.
   pushing needs the user's login: **tell the user to press "Push origin" in GitHub Desktop** (and remind them when there are unpushed commits).
 - **`run_all_checks.bat`** (double-click; `tools/run_all_checks.ps1`): every check with ONE PASS / FAIL list (a check passes only with
   its "all good" line, no FAIL line and no SCRIPT ERROR / Parse Error in stdout or stderr; outputs kept in `%TEMP%\llookjbb_checks_*`).
-  Full run ~15 min (run it at the end of a session); **`-Quick`** ~5 min (use it while working); `-Only help,health` runs the checks
+  Full run ~30-35 min on the user's PC (run it at the end of a session; `playtest_fix_check` alone ~14 min, limit 1200 s); **`-Quick`** ~5 min (use it while working); `-Only help,health` runs the checks
   whose name contains a word. Not in it (too slow, run by Claude after engine changes): `race_shape`, `training_balance` (parts 3+),
   `race_check`, `layout_check`, the tour, `career_check`, the long playtests.
 - **Fingerprints that must stay identical unless a change is MEANT to change them** (prove it after each step): `training_balance.gd -- 0`
@@ -67,6 +68,8 @@ only at senior level.
 - Tools that play days with the people / talks / decisions on must answer stop events and play by the date (`while advance_day() != WEEK_DONE`
   never ends on a stop; a stop on Sunday evening returns STOP, not WEEK_DONE). Tools in `lab` never meet stops from the new systems.
 - GDScript lambdas capture locals by value when they are made: create the controls before the closures that use them.
+- Never keep a lambda bound to a node in a `static var`: Godot crashes on quit (exit code -1073741819 after "ALL CHECKS PASSED",
+  L1b). Keep a `weakref(node)` instead and clear it in `_exit_tree`.
 - JSON files: never edit them with PowerShell `Set-Content` (BOM); use the Edit tool. Godot's JSON reader misses the last binary digit of
   ~1 in 8 decimals: `SaveGame.load_slot` re-reads decimals from the text (`_exact_numbers`), so saves continue bit for bit.
 - Every system has its own dice (seeded from the career, state saved as strings) and never touches the global dice: same career =
@@ -119,8 +122,8 @@ in-game Credits screen is still to do). **Help:** texts only in `data/help.json`
   `answer_event`; `Game.systems` order: Health, Season, Form, Coach, School, Mind, Moments (StoryletSystem), Goals, Suggests, Proposals,
   Market (see `_make_systems`).
 - `HealthSystem` (soreness, injuries, illness, adaptation; `data/health.json`, `data/injuries.json`), UI in `HealthUI` / `HealthEventPanel`.
-- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 4**; older saves load (each system's state is `{}`
-  until it first runs).
+- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 5** (L1b: the habits); older saves load (each
+  system's state is `{}` until it first runs; a v4 save's study effort / free time become habits).
 
 **Races.** `RaceDay` runs a meet as `single` / `sections` / `heats` (World Athletics table); `Race` = the pack engine (drafting, moves,
 kick chain, boxes, falls, DNF/DQ; every number in `data/races.json`; same seed = same race); the player's cards and action bar
@@ -139,12 +142,16 @@ coach voices (`data/race_commentary.json`, `data/coaches.json`) only READ the ra
   the planner days, written on Sunday, ≤ 2 a week, Make it easy / Keep mine = the Veto; mid-week only the "scratch?" stop), `CoachAsk`,
   `SeasonGoals` (time / milestone / habit with real standards), `RaceAdvice`, `CoachSuggests` (a planner card on Sunday).
 - `MindSystem` (confidence / motivation / stress, mental plan, effects on training and races; `data/mind.json`).
+- `HabitSystem` (L1b: the 9 free-time slots (evenings + Sat + Sun) with study / rest / friends / family, the standing habits, this
+  week's changes; they move grades, the life load and the moods where the old study effort / free time did; the default habit = the
+  neutral one; `data/habits.json`; **call `HabitSystem.touch()` after changing anything a slot reads**) + invitations (storylets with
+  `invite`, posted on Sunday into a slot, planned on the planner, happening on their evening; never a Play-week ask) + `HabitsUI`.
 - `SchoolSystem` (stages, 17 subjects, tests, report cards, life load, the meet-and-tests decision; `data/school_life.json`) +
   `SchoolCalendar` (real 2026–27 dates, rules after) + `SchoolApplication` (the joint application, points, the path, moving; a rejection
   offers a **TUVA year**, stored as path kind `grade_10`) + `Lukio` / `Matriculation` (courses, periods, exams; `data/lukio.json`).
   Research data: `towns.json`, `urheilulukiot.json`, `school.json`, `application.json`, `standards.json`, each fact with a source.
 - UI: `PeopleView` (People tab: threads, profile, Find a coach, School page, Rivals), `PeopleUI`, `MomentEventPanel`, `StandingOrders`
-  (Season tab: the coach's notes on / off, **"Lukio courses: ask me every period / let the counsellor plan them"**, saved rules),
+  (Season tab, under YOUR HABITS and the mental plan: the coach's notes on / off, **"Lukio courses: ask me every period / let the counsellor plan them"**, saved rules),
   `SchoolUI` / `SchoolView` / `LukioUI` / `MatricPlanView` / `SchoolApplyView`, `MindUI`, `GoalsUI`, `CoachProfile`, `CoachMarketView`.
 
 **Tools and docs.** All checks live in `tools/` (see "How to run and check"); `tools/json_check.gd` parses every data file (and the research

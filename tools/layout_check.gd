@@ -140,6 +140,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _school_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _slot_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		await _application_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _lukio_views(main, game, tag)
@@ -935,7 +937,7 @@ func _cast_views(main: Node, game, tag: String) -> void:
 		_check_overflow(hub, "%s cast_result" % tag)
 		hub._end_result_card()
 		await _frames(3)
-	for pair in [["fam_shoes", "parent"], ["fr_party_weekend", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
+	for pair in [["fam_shoes", "parent"], ["fr_gaming", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
 		var who: Array = ms.people_for(str(pair[1]))
 		if not who.is_empty():
 			ms._post(ms.storylet(str(pair[0])), who[0], ctx, today, true, {"counted": false})
@@ -1082,7 +1084,8 @@ func _proposal_views(main: Node, game, data, tag: String) -> void:
 		await _frames(6)
 		if not game.pending_event().is_empty() or not bool(p.get("note", false)):
 			print("WRONG: the coach's change is not a note on the planner at ", tag)
-		hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+		if hub._planner.callouts_anchor.is_inside_tree():   # (on a phone the note is under its day and the cards may be empty)
+			hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
 		await _frames(3)
 		await _shot("%s_planner_note" % tag)
 		_check_overflow(hub, "%s planner_note" % tag)
@@ -1324,9 +1327,9 @@ func _school_views(main: Node, game, tag: String) -> void:
 	_check_overflow(hub, "%s school_in_list" % tag)
 	hub._show("training")
 	await _frames(5)
-	var settings = _find_label(hub, "SCHOOL LIFE")
+	var settings = _find_label(hub, "YOUR HABITS")   # (session L1b: the habits replaced the two school settings in the Season tab)
 	if settings == null:
-		print("WRONG: no school settings in the Training tab at ", tag)
+		print("WRONG: no habits in the Season tab at ", tag)
 	await _frames(2)
 	if settings != null:   # (the panel's top at the top of the page)
 		hub._scroll.scroll_vertical += int(settings.global_position.y - hub._scroll.global_position.y) - 24
@@ -1384,8 +1387,7 @@ func _school_views(main: Node, game, tag: String) -> void:
 	ss._schedules = saved_schedule
 	year_data.free.erase(fri)
 	ss.set_focus([])
-	ss.set_effort("normal")
-	ss.set_free_time("normal")
+	game.get_system("habits").reset_habits()
 	ss.term_tests = {}
 	ss.tests_log = []
 	ss.reports = reports_before
@@ -1397,6 +1399,109 @@ func _school_views(main: Node, game, tag: String) -> void:
 	hub._show("overview")
 	hub._refresh_week_ui()
 	await _frames(3)
+
+
+# --- The free-time slots (session L1b) at this window size --------------------------------------------------------------------------
+
+## The planner with a changed evening (Thursday with friends) before a hard Friday (the amber clash), an invitation waiting on
+## Saturday and one planned (Go) on Friday; the slot picker open on Thursday and on Saturday (PC: among the cards; phone: under its
+## day); the day editor's FREE TIME box with the invitation; the Season tab's YOUR HABITS (a phone row opened); the School page's line.
+## Everything is put back and the people switched off again.
+func _slot_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var WPL = load("res://scripts/ui/week_planner.gd")
+	var HUI = load("res://scripts/ui/habits_ui.gd")
+	var cal = load("res://scripts/core/calendar.gd")
+	var ms = game.get_system("moments")
+	var hs = game.get_system("habits")
+	MS.people_enabled = true
+	ms.ensure_cast(game.athlete)
+	ms._sync_people()
+	var w = game.current_week()
+	hs.set_slot(3, "friends")
+	var hard_set: bool = w.set_intensity(4, "hard")
+	var friends: Array = ms.people_for("friends")
+	var posted := []
+	for pair in [["fr_party_weekend", 5], ["fr_party_race", 4]]:
+		var date: Dictionary = game.add_days(w.monday, int(pair[1]))
+		var ctx := {"date": date, "day": int(pair[1]), "day_type": cal.day_type(date), "week": w, "race_note": {}}
+		ms.stop_tokens = maxf(ms.stop_tokens, 1.0)
+		posted.append(ms._post(ms.storylet(str(pair[0])), friends[0], ctx, MS.day_no(game.date), false, {"invite": true, "counted": false}))
+	ms.answer(str(posted[1].id), "short")
+	hub._refresh_week_ui()
+	hub._show("week")
+	await _frames(6)
+	await _shot("%s_slots_planner" % tag)
+	_check_overflow(hub, "%s slots_planner" % tag)
+	var card = _find_meta(hub, "invite")   # (PC: among the cards; phone: under its day)
+	if card != null:
+		hub._scroll.ensure_control_visible(card)
+	else:
+		print("WRONG: no invitation card on the planner at ", tag)
+	await _frames(3)
+	await _shot("%s_slots_cards" % tag)
+	_check_overflow(hub, "%s slots_cards" % tag)
+	for d in [3, 5]:
+		WPL.open_slot = d
+		WPL.open_slot_week = cal.date_key(game.week_monday())
+		hub._show("week")
+		await _frames(6)
+		var picker = _find_meta(hub, "slot_picker")
+		if picker == null:
+			print("WRONG: no slot picker for day %d at %s" % [d, tag])
+		else:
+			hub._scroll.ensure_control_visible(picker)
+		await _frames(3)
+		await _shot("%s_slots_picker_%d" % [tag, d])
+		_check_overflow(hub, "%s slots_picker_%d" % [tag, d])
+	WPL.open_slot = -1
+	hub._show("week")
+	hub._open_day(5)
+	await _frames(6)
+	await _shot("%s_slots_editor" % tag)
+	_check_overflow(hub, "%s slots_editor" % tag)
+	hub._close_day()
+	for row in [-1, 2]:
+		HUI.open_row = row
+		hub._show("season")
+		await _frames(5)
+		var head = _find_label(hub, "YOUR HABITS")
+		if head == null:
+			print("WRONG: no YOUR HABITS in the Season tab at ", tag)
+		else:
+			hub._scroll.scroll_vertical += int(head.global_position.y - hub._scroll.global_position.y) - 24
+		await _frames(4)
+		await _shot("%s_slots_habits%s" % [tag, "" if row < 0 else "_row_open"])
+		_check_overflow(hub, "%s slots_habits %d" % [tag, row])
+	HUI.open_row = -1
+	hub._people_page = "school"
+	hub._show("people")
+	await _frames(6)
+	_check_overflow(hub, "%s slots_school_line" % tag)
+	hub._people_page = ""
+	# Put everything back.
+	hs.reset_slot(3)
+	if hard_set:
+		w.reset_day(4)
+	for m in posted:
+		ms.moments.erase(m)
+	MS.people_enabled = false
+	ms._sync_people()
+	hub._refresh_week_ui()
+	hub._show("week")
+	await _frames(3)
+
+
+## The first visible node (depth first) that has the meta `key` (the slot picker, an invitation card), or null.
+func _find_meta(node: Node, key: String):
+	if node.has_meta(key) and (not node is CanvasItem or (node as CanvasItem).is_visible_in_tree()):
+		return node
+	for c in node.get_children():
+		var found = _find_meta(c, key)
+		if found != null:
+			return found
+	return null
 
 
 # --- The joint application and the school after grade 9 (session S3a) at this window size ------------------------------------------

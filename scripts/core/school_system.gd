@@ -6,11 +6,14 @@ extends GameSystem
 ## - 17 real subjects graded 4-10, each with a hidden natural level (the creation answer + an aptitude roll); on every school
 ##   day each grade drifts towards natural + the study effort + the focus subjects. Single tests through the term, report cards
 ##   at Christmas and in June (stored in `reports`).
-## - Two weekly life settings: study effort (light / normal / heavy) and free time (little / normal / lots).
-## - LIFE LOAD per day (life_load): 0 on a normal school day at Normal / Normal; holidays lighter; the settings, double days on
+## - Session L1b: the two old weekly life settings (study effort, free time) are gone: the free-time slots and the standing
+##   habits (HabitSystem, data/habits.json) do what they did: the study slots move the grade target, the slots add their parts
+##   to the life load and pull the moods. The default habit is the old Normal / Normal exactly. `set_effort` / `set_free_time`
+##   remain for the tools: they set the habits an old setting becomes (HabitSystem.from_old).
+## - LIFE LOAD per day (life_load): 0 on a normal school day with the default habit; holidays lighter; the slots, double days on
 ##   school days (two separate practices), busy test weeks and exam weeks heavier. It slows fatigue recovery (WeekSim), makes
-##   colds and injuries a little more likely (HealthSystem) and pulls stress (MindSystem.pulls, with the causes); free time also
-##   pulls motivation. At 0 nothing is computed differently: today's game to the last digit.
+##   colds and injuries a little more likely (HealthSystem) and pulls stress (MindSystem.pulls, with the causes). At 0 nothing is
+##   computed differently: today's game to the last digit.
 ## Dice: every roll comes from a seed made of the career (name + birth date) and what is rolled (the aptitudes; a school year's
 ## test days; one test), so nothing depends on when it is asked and the global dice are untouched; no dice state to save.
 ## Switches for the tools: `model_enabled` (off = no school at all; sys() is null) and `neutral` (the life load is always 0 and
@@ -27,8 +30,6 @@ const EFFORTS := ["light", "normal", "heavy"]
 const FREE_TIMES := ["little", "normal", "lots"]
 
 var started := false
-var effort := "normal"
-var free_time := "normal"
 var focus: Array = []           # 0-2 subject ids
 var subjects := {}              # subject id -> {"level": float, "natural": float}
 var term_tests := {}            # subject id -> [scores] written this term (the next report card uses them)
@@ -265,8 +266,9 @@ func life_load(d: Dictionary, session_ids: Array) -> float:
 	return total
 
 
-## The parts of the day's life load: [{id, value, n?}] (ids: holiday, effort_heavy / effort_light, free_lots / free_little,
-## double_day, busy_test (n = the week's tests), exam). Empty when there is nothing (always with the model off or neutral).
+## The parts of the day's life load: [{id, value, n?}] (ids: late_night, holiday, the slots' slot_study / slot_friends /
+## slot_rest (session L1b, HabitSystem.load_parts), double_day, decision_<answer>, busy_test (n = the week's tests), exam, the
+## lukio's parts). Empty when there is nothing (always with the model off or neutral).
 func load_parts(d: Dictionary, session_ids: Array) -> Array:
 	var out := []
 	if not model_enabled or neutral or Game.athlete == null:
@@ -285,12 +287,9 @@ func load_parts(d: Dictionary, session_ids: Array) -> Array:
 	if info.kind != "school":
 		return out
 	var scale := float(stage_of(d).get("scale", 1.0))
-	var e := float(ll.effort.get(effort, 0.0))
-	if e != 0.0:
-		out.append({"id": "effort_" + effort, "value": e * (scale if e > 0.0 else 1.0)})
-	var f := float(ll.free_time.get(free_time, 0.0))
-	if f != 0.0:
-		out.append({"id": "free_" + free_time, "value": f * (scale if f > 0.0 else 1.0)})
+	var hs := HabitSystem.sys()   # (session L1b: the free-time slots, where the two old settings were)
+	if hs != null:
+		out.append_array(hs.load_parts(d, scale, true))
 	if is_double_on(d, session_ids):
 		out.append({"id": "double_day", "value": float(ll.double_day) * scale})
 	var chosen := choice_of(Calendar.monday_of(d))   # the week's meet-and-tests answer (S2): "bus" = studying late all week
@@ -380,20 +379,6 @@ func stress_pulls(monday: Dictionary) -> Array:
 		if delta != 0.0:
 			out.append({"text": str(texts.get(pid, pid)).format({"n": counts[pid]}), "delta": delta})
 	return out
-
-
-## Free time's pull on motivation: [{text, delta}].
-func motivation_pulls() -> Array:
-	if not model_enabled or neutral:
-		return []
-	var e: Dictionary = cfg().effects
-	var texts: Dictionary = cfg().texts.pulls
-	match free_time:
-		"lots":
-			return [{"text": str(texts.motivation_lots), "delta": float(e.motivation_lots)}]
-		"little":
-			return [{"text": str(texts.motivation_little), "delta": -float(e.motivation_little)}]
-	return []
 
 
 ## Stress news for the Sunday before the week starting `monday`: [{delta, text}] (a busy test week, an exam week ahead).
@@ -505,10 +490,13 @@ func level(sid: String) -> float:
 	return float(subjects.get(sid, {}).get("level", 0.0))
 
 
-## Where a subject's grade drifts at the current settings.
-func target(sid: String) -> float:
+## Where a subject's grade drifts in the week of `d` (default today): the study slots shift it (session L1b, HabitSystem;
+## exactly 0.0 with the default habit, as the old Normal effort). `shift` = that shift when the caller has it already.
+func target(sid: String, shift := NAN) -> float:
 	var g: Dictionary = cfg().grades
-	var t := float(subjects[sid].natural) + float(g.effort_shift.get(effort, 0.0))
+	if is_nan(shift):
+		shift = study_shift(Game.date)
+	var t := float(subjects[sid].natural) + shift
 	if sid in focus:
 		t += float(g.focus_shift)
 	elif is_academic(sid):
@@ -528,12 +516,19 @@ func average(academic_only := false) -> float:
 	return total / maxf(1.0, n)
 
 
-## One school day of grade drift.
-func _drift() -> void:
+## One school day of grade drift (`d` = that day: its week's study slots shift the target).
+func _drift(d: Dictionary) -> void:
 	var k := 1.0 - pow(0.5, 1.0 / float(cfg().grades.half_life_days))
+	var shift := study_shift(d)
 	for sid in subjects:
 		var lv := level(sid)
-		subjects[sid].level = lv + (target(sid) - lv) * k
+		subjects[sid].level = lv + (target(sid, shift) - lv) * k
+
+
+## The study slots' shift of the grade target in the week of `d` (HabitSystem.grade_shift; 0.0 without the habit system).
+func study_shift(d: Dictionary) -> float:
+	var hs := HabitSystem.sys()
+	return hs.grade_shift(d) if hs != null else 0.0
 
 
 # --- Tests -------------------------------------------------------------------------------------------------------------------
@@ -656,18 +651,33 @@ func latest_report() -> Dictionary:
 
 # --- The settings ----------------------------------------------------------------------------------------------------------
 
+## Session L1b: the old settings are habits now. These set the habits an old setting becomes (HabitSystem.from_old, with the
+## other setting as the habits read now): the tools that compared Heavy / Light keep working.
 func set_effort(value: String) -> bool:
-	if not value in EFFORTS:
+	var hs := HabitSystem.sys()
+	if not value in EFFORTS or hs == null:
 		return false
-	effort = value
+	hs.from_old(value, hs.free_word())
 	return true
 
 
 func set_free_time(value: String) -> bool:
-	if not value in FREE_TIMES:
+	var hs := HabitSystem.sys()
+	if not value in FREE_TIMES or hs == null:
 		return false
-	free_time = value
+	hs.from_old(hs.effort_word(), value)
 	return true
+
+
+## What the habits amount to in the old settings' words: "light" / "normal" / "heavy" (effort), "little" / "normal" / "lots".
+func effort_word() -> String:
+	var hs := HabitSystem.sys()
+	return hs.effort_word() if hs != null else "normal"
+
+
+func free_word() -> String:
+	var hs := HabitSystem.sys()
+	return hs.free_word() if hs != null else "normal"
 
 
 ## The focus subjects (at most grades.focus_max; unknown ids dropped).
@@ -704,7 +714,7 @@ func on_day_end(ctx: Dictionary) -> void:
 	var written := []
 	var in_lukio := lukio_active(d)
 	if info.kind == "school" and bool(stage.get("subjects", false)):
-		_drift()
+		_drift(d)
 		if in_lukio:   # the exams of the period's courses (S3b)
 			written = _write_lukio_exams(d)
 		else:
@@ -849,12 +859,19 @@ func _post_card(index: int) -> void:
 	var choices := []
 	if kind == "final":
 		choices.append({"id": "done", "label": str(ch.done.label), "detail": str(ch.done.detail)})
-	else:
-		choices.append({"id": "keep", "label": str(ch.keep.label), "detail": str(ch.keep.detail).format({"effort": setting_name("effort", effort).to_lower()})})
-		if effort != "heavy":
-			choices.append({"id": "harder", "label": str(ch.harder.label), "detail": str(ch.harder.detail)})
-		if effort != "light":
-			choices.append({"id": "ease", "label": str(ch.ease.label), "detail": str(ch.ease.detail)})
+	else:   # (session L1b: the choice edits the habits by one slot, data/habits.json card; "keep" stays first)
+		var hc: Dictionary = Data.habits.card
+		var hs := HabitSystem.sys()
+		var study := int(HabitSystem.counts(hs.habits).study) if hs != null else 4
+		choices.append({"id": "keep", "label": str(hc.keep.label), "detail": str(hc.keep.detail).format({"study": study})})
+		var more := hs.more_study() if hs != null else {}
+		if not more.is_empty():
+			choices.append({"id": "harder", "label": str(hc.harder.label), "detail": str(hc.harder.detail).format({
+					"slot": HabitSystem.slot_name(int(more.i)), "from": HabitSystem.activity_name(str(more.from)).to_lower()})})
+		var less := hs.less_study() if hs != null else {}
+		if not less.is_empty():
+			choices.append({"id": "ease", "label": str(hc.ease.label), "detail": str(hc.ease.detail).format({
+					"slot": HabitSystem.slot_name(int(less.i))})})
 	var e := Game.post_event(id, str(c.title[kind]), str(c.intro[kind]), choices, true)
 	e.kind = "school_card"
 	e.index = index
@@ -938,15 +955,24 @@ func settle_week(monday_key: int, meet_key: String, choice: String) -> void:
 	Game.post_event(id, str(c.title), str(o.note).format({"meet": meet_name}))   # (the line that shows in the day's events)
 
 
+## The report card's choice (session L1b): one more study slot (the first of habits.json card.more_from that is not study) or one
+## fewer (the last study slot of less_from becomes rest). The player pressed it: the habit changes as they chose.
 func _answer_card(choice: String) -> void:
-	var next := ""
+	var hs := HabitSystem.sys()
+	if hs == null:
+		return
+	var i := -1
+	var to := ""
 	match choice:
 		"harder":
-			next = "heavy"
+			i = int(hs.more_study().get("i", -1))
+			to = "study"
 		"ease":
-			next = "light"
-	if next != "" and next != effort and set_effort(next):
-		Game.post_event(id, str(cfg().ui.row_title), str(cfg().card.changed).format({"effort": setting_name("effort", next).to_lower()}))
+			i = int(hs.less_study().get("i", -1))
+			to = "rest"
+	if i >= 0 and hs.set_habit(i, to):
+		Game.post_event(id, str(cfg().ui.row_title), str(Data.habits.card.changed).format({"slot": HabitSystem.slot_name(i),
+				"to": HabitSystem.activity_name(to).to_lower()}))
 
 
 # --- Reading the school for the UI (session S2) ------------------------------------------------------------------------------
@@ -966,14 +992,6 @@ func any_subject_name(sid: String) -> String:
 	if not Lukio.subject_def(sid).is_empty():
 		return Lukio.subject_name(sid, lukio)
 	return sid
-
-
-## The name of a setting value ("Heavy"): kind = "effort" / "free_time".
-static func setting_name(kind: String, value: String) -> String:
-	for s in Data.school_life.settings[kind]:
-		if str(s.id) == value:
-			return str(s.name)
-	return value
 
 
 ## Where a subject stands now: the level rounded to the nearest quarter grade (written 8, 8+, 8½, 9-).
@@ -1049,15 +1067,6 @@ func week_summary(monday: Dictionary) -> Dictionary:
 			tests.append({"day": i, "subject": str(sid)})
 	return {"school_days": school_days, "break": break_id, "tests": tests,
 			"busy": tests.size() > int(cfg().tests.normal_per_week), "choice": choice_of(monday)}
-
-
-## The life load of a school day with the two settings and nothing else (what the settings alone weigh).
-func settings_load() -> float:
-	var ll: Dictionary = cfg().life_load
-	var scale := float(stage_of(Game.date).get("scale", 1.0))
-	var e := float(ll.effort.get(effort, 0.0))
-	var f := float(ll.free_time.get(free_time, 0.0))
-	return e * (scale if e > 0.0 else 1.0) + f * (scale if f > 0.0 else 1.0)
 
 
 ## "lighter than usual" / "normal" / "a little heavier" / "heavy" / "very heavy".
@@ -1426,7 +1435,9 @@ static func _lukio_from(src: Dictionary) -> Dictionary:
 func to_dict() -> Dictionary:
 	if not started:
 		return {}
-	var out := {"started": true, "effort": effort, "free_time": free_time, "focus": focus, "subjects": subjects,
+	# ("effort" / "free_time": session L1b keeps the two keys with what the habits amount to (HabitSystem.effort_word), so a
+	# career's school state saves exactly as before; the habits themselves are saved by HabitSystem.)
+	var out := {"started": true, "effort": effort_word(), "free_time": free_word(), "focus": focus, "subjects": subjects,
 			"term_tests": term_tests, "tests_log": tests_log, "reports": reports}
 	if not week_choices.is_empty():   # (S2: only a career that was asked has the key, so older states stay exactly as they were)
 		out["choices"] = week_choices
@@ -1444,8 +1455,6 @@ func to_dict() -> Dictionary:
 ## An empty state (an older save, or a career that hasn't played a day) starts from the creation answer on the next day.
 func from_dict(d: Dictionary) -> void:
 	started = false
-	effort = "normal"
-	free_time = "normal"
 	focus = []
 	subjects = {}
 	term_tests = {}
@@ -1483,8 +1492,7 @@ func from_dict(d: Dictionary) -> void:
 				"test": test, "results": rows, "decided": bool(src.get("decided", false))}
 	courses_mode = str(d.get("courses_mode", "ask")) if str(d.get("courses_mode", "ask")) in COURSES_MODES else "ask"
 	started = bool(d.get("started", false))
-	effort = str(d.get("effort", "normal"))
-	free_time = str(d.get("free_time", "normal"))
+	# (the "effort" / "free_time" of a save from before version 5 become habits in Game.from_dict: HabitSystem.from_old)
 	for sid in d.get("focus", []):
 		focus.append(str(sid))
 	for sid in d.get("subjects", {}):

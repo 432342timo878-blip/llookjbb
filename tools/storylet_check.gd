@@ -1280,6 +1280,8 @@ func _people_seasons(careers: int, cal) -> void:
 	var answered := 0
 	var none := 0
 	var auto := 0
+	var invites := 0           # session L1b: invitations (outside the 3-5 a week and the one a day)
+	var invite_week_max := 0
 	var moods := {}   # mood -> word id -> weeks (Sunday night, answers at random)
 	var quality_sum := 0.0   # the mind's training quality at each week's end (M1: ~1.0005 on average without the people)
 	var quality_n := 0
@@ -1310,6 +1312,7 @@ func _people_seasons(careers: int, cal) -> void:
 					moods[mood][wid] = int(moods[mood].get(wid, 0)) + 1
 		ms = _ms()
 		rival_people += ms.people.values().filter(func(p): return str(p.thread) == "rivals").size()
+		var invite_weeks := {}
 		var per_week := {}
 		var stops_week := {}
 		var per_day := {}
@@ -1338,6 +1341,11 @@ func _people_seasons(careers: int, cal) -> void:
 			if str(s.get("topic", "")) == "rival":
 				rival_notes += 1
 				continue   # (a rival's note sits outside the 3-5 a week, like the coach's race message)
+			if bool(f.get("invite", false)):   # (session L1b: posted when the week opens, outside the day's slot: at most 1 a week)
+				invites += 1
+				var iwk := floori((int(f.day) - start_monday) / 7.0)
+				invite_weeks[iwk] = int(invite_weeks.get(iwk, 0)) + 1
+				continue
 			var wk := floori((int(f.day) - start_monday) / 7.0)
 			per_week[wk] = int(per_week.get(wk, 0)) + 1
 			if f.stop or bool(f.get("planner", false)):   # (session L1a: an important moment waits for the planner instead of stopping)
@@ -1348,6 +1356,8 @@ func _people_seasons(careers: int, cal) -> void:
 		for dd in per_day:
 			if per_day[dd] > int(data.moments.rate.max_per_day):
 				per_day_bad += 1
+		for iw in invite_weeks:
+			invite_week_max = maxi(invite_week_max, int(invite_weeks[iw]))
 		for wk in range(1, weeks):
 			week_counts.append(int(per_week.get(wk, 0)))
 			week_stops.append(int(stops_week.get(wk, 0)))
@@ -1398,6 +1408,10 @@ func _people_seasons(careers: int, cal) -> void:
 			week_counts.max() if not week_counts.is_empty() else 0, data.moments.rate.max_per_day, per_day_bad],
 			week_counts.all(func(x): return x <= int(data.moments.rate.max_per_week)) and per_day_bad == 0)
 	_ok("at most ~1 moment a week waits for the planner on average (%.2f), none stops Play week" % stops, stops <= 1.05)
+	print("    invitations (session L1b, posted into a slot when the week opens; outside the counts above): %d, %.2f a week" % [
+			invites, invites / float(maxi(1, week_counts.size()))])
+	_ok("invitations come, and at most %d a week (most %d)" % [int(data.habits.invites.max_per_week), invite_week_max],
+			invites > 0 and invite_week_max <= int(data.habits.invites.max_per_week))
 	for b in cooldown_bad.slice(0, 5):
 		print("    " + b)
 	_ok("no moment again inside its cooldown, no 'once' moment twice (%d)" % cooldown_bad.size(), cooldown_bad.is_empty())

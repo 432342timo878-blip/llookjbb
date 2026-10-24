@@ -19,14 +19,15 @@
 		},
 		{
 			"id": "fr_party_race", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 21, "important": true,
-			"when": {"age": [14, 16], "weekday": [4, 5], "race_tomorrow": true},
+			"invite": {"days": [4, 5], "activity": "friends", "go": ["short", "all"], "title": "A party the night before your race?", "chip": "Party?"},
+			"when": {"age": [14, 16], "race_tomorrow": true},
 			"text": [
-				"Party at Joonas's place tonight! His parents are away. Everyone's going. You're coming, right?",
-				"Saturday night at the beach, a bonfire, the whole class. Come on, just for a bit!",
-				{"text": "There's a party tonight and you're the only one who hasn't answered. Coming?", "when": {"trait": ["partygoer"]}}
+				"Party at Joonas's place on {weekday}! His parents are away. Everyone's going. You're coming, right?",
+				"{weekday} night at the beach, a bonfire, the whole class. Come on, just for a bit!",
+				{"text": "There's a party on {weekday} and you're the only one who hasn't answered. Coming?", "when": {"trait": ["partygoer"]}}
 			],
 			"replies": [
-				{"id": "no", "label": "I race tomorrow, sorry", "hint": "{from} will be a bit hurt", "effects": {"relation": -2, "relation_thread": {"friends": -1}},
+				{"id": "no", "label": "I race the next day, sorry", "hint": "{from} will be a bit hurt", "effects": {"relation": -2, "relation_thread": {"friends": -1}},
 					"rule": "Always say no to parties the night before a race", "result": "Boring. Good luck tomorrow, I guess.", "result_from": "sender"},
 				{"id": "short", "label": "An hour, then home", "hint": "a late night before a race", "effects": {"relation": 2, "sleep": -1, "motivation": 1},
 					"result": "You left at ten like Cinderella. Everyone noticed. In a good way."},
@@ -37,18 +38,19 @@
 		},
 		{
 			"id": "fr_party_weekend", "important": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 21,
-			"when": {"age": [14, 16], "weekday": [4, 5], "race_tomorrow": false, "tomorrow_tags": ["long", "hard"]},
+			"invite": {"days": [4, 5], "activity": "friends", "go": ["go", "early"], "title": "An evening out with {from}?", "chip": "{from}?"},
+			"when": {"age": [14, 16], "race_tomorrow": false, "tomorrow_tags": ["long", "hard"]},
 			"text": [
-				"Movie night at mine tonight. Pizza, horror films, nobody sleeps. Coming?",
-				"Everyone's going bowling and then to the kiosk. You in?",
-				{"text": "Sauna evening at our place, then we watch the game. You have to come.", "when": {"month": [1, 2, 3, 10, 11, 12]}}
+				"Movie night at mine on {weekday}. Pizza, horror films, nobody sleeps. Coming?",
+				"Everyone's going bowling on {weekday} and then to the kiosk. You in?",
+				{"text": "Sauna evening at our place on {weekday}, then we watch the game. You have to come.", "when": {"month": [1, 2, 3, 10, 11, 12]}}
 			],
 			"replies": [
 				{"id": "go", "label": "I'm in", "hint": "a late night", "effects": {"relation": 3, "sleep": -1, "motivation": 1},
 					"result": "Best night in ages. Your legs may disagree tomorrow."},
 				{"id": "early", "label": "I'll come, but leave early", "hint": "", "effects": {"relation": 1},
 					"rule": "Go to weekend evenings, but leave early", "result": "Better than nothing!", "result_from": "sender"},
-				{"id": "no", "label": "Long run tomorrow, sorry", "hint": "{from} will be a bit hurt", "effects": {"relation": -2},
+				{"id": "no", "label": "Stay home: training the next day", "hint": "{from} will be a bit hurt", "effects": {"relation": -2},
 					"rule": "Say no to weekend evenings before a long or hard session", "result": "You and your long runs.", "result_from": "sender"}
 			],
 			"standing": "weekend_party"

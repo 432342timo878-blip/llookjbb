@@ -107,6 +107,7 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	var school_day := SchoolUI.day_panel(info)   # the day as blocks + the school life load (session S2)
 	if school_day != null:
 		add_child(school_day)
+	_add_free_time(w)
 
 	var sessions := UIKit.vbox(8)
 	sessions.add_child(UIKit.label("SESSIONS", "CaptionLabel"))
@@ -299,6 +300,13 @@ func _intensity_box(info: Dictionary) -> Control:
 	return box
 
 
+## The day's free-time slot with its four activities, back to the habit and an invitation on it (session L1b, HabitsUI.editor_box).
+func _add_free_time(w: WeekSim) -> void:
+	var box := HabitsUI.editor_box(w, day, func(): _after_change())
+	if box != null:
+		add_child(box)
+
+
 # --- A day that was played ---------------------------------------------------------------------------
 
 func _build_played(info: Dictionary) -> void:
@@ -363,7 +371,7 @@ func _build_race(info: Dictionary) -> void:
 	var level: String = Data.competitions.levels.get(meet.level, "")
 	if level != "":
 		box.add_child(UIKit.wrapped(level, "MutedLabel"))
-	box.add_child(UIKit.wrapped("The race replaces the day's training, so there is nothing to plan here. "
+	box.add_child(UIKit.wrapped("The race replaces the day's training, so there is no training to plan here. "
 			+ "You can't change a race day, but you can scratch from the race."))
 	box.add_child(HealthUI.scratch_control(meet, _after_change))
 	var cp := Game.get_system("proposals") as CoachProposals
@@ -381,6 +389,7 @@ func _build_race(info: Dictionary) -> void:
 	var school_day := SchoolUI.day_panel(info)
 	if school_day != null:
 		add_child(school_day)
+	_add_free_time(Game.current_week())   # (the evening after the race is a free-time slot too, session L1b)
 	if info.today:
 		var form := FormUI.race_card(meet)   # how you will race today (a later race day: it depends on the days in between)
 		if form != null:

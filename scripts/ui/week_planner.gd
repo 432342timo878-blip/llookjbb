@@ -12,6 +12,10 @@ extends VBoxContainer
 ## A tap on a day opens the day editor (the hub's), where "Ask the coach" is. The cards: the coach's notes (Make it easy / Keep
 ## mine, the Veto with its reasons), the moments that wait for Sunday, his meet suggestions, an unsettled meet-and-tests clash. The
 ## player decides: nothing here changes the week unless a button says so. Texts: data/planner.json; the look: Palette / ThemeBuilder.
+## Session L1b: every day shows its free-time slot (HabitsUI.chip: PC at the bottom of the day column, phone an icon on the right of
+## the row), faint unless something landed on it (an invitation, a late night before a race or a hard session). A tap opens the
+## slot's picker (PC: first among the cards; phone: under its day); an invitation is a card with its price (PC: among the cards;
+## phone: under its day).
 
 signal day_pressed(d: int)
 signal play_pressed(week: bool)
@@ -24,6 +28,51 @@ const PC_RIGHT := 290.0
 
 var callouts_anchor: Control         # the cards (Play week's "Show me" scrolls here)
 var selected := -1                   # the day open in the hub's day editor (a light border), -1 = none
+
+## The day whose slot picker is open (-1 = none) and the week it belongs to (kept while the planner redraws; session L1b).
+static var open_slot := -1
+static var open_slot_week := 0
+
+
+## The slot picker that is open this week, or -1.
+static func slot_open() -> int:
+	if open_slot >= 0 and Game.athlete != null and open_slot_week == Calendar.date_key(Game.week_monday()):
+		return open_slot
+	return -1
+
+
+## A tap on a slot chip: opens its picker, or closes it when it is open.
+func _toggle_slot(d: int) -> void:
+	open_slot = -1 if slot_open() == d else d
+	open_slot_week = Calendar.date_key(Game.week_monday())
+	changed.emit()
+
+
+func _close_slot() -> void:
+	open_slot = -1
+	changed.emit()
+
+
+## The slot's chip of day `d` (null without the habit system).
+func _slot_chip(w: WeekSim, d: int, icon_only: bool) -> Control:
+	var hs := HabitsUI.system()
+	if hs == null:
+		return null
+	return HabitsUI.chip(hs.slot_info(w, d), icon_only, _toggle_slot)
+
+
+## The open slot's picker for day `d`.
+func _slot_picker(w: WeekSim, d: int) -> Control:
+	return HabitsUI.picker(w, d, func(): changed.emit(), _close_slot)
+
+
+## This week's invitations still to come as cards (waiting or planned), oldest first.
+static func _invites(w: WeekSim) -> Array:
+	var ms := PeopleUI.system()
+	if ms == null:
+		return []
+	var today := StoryletSystem.day_no(Game.date)
+	return ms.invitations(w.monday).filter(func(m): return str(m.answer) == "" and int(m.slot_day) >= today)
 
 
 static func ui() -> Dictionary:
@@ -46,6 +95,8 @@ func _ready() -> void:
 
 ## The choices still open this week: the coach's notes for days not played yet, the moments waiting for the planner (his meet
 ## suggestions among them), an unsettled meet-and-tests clash. [{kind: "note" | "moment" | "clash", ...}]
+## Session L1b (user 2026-10-24): an invitation is NOT one of them: it sits in its evening with its price and "If you leave it, you
+## stay home", but it neither counts in "N choices waiting" nor makes Play week ask (a careful week stays two clicks).
 static func open_choices() -> Array:
 	var out := []
 	if Game.athlete == null:
@@ -56,7 +107,8 @@ static func open_choices() -> Array:
 	var ms := PeopleUI.system()
 	if ms != null:
 		for m in ms.waiting():
-			out.append({"kind": "moment", "m": m})
+			if not m.has("invite"):
+				out.append({"kind": "moment", "m": m})
 	var clash := _clash()
 	if not clash.is_empty():
 		out.append({"kind": "clash", "card": clash})
@@ -537,12 +589,21 @@ func _day_column(w: WeekSim, d: int, note: bool) -> Control:
 		col.add_child(c)
 	if bool(info.played):
 		panel.modulate = Color(1, 1, 1, 0.6)
-	panel.add_child(col)
+	# (session L1b: the day's top part is one button (the day editor), the slot chip under it is its own button)
+	var outer := UIKit.vbox(4)
+	var top := MarginContainer.new()
+	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	top.add_child(col)
 	var tap := Button.new()
 	tap.theme_type_variation = "CardOverlay"
 	tap.focus_mode = Control.FOCUS_ALL
 	tap.pressed.connect(func(): day_pressed.emit(d))
-	panel.add_child(tap)
+	top.add_child(tap)
+	outer.add_child(top)
+	var chip := _slot_chip(w, d, false)
+	if chip != null:
+		outer.add_child(chip)
+	panel.add_child(outer)
 	return panel
 
 
@@ -641,6 +702,10 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 	grid.columns = 1 if (Layout.compact or Layout.side_open) else 2
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
+	if not skip_notes:   # (PC, session L1b: the open slot picker first; the phone shows it under its day)
+		var open := slot_open()
+		if open >= 0 and HabitsUI.system() != null:
+			grid.add_child(_slot_picker(w, open))
 	if not skip_notes:   # (the notes of days still to come, answered or not; a played day's note is history)
 		for p in _notes(w, false):
 			if int(p.days[0].d) >= w.day:
@@ -650,8 +715,13 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 		grid.add_child(_clash_card(clash))
 	var ms := PeopleUI.system()
 	if ms != null:
+		if not skip_notes:   # (session L1b: the invitations of the week, waiting or planned; the phone shows them under their day)
+			for m in _invites(w):
+				if slot_open() != Calendar.weekday(StoryletSystem._date_of(int(m.slot_day))):   # (the open picker has it)
+					grid.add_child(HabitsUI.invite_card(m, func(): changed.emit()))
 		for m in ms.waiting():
-			grid.add_child(_moment_card(m))
+			if not m.has("invite"):
+				grid.add_child(_moment_card(m))
 	for c in grid.get_children():
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return grid
@@ -1025,11 +1095,20 @@ func _build_phone() -> void:
 	for p in _notes(w, false):
 		if int(p.days[0].d) >= w.day:
 			notes[int(p.days[0].d)] = p
+	var invites := {}   # (session L1b: an invitation opens under its day, like a note)
+	for m in _invites(w):
+		invites[Calendar.weekday(StoryletSystem._date_of(int(m.slot_day)))] = m
 	for d in 7:
 		var open := notes.has(d) and str(notes[d].status) == "asked"
 		week.add_child(_day_row(w, d, open))
+		var under := []
 		if notes.has(d):
-			var card := note_card(notes[d])
+			under.append(note_card(notes[d]))
+		if slot_open() == d and HabitsUI.system() != null:
+			under.append(_slot_picker(w, d))
+		elif invites.has(d):
+			under.append(HabitsUI.invite_card(invites[d], func(): changed.emit()))
+		for card in under:
 			var pad := MarginContainer.new()
 			pad.add_theme_constant_override("margin_bottom", 8)
 			pad.add_child(card)
@@ -1167,11 +1246,20 @@ func _day_row(w: WeekSim, d: int, note: bool) -> Control:
 		row.add_child(Icons.rect("message-circle", 18.0, Palette.WARN))
 	elif bool(info.played):
 		row.add_child(Icons.rect("check", 18.0, Palette.GOOD))
-	panel.add_child(row)
 	if bool(info.played):
 		panel.modulate = Color(1, 1, 1, 0.6)
+	# (session L1b: the row is one button (the day editor) except the slot icon on its right, its own 44 px button)
+	var outer := UIKit.hbox(4)
+	var left := MarginContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_child(row)
 	var tap := Button.new()
 	tap.theme_type_variation = "CardOverlay"
 	tap.pressed.connect(func(): day_pressed.emit(d))
-	panel.add_child(tap)
+	left.add_child(tap)
+	outer.add_child(left)
+	var chip := _slot_chip(w, d, true)
+	if chip != null:
+		outer.add_child(chip)
+	panel.add_child(outer)
 	return panel

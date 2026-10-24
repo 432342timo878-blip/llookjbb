@@ -437,7 +437,7 @@ func _save_load() -> void:
 	var file := FileAccess.get_file_as_string(saves.DIR + "coach_check.json")
 	var parsed: Dictionary = JSON.parse_string(file)
 	_ok("the save is version %d and holds the coach records" % saves.VERSION,
-			int(parsed.version) == 4 and parsed.game.systems.has("coach") and not parsed.game.systems.coach.coaches.is_empty())
+			int(parsed.version) == saves.VERSION and saves.VERSION >= 4 and parsed.game.systems.has("coach") and not parsed.game.systems.coach.coaches.is_empty())
 	var coach_before: String = JSON.stringify(game.get_system("coach").to_dict())
 	_play_days(30)
 	var straight := _snapshot()

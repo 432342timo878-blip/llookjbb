@@ -1,7 +1,7 @@
 class_name SchoolUI
 extends RefCounted
-## School where the player sees it (GDD 4.9.3 / 4.9.7, session S2): the two life settings (the Training tab and the School page),
-## the day as blocks in the day editor, the week strip's marks, the Calendar's bands and the Report tab's school lines. Reading
+## School where the player sees it (GDD 4.9.3 / 4.9.7, session S2): the day as blocks in the day editor (its evening = the day's
+## free-time slot since session L1b, which replaced the two life settings), the week strip's marks, the Calendar's bands and the Report tab's school lines. Reading
 ## the SchoolSystem and changing only its settings. With the school model off (SchoolSystem.model_enabled) every piece shows
 ## nothing. Every control is at least 44 px and nothing needs hovering. Texts: data/school_life.json `ui` (and `texts`).
 
@@ -29,59 +29,8 @@ static func break_name(break_id: String) -> String:
 	return str(Data.school_life.texts.breaks.get(break_id, ""))
 
 
-# --- The two settings ---------------------------------------------------------------------------------------------------------
-
-## The panel with Study effort and Free time (three 44 px toggles each, what the chosen one does) and what the two weigh
-## together. `on_open` (valid) adds an "Open the School page" button (the Training tab). Null with the school model off.
-static func settings_panel(on_open := Callable()) -> Control:
-	var ss := system()
-	if ss == null:
-		return null
-	var u := ui()
-	var box := UIKit.vbox(10)
-	box.add_child(UIKit.label(str(u.settings_head), "CaptionLabel"))
-	box.add_child(UIKit.wrapped(str(u.settings_text), "MutedLabel"))
-	var load_label := UIKit.wrapped("", "")
-	var refresh := func(): load_label.text = str(u.settings_load).format({"word": SchoolSystem.life_word(ss.settings_load())})
-	box.add_child(_setting(ss, "effort", str(u.effort_label), refresh))
-	box.add_child(_setting(ss, "free_time", str(u.free_label), refresh))
-	refresh.call()
-	box.add_child(load_label)
-	if on_open.is_valid():
-		var open := UIKit.button(str(u.open_page), false, 200)
-		open.size_flags_horizontal = Control.SIZE_EXPAND_FILL if Layout.compact else Control.SIZE_SHRINK_BEGIN
-		open.pressed.connect(func(): on_open.call())
-		box.add_child(open)
-	return UIKit.panel(box, 16)
-
-
-## One setting: its name, the three toggles (a row on PC, a column on a phone) and the text of the chosen one.
-static func _setting(ss: SchoolSystem, kind: String, title: String, on_change: Callable) -> Control:
-	var col := UIKit.vbox(6)
-	col.add_child(UIKit.label(title, "SubheadingLabel"))
-	var options: Array = Data.school_life.settings[kind]
-	var current: String = ss.effort if kind == "effort" else ss.free_time
-	var text := UIKit.wrapped("")
-	for o in options:
-		if str(o.id) == current:
-			text.text = str(o.text)
-	var group := ButtonGroup.new()
-	var row := UIKit.flex(8)
-	for o in options:
-		var b := UIKit.toggle(str(o.name), group)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.button_pressed = str(o.id) == current
-		b.pressed.connect(func():
-			if kind == "effort":
-				ss.set_effort(str(o.id))
-			else:
-				ss.set_free_time(str(o.id))
-			text.text = str(o.text)
-			on_change.call())
-		row.add_child(b)
-	col.add_child(row)
-	col.add_child(text)
-	return col
+# (Session L1b: the two settings' panel is gone; the habits are in the Season tab: HabitsUI.section, the School page's line:
+# HabitsUI.school_line.)
 
 
 # --- The week strip --------------------------------------------------------------------------------------------------------------
@@ -145,10 +94,9 @@ static func day_panel(info: Dictionary) -> Control:
 		if info.intensity != WeekSim.NORMAL:
 			training += " · " + DayInfo.intensity_name(info.intensity)
 	box.add_child(_block(str(u.training), training))
-	var evening := str(u.evening_free)
-	if on_school:
-		evening = str(u.evening_school).format({"effort": SchoolSystem.setting_name("effort", ss.effort).to_lower(),
-				"free": SchoolSystem.setting_name("free_time", ss.free_time).to_lower()})
+	var evening := HabitsUI.evening_text(info.date)   # (session L1b: the day's free-time slot)
+	if evening == "":
+		evening = str(u.evening_free)
 	box.add_child(_block(str(u.evening), evening))
 	var life := _life_lines(ss, info)
 	if life != null:

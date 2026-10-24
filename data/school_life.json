@@ -1,5 +1,5 @@
 {
- "_note": "The school model (GDD 4.9.3, session S1; scripts/core/school_system.gd). The calendar itself (real 2026-27 dates and the rules for later years) is data/school.json; this file holds the model: the stages, the subjects, the starting grades by the creation answer, the two weekly life settings, how grades drift, the tests, the report cards and the life load. NEUTRAL = IDENTICAL: a normal school day at Normal / Normal has a life load of exactly 0, and at 0 the game is today's game to the last digit (the code does not even run). Life load is a number per day in 'points': positive = a heavier day (fatigue recovers slower, colds a little more likely, injuries a little more likely), negative = a lighter one (holidays). All numbers here are Claude's first guesses (estimated), to be tuned in B1; the user's decisions of 2026-10-17 are in GDD 4.9.3 'Built (step S1)'.",
+ "_note": "The school model (GDD 4.9.3, session S1; scripts/core/school_system.gd). The calendar itself (real 2026-27 dates and the rules for later years) is data/school.json; this file holds the model: the stages, the subjects, the starting grades by the creation answer, how grades drift, the tests, the report cards and the life load (session L1b: the two old weekly life settings, study effort and free time, became the free-time slots and the standing habits of data/habits.json). NEUTRAL = IDENTICAL: a normal school day with the default habit has a life load of exactly 0, and at 0 the game is today's game to the last digit (the code does not even run). Life load is a number per day in 'points': positive = a heavier day (fatigue recovers slower, colds a little more likely, injuries a little more likely), negative = a lighter one (holidays). All numbers here are Claude's first guesses (estimated), to be tuned in B1; the user's decisions of 2026-10-17 are in GDD 4.9.3 'Built (step S1)'.",
  "stages": {
   "_note": "The school year that starts in the autumn of year Y is grade Y - birth year - grade_offset (born 2012: grade 8 in 2026-27). Grades 8 and 9 are yläkoulu (`list`); from the school year in which the athlete would be in grade 10 (born 2012: autumn 2028) the stage comes from the athlete's PATH (SchoolSystem.paths, made by the application, GDD 4.9.3 session S3a) and is one of `secondary` below. `scale` multiplies every positive part of the life load (grade 9 has more homework); `exam_weeks` = the stage's big exam weeks (user 2026-10-17: none in yläkoulu, only single tests). Rule formats: {before: christmas | winter | end, weeks: n} = the Mon-Fri school week n weeks before that break's first free day; {periods: true, last_shift_days: -2} = the last `exam_week_school_days` school days of each lukio period (data/school.json rules.lukio_periods, fitted to Helsingin kielilukio 2026-27; the last period's exam week ends `last_shift_days` days before the year's end). `applies`: the joint application is made in this stage's spring. `years`: how long a path of this kind lasts by default (session S3b: a lukio can take 3 or 4 years, the player's choice in the lukio's first stop, stored on the path; courses and the matriculation exams: data/lukio.json). `final`: the last year of a path (the final certificate).",
   "grade_offset": 6,
@@ -51,10 +51,9 @@
   "sd": 0.6, "max": 1.5, "pe_bonus": 1.0, "sports_class": 0.5
  },
  "grades": {
-  "_note": "Every school day each subject's level drifts towards its target: level += (target - level) x (1 - 0.5^(1 / half_life_days)), so half the way in half_life_days school days (~a school year). target = natural + effort shift + focus shift, kept inside min..max. GDD 4.9.7 targets: Normal holds the average +-0.3 a year, Heavy +0.5, Light -0.5 (= half of the shift in a year). Focus subjects (at most focus_max): + focus_shift each; every other academic subject - focus_others per focus subject (the study time moves).",
+  "_note": "Every school day each subject's level drifts towards its target: level += (target - level) x (1 - 0.5^(1 / half_life_days)), so half the way in half_life_days school days (~a school year). target = natural + the study slots' shift (session L1b: data/habits.json effects, +-1 at most like the old Heavy / Light effort; 0 with the default habit) + focus shift, kept inside min..max. GDD 4.9.7 targets: the default holds the average +-0.3 a year, a shift of +1 gives +0.5 a year, -1 gives -0.5 (= half of the shift in a year). Focus subjects (at most focus_max): + focus_shift each; every other academic subject - focus_others per focus subject (the study time moves).",
   "min": 4.0, "max": 10.0,
   "half_life_days": 190,
-  "effort_shift": {"light": -1.0, "normal": 0.0, "heavy": 1.0},
   "focus_shift": 1.0, "focus_others": 0.1, "focus_max": 2
  },
  "tests": {
@@ -72,41 +71,22 @@
   "tests_weight": 0.5,
   "names": {"christmas": "Christmas report card", "spring": "Spring report card", "final": "Final certificate"}
  },
- "settings": {
-  "_note": "The two weekly life settings (GDD 4.9.3; the player sets them in S2's School page). Study effort = the grades (grades.effort_shift) and the life load of school days; free time (user 2026-10-17: motivation vs rest) = Lots: time with friends, motivation pulls up but later nights add life load; Little: more rest, motivation pulls down. Neither changes what is trained.",
-  "effort": [
-   {"id": "light", "name": "Light", "text": "The minimum: grades slide, school takes less out of you."},
-   {"id": "normal", "name": "Normal", "text": "Homework done, grades hold."},
-   {"id": "heavy", "name": "Heavy", "text": "Extra study every evening: grades rise, but school days get heavier."}
-  ],
-  "free_time": [
-   {"id": "little", "name": "Little", "text": "Home early, to bed early: more rest, but it gets dull."},
-   {"id": "normal", "name": "Normal", "text": "Some time with friends, some rest."},
-   {"id": "lots", "name": "Lots", "text": "Out with friends a lot: good for motivation, but late nights on school days."}
-  ],
-  "default_effort": "normal",
-  "default_free_time": "normal"
- },
  "life_load": {
-  "_note": "The day's life load, in points (0 = a normal school day at Normal / Normal = today's game). Parts: a weekday off school in a break or the summer (holiday_weekday; user 2026-10-17: holidays = relief), and on SCHOOL days only: study effort, free time, a double day = two separate practices (two sessions that are not add-ons; drills, strides and the like ride along in the same practice, so the coach's Monday 'easy run + drills' is no double day), each test on a day of a busy test week, a day of an exam week (S3). Weekends are 0. Positive parts x the stage's scale. Double days are free on holidays and weekends (and in S3 in the urheilulukio's morning-practice slots).",
+  "_note": "The day's life load, in points (0 = a normal school day with the default habit = today's game). Parts: a weekday off school in a break or the summer (holiday_weekday; user 2026-10-17: holidays = relief), and on SCHOOL days only: the free-time slots (session L1b, data/habits.json: extra study in the week, a late night after a friends evening, an early night after a rest evening; they replaced the two old settings study effort and free time), a double day = two separate practices (two sessions that are not add-ons; drills, strides and the like ride along in the same practice, so the coach's Monday 'easy run + drills' is no double day), each test on a day of a busy test week, a day of an exam week (S3). Weekends are 0. Positive parts x the stage's scale. Double days are free on holidays and weekends (and in S3 in the urheilulukio's morning-practice slots).",
   "holiday_weekday": -1.0,
-  "effort": {"light": -0.5, "normal": 0.0, "heavy": 1.0},
-  "free_time": {"little": -0.5, "normal": 0.0, "lots": 0.75},
   "double_day": 1.5,
   "add_ons": ["drills", "speed_strides", "start_practice", "mobility", "strength", "gym_core"],
   "busy_test": 0.75,
   "exam_day": 2.0
  },
  "effects": {
-  "_note": "What the life load does (user 2026-10-17: mild). Fatigue: the day's keep (the share of fatigue carried to tomorrow, Training.daily_keep) + keep_per_point x load (an exam day of 2 points: ~4 % more fatigue built up over a week). Colds: the day's chance x (1 + illness_per_point x load), never below illness_min. Injuries (overuse and bad-luck): x (1 + injury_per_point x load) for a positive load only (Mann 2016, Hamlin 2019: more injuries in academic-stress weeks; older athletes than ours, so mild). Stress: the Sunday drift's pull = the coming week's life load summed over its days / 7 x stress_per_point; holidays pull it down. Busy test week ahead: stress news busy_week_news on the Sunday before (exam week ahead: exam_week_news). Motivation: free time Lots pulls + motivation_lots, Little - motivation_little.",
+  "_note": "What the life load does (user 2026-10-17: mild). Fatigue: the day's keep (the share of fatigue carried to tomorrow, Training.daily_keep) + keep_per_point x load (an exam day of 2 points: ~4 % more fatigue built up over a week). Colds: the day's chance x (1 + illness_per_point x load), never below illness_min. Injuries (overuse and bad-luck): x (1 + injury_per_point x load) for a positive load only (Mann 2016, Hamlin 2019: more injuries in academic-stress weeks; older athletes than ours, so mild). Stress: the Sunday drift's pull = the coming week's life load summed over its days / 7 x stress_per_point; holidays pull it down. Busy test week ahead: stress news busy_week_news on the Sunday before (exam week ahead: exam_week_news). Motivation: the free-time slots' pull is in data/habits.json (session L1b; it was free time's motivation_lots / motivation_little here).",
   "keep_per_point": 0.005,
   "illness_per_point": 0.075, "illness_min": 0.5,
   "injury_per_point": 0.075,
   "stress_per_point": 12.0,
   "busy_week_news": 4.0,
-  "exam_week_news": 14.0,
-  "motivation_lots": 4.0,
-  "motivation_little": 4.0
+  "exam_week_news": 14.0
  },
  "decisions": {
   "_note": "The school's decisions (GDD 4.9.3, session S2), only in the real game (SchoolSystem.decisions_enabled, set by main.gd: the tools that play days never see them). 'meet_test': a stop on the morning a race you entered is in a week where tests clash with it (a busy test week with at least min_left_busy tests still to write up to the race day, or a test on the race day or the day before it): three answers. Each option: test_penalty = grades off every test written in that Mon-Sun week, load = extra life load points on each school day of that week (x the stage's scale), stress = news to the stress mood when chosen, scratch = the race is withdrawn. Claude's first guesses (estimated), tuned in B1. An answer that is not an option id (a tool's 'ok') = `default`.",
@@ -128,7 +108,7 @@
   }
  },
  "card": {
-  "_note": "The report card day (session S2): a stop with the card (SchoolEventPanel) and, after it, the choice for the next term: keep going, study harder (Heavy) or ease off (Light); only the options that change something are offered. The final certificate has just Continue. Verdict = the average against the previous card (`delta`), level = the average now. The family's reaction comes with the people system (P1).",
+  "_note": "The report card day (session S2): a stop with the card (SchoolEventPanel) and, after it, the choice for the next term: keep my evenings, one more study evening or one fewer (session L1b: the choice edits the habits by one slot; its texts are in data/habits.json card); only the options that change something are offered. The final certificate has just Continue. Verdict = the average against the previous card (`delta`), level = the average now. The family's reaction comes with the people system (P1).",
   "title": {"christmas": "Your Christmas report card", "spring": "Your spring report card", "final": "Your final certificate"},
   "intro": {"christmas": "The autumn term is over. Here is how it went.", "spring": "The school year is over. Here is your report card.", "final": "This stage of school is over. This is your final certificate."},
   "first": "Your first report card of this career.",
@@ -149,15 +129,11 @@
   "choose": "How will you handle the next term?",
   "choose_final": "This stage is done. Your grades are kept for the next step.",
   "choices": {
-   "keep": {"label": "Keep going as I am", "detail": "Study effort stays {effort}."},
-   "harder": {"label": "Study harder (Heavy)", "detail": "Grades rise, but school days get heavier."},
-   "ease": {"label": "Ease off (Light)", "detail": "School takes less out of you, but grades slide."},
    "done": {"label": "Continue", "detail": ""}
-  },
-  "changed": "You set your study effort to {effort}."
+  }
  },
  "ui": {
-  "_note": "Everything the player reads in the school UI (session S2): the School page (People tab), the two settings (also in the Training tab), the week strip, the day editor's blocks, the Calendar bands and the Report tab. {x} = a value filled in by the code.",
+  "_note": "Everything the player reads in the school UI (session S2): the School page (People tab), the week strip, the day editor's blocks, the Calendar bands and the Report tab. {x} = a value filled in by the code. (Session L1b: the two settings' texts are gone; the habits' are in data/habits.json ui.)",
   "row_title": "School",
   "row_sub": "{stage} · average {avg}",
   "row_sub_none": "{stage}",
@@ -174,11 +150,6 @@
   "week_chose": "Your choice: {option}.",
   "next_card": "Next report card: {date}.",
   "settings_head": "SCHOOL LIFE",
-  "settings_text": "Two settings for your school days. They change how heavy your days are and how your grades go, never what you train.",
-  "effort_label": "Study effort",
-  "free_label": "Free time",
-  "settings_load": "Together your school days weigh: {word}.",
-  "open_page": "Open the School page",
   "focus_head": "FOCUS SUBJECTS",
   "focus_text": "Push up to two subjects: they rise faster while the other subjects slip a little. Change them any time; grades move slowly, so switching back and forth gains nothing.",
   "focus_none": "No focus subject.",
@@ -222,7 +193,6 @@
    "school_after": "Not a school day.",
    "training_rest": "A rest day.",
    "training_race": "Race: {meet}.",
-   "evening_school": "Homework, then your own time. Study effort {effort}, free time {free}.",
    "evening_free": "A free evening.",
    "life_head": "School life today",
    "life_line": "{word}",
@@ -258,18 +228,15 @@
    "late_night": "A late night yesterday",
    "decision_bus": "Studying on the bus this week",
    "holiday": "School holiday: time to rest",
-   "effort_heavy": "Heavy study effort",
-   "effort_light": "Light study effort",
-   "free_lots": "Lots of free time: late nights",
-   "free_little": "Little free time: early nights",
+   "slot_study": "Extra study ({n} study slots this week)",
+   "slot_friends": "Out with friends last night",
+   "slot_rest": "Early to bed last night",
    "double_day": "Double days on school days",
    "busy_test": "A busy test week ({n} tests)",
    "exam": "Exam week",
    "courses": "A heavy period ({n} courses)",
    "courses_light": "A light period ({n} courses)",
-   "matric": "Matriculation exam",
-   "motivation_lots": "Lots of free time with friends",
-   "motivation_little": "Little free time"
+   "matric": "Matriculation exam"
   },
   "news": {
    "busy_week": "{n} tests this week",

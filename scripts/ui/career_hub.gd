@@ -56,6 +56,7 @@ var _built_side_open := false   # the page was built with the side panel open (L
 
 func _exit_tree() -> void:
 	Layout.side_open = false   # (only the hub has a side panel)
+	HabitsUI.hub_ref = null   # (session L1b: nothing static keeps pointing at a hub that is gone)
 
 
 func _ready() -> void:
@@ -926,6 +927,7 @@ func _build_profile(a: Athlete) -> void:
 
 ## The People tab (GDD 4.9.7, session C3): the threads, the open thread, the coach's profile.
 func _build_people() -> void:
+	HabitsUI.hub_ref = weakref(self)   # (the School page's "Change my habits" opens the Season tab, session L1b)
 	var view := PeopleView.new(_people_page)
 	view.page_changed.connect(func(p: String):
 		_people_page = p
@@ -943,17 +945,18 @@ func _open_people(thread_id: String) -> void:
 	_show("people")
 
 
-## The Training tab: the page of the plan, then (not on the phase editor) the standing orders: what Play week stops for and
-## the rules saved from repeated answers (GDD 4.9.2, session C3).
+## The Season tab (it was the Training tab; GDD 4.10 decision 1 "One week view": the season plan): the page of the plan, then
+## (not on the phase editor) the standing habits (session L1b: the free-time slots, where the school's two settings were), the
+## mental plan (until L3 cuts it) and the standing orders (the coach's notes, the lukio courses, the rules saved from answers).
 func _build_training() -> void:
 	_build_training_page()
 	if _phase_open == "":
+		var habits := HabitsUI.section(func(): HealthUI.refresh())   # YOUR HABITS (session L1b)
+		if habits != null:
+			_content.add_child(habits)
 		var mental := MentalPlanUI.build()   # the weekly mental plan and the cue word (session M1)
 		if mental != null:
 			_content.add_child(mental)
-		var school := SchoolUI.settings_panel(func(): _open_people("school"))   # study effort + free time (session S2)
-		if school != null:
-			_content.add_child(school)
 		_content.add_child(StandingOrders.build())
 
 

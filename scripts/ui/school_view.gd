@@ -1,6 +1,7 @@
 class_name SchoolView
 extends VBoxContainer
-## The School page of the People tab (GDD 4.9.3 / 4.9.7, session S2): this week at school, the two life settings, the focus
+## The School page of the People tab (GDD 4.9.3 / 4.9.7, session S2): this week at school, your evenings (the habits' line,
+## session L1b; it was the two life settings), the focus
 ## subjects, every subject with where you stand (written the Finnish way, 8 / 8+ / 8½ / 9-; tap a subject for its latest tests),
 ## the averages and the report cards. PC: two columns (the week, the settings and the focus on the left, the grades and the cards
 ## on the right); a phone, or PC beside the hub's side panel: one column. It redraws itself when a focus subject is toggled.
@@ -39,7 +40,9 @@ func _build() -> void:
 	if in_lukio:   # the lukio's period and choices (S3b)
 		left.add_child(LukioUI.period_panel(ss))
 		left.add_child(LukioUI.choices_panel(ss, _build))
-	left.add_child(SchoolUI.settings_panel())
+	var habits := HabitsUI.school_line()   # (session L1b: your evenings in one line; the habits are changed in the Season tab)
+	if habits != null:
+		left.add_child(habits)
 	if bool(stage.get("subjects", false)):
 		left.add_child(_focus(ss))
 		right.add_child(LukioUI.card_panel(ss) if in_lukio else _grades(ss))

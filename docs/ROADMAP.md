@@ -481,7 +481,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         managers; three directions as mock-ups; the user picks; written into GDD 5 with colours, type, density and icon style; D28
         revisited). No game code. *(Opus, high)*
         Done: a chosen direction in the GDD, and the week planner shown in it as a mock-up.
-  - [ ] **L1. The week planner** (GDD 4.10 decision 1): the Sunday planner replaces the Sunday talk popup; the coach's notes on days (only
+  - [x] **L1. The week planner** *(done 2026-10-24 in two sessions, L1a + L1b)* (GDD 4.10 decision 1): the Sunday planner replaces the Sunday talk popup; the coach's notes on days (only
         when his truth is not "Fine"; Make it easy / Keep mine); proposals are no longer stops; the mid-week stop rule; race weeks shown with
         the plan's own taper; the Training tab becomes the season plan; the 9 free-time slots with standing habits (neutral habit in `lab`);
         built in V1's look; save version 5 (older saves load). *(Opus, high)*
@@ -499,7 +499,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           the talk's popup and the proposals' stops go (the coach's line + notes on days); people moments wait for Sunday; the
           mid-week stop rule; one week view (no week strip; Overview + Report fold into This week and a first Career tab); help.
           *(Opus, high)*
-    - [ ] **L1b. The slots + standing habits:** the 9 free-time slots and the habits that fill them (replacing study effort / free
+    - [x] **L1b. The slots + standing habits** *(done 2026-10-24: GDD 4.10 "Built (step L1b)"; careful week still 2 clicks, mid-week
+          stops 0.33 as before; an invitation doesn't make Play week ask)*: the 9 free-time slots and the habits that fill them (replacing study effort / free
           time; the neutral habit in `lab` = Normal / Normal), the Training tab → the season plan with the habits, save version 5,
           the "something lands on a slot" mechanism proven with a couple of existing moments (L3 sorts the rest, P2 brings the new
           people's invitations). *(Opus, high)*

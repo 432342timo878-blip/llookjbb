@@ -98,8 +98,9 @@ func _make_systems() -> Array:
 	# (The mind (M1) after the coach and before the moments: the day's diagnoses and race are news for the moods before an evening
 	# moment or the Sunday talk reads them.)
 	# (School (S1) before the mind: the day's tests and the life load are in the day log before the mind reads the day.)
-	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), SchoolSystem.new(), MindSystem.new(),
-			StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new()]
+	# (The habits (L1b, the free-time slots) beside the school: no dice; each evening they remember the slot for the next day.)
+	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), SchoolSystem.new(), HabitSystem.new(),
+			MindSystem.new(), StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new()]
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list
@@ -171,6 +172,10 @@ func from_dict(d: Dictionary) -> void:
 	var states: Dictionary = d.get("systems", {})
 	for s in systems:
 		s.from_dict(states.get(s.id, {}))
+	# Saves from before version 5 (session L1b) have the school's two settings instead of the habits: they become the nearest habits.
+	if not states.has("habits"):
+		var school_state: Dictionary = states.get("school", {})
+		(get_system("habits") as HabitSystem).from_old(str(school_state.get("effort", "normal")), str(school_state.get("free_time", "normal")))
 	# Saves from before version 4 (session C1) have no coach records: the athlete gets their club coach now (the same
 	# person and voice they had at races).
 	(get_system("coach") as CoachSystem).ensure_head(athlete, date)

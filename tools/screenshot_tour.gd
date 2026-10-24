@@ -292,6 +292,8 @@ func _run() -> void:
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _school_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
+	await _slots_tour(main, hub)
+	hub = main.get_node("ScreenHost").get_child(-1)
 	await _application_tour(main, hub)
 	hub = main.get_node("ScreenHost").get_child(-1)
 	await _lukio_tour(main, hub)
@@ -335,7 +337,7 @@ func _cast_tour(main: Node, hub_in: Control) -> void:
 		await _shot("54b_cast_result_card")
 		hub._end_result_card()
 		await _frames(3)
-	for pair in [["fam_shoes", "parent"], ["fr_party_weekend", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
+	for pair in [["fam_shoes", "parent"], ["fr_gaming", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
 		var who: Array = ms.people_for(str(pair[1]))
 		if not who.is_empty():
 			ms._post(ms.storylet(str(pair[0])), who[0], ctx, today, true, {"counted": false})
@@ -535,11 +537,11 @@ func _school_tour(main: Node, hub_in: Control) -> void:
 	hub._people_page = ""
 	hub._show("training")
 	await _frames(5)
-	var settings = _find_label(hub, "SCHOOL LIFE")
+	var settings = _find_label(hub, "YOUR HABITS")   # (session L1b: the habits replaced the two school settings)
 	if settings != null:   # (the panel's top at the top of the page)
 		hub._scroll.scroll_vertical += int(settings.global_position.y - hub._scroll.global_position.y) - 24
 	await _frames(4)
-	await _shot("51b_school_settings")
+	await _shot("51b_season_habits")
 	hub._show("calendar")
 	await _frames(5)
 	await _shot("51c_school_calendar")
@@ -554,6 +556,112 @@ func _school_tour(main: Node, hub_in: Control) -> void:
 		await _shot("51e_report_card")
 		hub._on_event_answer(game.pending_event().id, "keep")
 	hub._show("overview")
+
+
+# --- The free-time slots (session L1b): the planner with a changed evening and its amber clash, an invitation waiting and one
+# --- planned, the slot picker, an invitation answered, the day editor's FREE TIME, the Season tab's habits (shots 56...) ---------
+
+func _slots_tour(main: Node, hub_in: Control) -> void:
+	var game = main.get_node("/root/Game")
+	var hub: Control = hub_in
+	_answer_pending(game)
+	hub._show_pending_event()
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var WPL = load("res://scripts/ui/week_planner.gd")
+	var cal = load("res://scripts/core/calendar.gd")
+	var ms = game.get_system("moments")
+	var hs = game.get_system("habits")
+	MS.people_enabled = true
+	ms.ensure_cast(game.athlete)
+	ms._sync_people()
+	var w = game.current_week()
+	var first: int = maxi(int(w.day), 0)
+	print("slots tour: %s, the week from day %d" % [game.date, first])
+	# A changed evening (friends on a school night) before a hard day: the amber clash.
+	var eve: int = mini(first + 1, 3)
+	hs.set_slot(eve, "friends")
+	var hard_set: bool = w.set_intensity(eve + 1, "hard")
+	# An invitation on Saturday (waiting) and one on Friday (planned: Go).
+	var friends: Array = ms.people_for("friends")
+	var posted := []
+	for pair in [["fr_party_weekend", 5], ["fr_party_race", 4]]:
+		if int(pair[1]) < first:
+			continue
+		var date: Dictionary = game.add_days(w.monday, int(pair[1]))
+		var ctx := {"date": date, "day": int(pair[1]), "day_type": cal.day_type(date), "week": w, "race_note": {}}
+		ms.stop_tokens = maxf(ms.stop_tokens, 1.0)
+		posted.append(ms._post(ms.storylet(str(pair[0])), friends[0], ctx, MS.day_no(game.date), false, {"invite": true, "counted": false}))
+	if posted.size() > 1:
+		ms.answer(str(posted[1].id), "short")
+	hub._refresh_week_ui()
+	hub._show("week")
+	await _frames(6)
+	await _shot("56_slots_planner")
+	var card = _find_meta(hub, "invite")   # (PC: among the cards; phone: under its day)
+	if card != null:
+		hub._scroll.ensure_control_visible(card)
+	await _frames(3)
+	await _shot("56a_invitation_cards")
+	WPL.open_slot = eve
+	WPL.open_slot_week = cal.date_key(game.week_monday())
+	hub._show("week")
+	await _frames(6)
+	var picker = _find_meta(hub, "slot_picker")
+	if picker != null:
+		hub._scroll.ensure_control_visible(picker)
+	await _frames(3)
+	await _shot("56b_slot_picker")
+	WPL.open_slot = -1
+	if not posted.is_empty():
+		ms.answer(str(posted[0].id), "go")   # (Go on the waiting one: the card says what you chose)
+	hub._show("week")
+	await _frames(6)
+	var card2 = _find_meta(hub, "invite")
+	if card2 != null:
+		hub._scroll.ensure_control_visible(card2)
+	await _frames(3)
+	await _shot("56c_invitation_going")
+	hub._open_day(5 if first <= 5 else 6)
+	await _frames(8)
+	if hub._editor != null:   # (the FREE TIME box in view: "FREE TIME · SATURDAY")
+		var p: Node = hub._editor.get_parent()
+		while p and not p is ScrollContainer:
+			p = p.get_parent()
+		var line = _find_text(hub._editor, "FREE TIME")
+		if p and line != null:
+			(p as ScrollContainer).ensure_control_visible(line)
+	await _frames(4)
+	await _shot("56d_editor_free_time")
+	hub._close_day()
+	hub._show("season")
+	await _frames(5)
+	var head = _find_label(hub, "YOUR HABITS")
+	if head != null:
+		hub._scroll.scroll_vertical += int(head.global_position.y - hub._scroll.global_position.y) - 24
+	await _frames(4)
+	await _shot("56e_season_habits")
+	# Put everything back.
+	hs.reset_slot(eve)
+	if hard_set:
+		w.reset_day(eve + 1)
+	for m in posted:
+		ms.moments.erase(m)
+	MS.people_enabled = false
+	ms._sync_people()
+	hub._refresh_week_ui()
+	hub._show("week")
+	await _frames(3)
+
+
+## The first visible node (depth first) that has the meta `key`, or null.
+func _find_meta(node: Node, key: String):
+	if node.has_meta(key) and (not node is CanvasItem or (node as CanvasItem).is_visible_in_tree()):
+		return node
+	for c in node.get_children():
+		var found = _find_meta(c, key)
+		if found != null:
+			return found
+	return null
 
 
 # --- The joint application (session S3a): the School page in the spring of grade 9 with a wish list, the schools to add with one
@@ -1409,7 +1517,8 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 	hub._show("week")
 	await _frames(6)
 	await _shot("47_planner_note")
-	hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+	if hub._planner.callouts_anchor.is_inside_tree():   # (on a phone the note is under its day and the cards may be empty)
+		hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
 	await _frames(3)
 	await _shot("47a_planner_note_card")
 	cp.answer_note(str(p.id), "accept")

@@ -153,6 +153,7 @@ func on_day_end(ctx: Dictionary) -> void:
 	var today := day_no(ctx.date)
 	_sync_people()
 	_week_check(today, int(ctx.day))
+	_resolve_invitations(today)   # (session L1b: tonight's invitation happens, or passes)
 	_slot("evening", ctx, today)
 	if talks_enabled:
 		if not ctx.get("race_note", {}).is_empty():
@@ -243,6 +244,8 @@ func _pick(ctx: Dictionary, today: int, slots: Array, dated_only := false) -> Di
 	var total := 0.0
 	for s in content():
 		if bool(s.get("chain_only", false)) or str(s.get("topic", "")) != "" or not _slot_of(s) in slots:
+			continue
+		if s.has("invite"):   # (session L1b: invitations are posted into the coming week's slots on Sunday, never picked by the day)
 			continue
 		if dated_only and not bool(s.get("dated", false)):
 			continue
@@ -411,11 +414,24 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 	var text := body if prefix == "" else (prefix if body == "" else prefix + "\n\n" + body)
 	var talk := bool(opts.get("talk", false))
 	var counted := bool(opts.get("counted", true))
-	var m := {"id": "m%d" % _next, "kind": "moment", "storylet": str(s.id), "date": ctx.date.duplicate(), "day": today,
+	var invite := opts.has("invite")   # (session L1b: posted on Sunday for a slot of the coming week: ctx is that slot's day)
+	var posted: Dictionary = Game.date.duplicate() if invite else ctx.date.duplicate()
+	var m := {"id": "m%d" % _next, "kind": "moment", "storylet": str(s.id), "date": posted, "day": today,
 			"thread": str(s.thread), "from": str(p.id), "text": text, "variant": vi,
 			"replies": replies, "fill": fill, "expires": today + int(s.get("expires_days", Data.moments.expires_days)),
 			"stop": false, "event": "", "answer": "", "answered_day": -1, "auto": false, "talk": talk}
 	_next += 1
+	if invite:
+		var iv: Dictionary = s.invite
+		var go: Array = (iv.get("go", ["go"]) as Array).map(func(x): return str(x))
+		m.invite = {"activity": str(iv.get("activity", "friends")), "go": go,
+				"title": CoachSystem.words(str(iv.get("title", "")).format(fill)),
+				"chip": CoachSystem.words(str(iv.get("chip", iv.get("title", ""))).format(fill))}
+		m.slot_day = day_no(ctx.date)
+		m.planned = ""
+		m.expires = int(m.slot_day)
+		m.planner = true
+		HabitSystem.touch()
 	var sn: Dictionary = seen.get(s.id, {"count": 0, "first": today})
 	sn.count = int(sn.count) + 1
 	sn.last = today
@@ -424,8 +440,17 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 	seen[s.id] = sn
 	last_from[p.id] = today
 	moments.append(m)
-	_message(m.thread, p.id, m.text, m.id, ctx.date)
+	_message(m.thread, p.id, m.text, m.id, posted)
 	var group := str(s.get("standing", ""))
+	if invite:
+		if group != "" and standing.has(group) and replies.any(func(rep): return rep.id == standing[group].reply):
+			m.auto = true   # (the player's rule plans it; it still happens on its evening)
+			m.planned = str(standing[group].reply)
+		else:
+			stop_tokens -= 1.0
+		fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": false, "auto": bool(m.auto), "from": p.id,
+				"talk": false, "planner": true, "invite": true})
+		return m
 	if group != "" and standing.has(group) and replies.any(func(rep): return rep.id == standing[group].reply):
 		# Answered by the player's rule: only the result line shows; it uses neither the day's slot nor the week's rate.
 		m.auto = true
@@ -457,9 +482,101 @@ func _wait_for_planner(m: Dictionary) -> void:
 	m.expires = day_no(d) - Calendar.weekday(d) + 6
 
 
-## The moments waiting for the planner (session L1a), oldest first.
+## The moments waiting for the planner (session L1a), oldest first. Session L1b: an invitation waits until it is planned (Go /
+## Stay home); a planned one still shows on its slot but asks nothing.
 func waiting() -> Array:
-	return moments.filter(func(m): return m.answer == "" and bool(m.get("planner", false)))
+	return moments.filter(func(m): return m.answer == "" and bool(m.get("planner", false)) and str(m.get("planned", "")) == "")
+
+
+# --- Invitations (session L1b, GDD 4.10 decision 6 "Invitations land in the slots") -------------------------------------------
+
+## The new week is set up (Sunday evening, when the planner opens on it): an invitation may land in one of its slots.
+func on_week_start(w: WeekSim) -> void:
+	if not people_enabled or not active() or started_day < 0:
+		return
+	_post_invitations(w)
+
+
+## At most data/habits.json invites.max_per_week a week, with its chance, and only with the week's stop token (like the moments
+## that waited for Sunday, so the planner's cards don't grow): a storylet with an `invite` part whose conditions hold for one of
+## its slot days (`invite.days`, weekday numbers) still to come this week; picked by weight among every fitting (storylet, day).
+func _post_invitations(w: WeekSim) -> void:
+	var cfg: Dictionary = Data.habits.invites
+	var today := day_no(Game.date)
+	var mine := moments.filter(func(m): return m.has("invite") and Calendar.date_key(Calendar.monday_of(_date_of(int(m.slot_day)))) == Calendar.date_key(w.monday))
+	if mine.size() >= int(cfg.max_per_week) or stop_tokens < 1.0:
+		return
+	if rng.randf() >= float(cfg.chance):
+		return
+	var cands := []
+	var total := 0.0
+	for s in content():
+		if not s.has("invite") or bool(s.get("chain_only", false)):
+			continue
+		for wd in s.invite.get("days", []):
+			var d := int(wd)
+			if d < w.day or d > 6:
+				continue
+			var date := Game.add_days(w.monday, d)
+			if not invitation_on(date).is_empty():
+				continue
+			var ctx := {"date": date, "day": d, "day_type": Calendar.day_type(date), "week": w, "race_note": {}}
+			if not _eligible(s, ctx, today):
+				continue
+			var senders := _senders(s, ctx, today)
+			if senders.is_empty():
+				continue
+			var wt := float(s.get("weight", 1.0))
+			cands.append({"s": s, "ctx": ctx, "senders": senders, "w": wt})
+			total += wt
+	if cands.is_empty():
+		return
+	var x := rng.randf() * total
+	var chosen: Dictionary = cands.back()
+	for c in cands:
+		x -= c.w
+		if x < 0.0:
+			chosen = c
+			break
+	var senders: Array = chosen.senders
+	_post(chosen.s, senders[rng.randi_range(0, senders.size() - 1)], chosen.ctx, today, false, {"invite": true, "counted": false})
+
+
+## The date of a day number (the inverse of day_no).
+static func _date_of(n: int) -> Dictionary:
+	var t := Time.get_datetime_dict_from_unix_time(n * 86400 + 43200)
+	return {"year": int(t.year), "month": int(t.month), "day": int(t.day)}
+
+
+## The invitation in a date's slot (waiting, planned or answered on its evening), or {}.
+func invitation_on(d: Dictionary) -> Dictionary:
+	var n := day_no(d)
+	for m in moments:
+		if m.has("invite") and int(m.slot_day) == n:
+			return m
+	return {}
+
+
+## "Change my mind": a planned invitation waits for an answer again (until its evening).
+func unplan(moment_id: String) -> void:
+	var m := moment(moment_id)
+	if not m.is_empty() and m.has("invite") and m.answer == "":
+		m.planned = ""
+		HabitSystem.touch()
+
+
+## The invitations of the week starting `monday` (oldest first).
+func invitations(monday: Dictionary) -> Array:
+	var lo := day_no(monday)
+	return moments.filter(func(m): return m.has("invite") and int(m.slot_day) >= lo and int(m.slot_day) <= lo + 6)
+
+
+## Tonight's invitation happens: its planned reply (Go or Stay home) is resolved with its effects (a `sleep` = a late night for
+## tomorrow); unanswered it passes as "you didn't answer".
+func _resolve_invitations(today: int) -> void:
+	for m in moments.duplicate():
+		if m.has("invite") and m.answer == "" and int(m.slot_day) == today:
+			_resolve(m, str(m.planned) if str(m.get("planned", "")) != "" else NONE)
 
 
 func _post_event(m: Dictionary, p: Dictionary) -> void:
@@ -487,10 +604,20 @@ func _post_event(m: Dictionary, p: Dictionary) -> void:
 	m.event = e.id
 
 
-## The player's answer from a thread (the UI, C3) or the tools: a stop moment goes through its event.
+## The player's answer from a thread (the UI, C3) or the tools: a stop moment goes through its event. Session L1b: an invitation
+## is only PLANNED by an answer (Go / Stay home, changeable until its evening; an unknown reply leaves it open): it happens on the
+## evening of its slot (_resolve_invitations).
 func answer(moment_id: String, reply_id: String) -> void:
 	var m := moment(moment_id)
 	if m.is_empty() or m.answer != "":
+		return
+	if m.has("invite"):
+		if m.replies.any(func(r): return r.id == reply_id):
+			m.planned = reply_id
+			HabitSystem.touch()   # (the slot may change: HabitSystem's cache)
+			for x in threads.get(str(m.thread), []):
+				if str(x.moment) == str(m.id):
+					x.read = true
 		return
 	if m.event != "":
 		for e in Game.events:
@@ -503,6 +630,8 @@ func answer(moment_id: String, reply_id: String) -> void:
 
 func _resolve(m: Dictionary, reply_id: String) -> void:
 	var today := day_no(Game.date)
+	if m.has("invite"):
+		HabitSystem.touch()   # (session L1b: an invitation settled; HabitSystem's cache)
 	m.answer = reply_id
 	m.answered_day = today
 	if reply_id != NONE:   # (the player read it, in the stop panel or in the thread: nothing "new" about it any more)
@@ -1753,6 +1882,7 @@ func to_dict() -> Dictionary:
 
 ## JSON makes every number a float: counts, days and dates back to ints.
 func from_dict(d: Dictionary) -> void:
+	HabitSystem.touch()   # (other invitations now: HabitSystem's cache)
 	stop_setting = str(d.get("stop_setting", ""))
 	test_content = bool(d.get("test_content", false))
 	cast_info = d.get("cast_info", {})
@@ -1798,6 +1928,8 @@ func from_dict(d: Dictionary) -> void:
 		m.date = Game.int_date(m.date)
 		for k in ["day", "variant", "expires", "answered_day"]:
 			m[k] = int(m[k])
+		if m.has("slot_day"):   # (session L1b: an invitation's slot)
+			m.slot_day = int(m.slot_day)
 	queue = d.get("queue", [])
 	for q in queue:
 		for k in ["due", "until"]:

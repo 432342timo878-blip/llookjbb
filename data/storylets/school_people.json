@@ -294,7 +294,8 @@
 		},
 		{
 			"id": "sch_group_work", "important": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 60,
-			"when": {"stage": ["grade_8", "grade_9"], "school_day": true, "weekday": [0, 1, 2]},
+			"invite": {"days": [3], "activity": "study", "go": ["yes"], "title": "Group work at the library?", "chip": "Library?"},
+			"when": {"stage": ["grade_8", "grade_9"], "school_day": true},
 			"text": [
 				"Your group's history project is due on Friday. The others say they can only meet on Thursday evening. Can you be there?",
 				"The biology group work: your group is waiting for your part. Thursday evening, the library?"

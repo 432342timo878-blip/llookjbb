@@ -47,6 +47,20 @@ func _run() -> void:
 		_ok("%s: the week planner builds (%d choices waiting)" % [slot, load("res://scripts/ui/week_planner.gd").open_choices().size()],
 				planner.get_child_count() >= 1)
 		planner.free()
+		# Session L1b (save version 5): an older save's study effort / free time became the nearest habits; the Season tab shows them.
+		var parsed_save: Dictionary = JSON.parse_string(text)
+		var hs = game.get_system("habits")
+		var school_state: Dictionary = parsed_save.get("game", {}).get("systems", {}).get("school", {})
+		var effort := str(school_state.get("effort", "normal"))
+		var free := str(school_state.get("free_time", "normal"))
+		var habits_ok: bool = hs != null and hs.habits.size() == 7
+		if version < 5 and hs != null:
+			habits_ok = habits_ok and hs.habits == root.get_node("Data").habits.from_old["%s|%s" % [effort, free]]
+		var section = load("res://scripts/ui/habits_ui.gd").section()
+		_ok("%s: habits %s (the save's study effort %s / free time %s), the Season tab's section builds: %s" % [slot,
+				hs.habits if hs != null else [], effort, free, hs.summary() if hs != null else "-"], habits_ok and section != null)
+		if section != null:
+			section.free()
 		var start: Dictionary = game.date.duplicate()
 		var mode: String = game.season.mode
 		var athlete: String = game.athlete.full_name()
