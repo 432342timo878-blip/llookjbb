@@ -19,12 +19,17 @@ func _run() -> void:
 		quit(1)
 		return
 	var folder: String = args[0].replace("\\", "/").trim_suffix("/") + "/"
-	var days := int(args[1]) if args.size() > 1 else 10
+	var days := int(args[1]) if args.size() > 1 and args[1].is_valid_int() else 10
 	var game = root.get_node("Game")
 	var saves = load("res://scripts/core/save_game.gd")
 	saves.DIR = folder
 	game.autosave = false
-	load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})   # (health on, everything free)
+	# `real` (session L1a): the player's game (the coach's notes, moments waiting for Sunday, the school's decisions); else lab with
+	# health on and everything free.
+	if "real" in args:
+		load("res://scripts/core/game_config.gd").use("real")
+	else:
+		load("res://scripts/core/game_config.gd").use("lab", {"health": true, "coach_neutral": false, "mind_neutral": false, "school_neutral": false})
 	var slots := []
 	for file in DirAccess.get_files_at(folder):
 		if file.ends_with(".json"):
@@ -37,6 +42,11 @@ func _run() -> void:
 		_ok("%s (version %d) loads" % [slot, version], loaded)
 		if not loaded:
 			continue
+		var planner = load("res://scripts/ui/week_planner.gd").new()   # (session L1a: the planner builds from an older save)
+		root.add_child(planner)
+		_ok("%s: the week planner builds (%d choices waiting)" % [slot, load("res://scripts/ui/week_planner.gd").open_choices().size()],
+				planner.get_child_count() >= 1)
+		planner.free()
 		var start: Dictionary = game.date.duplicate()
 		var mode: String = game.season.mode
 		var athlete: String = game.athlete.full_name()

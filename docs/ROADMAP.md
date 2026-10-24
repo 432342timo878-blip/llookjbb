@@ -494,7 +494,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         People / Career / Rankings: where Overview and Report go), whether the week strip stays in the header of other tabs, and what Play
         week does with choices still open ("2 choices waiting"). The mock-up's 32 px in-card buttons become 44 px (the rule stays).
         **Split (user, 2026-10-23, like S3a / S3b; the answers are in GDD 4.10 "L1's questions"):**
-    - [ ] **L1a. The kit + the planner + the one weekly stop:** the V1 kit; the Sunday planner (PC + phone) as the This week tab;
+    - [x] **L1a. The kit + the planner + the one weekly stop** *(done 2026-10-24: GDD 4.10 "Built (step L1a)"; mid-week stops
+          0.33-0.48 a week races included, a normal week 2 clicks)*: the V1 kit; the Sunday planner (PC + phone) as the This week tab;
           the talk's popup and the proposals' stops go (the coach's line + notes on days); people moments wait for Sunday; the
           mid-week stop rule; one week view (no week strip; Overview + Report fold into This week and a first Career tab); help.
           *(Opus, high)*

@@ -76,7 +76,12 @@ static func _notes(w: WeekSim, open_only: bool) -> Array:
 	if cp == null or not CoachProposals.enabled:
 		return []
 	var list := cp.open_notes(w.monday) if open_only else cp.notes_of(w.monday)
-	return list.filter(func(p): return not open_only or int(p.days[0].d) >= w.day)
+	# (an open note on a day the player has changed since is left out: their change wins, and "Make it easy" would not apply)
+	return list.filter(func(p):
+		var d := int(p.days[0].d)
+		if str(p.status) == "asked" and w.changed_by(d).values().has("player"):
+			return false
+		return not open_only or d >= w.day)
 
 
 ## The meet-and-tests clash of this week as a card ({} when there is none, it was settled or the school's decisions are off).
@@ -164,13 +169,14 @@ func _build_pc() -> void:
 	row.add_child(right)
 
 
-## The side columns give up a little width on a narrower wide window (a phone sideways).
+## The side columns give up width on a narrower wide window (a phone sideways, ~1206 logical px), so the days keep room for a whole
+## word ("Strength") beside their icons: 268 | 290 at 1280.
 func _left_width() -> float:
-	return clampf(Layout.logical_width * 0.21, 220.0, PC_LEFT)
+	return clampf(PC_LEFT - maxf(0.0, 1280.0 - Layout.logical_width) * 0.65, 200.0, PC_LEFT)
 
 
 func _right_width() -> float:
-	return clampf(Layout.logical_width * 0.23, 240.0, PC_RIGHT)
+	return clampf(PC_RIGHT - maxf(0.0, 1280.0 - Layout.logical_width) * 0.5, 230.0, PC_RIGHT)
 
 
 static func _panel(content: Control) -> PanelContainer:
@@ -601,11 +607,12 @@ static func _test_chips(info: Dictionary, wrap := true) -> Array:
 		names.append(str(ui().exam_chip))
 	for n in names:
 		var p := PanelContainer.new()
-		p.add_theme_stylebox_override("panel", ThemeBuilder.raised_box(5, Palette.SCHOOL_TEST_BG))
+		p.add_theme_stylebox_override("panel", ThemeBuilder.raised_box(4 if wrap else 5, Palette.SCHOOL_TEST_BG))
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var l := UIKit.label(str(ui().test_chip).format({"subject": n}), "ItemLabel")
 		l.add_theme_color_override("font_color", Palette.SCHOOL_TEST)
-		if wrap:
+		if wrap:   # (the PC's narrow day column: a size smaller, so "Geography" fits whole)
+			l.add_theme_font_size_override("font_size", 12)
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			l.set_meta("fit_words", true)
 		p.add_child(l)
@@ -634,9 +641,9 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 	grid.columns = 1 if (Layout.compact or Layout.side_open) else 2
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
-	if not skip_notes:
+	if not skip_notes:   # (the notes of days still to come, answered or not; a played day's note is history)
 		for p in _notes(w, false):
-			if int(p.days[0].d) >= w.day or str(p.status) != "asked":
+			if int(p.days[0].d) >= w.day:
 				grid.add_child(note_card(p))
 	var clash := _clash()
 	if not clash.is_empty():
@@ -896,7 +903,7 @@ static func form_box(compact: bool) -> Control:
 	var u := ui()
 	var f := Game.get_system("form") as FormSystem
 	var fresh := clampi(100 - roundi(Game.athlete.fatigue), 0, 100)
-	var line := str(u.form_line).format({"s": roundi(f.sharpness), "f": fresh})
+	var line := str(u.form_line).format({"s": roundi(f.sharpness), "f": fresh}).replace(" %", " %")   # (a number keeps its %)
 	if compact:
 		var col := UIKit.vbox(2)
 		col.add_child(UIKit.label(str(u.form_strip), "WhyLabel"))
@@ -978,7 +985,7 @@ static func mood_row(mind: MindSystem, mood: String) -> Control:
 	if mood == "stress":
 		does = str(eff.low) if side == "middle" else str(eff.high)
 	var recent := mind.recent(mood)
-	var why := does if recent.is_empty() else "%s · %s" % [does, str(recent[0].text)]
+	var why := does if recent.is_empty() else "%s · %s %s" % [does, str(recent[0].text), "▲" if float(recent[0].delta) > 0.0 else "▼"]
 	var l := UIKit.wrapped(why, "WhyLabel")
 	col.add_child(l)
 	var box := UIKit.vbox(4)
@@ -1016,7 +1023,7 @@ func _build_phone() -> void:
 	week.add_child(_head(week_title(w), caption))
 	var notes := {}
 	for p in _notes(w, false):
-		if int(p.days[0].d) >= w.day or str(p.status) != "asked":
+		if int(p.days[0].d) >= w.day:
 			notes[int(p.days[0].d)] = p
 	for d in 7:
 		var open := notes.has(d) and str(notes[d].status) == "asked"

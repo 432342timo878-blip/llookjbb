@@ -47,6 +47,28 @@ Read the paragraphs below with these in mind; they win where they disagree.
   `CoachVerdict.strain_moved` (no strain moved = no risk noise) and `reason_for` (`work_light`), `CoachProposals.note_asked / asked_about`
   (saved `asked`), `Game.scratch_race(meet, cause)` + `CoachTalk.scratch_line`, `WeekSim.session_count` (the one "done"),
   `DevTools.jump(until, pass_races)` + `default_answer` + `first_of_after`, `MindUI.race_text`.
+- **Session L1a (the V1 kit + the Sunday planner, GDD 4.10 "Built (step L1a)"; these win over the paragraphs below about the hub,
+  the week strip, the Today card, the Sunday talk and the proposals):**
+  - **Look:** `ui/palette.gd` (V1 tokens, `Palette.band`, `Palette.intensity`), `ui/theme_builder.gd` (Barlow Condensed with `tnum`,
+    variations DisplayNumber / BigNumber / ChipNumber / NameLabel / CardHeading / BodyLabel / ItemLabel / WhyLabel / SectionLabel,
+    `FlatButton`, `panel_box` / `raised_box` / `callout_box` / `strap_box`), `scripts/ui/icons.gd` (`Icons.rect(name, size, colour)`,
+    Lucide SVGs in `assets/icons`, README there for adding one), `StatBar`, `CauseChip`, `CalloutCard`. New screens use these, not the
+    old Title / Heading / Muted / Caption variations.
+  - **Hub (`career_hub.gd`):** `VIEWS` week / season / calendar / people / career / rankings (`PHONE_VIEWS` without rankings), `ALIASES`
+    (overview → week, training → season) so tools' old ids work; pages report (of week), progress (of career), rankings (of career on a
+    phone); the 56 px header (`_build_header`, `_open_menu` = Save / Main menu); `_sticky` = Play week above the phone's bottom bar;
+    `_on_play_pressed` (asks once with choices open: `_open_play_confirm`) and `_on_advance` (tools call it directly = Play anyway);
+    `_open_day` / `_close_day` / `_mark_open_day` (the planner outlines the open day). The side panel (day editor / help) and the
+    phone sheet are as before. **WeekStrip, TodayCard and ChatMark are gone.**
+  - **`WeekPlanner`** (`scripts/ui/week_planner.gd`, texts `data/planner.json`): `open_choices()`, `choices_text`, `play_block`,
+    `week_chips(report)`, `tired_bar` / `area_bars` / `form_box` / `injury_blocks` / `mood_row`, `note_card`; signals day_pressed,
+    play_pressed, changed, report_pressed, moment_answered (the hub shows `MomentEventPanel.result`).
+  - **Engine:** `CoachProposals.plan_notes` (on_week_start), `open_notes / notes_of / answer_note / note_text / note_buttons`, proposals
+    with `note: true`; `_look` = the scratch advice only; requests answered on Sunday. `StoryletSystem._wait_for_planner`, `waiting()`,
+    `planner_line` + `line_for(monday)` (saved), `_changes_week`. `CoachTalk.planner_line`. `CoachSuggests` looks in `on_day_end`
+    of Sunday. `SchoolSystem.meet_test_card / settle_week`. `WeekSim.end_week` report `count` {planned, done, extra, days}.
+  - **Tools:** `tools/planner_shot.gd -- <out> [weeks] [seed]` (windowed: screenshots of the planner in a real career);
+    `season_playtest.gd` prints "The loop" (mid-week stops incl. races, weeks without one, stops at the planner, clicks a week).
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

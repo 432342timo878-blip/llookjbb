@@ -4264,6 +4264,71 @@ double days and altitude camps start (SUL's youth path) (T1); (8) real schools (
 7. **The coach's setting** becomes *Coach's notes: Show on the planner / Don't write notes*; "Always" goes (saves with it load as Show).
    "Coach suggests" works the same way: notes on the planner, never entered by himself.
 
+#### Built (step L1a, 2026-10-24): the V1 kit, the Sunday week planner, the one weekly stop
+
+1. **The V1 kit** (GDD 5): `Palette` has the style guide's values and the new tokens (`TOP_BAR`, `DAY`, `DIVIDER` (the guide's
+   `LINE`; that name was the stadium's), `LEAD`, `GOOD` / `WARN` / `BAD`, `PEOPLE`, `BAR_TRACK`, `COACH`, `DAY_REST`, `SCHOOL_TEST_BG`;
+   `Palette.band(value, line)`, `Palette.intensity`); Barlow Condensed SemiBold / Bold / ExtraBold in `assets/fonts` (OFL) with tabular
+   figures (`ThemeBuilder.number_font`, OpenType `tnum`); new label variations `DisplayNumber`, `BigNumber`, `ChipNumber`, `NameLabel`,
+   `CardHeading`, `BodyLabel`, `ItemLabel`, `WhyLabel`, `SectionLabel` (the old ones keep their sizes until the restyle); buttons radius
+   6 with a `BORDER` line, `FlatButton`; style boxes `panel_box` / `raised_box` / `callout_box` / `strap_box`; 61 Lucide 0.460.0 icons in
+   `assets/icons` (ISC, README; white strokes tinted with `modulate`, imported at 4× with mipmaps) and `Icons` (`rect`, `session`,
+   `session_short`); controls `StatBar` (track, band fill, warning tick, why line), `CauseChip` (row / pill), `CalloutCard` (3 px edge,
+   buttons, `show_answer`). The hub's backdrop is plain `BG` (`backdrop.gd PLAIN_SCREENS`); the photo stays for the big moments.
+2. **The planner** (`WeekPlanner`, the This week tab; texts and session icons in `data/planner.json`): PC three columns 268 | rest | 290
+   (narrower side columns on a phone held sideways), phone one column, as in the mock-ups. Left = last week: "8/8 sessions done" by
+   `WeekSim.session_count` (the week report now carries `count`), the race strap (time, PB tag in `LEAD`), what changed and why as
+   cause chips (attributes with the session that trained them most, the moods with their news, test grades; 5 + "+N more"), the
+   coach's line, "Last week in full" (the old Report as a page). Middle = the days (sessions with icons in the intensity colour, the
+   day's line, test chips, who changed it, played days dimmed with a tick, today ACCENT, a note WARN with "!", the day open in the
+   editor outlined), the cards that wait, four facts (load, plan risk, next race, goal). Right = body (an injury's block, tiredness
+   and the two most strained areas as bars: the line is where "Exhausted" starts (65, `planner.json body`) and where "Sore" starts
+   (`health.json soreness.levels[1]`, the game's own warning); tap = why), race form (sharpness and freshness), the mind (word, what
+   it does, the news; tap = the old detail), Play week + Next day. Beside the hub's side panel (the day editor or the help) only the
+   week shows. A tap on a day opens the day editor (Ask the coach is there).
+3. **The one weekly stop:** Play week runs to Sunday night and the planner shows the next week. **The Sunday talk is no popup**:
+   `CoachTalk.planner_line` (his comment on the week + the one thing for the next, ≤ ~25 words; a coach of few words says one) is kept
+   as `StoryletSystem.planner_line` for the week it belongs to; the whole talk is a read message in his thread; the week topics with a
+   `proposal` reply (sore, tired, fresh) are no longer posted (his notes do that); the mood topics are thread moments, and their
+   "lighter week" reply is a request his next Sunday notes answer.
+4. **The coach's notes** (`CoachProposals.plan_notes`, on `on_week_start`): once per week, the whole week: lighter changes when
+   something catches his eye (his noise as before) or you asked, a heavier one when you are fresh (fatigue ≤ 22, nothing sore:
+   `coaching.json proposals.notes`), each day's best change kept when HE judges it a Good idea, the best two as notes, a race in the
+   week with something sore gets his scratch note. `answer_note(id, "accept" | "veto_<reason>")` (Keep mine shows the veto reasons, the
+   silent-veto rule unchanged); a note still open when its day comes passes (`status none`, no trust). `setting()` reads an old
+   "always" as "ask"; `modes` is ask / never. Mid-week he only gives his "scratch?" advice while hurt (a stop, a real warning).
+   Measured (`verdict_check` part 4, 16 weeks × 2 careers): 17 notes, ~0.5 a week, 65 % Good and 29 % Fine in truth.
+5. **Moments wait for Sunday:** an important moment no longer stops: `_wait_for_planner` marks it `planner` and lets it expire on the
+   coming Sunday (unanswered it passes the Monday after); `StoryletSystem.waiting()` lists them; the stop token still limits them to
+   ~1 a week. "Every moment" is cut (the setting and its texts are gone from the UI). "Coach suggests" looks on Sunday evening
+   (`advice.json look_weekday` 6) and is a planner card. The meet-and-tests clash is a planner card (`SchoolSystem.meet_test_card`,
+   `settle_week`); left open, Monday's stop comes as before.
+6. **Play week with choices open** asks once (Show me scrolls to the cards / Play anyway). `WeekPlanner.open_choices()` counts them.
+7. **Tabs:** This week / Season (the old Training tab) / Calendar / People / Career (the old Overview's goals, body, PB, attributes,
+   progress) / Rankings; the phone's bottom bar has icons and no Rankings (a button on Career). The header is one 56 px bar (avatar,
+   name, meta line, tabs on PC, date, ?, ☰ = Save / Main menu). Old view ids still work (`ALIASES`: overview → week, training →
+   season). `WeekStrip`, `TodayCard` and `ChatMark` are deleted (the planner replaced them).
+8. **Help:** new `week` and `career`, `overview` removed; `report`, `moment`, `people`, `day_editor`, `training_*`, `phase_editor`,
+   `season_goals`, `coach_changes`, `easing_back_in` rewritten for the new places ("Training tab" → Season tab, no week strip).
+9. **Checks changed with it:** `storylet_check` (moments wait for the planner; the talk is a line; part 3 counts planner moments),
+   `verdict_check` (parts 4 / 4b / 6: notes), `goals_check` (suggestions as cards), `mind_check`, `f1_check`, `help_check`,
+   `day_engine_check` / `health_check` (the planner instead of the strip and the card), `week_views_check` (fixed dice: an injury made
+   it fail by chance), `layout_check` (planner views; a label marked `fit_words` is SQUEEZED only when its longest word doesn't fit),
+   the tour, `season_playtest` (mid-week stops vs stops at the planner, clicks a week), new `tools/planner_shot.gd`.
+10. **Measured** (`season_playtest`, a whole 2026-27 season on the coach's ★ plan through the real hub, ★ meets entered):
+    PC 1280×720, seed 1, policy `player` (answers every card): **0.48 mid-week stops a week, races included**; 30 of 52 weeks with
+    none; all stop events 0.29 a week (3.12 before L1a, `docs/AUDIT.md` 2026-10-18); 4.9 clicks a week (this policy answers every
+    note and message). Phone 390×844, seed 2, policy `careful` (leaves the cards: Play anyway): **0.33 mid-week stops a week, 37 of
+    52 weeks straight through, a week = 2 clicks (median)**. The remaining stops are diagnoses, sore warnings, the season offers,
+    the goals offer and report cards. A press of Play week now plays a whole week (~690-780 ms on the user's laptop GPU with the
+    daily autosave; about the same per day as before); the planner builds in ~100 ms. Fingerprints identical (coach row
+    206.798298350 / 14.102831594 / 1226.006524079, races 73182f4e…, school 55076d77…); the user's three saves (copies, version 4)
+    load in the real game, build the planner and play a week. Left for the user's playtest 3 (memory: feel it before tuning):
+    how often the coach's "a little more" notes come in base weeks (often two a week for a fresh 14-year-old).
+11. **Not in L1a (L1b):** the free-time slots and habits (the day editor's "study effort / free time" lines stay), the Training tab as
+    the season plan with the habits, save version 5. A moment that waits for Sunday can be about a day that has passed ("Thursday
+    evening, the library?"): L3's sort fixes the content.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

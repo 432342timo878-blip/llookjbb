@@ -90,18 +90,31 @@ func _run() -> void:
 	var event_ms := []
 	var presses := 0
 	var guard := 0
+	# Session L1a: a stop comes either AT THE PLANNER (the week not started yet: Sunday evening's or Monday morning's, the planner is
+	# open anyway) or MID-WEEK (a day of the week was played; a race day counts as one). Clicks: the planner's answers, Play week /
+	# Next day, "Play anyway" when choices are left, and each mid-week stop's answer.
+	var midweek := {}        # week -> mid-week stops (races included)
+	var planner_stops := {}  # week -> stops at the planner
+	var clicks := {}         # week -> clicks
 	while _cal.date_key(_game.date) < end_key and guard < 3000:
 		guard += 1
 		var e: Dictionary = _game.pending_event()
+		var wk: int = _cal.date_key(_game.week_monday())
+		var cw = _game.current_week()
+		var at_planner: bool = cw.day == 0 and not cw.day_started
 		if not e.is_empty():
 			var kind: String = e.get("kind", e.source)
 			stops[kind] = int(stops.get(kind, 0)) + 1
-			var wk: int = _cal.date_key(_game.week_monday())
 			stop_weeks[wk] = true
 			var cat := _category(e)
 			var row: Dictionary = by_week.get(wk, {})
 			row[cat] = int(row.get(cat, 0)) + 1
 			by_week[wk] = row
+			if at_planner:
+				planner_stops[wk] = int(planner_stops.get(wk, 0)) + 1
+			else:
+				midweek[wk] = int(midweek.get(wk, 0)) + 1
+			clicks[wk] = int(clicks.get(wk, 0)) + 1
 			await _frames(3)
 			if kind == "offer":   # the career-start offer and the autumn offer for next season both get a shot
 				kind += "_first" if e.get("first", false) else "_next"
@@ -129,12 +142,21 @@ func _run() -> void:
 			await _frames(3)
 			await _shot_once("easing_back_in_week")
 		var injured: bool = not health.injuries.is_empty()
+		if at_planner:   # the Sunday planner: the player policy answers what waits; the others leave it (Play anyway)
+			if policy == "player":
+				clicks[wk] = int(clicks.get(wk, 0)) + _answer_planner()
+			await _shot_once("planner_first")
+		var left: int = load("res://scripts/ui/week_planner.gd").open_choices().size()
+		if not injured and left > 0:
+			clicks[wk] = int(clicks.get(wk, 0)) + 1   # ("Play anyway")
+		clicks[wk] = int(clicks.get(wk, 0)) + 1
 		var t0 := Time.get_ticks_usec()
 		hub._on_advance(not injured)
 		advance_ms.append((Time.get_ticks_usec() - t0) / 1000.0)
 		presses += 1
 		await _frames(2)
 		if _game.race_day != null:
+			midweek[wk] = int(midweek.get(wk, 0)) + 1   # (a race day is a mid-week stop: the week's payoff)
 			await _run_race(policy)
 			hub = _hub()
 			await _shot_once("after_first_race")
@@ -146,6 +168,7 @@ func _run() -> void:
 	print("Played to %s (%d button presses; Next day while hurt, Play week otherwise)." % [_cal.format_day(_game.date), presses])
 	print("Stop events: %s; weeks with a stop: %d of %d" % [JSON.stringify(stops), stop_weeks.size(), int(ceil(days / 7.0))])
 	_print_weeks(by_week, days)
+	_print_loop(midweek, planner_stops, clicks, days)
 	print("Hub redraw after Next day / Play week: average %.1f ms, slowest %.1f ms; after answering an event: average %.1f ms, slowest %.1f ms" % [
 			_avg(advance_ms), _max(advance_ms), _avg(event_ms), _max(event_ms)])
 	var t1 := Time.get_ticks_usec()
@@ -198,6 +221,58 @@ func _category(e: Dictionary) -> String:
 	if mk != "moment":
 		return mk   # proposal / goal / suggest / market / rule
 	return "people:" + str(m.get("thread", "?")) if str(m.get("thread", "")) != "coach" else "coach_moment"
+
+
+## Session L1a: what the planner leaves open, answered like a player (each a click): the coach's notes (Make it easy / Keep mine with
+## a reason / left), the moments waiting (a reply), a meet-and-tests clash (an option). Returns the clicks.
+func _answer_planner() -> int:
+	var n := 0
+	var cp = _game.get_system("proposals")
+	for p in cp.open_notes(_game.week_monday()):
+		var pick: String = ["accept", "veto_fine", ""][_answer_rng.randi_range(0, 2)]
+		if pick != "":
+			cp.answer_note(str(p.id), pick)
+			n += 2 if pick != "accept" else 1   # (Keep mine + its reason)
+	var ms = _game.get_system("moments")
+	for m in ms.waiting():
+		ms.answer(str(m.id), str(m.replies[_answer_rng.randi_range(0, m.replies.size() - 1)].id))
+		n += 1
+	var clash: Dictionary = load("res://scripts/ui/week_planner.gd")._clash()
+	if not clash.is_empty():
+		var ss = _game.get_system("school")
+		ss.settle_week(int(clash.monday), str(clash.meet), str(clash.choices[_answer_rng.randi_range(0, clash.choices.size() - 1)].id))
+		n += 1
+	return n
+
+
+## The loop's numbers (session L1a, GDD 4.10 decision 1): mid-week stops a week (races included), weeks without one, stops at the
+## planner, clicks a week (a normal week = Play week alone, or with a "Play anyway").
+func _print_loop(midweek: Dictionary, planner_stops: Dictionary, clicks: Dictionary, days: int) -> void:
+	var weeks := 0
+	var mid := 0
+	var mid_no_race := 0
+	var quiet := 0
+	var plan := 0
+	var all_clicks := []
+	var monday: Dictionary = _cal.monday_of(_game.START_DATE)
+	while _cal.date_key(monday) < _cal.date_key(_game.add_days(_game.START_DATE, days)):
+		weeks += 1
+		var wk: int = _cal.date_key(monday)
+		mid += int(midweek.get(wk, 0))
+		if int(midweek.get(wk, 0)) == 0:
+			quiet += 1
+		plan += int(planner_stops.get(wk, 0))
+		all_clicks.append(int(clicks.get(wk, 0)))
+		monday = _game.add_days(monday, 7)
+	all_clicks.sort()
+	print("\n== The loop (session L1a)")
+	print("Mid-week stops a week (races included): %.2f; weeks with none: %d of %d; stops at the planner a week: %.2f" % [
+			mid / float(maxi(1, weeks)), quiet, weeks, plan / float(maxi(1, weeks))])
+	var total := 0
+	for c in all_clicks:
+		total += c
+	print("Clicks a week: average %.2f, median %d, most %d" % [total / float(maxi(1, weeks)), all_clicks[all_clicks.size() / 2] if not all_clicks.is_empty() else 0,
+			all_clicks.back() if not all_clicks.is_empty() else 0])
 
 
 ## Week by week: the stops by kind and the moments that only waited in the threads (no stop).

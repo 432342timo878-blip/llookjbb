@@ -148,16 +148,7 @@ func plan_notes(w: WeekSim) -> void:
 ## Fresh enough that he would add work (the talk's old "you look fresh" topic): fatigue at most notes.fresh_fatigue, nothing sore,
 ## no injury or illness.
 func _fresh() -> bool:
-	if Game.athlete.fatigue > float(cfg().notes.fresh_fatigue):
-		return false
-	var h := Game.get_system("health") as HealthSystem
-	if h != null and HealthSystem.model_enabled and h.started:
-		if not h.injuries.is_empty():
-			return false
-		for area in HealthSystem.areas():
-			if h.soreness_level(area.id) >= 1:
-				return false
-	return true
+	return Game.athlete.fatigue <= float(cfg().notes.fresh_fatigue) and not _hurt()
 
 
 ## The notes of the week starting `monday` that still wait for an answer (oldest first).
@@ -191,12 +182,29 @@ func answer_note(proposal_id: String, reply_id: String) -> Dictionary:
 	return res
 
 
-## A note whose (first) day has come without an answer passes: the plan stays, no trust cost.
+## A note whose (first) day has come without an answer passes: the plan stays, no trust cost. A note asking for MORE is withdrawn
+## the morning an injury, an illness or soreness came up (he would not ask that any more).
 func _pass_open_notes(today: Dictionary) -> void:
 	var key := Calendar.date_key(today)
+	var hurt := _hurt()
 	for p in list:
-		if bool(p.get("note", false)) and p.status == "asked" and Calendar.date_key(p.days[0].date) <= key:
+		if not bool(p.get("note", false)) or p.status != "asked":
+			continue
+		if Calendar.date_key(p.days[0].date) <= key or (hurt and str(p.kind) == "heavier"):
 			p.status = "none"
+
+
+## An injury or illness, or a body area at least "a bit sore".
+func _hurt() -> bool:
+	var h := Game.get_system("health") as HealthSystem
+	if h == null or not HealthSystem.model_enabled or not h.started:
+		return false
+	if not h.injuries.is_empty():
+		return true
+	for area in HealthSystem.areas():
+		if h.soreness_level(area.id) >= 1:
+			return true
+	return false
 
 
 ## The note's title on the planner day ("Thu: tempo → easy run?") and its line (his reason, the number and the cost), from

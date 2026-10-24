@@ -582,8 +582,12 @@ func _check_health_ui() -> void:
 	root.add_child(planner)   # (it builds when it enters the tree)
 	_ok("the week planner builds with an injury and soreness", planner.get_child_count() >= 1)
 	var bars: Array = Planner.area_bars(2, false)
+	for b in bars:
+		root.add_child(b)   # (a bar builds its labels when it enters the tree)
 	_ok("the body column: the two most strained areas as bars, shins among them (%d)" % bars.size(),
 			bars.size() == 2 and bars.any(func(b): return _has_text(b, "Shins")))
+	for b in bars:
+		b.free()
 	_ok("an active injury shows in the body column", _has_text(planner, "Shin splints"))
 	planner.free()
 

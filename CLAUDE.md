@@ -20,7 +20,9 @@ micromanagement clicker") led to the redesign **GDD 4.10 "plan → play → see"
 UI: one Sunday planner, mid-week stops only for real decisions, causes visible, people as state + free-time slots). F1 (the 11
 playtest bugs) done (GDD 4.10 "Built (step F1)"; coach texts say `{he}` / `{his}`, never a bare "he"). V1 (the look) done: **GDD 5
 "The look (V1)"** is the style guide for every new or restyled screen (dark "Stadium Night", condensed numbers, TV-style race card;
-mock-ups in `docs/v1/`). Next, in `docs/ROADMAP.md` order: L1–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+mock-ups in `docs/v1/`). L1 was split (user, 2026-10-23): **L1a done** (the V1 kit, the Sunday week planner = the This week tab,
+the coach's notes, moments wait for Sunday, the new tabs; GDD 4.10 "Built (step L1a)"). Next, in `docs/ROADMAP.md` order: L1b (the
+slots + habits, save v5) → L2–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -75,7 +77,8 @@ only at senior level.
   drawing real things (stadium layout etc.). The user cares about realism over neat balance: the world varies; prove neutrality with a
   tool switch, not by making everything equal.
 - The player decides, the game doesn't: no automatic decisions in races; a quick result follows a player-set tactic.
-- Interaction is the point: the user chose "the Sunday talk always stops Play week" and the stricter −1 trust over quiet defaults.
+- Interaction is the point: the user chose the stricter −1 trust over quiet defaults; since L1a the Sunday planner is the one weekly
+  stop (it opens every week) and mid-week stops are only for real things (GDD 4.10).
   Ask before anything that changes how the game plays beyond what was agreed.
 - Split sessions rather than cut the user's picks (S3 became S3a / S3b); correct earlier claims a tool disproves.
 
@@ -91,10 +94,12 @@ scripts in `scripts/ui/`; the hub, wizard and race screen build their shell in c
 sets `content_scale_size`, rebuilds the theme (`ThemeBuilder.build(compact)`) and emits `Router.layout_changed`; every screen builds from
 `Layout.compact` and rebuilds on that signal. Use `UIKit` helpers (labels, panels, `flex()` = a row on PC and a column on a phone,
 FM-style `attr_row`, `ChoiceCard`), `Layout.page_margin()`, `Layout.stacked()`, **44 px minimum for anything tappable, no hover-only
-info** (use `attr_row(..., description)` / `UIKit.tap_to_explain`). Hub = tabs on top on PC (`TabButton`), bottom bar on a phone
-(`BottomTabButton`): Overview / Training / Calendar / Rankings / Report / People. Theme in code: `ui/palette.gd`, `ui/theme_builder.gd`,
-label variations TitleLabel / HeadingLabel / MutedLabel / CaptionLabel, PrimaryButton; font Inter. Backdrop: `scripts/ui/backdrop.gd` +
-a blurred photo in `assets/backgrounds/` (CC BY-SA, credits in its README; the `.import` files must keep `mipmaps/generate=true`; an
+info** (use `attr_row(..., description)` / `UIKit.tap_to_explain`). Hub = a 56 px header bar with the tabs on PC (`TabButton`), a
+bottom bar with icons on a phone (`BottomTabButton`): This week (`WeekPlanner`, the one place the week is shown and changed) / Season /
+Calendar / People / Career / Rankings (old ids overview / training still work). Theme in code: `ui/palette.gd`, `ui/theme_builder.gd`;
+the V1 kit for new screens: variations BigNumber / CardHeading / BodyLabel / ItemLabel / WhyLabel / SectionLabel …, `Icons` (Lucide,
+`assets/icons`), `StatBar`, `CauseChip`, `CalloutCard`; fonts Inter + Barlow Condensed (numbers). Backdrop (big moments only; the hub
+is plain BG): `scripts/ui/backdrop.gd` + a blurred photo in `assets/backgrounds/` (CC BY-SA, credits in its README; the `.import` files must keep `mipmaps/generate=true`; an
 in-game Credits screen is still to do). **Help:** texts only in `data/help.json` (`screens` + `topics`, sections ≤ ~50 words, `version`);
 `Help`, `HelpButton` ("?" with a "new" dot), `HelpPanel`, `HelpOverlay`.
 
@@ -127,17 +132,19 @@ coach voices (`data/race_commentary.json`, `data/coaches.json`) only READ the ra
 - `CoachSystem` (coach records with 11 attributes, trust, fit; `data/coaching.json`; 12 real coaches in `real`), `CoachMarket` (Find a coach,
   scouting, offers: **under 18 an offer comes through a parent in the family thread and waits on the coach's page; remote coaches from 16**,
   ending chain; `data/market.json`).
-- `StoryletSystem` (moments engine: threads, the 3–5 a week rate, stops, standing orders, custom kinds; storylets in `data/storylets/`,
-  format in its README; the Sunday talk, race message and mood topics; `Cast` = family, friends, school people, partners, rivals;
-  `data/cast.json`), `CoachTalk`, `CoachVerdict` (the coach's judgement of a change: truth + his noise), `CoachProposals` (≤ 2 a week, Veto,
-  "Ask me first"), `CoachAsk`, `SeasonGoals` (time / milestone / habit with real standards), `RaceAdvice`, `CoachSuggests`.
+- `StoryletSystem` (moments engine: threads, the 3–5 a week rate, standing orders, custom kinds; since L1a an important moment WAITS
+  for the Sunday planner (`waiting()`), no people stops; storylets in `data/storylets/`, format in its README; the Sunday talk = the
+  coach's `planner_line` + a thread message, race message and mood topics; `Cast` = family, friends, school people, partners, rivals;
+  `data/cast.json`), `CoachTalk`, `CoachVerdict` (the coach's judgement of a change: truth + his noise), `CoachProposals` (his NOTES on
+  the planner days, written on Sunday, ≤ 2 a week, Make it easy / Keep mine = the Veto; mid-week only the "scratch?" stop), `CoachAsk`,
+  `SeasonGoals` (time / milestone / habit with real standards), `RaceAdvice`, `CoachSuggests` (a planner card on Sunday).
 - `MindSystem` (confidence / motivation / stress, mental plan, effects on training and races; `data/mind.json`).
 - `SchoolSystem` (stages, 17 subjects, tests, report cards, life load, the meet-and-tests decision; `data/school_life.json`) +
   `SchoolCalendar` (real 2026–27 dates, rules after) + `SchoolApplication` (the joint application, points, the path, moving; a rejection
   offers a **TUVA year**, stored as path kind `grade_10`) + `Lukio` / `Matriculation` (courses, periods, exams; `data/lukio.json`).
   Research data: `towns.json`, `urheilulukiot.json`, `school.json`, `application.json`, `standards.json`, each fact with a source.
 - UI: `PeopleView` (People tab: threads, profile, Find a coach, School page, Rivals), `PeopleUI`, `MomentEventPanel`, `StandingOrders`
-  (Training tab: "Play week stops for", the coach's proposals, **"Lukio courses: ask me every period / let the counsellor plan them"**),
+  (Season tab: the coach's notes on / off, **"Lukio courses: ask me every period / let the counsellor plan them"**, saved rules),
   `SchoolUI` / `SchoolView` / `LukioUI` / `MatricPlanView` / `SchoolApplyView`, `MindUI`, `GoalsUI`, `CoachProfile`, `CoachMarketView`.
 
 **Tools and docs.** All checks live in `tools/` (see "How to run and check"); `tools/json_check.gd` parses every data file (and the research

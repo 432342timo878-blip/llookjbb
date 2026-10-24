@@ -317,16 +317,20 @@ func _cast_tour(main: Node, hub_in: Control) -> void:
 	var today: int = MS.day_no(game.date)
 	var parent: Dictionary = ms.people_for("parent")[0]
 	print("cast tour: family attitude ", ms.family.get("attitude", ""), ", people ", ms.people.size())
-	ms.set_stop_mode("all")
-	ms._post(ms.storylet("fam_against_tests"), parent, ctx, today, false, {"counted": false})
-	ms.set_stop_mode("important")
+	# Session L1a: a family moment that matters waits on the Sunday planner as a card (no stop); answered there, the result card.
+	var fm: Dictionary = ms._post(ms.storylet("fam_against_tests"), parent, ctx, today, false, {"counted": false})
+	if not fm.is_empty() and not bool(fm.get("planner", false)):
+		ms._wait_for_planner(fm)
 	hub._refresh_week_ui()
-	hub._show_pending_event()
+	hub._show("week")
 	await _frames(6)
-	await _shot("54_cast_family_stop")
-	var e: Dictionary = game.pending_event()
-	if not e.is_empty():
-		hub._on_event_answer(e.id, "study")
+	hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+	await _frames(3)
+	await _shot("54_cast_family_card")
+	if not fm.is_empty():
+		ms.answer(str(fm.id), "study")
+		hub._result_event = {"kind": "moment", "moment": str(fm.id), "date": game.date.duplicate(), "source": "moments"}
+		hub._show_pending_event()
 		await _frames(6)
 		await _shot("54b_cast_result_card")
 		hub._end_result_card()
@@ -715,22 +719,21 @@ func _mind_tour(main: Node, hub_in: Control) -> void:
 	# The Sunday talk with motivation Low: his line and the "how are you?" topic (the talks are on in the tour, main.gd).
 	var cal = load("res://scripts/core/calendar.gd")
 	var monday: int = cal.date_key(game.add_days(game.week_monday(), 7))
-	var shot := false
+	# (Session L1a: the talk is no stop: after Sunday the planner shows his line and the mind column; the topic is in his thread.)
+	var reached := true
 	while cal.date_key(game.date) < monday:
 		var r: String = game.advance_day()
 		if r == game.RACE:
+			reached = false
 			break
-		var e: Dictionary = game.pending_event()
-		if not e.is_empty():
-			if not shot and str(e.get("kind", "")) == "moment" and game.get_system("moments").moment(str(e.get("moment", ""))).get("talk", false):
-				shot = true
-				hub._refresh_week_ui()
-				hub._show_pending_event()
-				await _frames(6)
-				await _shot("49c_week_talk_mood")
-			_answer_pending(game)
-	if not shot:
-		print("mind tour: no Sunday talk shot (a race or the week ended first)")
+		_answer_pending(game)
+	if reached:
+		hub._refresh_week_ui()
+		hub._show("week")
+		await _frames(6)
+		await _shot("49c_planner_mind_and_line")
+	else:
+		print("mind tour: no Sunday shot (a race came first)")
 
 
 # --- The result list after heats (R5 playtest fixes): every heat, Q = through on place, q = on time. A championship ---
@@ -1084,13 +1087,10 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	_reset_health(game, health)
 	health.strain["shins"] = 36.0
 	health.strain["achilles"] = 38.0
-	hub._show("overview")
+	hub._show("week")   # (session L1a: the planner's body column: the bars with their warning lines)
 	hub._refresh_week_ui()
 	await _frames(6)
-	await _shot("19_health_today_card")
-	hub._today_card.open_area("shins")
-	await _frames(4)
-	await _shot("19b_health_soreness_row_open")
+	await _shot("19_health_planner_body")
 	health.strain["calves"] = 72.0   # (62 was enough on the old coach week; the indoor-specific Wednesday is lighter on the calves)
 	hub._on_advance(false)
 	await _frames(6)
@@ -1099,7 +1099,7 @@ func _health_tour(main: Node, hub_in: Control) -> void:
 	if not game.pending_event().is_empty():
 		hub._on_event_answer(game.pending_event().id, "easy")
 	await _frames(6)
-	await _shot("19d_health_strip_markers")
+	await _shot("19d_health_planner_after")
 	hub._open_day(cal.weekday(game.date))
 	await _frames(6)
 	await _shot("19e_health_editor_sore_today")
@@ -1268,7 +1268,7 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 	# (No proposal stops here, so the first stop moment is the week talk: the coach only says what he'd change. Section 6 below
 	# shows the proposals.)
 	game.get_system("proposals").set_setting("never")
-	# 1. Play on to Sunday evening: the week talk stops Play week.
+	# 1. Play on to Sunday night (session L1a: no stop for the talk): the planner of the next week with the coach's line.
 	var guard := 0
 	while guard < 40:
 		guard += 1
@@ -1279,46 +1279,47 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 				rd.start_round(false, "pack").run()
 				rd.finish_round()
 			game.finish_race()
-		var e: Dictionary = game.pending_event()
-		if not e.is_empty() and str(e.get("kind", "")) == "moment":
-			break
 		while not game.pending_event().is_empty():
 			game.answer_event(game.pending_event().id, "keep" if game.pending_event().get("kind", "") == "sore" else "ok")
-	var talk: Dictionary = game.pending_event()
-	print("people tour: the week talk stopped Play week: ", talk.get("title", "none"))
+		if r == game.WEEK_DONE:
+			break
+	var ms = game.get_system("moments")
+	print("people tour: the coach's line for the planner: ", ms.line_for(game.week_monday()))
 	hub = main.get_node("ScreenHost").get_child(-1)
 	hub._refresh_week_ui()
-	hub._show_pending_event()
+	hub._show_pending_event()   # (the events were answered in the engine: the hub's stop panel goes)
+	hub._show("week")
 	await _frames(6)
-	await _shot("40_week_talk_message")
-	await _scroll_event_to_end(hub)
-	await _shot("40b_week_talk_replies")
-	var help_btn = _find_script(hub._event_overlay, load("res://scripts/ui/help_button.gd"))
-	if help_btn:
-		help_btn.pressed.emit()
-		await _frames(4)
-		await _shot("40c_help_moment")
-		_close_help_overlays(hub)
-	if not talk.is_empty():
-		hub._on_event_answer(talk.id, str(talk.choices[0].id))
-		hub._end_result_card()
+	await _shot("40_planner_sunday")
+	hub._open_help("week", true)
 	await _frames(4)
+	await _shot("40c_help_week")
+	hub._close_help()
+	_close_help_overlays(hub)
 
-	# 2. A question that stops the week, answered: the result card (what changed, in words) over the page.
-	var ms = game.get_system("moments")
+	# 2. A moment waiting on the planner, answered there: the result card (what changed, in words) over the page.
 	var coach: Dictionary = ms.people_for("coach")[0]
 	var ctx := {"date": game.date.duplicate(), "day": 0, "day_type": "weekday", "week": game.current_week()}
-	ms._post(ms.storylet("wt_tired"), coach, ctx, MS.day_no(game.date), false, {"talk": true, "counted": false})
-	hub._refresh_week_ui()
-	hub._show_pending_event()
-	await _frames(6)
-	await _shot("40e_question_stop")
-	var q: Dictionary = game.pending_event()
-	hub._on_event_answer(q.id, "lighter")
-	await _frames(6)
-	await _shot("40f_result_card")
-	hub._end_result_card()
-	await _frames(3)
+	var q: Dictionary = ms._post(ms.storylet("mood_doubt"), coach, ctx, MS.day_no(game.date), true, {"counted": false})
+	if not q.is_empty():
+		ms._wait_for_planner(q)
+		hub._refresh_week_ui()
+		hub._show("week")
+		await _frames(6)
+		hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+		await _frames(3)
+		await _shot("40e_planner_card")
+		hub._on_play_pressed(true)   # Play week with a choice waiting: it asks once
+		await _frames(4)
+		await _shot("40d_play_week_asks")
+		hub._close_play_confirm()
+		ms.answer(str(q.id), str(q.replies[0].id))
+		hub._result_event = {"kind": "moment", "moment": str(q.id), "date": game.date.duplicate(), "source": "moments"}
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("40f_result_card")
+		hub._end_result_card()
+		await _frames(3)
 
 	# 3. A second moment waits in the thread; a race message from the coach is there too.
 	ms._post(ms.storylet("wt_fresh"), coach, ctx, MS.day_no(game.date), true, {"counted": false})
@@ -1402,19 +1403,19 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 	var cur: Dictionary = V.day_now(w, d)
 	var to := {"sessions": cur.sessions.duplicate(), "intensity": "easy"} if cur.intensity != "easy" else {"sessions": [], "intensity": cur.intensity}
 	var j: Dictionary = V.judge(V.day_change({d: cur}, {d: to}, "day_changed", [], "proposal"))
-	cp._propose("lighter", w, [{"d": d, "from": cur, "to": to}], j, game._day_context(), MS.day_no(game.date))
+	# (session L1a: his change is a note on the planner day, answered there: Make it easy)
+	var p: Dictionary = cp._propose("lighter", w, [{"d": d, "from": cur, "to": to}], j, game._day_context(), MS.day_no(game.date), {"note": true})
 	hub._refresh_week_ui()
-	hub._show_pending_event()
+	hub._show("week")
 	await _frames(6)
-	await _shot("47_proposal_stop")
-	await _scroll_event_to_end(hub)
-	await _shot("47a_proposal_replies")
-	var stop: Dictionary = game.pending_event()
-	if not stop.is_empty():
-		hub._on_event_answer(stop.id, "accept")
-		await _frames(6)
-		await _shot("47b_proposal_result")
-		hub._end_result_card()
+	await _shot("47_planner_note")
+	hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+	await _frames(3)
+	await _shot("47a_planner_note_card")
+	cp.answer_note(str(p.id), "accept")
+	hub._show("week")
+	await _frames(6)
+	await _shot("47b_planner_note_answered")
 	await _frames(3)
 	hub._open_day(d)
 	await _frames(6)

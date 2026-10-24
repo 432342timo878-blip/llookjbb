@@ -831,39 +831,39 @@ func _people_views(main: Node, game, tag: String) -> void:
 	var coach: Dictionary = ms.people_for("coach")[0]
 	var ctx := {"date": game.date.duplicate(), "day": 6, "day_type": "weekday", "week": game.current_week()}
 	var today: int = MS.day_no(game.date)
-	# The talk (a stop).
+	# Session L1a: the talk is no stop: his line on the planner (shown for this week here), the whole talk in his thread.
 	ms._post_week_talk(ctx, today)
+	ms.planner_line.monday = load("res://scripts/core/calendar.gd").date_key(game.week_monday())
 	hub._refresh_week_ui()
-	hub._show_pending_event()
+	hub._show("week")
 	await _frames(6)
-	await _shot("%s_moment_stop" % tag)
-	_check_overflow(hub, "%s moment_stop" % tag)
-	var e: Dictionary = game.pending_event()
-	hub._on_event_answer(e.id, str(e.choices[-1].id))
-	hub._end_result_card()
-	await _frames(3)
-	# A question that stops the week, answered: the result card (what changed, in words) over the page.
+	await _shot("%s_planner_coach_line" % tag)
+	_check_overflow(hub, "%s planner_coach_line" % tag)
+	# A moment waiting on the planner, answered there: the result card (what changed, in words) over the page.
 	ctx.day = 0
-	ms._post(ms.storylet("wt_tired"), coach, ctx, today, false, {"talk": true, "counted": false})
-	hub._show_pending_event()
-	await _frames(6)
-	e = game.pending_event()
-	hub._on_event_answer(e.id, "lighter")
-	await _frames(6)
-	await _shot("%s_result_card" % tag)
-	_check_overflow(hub, "%s result_card" % tag)
-	hub._end_result_card()
-	await _frames(3)
+	var mm: Dictionary = ms._post(ms.storylet("mood_doubt"), coach, ctx, today, true, {"counted": false})
+	if not mm.is_empty():
+		ms._wait_for_planner(mm)
+		hub._show("week")
+		await _frames(6)
+		ms.answer(str(mm.id), str(mm.replies[0].id))
+		hub._result_event = {"kind": "moment", "moment": str(mm.id), "date": game.date.duplicate(), "source": "moments"}
+		hub._show_pending_event()
+		await _frames(6)
+		await _shot("%s_result_card" % tag)
+		_check_overflow(hub, "%s result_card" % tag)
+		hub._end_result_card()
+		await _frames(3)
 	# A moment waiting (not a stop) and the message after a race.
 	ms._post(ms.storylet("wt_fresh"), coach, ctx, today, true, {"counted": false})
 	ctx.race_note = {"meet": "Kalevan kisat", "key": "x", "story": {"case": "pb", "line": "A new best. That is the work paying off."},
 			"result": {"place": 2, "field": 8, "time": 128.4, "pb": true, "round": "Final", "meet_key": "x"}}
 	ms._post_race_note(ctx, today)
 	hub._refresh_week_ui()
-	hub._show("overview")
+	hub._show("week")
 	await _frames(6)
-	await _shot("%s_today_message" % tag)
-	_check_overflow(hub, "%s today_message" % tag)
+	await _shot("%s_week_messages" % tag)
+	_check_overflow(hub, "%s week_messages" % tag)
 	for page in ["", "coach", "profile", "group", "family"]:
 		hub._people_page = page
 		hub._show("people")
@@ -1074,22 +1074,23 @@ func _proposal_views(main: Node, game, data, tag: String) -> void:
 		var cur: Dictionary = V.day_now(w, d)
 		var to := {"sessions": cur.sessions.duplicate(), "intensity": "easy"} if cur.intensity != "easy" else {"sessions": [], "intensity": cur.intensity}
 		var j: Dictionary = V.judge(V.day_change({d: cur}, {d: to}, "day_changed", [], "proposal"))
-		cp._propose("lighter", w, [{"d": d, "from": cur, "to": to}], j, game._day_context(), MS.day_no(game.date))
+		# Session L1a: his change is a note on the planner day (no stop): the card, then Make it easy.
+		var p: Dictionary = cp._propose("lighter", w, [{"d": d, "from": cur, "to": to}], j, game._day_context(), MS.day_no(game.date),
+				{"note": true})
 		hub._refresh_week_ui()
-		hub._show_pending_event()
+		hub._show("week")
 		await _frames(6)
-		await _shot("%s_proposal_stop" % tag)
-		_check_overflow(hub, "%s proposal_stop" % tag)
-		var e: Dictionary = game.pending_event()
-		if e.is_empty():
-			print("WRONG: no proposal stop at ", tag)
-			return
-		hub._on_event_answer(e.id, "accept")
-		await _frames(6)
-		await _shot("%s_proposal_result" % tag)
-		_check_overflow(hub, "%s proposal_result" % tag)
-		hub._end_result_card()
+		if not game.pending_event().is_empty() or not bool(p.get("note", false)):
+			print("WRONG: the coach's change is not a note on the planner at ", tag)
+		hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
 		await _frames(3)
+		await _shot("%s_planner_note" % tag)
+		_check_overflow(hub, "%s planner_note" % tag)
+		cp.answer_note(str(p.id), "accept")
+		hub._show("week")
+		await _frames(6)
+		await _shot("%s_planner_note_answered" % tag)
+		_check_overflow(hub, "%s planner_note_answered" % tag)
 		if not load("res://scripts/ui/day_info.gd").of(game.current_week(), d).coach:
 			print("WRONG: the accepted proposal is not in the day (", tag, ")")
 		hub._show("overview")
@@ -1631,7 +1632,7 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 	var year: int = gs.current_year()
 	gs.seasons.erase(year)
 	gs.offers.erase(year)
-	hub._show("overview")
+	hub._show("career")   # (session L1a: the goals panel is on the Career tab)
 	hub._refresh_week_ui()
 	await _frames(5)
 	await _shot("%s_goals_none" % tag)
@@ -1668,7 +1669,7 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 		_close_help_overlays(hub)
 	hub._on_event_answer(game.pending_event().id, "set")
 	await _frames(5)
-	hub._show("overview")
+	hub._show("career")
 	await _frames(5)
 	await _shot("%s_goals_overview" % tag)
 	_check_overflow(hub, "%s goals_overview" % tag)
@@ -1702,7 +1703,7 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 			await _shot("%s_goal_review_result" % tag)
 			_check_overflow(hub, "%s goal_review_result" % tag)
 			hub._end_result_card()
-		hub._show("overview")
+		hub._show("career")
 		await _frames(5)
 		await _shot("%s_goals_overview_done" % tag)
 		_check_overflow(hub, "%s goals_overview_done" % tag)
@@ -1728,15 +1729,19 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 			print("WRONG: no COACH SUGGESTS mark in the Calendar at ", tag)
 		await _shot("%s_calendar_suggest" % tag)
 		_check_overflow(hub, "%s calendar_suggest" % tag)
-		s.moment = str(ms.post_custom("suggest", s.id, sg._text(s, "ask_end"), sg._replies(s), true).get("id", ""))
+		# (session L1a: a card on the Sunday planner, no stop; answered there, then the result card)
+		s.moment = str(ms.post_custom("suggest", s.id, sg._text(s, "ask_end"), sg._replies(s), false, {"planner": true}).get("id", ""))
 		hub._refresh_week_ui()
-		hub._show_pending_event()
+		hub._show("week")
 		await _frames(6)
-		await _shot("%s_suggest_stop" % tag)
-		_check_overflow(hub, "%s suggest_stop" % tag)
-		var e2: Dictionary = game.pending_event()
-		if not e2.is_empty():
-			hub._on_event_answer(e2.id, "decline")
+		hub._scroll.ensure_control_visible(hub._planner.callouts_anchor)
+		await _frames(3)
+		await _shot("%s_suggest_card" % tag)
+		_check_overflow(hub, "%s suggest_card" % tag)
+		if s.moment != "":
+			ms.answer(s.moment, "decline")
+			hub._result_event = {"kind": "moment", "moment": s.moment, "date": game.date.duplicate(), "source": "moments"}
+			hub._show_pending_event()
 			await _frames(6)
 			await _shot("%s_suggest_result" % tag)
 			_check_overflow(hub, "%s suggest_result" % tag)
@@ -1782,7 +1787,7 @@ func _find_script(node: Node, script):
 func _help_views(main: Node, game, tag: String) -> void:
 	var router = main.get_node("/root/Router")
 	var hub: Control = main.get_node("ScreenHost").get_child(-1)
-	for view in ["overview", "progress", "training", "calendar", "rankings", "report", "people"]:
+	for view in ["week", "career", "progress", "season", "calendar", "rankings", "report", "people"]:
 		hub._show(view)
 		await _frames(3)
 		hub._toggle_help()
