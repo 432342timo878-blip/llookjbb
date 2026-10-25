@@ -452,6 +452,23 @@ func _end_week(ctx: Dictionary) -> void:
 		last_report.plan.return_weeks = plan.return_weeks
 	ctx.report = last_report
 	_hook("on_week_end", ctx)
+	# Session L2b (recording only): every attribute that moved this week, from its value when the week started to now (after the
+	# Sunday hooks: the long-break detraining, the mental plan); a save from before L2b has no start (then only Sunday's changes).
+	var start: Dictionary = last_report.get("attr_start", {})
+	last_report.erase("attr_start")
+	var moved := {}
+	if not start.is_empty():
+		for id in athlete.attributes:
+			var was := float(start.get(id, athlete.attributes[id]))
+			if float(athlete.attributes[id]) != was:
+				moved[id] = {"before": was, "after": float(athlete.attributes[id])}
+	else:
+		for id in last_report.get("changes", {}):
+			moved[id] = {"before": float(last_report.changes[id].before), "after": athlete.get_attr(str(id))}
+	last_report.attrs = moved
+	var hs := get_system("habits") as HabitSystem   # (the week's free-time slots as they were played: the report's causes)
+	if hs != null:
+		last_report.slots = hs.week_activities(_week.monday)
 	Rivals.train_week(rivals, athlete.gender, _week.monday, int(athlete.birth_date.year))
 	_week = null
 	open_report = true

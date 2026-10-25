@@ -1,34 +1,143 @@
 class_name ReportView
 extends VBoxContainer
-## The Report tab (GDD 4.5): this week day by day so far (from the day log), then last week's summary
-## (the weekly report) with its days. Built when the tab is shown.
+## "Last week in full" (a page of the This week tab; GDD 4.10 decision 2, session L2b restyled it to V1, GDD 5): last week's
+## sessions done, its races (a strap opens the race's card), the plan, load and tiredness, then every change with its recorded
+## cause, a row each, the exact numbers on a tap (WeekCauses / CausesUI): attributes, the body, the moods, people, school tests,
+## the free-time slots' effects, invitations, the week's notes; the days one by one (folded); this week so far (folded).
+## PC: two columns; a phone or beside the hub's side panel: one. Built when shown; reading only.
+
+signal card_pressed(id: String)
 
 
 func _init() -> void:
-	add_theme_constant_override("separation", 14)
+	add_theme_constant_override("separation", 12)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
+static func t() -> Dictionary:
+	return Data.causes.report
+
+
 func _ready() -> void:
-	var monday := Game.week_monday()
+	var r: Dictionary = Game.last_report
 	var note := HealthUI.proneness_note()   # after repeated injuries
 	if note != null:
 		add_child(note)
-	add_child(UIKit.label("This week", "HeadingLabel"))
-	add_child(UIKit.wrapped(_range(monday), "MutedLabel"))
-	_add_week(monday, "No days played yet this week. Press Next day or Play week.", true)
+	if not r.is_empty():
+		_add_last_week(r)
+	var monday := Game.week_monday()
+	var rows := _days_of(monday)
+	if not rows.is_empty() or r.is_empty():
+		var box := UIKit.vbox(8)
+		box.add_child(WeekPlanner._head(str(t().this_week), WeekPlanner.range_text(monday)))
+		if rows.is_empty():
+			box.add_child(UIKit.wrapped(str(t().none_this_week), "WhyLabel"))
+		else:
+			box.add_child(_days_box(rows, true))
+		add_child(WeekPlanner._panel(box))
 
-	if not Game.last_report.is_empty():
-		_add_last_week(Game.last_report)
+
+# --- Last week ---------------------------------------------------------------------------------------------------------------
+
+func _add_last_week(r: Dictionary) -> void:
+	var head := UIKit.vbox(8)
+	head.add_child(WeekPlanner._head(str(t().title), WeekPlanner.range_text(r.monday)))
+	head.add_child(WeekPlanner._done_row(r))
+	for strap in WeekPlanner.race_straps(r, func(id: String): card_pressed.emit(id)):
+		head.add_child(strap)
+	head.add_child(_facts(r))
+	if not r.has("parts"):
+		head.add_child(UIKit.wrapped(str(t().old_report), "WhyLabel"))
+	else:
+		head.add_child(UIKit.wrapped(str(t().tap_hint), "WhyLabel"))
+	add_child(WeekPlanner._panel(head))
+
+	var attrs := WeekCauses.attr_rows(r)
+	attrs.sort_custom(func(x, y): return float(x.size) > float(y.size))
+	var body := WeekCauses.injury_rows(r) + WeekCauses.body_rows(r)
+	var left := [CausesUI.section(str(t().attributes), attrs, str(t().no_attrs)), CausesUI.section(str(t().body), body)]
+	var right := [CausesUI.section(str(t().moods), WeekCauses.mood_rows(r)), CausesUI.section(str(t().people), WeekCauses.people_rows(r)),
+			CausesUI.section(str(t().school), WeekCauses.test_rows(r)), _free_time(r),
+			CausesUI.section(str(t().invites), WeekCauses.invite_rows(r)), _notes(r)]
+	left = left.filter(func(x): return x != null)
+	right = right.filter(func(x): return x != null)
+	if Layout.stacked():
+		for s in left + right:
+			add_child(WeekPlanner._panel(s))
+	else:
+		var cols := UIKit.hbox(12)
+		for list in [left, right]:
+			var col := UIKit.vbox(12)
+			col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			for s in list:
+				col.add_child(WeekPlanner._panel(s))
+			cols.add_child(col)
+		add_child(cols)
+	var days := _days_of(r.monday)
+	if not days.is_empty():
+		add_child(WeekPlanner._panel(_days_box(days, false)))
 
 
-## "Mon 2 Nov – Sun 8 Nov"
-func _range(monday: Dictionary) -> String:
-	return "%s – %s" % [DayInfo.short_day(monday), DayInfo.short_day(Game.add_days(monday, 6))]
+## The week's plan (a line that wraps: it can be long), then load and tiredness as raised facts.
+func _facts(r: Dictionary) -> Control:
+	var box := UIKit.vbox(6)
+	if r.get("plan") is Dictionary and not r.plan.is_empty():
+		box.add_child(UIKit.wrapped("%s: %s" % [str(t().plan), SeasonUI.week_text(r.plan)], "WhyLabel"))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	flow.add_child(_fact("", str(t().load_plain).format({"load": roundi(float(r.load))})))
+	flow.add_child(_fact("", str(t().fatigue).format({"before": roundi(float(r.fatigue_start)), "after": roundi(float(r.fatigue_end))})))
+	box.add_child(flow)
+	return box
 
+
+static func _fact(head: String, text: String) -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", ThemeBuilder.raised_box(8))
+	var row := UIKit.hbox(6)
+	if head != "":
+		row.add_child(UIKit.label(head, "WhyLabel"))
+	var l := UIKit.label(text, "ItemLabel")
+	row.add_child(l)
+	p.add_child(row)
+	return p
+
+
+## FREE TIME: the slots' effects as rows, then the week's nine slots in one line.
+func _free_time(r: Dictionary) -> Control:
+	var rows := WeekCauses.slot_rows(r)
+	var slots: Array = r.get("slots", [])
+	if rows.is_empty() and slots.is_empty():
+		return null
+	var box := UIKit.vbox(2)
+	box.add_child(UIKit.label(str(t().free_time), "SectionLabel"))
+	for x in rows:
+		box.add_child(CausesUI.line_row(x))
+	if not slots.is_empty():
+		var parts := []
+		for i in slots.size():
+			parts.append("%s %s" % [HabitSystem.slot_short(i), HabitSystem.activity_name(str(slots[i])).to_lower()])
+		box.add_child(UIKit.wrapped(" · ".join(parts), "WhyLabel"))
+	return box
+
+
+## NOTES: the week's own notes (off-track sessions, a tired week, a week off).
+func _notes(r: Dictionary) -> Control:
+	var notes: Array = r.get("notes", [])
+	if notes.is_empty():
+		return null
+	var box := UIKit.vbox(4)
+	box.add_child(UIKit.label(str(t().notes), "SectionLabel"))
+	for n in notes:
+		box.add_child(UIKit.wrapped(str(n), "BodyLabel"))
+	return box
+
+
+# --- Days ------------------------------------------------------------------------------------------------------------------------
 
 ## The played days of the week starting `monday` from the day log, in order.
-func _days_of(monday: Dictionary) -> Array:
+static func _days_of(monday: Dictionary) -> Array:
 	var lo := Calendar.date_key(monday)
 	var hi := Calendar.date_key(Game.add_days(monday, 6))
 	var rows := []
@@ -39,227 +148,104 @@ func _days_of(monday: Dictionary) -> Array:
 	return rows
 
 
-## A week of the day log: with `summary`, a few lines first (days, sessions, load, fatigue, races, health), then the days
-## day by day folded away (tap to open, playtest fix 8); without it only the folded days.
-func _add_week(monday: Dictionary, none_text: String, summary: bool) -> void:
-	var rows := _days_of(monday)
-	if rows.is_empty():
-		add_child(UIKit.wrapped(none_text, "MutedLabel"))
-		return
-	if summary:
-		add_child(UIKit.panel(_week_summary(monday, rows), 16))
-	var box := UIKit.vbox(12)
-	for i in rows.size():
-		if i > 0:
-			box.add_child(HSeparator.new())
-		box.add_child(_day_row(rows[i]))
-	add_child(_fold("Day by day (%d day%s)" % [rows.size(), "" if rows.size() == 1 else "s"], UIKit.panel(box, 16)))
-
-
-## The week so far in a few lines: days played, sessions, training load, fatigue now, races and health.
-func _week_summary(monday: Dictionary, rows: Array) -> Control:
-	var facts := UIKit.vbox(6)
-	var sessions := 0
-	var load := 0.0
-	var tests := 0
-	var races := []
-	for e in rows:
-		load += float(e.load)
-		tests += (e.get("tests", []) as Array).size()
-		if e.race != "":
-			var text: String = Calendar.get_meet(e.race).get("name", e.race)
-			var result := DayInfo.race_result_text(e.race)
-			races.append(text + (" (%s)" % result if result != "" else ""))
-		else:
-			sessions += e.sessions.size()
-	facts.add_child(UIKit.fact_row("Days played", UIKit.label("%d of 7" % rows.size())))
-	facts.add_child(UIKit.fact_row("Sessions", UIKit.label(str(sessions))))
-	facts.add_child(UIKit.fact_row("Training load", UIKit.label(str(roundi(load)))))
-	facts.add_child(UIKit.fact_row("Fatigue now", UIKit.fatigue_label(rows[-1].fatigue)))
-	if tests > 0 and SchoolUI.system() != null:   # (session S2)
-		facts.add_child(UIKit.fact_row(str(SchoolUI.ui().report.week_tests), UIKit.label(str(tests))))
-	for race in races:
-		facts.add_child(UIKit.wrapped("Race: " + race, ""))
-	var health := _week_health(monday)
-	if health != "":
-		facts.add_child(UIKit.wrapped("Health: " + health, ""))
-	return facts
-
-
-## A folded section: a 44 px header button with ▸ / ▾; the content is hidden until it is tapped (phone and PC alike).
-func _fold(title: String, content: Control) -> Control:
-	var box := UIKit.vbox(8)
-	var head := UIKit.button("▸  " + title, false, 140)
+## "Day by day (n)": a 44 px fold (closed unless `open`) with a row per day.
+func _days_box(rows: Array, open: bool) -> Control:
+	var title := str(t().day_by_day).format({"n": rows.size()})
+	var box := UIKit.vbox(6)
+	var head := UIKit.button(("▾  " if open else "▸  ") + title, false, 0.0)
+	head.theme_type_variation = "FlatButton"
 	head.custom_minimum_size.y = 44
 	head.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_child(head)
-	content.visible = false
-	box.add_child(content)
+	var list := UIKit.vbox(0)
+	for e in rows:
+		list.add_child(_day_row(e))
+	list.visible = open
+	box.add_child(list)
 	head.pressed.connect(func():
-		content.visible = not content.visible
-		head.text = ("▾  " if content.visible else "▸  ") + title)
+		list.visible = not list.visible
+		head.text = ("▾  " if list.visible else "▸  ") + title)
 	return box
 
 
-## One played day: date and fatigue, what was done, intensity and load, then its events.
+## One played day (V1): the date, what was done with its icons in the intensity colour, tiredness and load; under it its school,
+## health and events lines.
 func _day_row(e: Dictionary) -> Control:
-	var box := UIKit.vbox(3)
+	var box := UIKit.vbox(2)
 	var head := UIKit.hbox(8)
-	var day := UIKit.label(DayInfo.short_day(e.date), "SubheadingLabel")
-	day.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var day := UIKit.label(DayInfo.short_day(e.date), "ItemLabel")
+	day.custom_minimum_size.x = 92
 	head.add_child(day)
-	head.add_child(UIKit.fatigue_label(e.fatigue))
-	box.add_child(head)
-
-	var meta := []
+	var what := UIKit.hbox(6)
+	what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var color := Palette.intensity(str(e.intensity))
 	if e.race != "":
-		var meet := Calendar.get_meet(e.race)
-		var text: String = "Race: %s" % meet.get("name", e.race)
+		what.add_child(Icons.rect("flag", 16.0, Palette.LEAD))
 		var result := DayInfo.race_result_text(e.race)
-		if result != "":
-			text += " (%s)" % result
-		box.add_child(UIKit.wrapped(text, ""))
+		what.add_child(UIKit.wrapped(str(Calendar.get_meet(e.race).get("name", e.race)) + (" · " + result if result != "" else ""), "BodyLabel"))
 	elif e.sessions.is_empty():
-		box.add_child(UIKit.wrapped("Rest day", ""))
+		what.add_child(Icons.rect("moon", 16.0, Palette.DAY_REST))
+		what.add_child(UIKit.label(str(Data.planner.ui.rest_word), "BodyLabel"))
 	else:
-		box.add_child(UIKit.wrapped(" + ".join(DayInfo.session_names(e.sessions)), ""))
+		for sid in e.sessions:
+			what.add_child(Icons.rect(Icons.session(str(sid)), 16.0, color))
+		var names := " + ".join(e.sessions.map(func(s): return Icons.session_short(str(s))))
 		if e.intensity != WeekSim.NORMAL:
-			meta.append(DayInfo.intensity_name(e.intensity))
-	meta.append("load %d" % roundi(e.load))
-	box.add_child(UIKit.wrapped(" · ".join(meta), "MutedLabel"))
-	if e.get("dragged", false):   # trained at Low or Flat motivation (session M1): the sessions trained you a little less
-		box.add_child(UIKit.wrapped(str(Data.mind.ui.dragged), "MutedLabel"))
-	for line in SchoolUI.report_lines(e):   # the break it was in, the tests and their scores, the school life load (session S2)
-		box.add_child(UIKit.wrapped(line, "MutedLabel"))
+			names += " · " + DayInfo.intensity_name(e.intensity)
+		what.add_child(UIKit.wrapped(names, "BodyLabel"))
+	for c in what.get_children():
+		if c is Label:
+			c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(what)
+	var nums := UIKit.label(str(t().day_nums).format({"f": roundi(float(e.fatigue)), "load": roundi(float(e.load))}), "ChipNumber")
+	nums.add_theme_color_override("font_color", Palette.TEXT_MUTED)
+	head.add_child(nums)
+	box.add_child(head)
+	var lines := []
+	if e.get("dragged", false):
+		lines.append(str(t().dragged))
+	lines.append_array(SchoolUI.report_lines(e))
 	for line in _health_lines(e):
-		var l := UIKit.wrapped(line.text, "")
-		l.add_theme_color_override("font_color", line.color)
-		box.add_child(l)
+		lines.append(line)
 	for ev in DayInfo.events_of(e):
-		var line: String = "• " + ev.title
+		var text: String = "• " + ev.title
 		if ev.answer != "":
 			for c in ev.choices:
 				if c.id == ev.answer:
-					line += " → " + c.label
-		box.add_child(UIKit.wrapped(line, "MutedLabel"))
-	return box
+					text += " → " + c.label
+		lines.append(text)
+	for line in lines:
+		var l := UIKit.wrapped(str(line), "WhyLabel")
+		box.add_child(l)
+	var wrap := UIKit.vbox(0)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_top", 6)
+	pad.add_theme_constant_override("margin_bottom", 6)
+	pad.add_child(box)
+	wrap.add_child(pad)
+	var div := ColorRect.new()
+	div.color = Palette.DIVIDER
+	div.custom_minimum_size.y = 1
+	wrap.add_child(div)
+	return wrap
 
 
-## The health side of a played day (from its day log entry): injuries and illnesses that were active
-## after the day, and sore areas. [{text, color}], empty on a healthy day or with the health model off.
-func _health_lines(e: Dictionary) -> Array:
+## The health side of a played day (its day log entry): injuries and illnesses that were active after the day, sore areas.
+static func _health_lines(e: Dictionary) -> Array:
 	var lines := []
 	if HealthUI.system() == null:
 		return lines
 	for id in e.get("health", []):
 		var data := Data.get_injury(str(id))
 		if not data.is_empty():
-			lines.append({"text": "%s (%s)" % [data.name, str(HealthUI.TIER_NAMES[data.tier]).to_lower()],
-					"color": HealthUI.tier_color(data.tier)})
+			lines.append("%s (%s)" % [data.name, str(HealthUI.TIER_NAMES[data.tier]).to_lower()])
 	var levels: Dictionary = e.get("soreness", {})
-	var worst := 0
 	var parts := []
 	for area in HealthSystem.areas():   # in the body areas' order
 		var level := int(levels.get(area.id, 0))
 		if level > 0:
-			worst = maxi(worst, level)
 			parts.append("%s %s" % [area.name.to_lower(), HealthUI.level_word(level).to_lower()])
 	if not parts.is_empty():
-		lines.append({"text": "Sore: " + ", ".join(parts), "color": HealthUI.level_color(worst)})
+		lines.append(str(t().sore).format({"list": ", ".join(parts)}))
 	return lines
-
-
-# --- Last week ---------------------------------------------------------------------------------------
-
-## One line about the week's injuries, illnesses and soreness from the day log ("" when it was a healthy week).
-func _week_health(monday: Dictionary) -> String:
-	if HealthUI.system() == null:
-		return ""
-	var lo := Calendar.date_key(monday)
-	var hi := Calendar.date_key(Game.add_days(monday, 6))
-	var names := []
-	var sore_days := 0
-	for e in Game.day_log:
-		var key := Calendar.date_key(e.date)
-		if key < lo or key > hi:
-			continue
-		for id in e.get("health", []):
-			var n: String = Data.get_injury(str(id)).get("name", id)
-			if not n in names:
-				names.append(n)
-		if not e.get("soreness", {}).is_empty():
-			sore_days += 1
-	var parts := []
-	if not names.is_empty():
-		parts.append(", ".join(names))
-	if sore_days > 0:
-		parts.append("sore on %d day%s" % [sore_days, "" if sore_days == 1 else "s"])
-	return "; ".join(parts)
-
-
-func _add_last_week(r: Dictionary) -> void:
-	var a := Game.athlete
-	var sunday := Game.add_days(r.monday, 6)
-	add_child(UIKit.label("Last week", "HeadingLabel"))
-	add_child(UIKit.wrapped("%d.%d. – %d.%d.%d" % [
-			r.monday.day, r.monday.month, sunday.day, sunday.month, sunday.year], "MutedLabel"))
-
-	var facts := UIKit.vbox(6)
-	# The season plan's phase and kind of that week (saved with the report; not there in repeat mode).
-	if r.get("plan") is Dictionary and not r.plan.is_empty():
-		var phase := UIKit.wrapped(SeasonUI.week_text(r.plan), "")
-		phase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		facts.add_child(UIKit.fact_row("Season plan" if r.plan.has("phase") else "Plan", phase))
-	facts.add_child(UIKit.fact_row("Sessions", UIKit.label(str(r.sessions))))
-	facts.add_child(UIKit.fact_row("Training load", UIKit.label(str(roundi(r.load)))))
-	var fat := UIKit.hbox(6)
-	fat.add_child(UIKit.fatigue_label(r.fatigue_start))
-	fat.add_child(UIKit.label("→", "MutedLabel"))
-	fat.add_child(UIKit.fatigue_label(r.fatigue_end))
-	facts.add_child(UIKit.fact_row("Fatigue (Mon → Sun)", fat))
-	for e in _days_of(r.monday):   # (the days are still in the log for a week or so)
-		if e.race != "":
-			var result := DayInfo.race_result_text(e.race)
-			facts.add_child(UIKit.wrapped("Race: " + str(Calendar.get_meet(e.race).get("name", e.race)) \
-					+ (" (%s)" % result if result != "" else ""), ""))
-	var health := _week_health(r.monday)
-	if health != "":
-		facts.add_child(UIKit.wrapped("Health: " + health, ""))
-	add_child(UIKit.panel(facts, 16))
-
-	for note in r.notes:
-		add_child(UIKit.wrapped("• " + note, ""))
-
-	var up := []
-	var down := []
-	for id in r.changes:
-		var c: Dictionary = r.changes[id]
-		if roundi(c.after) != roundi(c.before):
-			(up if c.after > c.before else down).append(id)
-	var box := UIKit.vbox(6)
-	box.add_child(UIKit.label("ATTRIBUTES", "CaptionLabel"))
-	if up.is_empty() and down.is_empty():
-		box.add_child(UIKit.wrapped("No attribute has moved up a whole point this week. Progress builds up slowly, so keep going."))
-	for id in up + down:
-		var c: Dictionary = r.changes[id]
-		var row := UIKit.hbox(8)
-		var l := UIKit.label(UIKit.attr_name(id))
-		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(l)
-		row.add_child(UIKit.attr_value_label(c.before))
-		row.add_child(UIKit.label("→", "MutedLabel"))
-		row.add_child(UIKit.trend_arrow(1 if c.after > c.before else -1))
-		row.add_child(UIKit.attr_value_label(c.after))
-		box.add_child(row)
-	var improving := []
-	for category in Training.TRAINED_CATEGORIES:
-		for attr in Data.attributes_in(category):
-			if a.trend(attr.id) > 0:
-				improving.append(attr.name.to_lower())
-	if not improving.is_empty():
-		box.add_child(UIKit.wrapped("Improving lately: %s." % ", ".join(improving)))
-	add_child(UIKit.panel(box, 16))
-
-	_add_week(r.monday, "The day-by-day log of that week is no longer kept.", false)   # (its summary is the panel above)

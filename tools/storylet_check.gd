@@ -419,9 +419,16 @@ func _rules() -> void:
 	_ok("a reply with relation +2 raises the sender's relationship (%d -> %d)" % [rel4, ms.people[m4.from].relation],
 			ms.people[m4.from].relation == rel4 + 2.0)
 	var first4: String = ms.people[m4.from].first_name
-	_ok("the result card says it in words (%s): ▲ somewhat; the unanswered moment: ▼ a little" % str(ms.moment(m4.id).changes),
-			ms.moment(m4.id).changes == ["%s ▲ somewhat" % first4]
-			and ms.moment(m2.id).changes == ["%s ▼ a little" % str(sender.first_name)])
+	# (Session L2b: a relationship is no longer a line of `changes`: the moment keeps it in `rel` and the result card shows it as a
+	# word + the size, "Good ▲ somewhat" or "Good → Close", WeekCauses.person_row.)
+	var WC = load("res://scripts/ui/week_causes.gd")
+	var r4: Array = ms.moment(m4.id).get("rel", [])
+	var r2: Array = ms.moment(m2.id).get("rel", [])
+	var v4: String = str(WC.person_row(ms, ms.people[m4.from], rel4, rel4 + 2.0, []).value) if not r4.is_empty() else ""
+	var v2: String = str(WC.person_row(ms, sender, rel0, rel0 - 1.0, []).value) if not r2.is_empty() else ""
+	_ok("the result card says it in words (%s %s; the unanswered moment: %s)" % [first4, v4, v2],
+			ms.moment(m4.id).changes.is_empty() and r4.size() == 1 and float(r4[0].after) - float(r4[0].before) == 2.0
+			and (v4.ends_with("▲ somewhat") or " → " in v4) and r2.size() == 1 and (v2.ends_with("▼ a little") or " → " in v2))
 	var coach_first: String = str(ms.people_for("coach")[0].first_name)
 	_ok("the coach's trust in words: 'Trust in %s ▲ a little' (%s)" % [coach_first, str(ms.moment(follow[0].id).changes)],
 			ms.moment(follow[0].id).changes == ["Trust in %s ▲ a little" % coach_first])

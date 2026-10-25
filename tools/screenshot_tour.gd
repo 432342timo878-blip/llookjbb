@@ -256,6 +256,18 @@ func _run() -> void:
 				ok.pressed.emit()
 			await _frames(3)
 			break
+	# Session L2b: causes everywhere: last week's rows, a body bar and a mood tapped open, then "Last week in full" with its taps.
+	hub._show("week")
+	await _frames(5)
+	_tap_rows(hub, ["attr", "body", "mood:motivation", "tired"])
+	await _frames(4)
+	await _shot("13c_week_causes_open")
+	hub._show("report")
+	await _frames(5)
+	await _shot("13d_report_full")
+	_tap_rows(hub, ["attr", "body", "mood"], 4)
+	await _frames(4)
+	await _shot("13e_report_taps")
 	hub._show("overview")
 	await _frames(5)
 	await _shot("14_overview_with_pb")
@@ -357,6 +369,14 @@ func _cast_tour(main: Node, hub_in: Control) -> void:
 	var today: int = MS.day_no(game.date)
 	var parent: Dictionary = ms.people_for("parent")[0]
 	print("cast tour: family attitude ", ms.family.get("attitude", ""), ", people ", ms.people.size())
+	# (A scratch card left from the health part of the tour covered these shots since L2a: its OK first.)
+	hub._refresh_week_ui()
+	await _frames(4)
+	var ok_card = _find_button(hub, str(game.get_node("/root/Data").recap.ok))
+	if ok_card:
+		ok_card.pressed.emit()
+		await _frames(3)
+	game.scratch_card = {}
 	# Session L1a: a family moment that matters waits on the Sunday planner as a card (no stop); answered there, the result card.
 	var fm: Dictionary = ms._post(ms.storylet("fam_against_tests"), parent, ctx, today, false, {"counted": false})
 	if not fm.is_empty() and not bool(fm.get("planner", false)):
@@ -386,6 +406,10 @@ func _cast_tour(main: Node, hub_in: Control) -> void:
 		hub._show("people")
 		await _frames(6)
 		await _shot(shots[page])
+		if page == "family":   # (session L2b: a person tapped open: how close, what it does, the answers that changed it)
+			_tap_rows(hub, ["person"], 1)
+			await _frames(4)
+			await _shot("54d2_family_person_tap")
 	# The late night of the answer above, in tomorrow's blocks of the day editor.
 	var w = game.current_week()
 	var d: int = mini(int(w.day) + 1, 6)
@@ -1858,6 +1882,30 @@ func _find_button(node: Node, text: String) -> Button:
 func _frames(n: int) -> void:
 	for i in n:
 		await process_frame
+
+
+## Session L2b: taps open the rows whose cause key starts with one of `prefixes` (at most `most` of each), as a player's tap.
+func _tap_rows(node: Node, prefixes: Array, most := 1) -> void:
+	var rows := []
+	_collect_cause_rows(node, rows)
+	for pre in prefixes:
+		var n := 0
+		for r in rows:
+			if n < most and str(r.get_meta("cause_row")).begins_with(str(pre)):
+				n += 1
+				for pressed in [true, false]:
+					var ev := InputEventMouseButton.new()
+					ev.button_index = MOUSE_BUTTON_LEFT
+					ev.pressed = pressed
+					ev.position = Vector2(5, 5)
+					r.gui_input.emit(ev)
+
+
+func _collect_cause_rows(node: Node, out: Array) -> void:
+	if node is Control and node.has_meta("cause_row") and node.is_visible_in_tree():
+		out.append(node)
+	for c in node.get_children():
+		_collect_cause_rows(c, out)
 
 
 func _shot(name: String) -> void:

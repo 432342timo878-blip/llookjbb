@@ -24,7 +24,8 @@ mock-ups in `docs/v1/`). **L1 done** in two sessions (user, 2026-10-23): L1a (th
 tab, the coach's notes, moments wait for Sunday, the new tabs; GDD 4.10 "Built (step L1a)") and L1b (the 9 free-time slots + standing
 habits replacing the school's two settings, invitations in the slots, save v5; "Built (step L1b)"). **L2 is split** (user, 2026-10-25,
 GDD 4.10 "L2's questions"): **L2a done** (the "what this race did" card after every race + the scratch card, kept in
-`Game.race_cards`; "Built (step L2a)"). Next, in `docs/ROADMAP.md` order: L2b (causes everywhere) → L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+`Game.race_cards`; "Built (step L2a)") and **L2b done** (causes everywhere: recorded causes for attributes, body, moods, people,
+the slots, a tap on every row; "Last week in full" in V1; "Built (step L2b)"). Next, in `docs/ROADMAP.md` order: L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -104,7 +105,10 @@ Calendar / People / Career / Rankings (old ids overview / training still work). 
 the V1 kit for new screens: variations BigNumber / CardHeading / BodyLabel / ItemLabel / WhyLabel / SectionLabel …, `Icons` (Lucide,
 `assets/icons`), `StatBar`, `CauseChip`, `CalloutCard`; fonts Inter + Barlow Condensed (numbers). Backdrop (big moments only; the hub
 is plain BG): `scripts/ui/backdrop.gd` + a blurred photo in `assets/backgrounds/` (CC BY-SA, credits in its README; the `.import` files must keep `mipmaps/generate=true`; an
-in-game Credits screen is still to do). **Help:** texts only in `data/help.json` (`screens` + `topics`, sections ≤ ~50 words, `version`);
+in-game Credits screen is still to do). **Causes (L2b):** the systems RECORD what changed and why (WeekSim's stimulus by source + the report's `parts` / `attrs`,
+`HealthSystem.strain_log`, `MindSystem.drift`, a person's relationship `log`, the day log's `life_parts`; recording only, proven
+by the fingerprints and `tools/causes_check.gd`); `WeekCauses` turns them into rows (texts `data/causes.json`), `CausesUI` shows
+them with a tap for the numbers (meta `cause_row`). Never state a cause the game did not record. **Help:** texts only in `data/help.json` (`screens` + `topics`, sections ≤ ~50 words, `version`);
 `Help`, `HelpButton` ("?" with a "new" dot), `HelpPanel`, `HelpOverlay`.
 
 **Core model.**

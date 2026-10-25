@@ -39,6 +39,7 @@ var cast: Dictionary = {}              # data/cast.json: the people around the a
 var planner: Dictionary = {}           # data/planner.json: the Sunday week planner's texts, the sessions' short names and icons (session L1a)
 var habits: Dictionary = {}            # data/habits.json: the free-time slots, the activities and the standing habits (session L1b)
 var recap: Dictionary = {}             # data/race_recap.json: the "what this race did" card and the scratch card (session L2a)
+var causes: Dictionary = {}            # data/causes.json: the week report's causes and the taps on body, moods and people (session L2b)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -87,6 +88,7 @@ func _ready() -> void:
 	planner = _load("res://data/planner.json")
 	habits = _load("res://data/habits.json")
 	recap = _load("res://data/race_recap.json")
+	causes = _load("res://data/causes.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()

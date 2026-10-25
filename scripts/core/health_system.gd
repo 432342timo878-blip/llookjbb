@@ -40,6 +40,12 @@ var days_without_running := 0
 var run_detrain_days := 0    # days this week beyond the running-detraining limit (cross-training doesn't count)
 var last_race_no := -1000    # day_no of the last race
 var counters := {"days_injured": 0, "days_ill": 0, "days_out": 0}
+## Session L2b (recording only; nothing decides from it): each played day's strain, the last STRAIN_LOG_DAYS days, oldest first:
+## {date (key), add: {area: {session id or "race": strain added}}, fade: {area: strain that faded}, after: {area: strain at the
+## day's end}, rest (no training),
+## tired / jump (the day's multipliers: tired legs, a jump in load), used_to (the capacity), body: {area: {growth, old_injury}}}.
+const STRAIN_LOG_DAYS := 14
+var strain_log: Array = []
 var _ill_mult := 1.0         # today's colds multiplier from the life load (SchoolSystem.illness_mult; not saved)
 var _inj_mult := 1.0         # today's injury multiplier from the life load (SchoolSystem.injury_mult; not saved)
 
@@ -140,6 +146,7 @@ func on_health(ctx: Dictionary) -> void:
 func on_week_end(ctx: Dictionary) -> void:
 	if not model_enabled:
 		return
+	var parts: Dictionary = ctx.get("report", {}).get("parts", {})   # (session L2b: what each loss was, recording only)
 	if detrain_days > 0:
 		var stimulus: Dictionary = ctx.week.stimulus_so_far()
 		var loss := float(Data.health.detraining.per_day) * detrain_days
@@ -149,6 +156,7 @@ func on_week_end(ctx: Dictionary) -> void:
 				var before := a.get_attr(attr.id)
 				a.set_attr(attr.id, before - loss)
 				a.recent_change[attr.id] = a.recent_change.get(attr.id, 0.0) + a.get_attr(attr.id) - before
+				WeekSim.add_part(parts, str(attr.id), "long_break", a.get_attr(attr.id) - before)
 		detrain_days = 0
 	if run_detrain_days > 0:
 		var a := Game.athlete
@@ -157,6 +165,7 @@ func on_week_end(ctx: Dictionary) -> void:
 			var before := a.get_attr(attr_id)
 			a.set_attr(attr_id, before - float(per_day[attr_id]) * run_detrain_days)
 			a.recent_change[attr_id] = a.recent_change.get(attr_id, 0.0) + a.get_attr(attr_id) - before
+			WeekSim.add_part(parts, str(attr_id), "no_running", a.get_attr(attr_id) - before)
 		run_detrain_days = 0
 	var cfg: Dictionary = Data.health.rivals
 	for r in Game.rivals:
@@ -221,16 +230,21 @@ func _body_day(a: Athlete, sessions: Array, level: String, is_race: bool, date: 
 	var month := int(date.month)
 	var level_mult := 1.0 if is_race else float(Training.intensity(level).get("strain", 1.0))
 	var input := {}
+	var by_source := {}   # (session L2b, recording only: area id -> {session id or "race": raw strain})
 	var impact := 0.0
 	for s in sessions:
 		var st: Dictionary = s.get("strain", {})
 		var off_track := not is_race and Training.effectiveness(a, s, month) < 1.0
+		var source := "race" if is_race else str(s.get("id", ""))
 		for area_id in st:
 			var v := float(st[area_id]) * level_mult
 			impact += v
 			if off_track and area_id in cfg.hard_surface_areas:
 				v *= float(cfg.hard_surface)
 			input[area_id] = input.get(area_id, 0.0) + v
+			var src: Dictionary = by_source.get(area_id, {})
+			src[source] = float(src.get(source, 0.0)) + v
+			by_source[area_id] = src
 	impacts.append(impact)
 	while impacts.size() > int(cfg.spike.chronic_days):
 		impacts.pop_front()
@@ -241,12 +255,32 @@ func _body_day(a: Athlete, sessions: Array, level: String, is_race: bool, date: 
 	if sessions.is_empty():
 		fade += float(cfg.rest_day_extra_fade)
 	var growth := growth_closeness(a, date)
+	var day := {"date": Calendar.date_key(date), "add": {}, "fade": {}, "after": {}, "rest": sessions.is_empty(),
+			"tired": _fatigue_mult(fatigue), "jump": spike_mult(), "used_to": capacity(), "body": {}}
 	for area in areas():
 		var keep := clampf(float(area.keep) - fade, 0.3, 0.98)
 		var added := float(input.get(area.id, 0.0))
+		var raw := added
 		if added > 0.0:
 			added *= common * (1.0 + float(cfg.growth.areas.get(area.id, 0.0)) * growth) * _history_mult(area.id)
-		strain[area.id] = float(strain.get(area.id, 0.0)) * keep + added
+		var old := float(strain.get(area.id, 0.0))
+		strain[area.id] = old * keep + added
+		# (Session L2b: what was added and by what, and what faded; recording only.)
+		if added > 0.0:
+			var parts := {}
+			for src in by_source.get(area.id, {}):
+				parts[src] = float(by_source[area.id][src]) / raw * added
+			day.add[area.id] = parts
+			var own := (1.0 + float(cfg.growth.areas.get(area.id, 0.0)) * growth) * _history_mult(area.id)
+			if own > 1.0:
+				day.body[area.id] = {"growth": 1.0 + float(cfg.growth.areas.get(area.id, 0.0)) * growth, "old_injury": _history_mult(area.id)}
+		if old * (1.0 - keep) > 0.0:
+			day.fade[area.id] = old * (1.0 - keep)
+		if float(strain[area.id]) > 0.0:
+			day.after[area.id] = float(strain[area.id])
+	strain_log.append(day)
+	while strain_log.size() > STRAIN_LOG_DAYS:
+		strain_log.pop_front()
 
 
 func _fatigue_mult(fatigue: float) -> float:
@@ -1088,7 +1122,7 @@ func to_dict() -> Dictionary:
 			"last_level": last_level, "levels": levels, "overrides": overrides,
 			"days_without_training": days_without_training, "detrain_days": detrain_days,
 			"days_without_running": days_without_running, "run_detrain_days": run_detrain_days,
-			"last_race_no": last_race_no, "counters": counters}
+			"last_race_no": last_race_no, "counters": counters, "strain_log": strain_log}
 
 
 ## An empty state (a save from before the health model) starts fresh on the next played day.
@@ -1101,6 +1135,9 @@ func from_dict(d: Dictionary) -> void:
 	day_no = int(d.day_no)
 	strain = d.strain
 	impacts = d.impacts
+	strain_log = d.get("strain_log", [])   # (session L2b; older saves: none yet)
+	for x in strain_log:
+		x.date = int(x.date)
 	capacity_now = float(d.capacity)
 	injuries = d.injuries
 	history = d.history

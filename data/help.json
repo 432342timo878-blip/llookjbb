@@ -3,18 +3,19 @@
  "screens": {
   "week": {
    "title": "This week",
-   "version": 3,
+   "version": 4,
    "sections": [
     {"heading": "Plan, then play", "text": "Every Sunday evening the week stops here. Look at the days, change any you like, answer what waits for you, then press Play week. A normal week is two taps. Next day plays one day at a time."},
-    {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Tap the race to see what it did again; a race you scratched says why. Last week in full opens every day of that week."},
+    {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Tap the race to see what it did again; a race you scratched says why. Last week in full shows every change and every day."},
+    {"heading": "What changed and why", "text": "The most important changes first: an injury, a body area over its line, attributes, moods and people whose word changed, tests, late nights and study evenings, invitations. Each says where it came from. Tap one for the exact numbers: an attribute shows each session's share, the race's, growing up and your coach.", "see": ["causes"]},
     {"heading": "The days", "text": "Each day shows its sessions. The line's colour says how hard: blue Easy, grey Normal, red Hard, dark a rest day, yellow a race. Violet chips are tests. Tap a day to change it or to ask your coach about it.", "see": ["ask_coach"]},
     {"heading": "Free time", "text": "Under each day (on a phone, the icon on its right) is what you do after training: each evening, and Saturday and Sunday. It follows your habits from the Season tab. Tap it to change it for this week only. It lights up only when something lands on it.", "see": ["habits"]},
     {"heading": "Invitations", "text": "A party or a group work lands in its evening, with its price: the late night and the day after it, and what staying home costs the friendship. Go or Stay home; you can change your mind until that evening. If you leave it, you stay home: Play week won't ask.", "see": ["habits"]},
     {"heading": "Amber evenings", "text": "An evening turns amber with a warning sign when it means a late night before a race or a hard session: friends on a school night, or an invitation you said yes to. Tap it to change it, or keep it: it's your call.", "see": ["habits"]},
     {"heading": "Your coach's notes", "text": "When your coach would change a day, the day gets a ! and a note says why and what it costs. Make it easy (or Do it) puts the change in. Keep mine keeps your plan: a reason costs nothing. A note you leave costs nothing either.", "see": ["coach_changes"]},
     {"heading": "Waiting for you", "text": "Messages that need an answer wait here instead of stopping the week, each answer with what it may cost. Left unanswered, they pass when the next week starts. A meet your coach suggests and a meet-and-tests clash wait here too. Invitations sit in their evening; Play week doesn't ask about them."},
-    {"heading": "Body", "text": "Tiredness and your most strained body areas as bars. The white tick is the warning line: green is fine, yellow near the line, red at or over it. At the line for a body area it starts to feel sore. Tap a bar for why.", "see": ["fatigue", "soreness"]},
-    {"heading": "Form and mind", "text": "Race form says how you would race today, with how sharp and how fresh you are. Your confidence, motivation and stress are words with what they do now and the news that moved them. Tap one for the whole story.", "see": ["form", "moods"]},
+    {"heading": "Body", "text": "Tiredness and your most strained body areas as bars. The white tick is the warning line: green is fine, yellow near the line, red at or over it. At the line for a body area it starts to feel sore. Tap a bar for what raised it, day by day, and what helps.", "see": ["fatigue", "soreness"]},
+    {"heading": "Form and mind", "text": "Race form says how you would race today, with how sharp and how fresh you are. Your confidence, motivation and stress are words with what they do now. Tap one for its number, the news that moved it and where last Sunday pulled it.", "see": ["form", "moods"]},
     {"heading": "The four facts", "text": "Load: this week against your normal week. Plan risk: how risky the week is for your body now. The next race you entered, and your season goal with how far you are from it.", "see": ["load_vs_normal", "plan_risk"]},
     {"heading": "Play week", "text": "It plays to Sunday night and stops early only for real things: a race, a sore warning, an injury or illness, a clash you left open, or a rare moment that matters. With choices still waiting it asks once: Show me, or Play anyway."},
     {"heading": "Saving", "text": "The game saves itself after every day. The menu (top right) has Save, an extra copy you can load later, and Main menu. On a computer, Ctrl+S saves too."}
@@ -106,19 +107,21 @@
   },
   "report": {
    "title": "Last week in full",
-   "version": 4,
+   "version": 5,
    "sections": [
-    {"heading": "Where it is", "text": "This page opens from Last week in full on This week; Back takes you there again. This week's left column is the short version."},
-    {"heading": "This week", "text": "A short summary of the week so far: days played, sessions, training load, how tired you are, races and health. Tap Day by day to open every day: what you did, your fatigue, sore areas, injuries and anything that happened. School days show their tests and scores."},
-    {"heading": "Last week", "text": "Sessions, training load and how your fatigue went, plus races, health and the season plan line. Attributes are shown when one moved a whole point: progress is added on Sunday night and builds up slowly. The days of that week are folded under Day by day."}
+    {"heading": "Where it is", "text": "This page opens from Last week in full on This week; Back takes you there again. This week's left column is the short version: only what moved enough to matter."},
+    {"heading": "Every change", "text": "Last week's sessions, races, plan, load and tiredness, then every change with its cause: attributes (even +0.01), the body, your moods, the people, tests, your evenings and invitations. Tap a row for the exact numbers. Tap a race to open its card.", "see": ["causes"]},
+    {"heading": "Attributes", "text": "Training adds up over the week and counts on Sunday night. Each session gets its share of what the week trained, the race too. Growing up adds a little; an attribute you don't train fades. Moving to the next whole number is marked.", "see": ["causes"]},
+    {"heading": "The days", "text": "Day by day opens every day: what you did, how tired you were and the load, sore areas, injuries, school tests and anything that happened. This week so far is at the bottom."}
    ]
   },
   "people": {
    "title": "People",
-   "version": 7,
+   "version": 8,
    "sections": [
     {"heading": "The people around you", "text": "Your coach, your training group, your family, your friends from school and, once you have raced someone a few times, your rivals. A number or a dot means something is new or waits for your answer. Tap a row to open the conversation."},
     {"heading": "Who they are", "text": "At the top of a thread: who the people are and how you get on with each (Close, Good, Fine, Cool, Strained). Your family's attitude comes from your story: some are proud, some think grades come first. Your answers slowly change both."},
+    {"heading": "How close", "text": "Tap a person for how close you are (out of 100) and the answers that changed it. Where it changes something today, it says so: a best friend you drift from may tell you they feel left out.", "see": ["causes"]},
     {"heading": "What an answer changes", "text": "Never your training. An answer can move your moods, how someone feels about you, give you a late night (a heavier next day) or nudge your schoolwork. The card after an answer says what changed.", "see": ["moods"]},
     {"heading": "School", "text": "The School row opens your grades, tests and report cards, your evenings in one line, the joint application and the school after grade 9. Your teachers' messages are at the top of that page.", "see": ["moods"]},
     {"heading": "Invitations", "text": "When a friend or a teacher asks you to something on a coming evening, the message is here, but you answer it on This week, where it sits in its evening with its price.", "see": ["habits"]},
@@ -131,13 +134,13 @@
   },
   "school": {
    "title": "School",
-   "version": 6,
+   "version": 7,
    "sections": [
     {"heading": "What school does", "text": "School changes how heavy your days are and how your grades go. It never changes what you train. A normal school week with the usual habits (study Monday to Thursday) is just your normal game."},
     {"heading": "Messages from school", "text": "Your class teacher, PE teacher and study counsellor write at the top of this page: tests, the school's cross-country run, the work-experience week, the application. Some answers nudge your grades a little or cost you a late night."},
     {"heading": "Your evenings", "text": "Your study evenings move your grades: more than four a week lifts them, fewer lets them slide, and a lot of study makes school days heavier. Friends on a school night means a late night; a rest evening makes the next day lighter. Change your habits in the Season tab.", "see": ["habits", "moods"]},
     {"heading": "Focus subjects", "text": "Pick up to two subjects to push. They rise faster while the others slip a little. Change them any time: grades move slowly, so switching back and forth gains nothing."},
-    {"heading": "Grades and tests", "text": "Each subject shows where you stand, written like a test: 8, 8+, 8½, 9-. Tap one for its latest tests. A week with more than two tests is a busy test week: heavier and more stressful."},
+    {"heading": "Grades and tests", "text": "Each subject shows where you stand, written like a test: 8, 8+, 8½, 9-. Tap one for its latest tests and how your study evenings move it. A week with more than two tests is a busy test week: heavier and more stressful."},
     {"heading": "Report cards", "text": "In grades 8 and 9 you get a report card on the last school day before Christmas and at the end of the school year. Play stops to show it, and you choose the next term: keep your evenings, one more study evening or one fewer. Your family reacts the next evening. In lukio each period has its results instead."},
     {"heading": "Tests and a race", "text": "When you have a race in a busy test week, a test on the race day itself, or a matriculation exam that week, play stops once. Race and risk the grades, study and scratch, or race and study on the bus: each has a price. Exam weeks nearly always count as busy."},
     {"heading": "Holidays", "text": "Breaks and the summer are lighter: you recover a little faster and feel less stressed. The Calendar lists them. Pajulahti camp weeks are shown there too."},
@@ -164,12 +167,13 @@
   },
   "moment": {
    "title": "A message that stops the week",
-   "version": 5,
+   "version": 6,
    "sections": [
     {"heading": "Why it stops", "text": "Most messages no longer stop the week: they wait on This week. A few still do, because the answer can't wait: your coach advising you to scratch a race while you are hurt, or a coach close to giving up on you. Pick an answer to carry on."},
     {"heading": "Scratch or race", "text": "{He} {v:advises|advise} you to scratch from a race because something hurts. Scratch lets {him}. Race anyway keeps your plan: a reason costs nothing, but many without one cost a little trust.", "see": ["coach_changes"]},
     {"heading": "Goals and suggestions", "text": "Your coach also writes about your season goals, when one is met or the season is looked back on. Nothing is decided without you.", "see": ["standards"]},
     {"heading": "The answers", "text": "The line under each button says what it may cost, like \"{he} will remember\"."},
+    {"heading": "What changed", "text": "After you answer, the card shows what really changed: a mood, trust, a late night, and each person as a word (\"Good → Close\"). Tap a person for how close you are and why.", "see": ["causes"]},
     {"heading": "Later", "text": "The whole conversation stays in the People tab."}
    ]
   },
@@ -314,6 +318,17 @@
   }
  },
  "topics": {
+  "causes": {
+   "title": "Why things change",
+   "version": 1,
+   "sections": [
+    {"heading": "Only what happened", "text": "Every change shows what really caused it, as the game played it: the sessions you did, a race, growing up, your coach, the evenings, the answers you gave. Nothing is guessed. A save from an older version shows its first week's numbers without their causes."},
+    {"heading": "Small numbers", "text": "Attributes move a little each week, often +0.02 or +0.05 on the 1 to 20 scale. This week shows changes from 0.1; Last week in full shows every one from 0.01. Tap one for its exact split."},
+    {"heading": "Body", "text": "A body area's strain grows with the sessions that load it and fades every day, faster on rest days. It builds faster when you are tired, after a sudden jump in training, while you grow fast, or where you were injured before."},
+    {"heading": "Moods", "text": "News moves a mood at once: a race, an injury, an answer. On Sunday night each mood also drifts towards where your week pulls it: friends evenings, family, your coach, the same training for months, a heavy school week."},
+    {"heading": "People", "text": "How close you are to someone moves with your answers to them, and a little with answers to their group. Your coach's trust also moves with your vetoes and goals, and drifts each Sunday towards how well you two fit."}
+   ]
+  },
   "habits": {
    "title": "Free time and habits",
    "version": 1,

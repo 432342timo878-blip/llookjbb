@@ -568,7 +568,9 @@ func _check_ui_models() -> void:
 			and info.health.is_empty() and info.limited == false and info.tier == "")
 	var report = Report.new()
 	root.add_child(report)   # ReportView builds itself when it enters the tree
-	_ok("Report builds", report.get_child_count() >= 3)
+	# (Session L2b: the page is V1 panels; before the first week is over it is one panel, this week so far with its Day by day fold.)
+	var folds: Array = report.find_children("*", "Button", true, false).filter(func(b): return str(b.text).contains("Day by day"))
+	_ok("Report builds (this week so far with its Day by day fold)", report.get_child_count() >= 1 and not folds.is_empty())
 	report.queue_free()
 	saves.save("ui")
 	game.date = game.START_DATE.duplicate()

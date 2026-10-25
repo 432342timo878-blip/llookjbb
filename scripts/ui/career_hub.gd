@@ -747,7 +747,11 @@ func _show(view: String) -> void:
 			_build_rankings()
 		"report":
 			_content.add_child(_back_button("week"))
-			_content.add_child(ReportView.new())
+			var rv := ReportView.new()
+			rv.card_pressed.connect(func(id: String):   # (session L2b: the report's race straps open their cards too)
+				_card_id = id
+				_show("race_card"))
+			_content.add_child(rv)
 		"race_card":   # (session L2a: a kept card, opened from the planner's race strap)
 			_content.add_child(_back_button("week"))
 			var c := Game.card(_card_id)

@@ -118,7 +118,10 @@ static func expected_fatigue(a: Athlete, plan: Variant, monday: Dictionary) -> D
 ## (age_share: none while an attribute is at least age_brake_gap[1] below the potential, all of it from [0]).
 ## `coach`: the coach's training effect (CoachSystem.training_effect: attribute id -> multiplier of the trained gain;
 ## empty = none, as for a coach of 10s).
-static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Dictionary, coach := {}) -> Dictionary:
+## `parts` (session L2b, recording only): filled with attribute id -> {trained, coach, growth, detrain} = the exact terms of each
+## change (the trained gain before the coach's effect, what his effect added, puberty growth, the loss for not training it); the
+## numbers are the same as without it.
+static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Dictionary, coach := {}, parts := {}) -> Dictionary:
 	var trainability := 0.6 + a.get_attr("trainability") / 20.0 * 0.8
 	var growth := puberty_share(a, monday)
 	var novice := 1.0 + novice_bonus(a)
@@ -130,6 +133,8 @@ static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Diction
 			var before := a.get_attr(id)
 			var s: float = stimulus.get(id, 0.0)
 			var gain := 0.0
+			var by_coach := 0.0
+			var detrain := 0.0
 			if s > MIN_DOSE:
 				gain = WEEKLY_RATE * (1.0 - exp(-(s - MIN_DOSE) / dose_scale(id))) * trainability * _headroom(a, before)
 				if category == "physical":
@@ -137,15 +142,21 @@ static func _apply_progression(a: Athlete, stimulus: Dictionary, monday: Diction
 				elif category == "technical":
 					gain *= novice
 				if coach.has(id):
+					var plain := gain
 					gain *= float(coach[id])
+					by_coach = gain - plain
 			elif category == "physical":
 				gain -= DETRAINING
-			gain += NATURAL_GROWTH.get(id, 0.0) * growth
+				detrain = -DETRAINING
+			var trained := gain - by_coach - detrain
+			var grown: float = NATURAL_GROWTH.get(id, 0.0) * growth
+			gain += grown
 			a.set_attr(id, before + gain)
 			var delta := a.get_attr(id) - before
 			a.recent_change[id] = a.recent_change.get(id, 0.0) * 0.75 + delta
 			if delta != 0.0:
 				changes[id] = {"before": before, "after": a.get_attr(id)}
+				parts[id] = {"trained": trained, "coach": by_coach, "growth": grown, "detrain": detrain}
 	a.weeks_trained += 1
 	return changes
 

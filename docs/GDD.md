@@ -4498,6 +4498,89 @@ the real sizes are smaller than the mock-up's (consistency ~+0.04 a race); nothi
     alone; e.g. "Tired · Form +0.8 %"): the planner shows the same; a question for the playtest / B1. The coach's race line comes from
     the Race story's pick, which uses the global dice (since R4): not a card matter.
 
+#### L2b's questions (user, 2026-10-25; each the recommended option)
+
+What the code showed first: the week's training stimulus is one sum per attribute (which session gave how much is not kept; the
+planner's "3 × Tempo run" was rebuilt afterwards from the day log); growing up, not training it and the coach's effect are exact
+terms inside `Training._apply_progression` but not kept; body strain is added a day at a time with six multipliers and only the
+total is kept; the moods keep their news with causes but not the Sunday drift; a relationship is a number with no history that today
+only decides two of the best friend's moments (below / above 50) and the price of staying home from an invitation; the coach's trust
+keeps its causes and does real things. Weekly attribute changes are mostly +0.02 to +0.12 on the 1–20 scale.
+
+1. **An attribute change is split by share:** each session's and race's stimulus is recorded as it is added; growing up, not
+   training it, the coach's effect, the long-break detraining and the mental growth are exact parts; the trained gain is shared out by
+   each source's share of the week's stimulus.
+2. **Two levels for small changes:** the planner's left column shows changes that read at least ±0.1; "Last week in full" lists every
+   change with two decimals; anything that rounds to 0.00 is hidden; passing a whole number (12 → 13) is marked; the tap shows the
+   exact split.
+3. **People: only real effects.** A relationship is a word + its change + the cause (the moment and the reply); a "does" line only
+   where the game simulates one (the coach's trust; the best friend below Fine may feel left out; an invitation's price); the others
+   get none until P2; the tap shows the number and the recent causes.
+4. **Record all four missing causes for real** (saved, no dice, older saves load with an empty record): the stimulus by session and
+   race in the week; the strain added to each body area each day (the last 14 days); last Sunday's mood drift with its pulls; a short
+   cause list per person. Proven with the fingerprints and a save / load check.
+5. **The moods' drift is one row** ("Sunday: ▲ +3 towards Keen"); its tap lists each pull with its sign (the drift cannot honestly be
+   split per pull: how far it moves depends on where the mood stands).
+6. **"Last week in full" is restyled to V1 as a whole page** (last week and the day-by-day log, same content).
+7. **The left column goes by importance:** an injury / an area over its line → attributes (biggest first) → moods that changed word →
+   people whose word changed → test grades → the slots' effects → invitations that happened; the rest in "+N more" and the full report.
+8. **One session, split only if needed** at a clean point (people as L2b2), nothing cut.
+
+#### Built (step L2b, 2026-10-25): causes everywhere
+
+Built in one session (no split was needed).
+1. **The records** (recording only, saved, no dice; older saves load with them empty): the week's stimulus by source (each
+   session id and each race, as added, with what tired legs took away and motivation added); the exact parts of every Sunday
+   change (`Training._apply_progression` fills trained / the coach's effect / growing up / not trained; the Sunday hooks add a long
+   break, days without running, the mental plan; a race evening adds consistency / composure); every attribute's value when the
+   week started and after Sunday night; the week's nine slots as played; the strain added to each body area each day by session,
+   what faded and the day's multipliers (tired legs, a jump in load, not used to the load, growing fast, an old injury), 14 days;
+   last Sunday's mood drift (from, to, target, its pulls) and the moods when the week started; each person's relationship log (the
+   last 6 changes with the reply and the first words of the message) and on a moment whose relationships it moved; the coach's
+   Sunday trust drift; the parts of a day's life load in the day log. `causes_check` proves they add up to the game's own numbers
+   (parts = the change, sources = the stimulus, the strain log = the strain, the drift target = base + pulls) and change nothing.
+2. **Attributes:** each change is split by share (decision 1): "Aerobic capacity 6.89 → 6.97 (+0.08) · Training +0.08: Long run
+   (Sat) 45 % +0.04, Easy run (Mon) 32 % +0.03, Fartlek (Thu) 23 % +0.02 · Your coach's effect +0.003 · Growing up +0.002",
+   tired / motivation lines when they changed it by 1 % or more, "Now shows as 5 (was 4)". The planner lists changes from 0.1
+   ("+0.1"), Last week in full every one from 0.01 (decision 2).
+3. **The body:** an area's row = its strain at the start and end of the week, what raised it most ("Sat long run + Tue club
+   group"); the tap = each addition by day and session, what faded, what built it faster, what helps. The planner's bars tap to the
+   last 7 days; tiredness taps to the days with their load. A save from before L2b says "recorded from now on".
+4. **The moods:** word → word (or ▲ / ▼, "steady"), the biggest cause; the tap = the number, every news of the week with its
+   points and date, "Sunday: ▲ +3.2 towards 66" and its pulls (decision 5), and on the planner what helps.
+5. **People:** a relationship = a word ("Good → Close", or "Good ▼ a little") + the cause ("you didn't answer · “Are you coming
+   to…”"); a "does" line only where the game simulates one (decision 3: `causes.json people_does`, the best friend's two
+   moments, checked against the storylets; the coach's trust from `trust_does`). The result card shows each relationship this way
+   (C3's bare lines remain only on answers made before L2b); the thread's people are rows with a tap. The coach's trust in the
+   week report: its causes in words + the Sunday drift. The race card's trust causes are words now (they were ids).
+6. **The week report** (the planner's left column): the rows in the order of decision 7, the main ones shown (at least 2, at most 5;
+   phone 4 pills), "+N more" opens the rest in place; every row taps open. **Last week in full** (ReportView) rewritten in V1: the
+   done row, race straps (they open their cards), plan / load / tiredness, then ATTRIBUTES, BODY, MOODS, PEOPLE, SCHOOL, FREE TIME
+   (late nights, early nights, study evenings, the nine slots), INVITATIONS, NOTES, every row with its tap; PC two columns; Day
+   by day (V1 rows) and This week so far folded.
+7. **Grades:** the subject tap also says this week's study evenings and what they do to grades.
+8. **Help:** `week` v4, `report` v5, `people` v8, `moment` v6, `school` v7, new topic `causes` ("Why things change").
+9. **Checks:** new `tools/causes_check.gd` (in run_all_checks). `school_fingerprint` leaves the day log's new `life_parts` key out
+   of its hash (a record of the parts of `life`, which stays in): the hashes are identical again. The tour (13c–13e, 54d2) and
+   `planner_shot` shoot the taps. Changed to the new design: `storylet_check` (a relationship is in the moment's `rel` and shows
+   as a word), `day_engine_check` (the report page's new shape), `saves_check` (the old saves build their week report's causes).
+   The tour now presses OK on the scratch card it leaves open before the people shots (it had covered 54d since L2a).
+10. **Proven:** `training_balance -- 0` coach row 206.798298350 / 14.102831594 / 1226.006524079 and every other row identical to the
+    commit before (only the moments' / proposals' counts of the rows with the moments on differ, and they differ between two runs
+    of the old code too: 194 / 192 moments, 705 / 726 proposals); races 73182f4e…; school 55076d77… (42fd3635… / 01dd20d7…).
+    `causes_check`: the parts add up to each change (difference 0.0), a save on Thursday and its load reach the same Sunday with the
+    same save text (but the rivals, whose training draws from the global dice as before), building every row and tap 3 times
+    changes nothing. `layout_check` 939 views at the five sizes, no OVERFLOW / SQUEEZED / WRONG (found and fixed: the plan line as a
+    chip was too wide on a phone); `help_check` 969 checks in the PC layout, passes in the phone layout. The user's three saves
+    (copies, version 4) load in the real game, play 7 days, race with a card and build their week report.
+11. **Measured** (`season_playtest`, the whole 2026-27 season through the real hub, phone 390×844, seed 2, policy `careful`, against
+    the commit before): **0.35 mid-week stops a week (0.33), 36 of 52 weeks straight through (36), clicks a week 2.48 average /
+    median 2 (2.56 / 2)**; the one extra stop is a fourth diagnosis (the races' and moments' dice come from the clock in this tool,
+    so injuries differ between runs, as in L1b and L2a). The autosave 509 KB (464: the strain log, the stimulus by source, the logs).
+12. **Seen and left for later:** the week report's rows answer "why"; they do not yet say "what next" (K1 / B1); the coach's trust
+    drift and the moods' drift are one line each, never split per cause (L2b decision 5); a relationship's "does" lines are few
+    until P2 gives people real effects.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

@@ -751,9 +751,17 @@ func on_day_end(ctx: Dictionary) -> void:
 		var extra: Dictionary = ctx.get("log_extra", {})
 		extra["school"] = info.kind if info["break"] == "" or info.kind == "weekend" else str(info["break"])
 		var rec: Dictionary = ctx.get("record", {})
-		var life := life_load(d, rec.get("sessions", []))
+		var parts := load_parts(d, rec.get("sessions", []))
+		var life := 0.0
+		var by_id := {}   # (session L2b: the parts, for the week report's causes; recording only)
+		for p in parts:
+			life += float(p.value)
+			by_id[str(p.id)] = float(by_id.get(str(p.id), 0.0)) + float(p.value)
+			if p.has("n"):
+				by_id["n_" + str(p.id)] = int(p.n)
 		if life != 0.0:
 			extra["life"] = life
+			extra["life_parts"] = by_id
 		if not written.is_empty():
 			extra["tests"] = written
 		if not _matric_log.is_empty():   # S3b: the matriculation exams of the day ({exam, absent})

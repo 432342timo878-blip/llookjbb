@@ -41,6 +41,15 @@ var _fatigue_sum := 0.0
 var _sessions := 0
 var _load := 0.0
 var _off_track := []
+## Session L2b (recording only; nothing reads these to decide anything): the stimulus by where it came from, attribute id ->
+## {session id or "race:<meet key>": amount} (the amounts add up to `_stimulus`); what tired legs took away and what motivation
+## added to it ({"tired": {attr: amount}, "motivation": {attr: amount}, "tired_days": [day]}); attribute changes made during
+## the week outside the Sunday progression (attribute id -> {part key: delta}, e.g. a race evening's consistency); the
+## attributes when the week started (the report's before / after).
+var _sources := {}
+var _mods := {"tired": {}, "motivation": {}, "tired_days": []}
+var _extra := {}
+var _attr_start := {}
 
 
 ## `week_plan` is a week plan (see WeekPlan); the old plain Array of days works too (every day Normal).
@@ -54,6 +63,7 @@ func _init(athlete: Athlete, week_plan: Variant, week_monday: Dictionary, week_r
 	_month = Game.add_days(monday, 3).month   # the month most of the week is in
 	_fatigue_start = a.fatigue
 	_fatigue_peak = a.fatigue
+	_attr_start = a.attributes.duplicate()
 
 
 # --- Playing ---------------------------------------------------------------------------------
@@ -138,7 +148,11 @@ func end_week() -> Dictionary:
 	if _sessions == 0:
 		_notes.append("A full week off. Good for recovery, but fitness slowly fades.")
 
-	var changes_done := Training._apply_progression(a, _stimulus, monday, coach_effect)
+	var parts := {}
+	var changes_done := Training._apply_progression(a, _stimulus, monday, coach_effect, parts)
+	for id in _extra:   # (session L2b: the week's other changes, e.g. a race evening's consistency)
+		for key in _extra[id]:
+			add_part(parts, str(id), str(key), float(_extra[id][key]))
 	# Session L1a: the week's sessions done by the one definition (session_count) for the planner's "7/7 sessions done", day by day.
 	var counted := {"planned": 0, "done": 0, "extra": 0, "days": []}
 	for r in played:
@@ -153,12 +167,34 @@ func end_week() -> Dictionary:
 		"monday": monday, "sessions": _sessions, "load": _load,
 		"fatigue_start": _fatigue_start, "fatigue_end": a.fatigue, "fatigue_peak": _fatigue_peak,
 		"fatigue_avg": fatigue_avg, "changes": changes_done, "notes": _notes, "races": _raced, "count": counted,
+		# Session L2b (recording only): where each change came from (Game._end_week adds the Sunday hooks' parts and `attrs`).
+		"parts": parts, "sources": _sources.duplicate(true), "stimulus": _stimulus.duplicate(), "mods": _mods.duplicate(true),
+		"attr_start": _attr_start.duplicate(),
 	}
 
 
 ## The training stimulus collected so far this week (attribute id -> amount). Read-only.
 func stimulus_so_far() -> Dictionary:
 	return _stimulus
+
+
+## Session L2b: an attribute change made during the week outside the Sunday progression (recording only; the change itself is
+## made by the caller). `key` names its cause (e.g. "race_growth:<meet key>").
+func note_change(attr: String, key: String, delta: float) -> void:
+	if delta == 0.0:
+		return
+	var parts: Dictionary = _extra.get(attr, {})
+	parts[key] = float(parts.get(key, 0.0)) + delta
+	_extra[attr] = parts
+
+
+## Adds `delta` to part `key` of attribute `attr` in a report's `parts` (recording only).
+static func add_part(parts: Dictionary, attr: String, key: String, delta: float) -> void:
+	if delta == 0.0:
+		return
+	var p: Dictionary = parts.get(attr, {})
+	p[key] = float(p.get(key, 0.0)) + delta
+	parts[attr] = p
 
 
 # --- Day changes (this week only) --------------------------------------------------------------
@@ -283,6 +319,7 @@ func to_dict() -> Dictionary:
 		"stimulus": _stimulus, "notes": _notes, "raced": _raced, "fatigue_start": _fatigue_start,
 		"fatigue_peak": _fatigue_peak, "fatigue_sum": _fatigue_sum, "sessions": _sessions, "load": _load,
 		"off_track": _off_track,
+		"sources": _sources, "mods": _mods, "extra": _extra, "attr_start": _attr_start,   # (session L2b; older saves: none)
 	}
 
 
@@ -307,6 +344,15 @@ static func from_dict(athlete: Athlete, week_plan: Variant, d: Dictionary) -> We
 	w._sessions = int(d.sessions)
 	w._load = float(d.load)
 	w._off_track = d.get("off_track", [])
+	# (Session L2b: a save from before it has no record of the days already played; the report then says so.)
+	w._sources = d.get("sources", {})
+	var mods: Dictionary = d.get("mods", {})
+	w._mods = {"tired": mods.get("tired", {}), "motivation": mods.get("motivation", {}),
+			"tired_days": mods.get("tired_days", []).map(func(x): return int(x))}
+	w._extra = d.get("extra", {})
+	w._attr_start = d.get("attr_start", {})
+	if not d.has("sources") and w.day > 0:
+		w._mods["unrecorded"] = true
 	return w
 
 
@@ -319,6 +365,18 @@ func _sessions_of(ids: Array) -> Array:
 		if not s.is_empty():
 			sessions.append(s)
 	return sessions
+
+
+## Session L2b (recording only): `added` of attribute `attr` came from `source`; `plain` = the same without tired legs and
+## motivation (`fresh`, `q`), so the report can say what each took away or added.
+func _record_source(attr: String, source: String, added: float, plain: float, fresh: float, q: float) -> void:
+	var src: Dictionary = _sources.get(attr, {})
+	src[source] = float(src.get(source, 0.0)) + added
+	_sources[attr] = src
+	if fresh < 1.0:
+		_mods.tired[attr] = float(_mods.tired.get(attr, 0.0)) + plain * q * (1.0 - fresh)
+	if q != 1.0:
+		_mods.motivation[attr] = float(_mods.motivation.get(attr, 0.0)) + plain * fresh * (q - 1.0)
 
 
 ## Plays day `day` and moves on to the next. `meet` is set on a race day (then `sessions` is the race).
@@ -345,8 +403,13 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 		if a.fatigue > Training.FATIGUE_LIMIT:
 			fresh = lerpf(1.0, Training.FATIGUED_MIN_EFFECT,
 					(a.fatigue - Training.FATIGUE_LIMIT) / (100.0 - Training.FATIGUE_LIMIT))
+		var source := "race:" + str(meet.get("key", "")) if is_race else str(s.get("id", ""))
 		for attr in s.effects:
-			_stimulus[attr] = _stimulus.get(attr, 0.0) + float(s.effects[attr]) * eff * fresh * effect_mult * q
+			var added := float(s.effects[attr]) * eff * fresh * effect_mult * q
+			_stimulus[attr] = _stimulus.get(attr, 0.0) + added
+			_record_source(str(attr), source, added, float(s.effects[attr]) * eff * effect_mult, fresh, q)
+		if fresh < 1.0 and not day in _mods.tired_days:
+			_mods.tired_days.append(day)
 		day_load += Training.session_load(a, s) * load_mult
 		extra_recovery += float(s.get("recovery", 0))
 		_sessions += 1

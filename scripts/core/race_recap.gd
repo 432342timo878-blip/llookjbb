@@ -300,7 +300,7 @@ static func _changes(rd: RaceDay, b: Dictionary) -> Array:
 		var name := str(cs.head().get("name", ""))
 		var list := []
 		for x in new_entries(b.get("trust_causes", []), cs.relation().get("causes", [])):
-			list.append("%s %s" % [signed(float(x.delta), 0), str(x.cause)])
+			list.append("%s %s" % [signed(float(x.delta), 0), WeekCauses.trust_cause(str(x.cause))])   # (L2b: in words, not its id)
 		out.append({"kind": "trust", "id": "trust", "title": str(c.trust_title).format({"name": name.get_slice(" ", 0)}),
 				"value": "▲" if t1 > float(b.trust) else "▼", "tone": "good" if t1 > float(b.trust) else "bad",
 				"cause": list[0].substr(list[0].find(" ") + 1) if not list.is_empty() else "",

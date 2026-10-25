@@ -94,6 +94,11 @@ func _run() -> void:
 				var choice: String = e.choices[0].id if not e.choices.is_empty() else "ok"
 				game.answer_event(e.id, choice)
 			played += 1
+		# Session L2b: the week report's causes build from an older save's first week (its days before the load were not recorded).
+		var WC = load("res://scripts/ui/week_causes.gd")
+		var crows: Array = WC.rows(game.last_report) if not game.last_report.is_empty() else []
+		_ok("%s: the week report's causes build (%d rows; \"%s\")" % [slot, crows.size(), str(crows[0].title) + " " + str(crows[0].value) if not crows.is_empty() else "-"],
+				crows.all(func(x): return str(x.title) != "" and str(x.detail) != ""))
 		var week: Dictionary = game.season.week_for(game.week_monday())
 		print("    %s: %s, %s → %s, mode %s, %d days played, plan has %d day entries" % [athlete,
 				load("res://scripts/core/calendar.gd").format_day(start), version, load("res://scripts/core/calendar.gd").format_day(game.date),

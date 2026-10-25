@@ -39,7 +39,14 @@ func _run() -> void:
 					stops += 1
 					game.answer_event(e.id, choice)
 			var school: Dictionary = game.get_system("school").to_dict()
-			var text := JSON.stringify(school, "", true, true) + JSON.stringify(game.athlete.to_dict(), "", true, true) + JSON.stringify(game.day_log, "", true, true)
+			# (Session L2b: the day log's `life_parts` is a record of the causes only, the parts of `life` that is hashed: left out,
+			# so the hash compares the same game as before.)
+			var log := []
+			for e in game.day_log:
+				var x: Dictionary = e.duplicate()
+				x.erase("life_parts")
+				log.append(x)
+			var text := JSON.stringify(school, "", true, true) + JSON.stringify(game.athlete.to_dict(), "", true, true) + JSON.stringify(log, "", true, true)
 			print("school fingerprint %s answer %d: %s (%d stops, %d report cards)" % [mode, school_index, text.md5_text(), stops, (school.get("reports", []) as Array).size()])
 			all += text.md5_text()
 	print("school fingerprint all: %s" % all.md5_text())   # (the four above together: run_all_checks looks for this line)

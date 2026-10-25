@@ -281,21 +281,12 @@ func _last_week_box() -> Control:
 		return box
 	box.add_child(_head(str(u.last_week), range_text(r.monday)))
 	box.add_child(_done_row(r))
-	for strap in _race_straps(r):
+	for strap in race_straps(r, func(id: String): card_pressed.emit(id)):
 		box.add_child(strap)
-	var chips := week_chips(r)
-	if not chips.is_empty():
+	var rows := week_rows(r)
+	if not rows.is_empty():   # (session L2b: every row opens its numbers on a tap; 5 + "+N more")
 		box.add_child(UIKit.label(str(u.what_changed), "SectionLabel"))
-		var shown := mini(5, chips.size())
-		for i in shown:
-			var c: Dictionary = chips[i]
-			box.add_child(CauseChip.new(c.icon, c.title, c.value, c.color, c.cause))
-		if chips.size() > shown:
-			var rest := []
-			for i in range(shown, chips.size()):
-				rest.append(str(chips[i].title))
-			var more := UIKit.wrapped(str(u.more).format({"n": chips.size() - shown, "list": ", ".join(rest)}), "WhyLabel")
-			box.add_child(more)
+		box.add_child(CausesUI.chip_list(rows, shown_rows(rows, 5), true))
 	var line := _coach_line()
 	if line != null:
 		box.add_child(line)
@@ -334,8 +325,8 @@ static func _done_row(r: Dictionary) -> Control:
 
 ## A broadcast strap per race of the week: the flag, the time, a PB tag in LEAD, the meet and the place. Session L2a: a strap is a
 ## button that opens the race's "what this race did" card (kept in Game.race_cards); a race scratched that week has its own strap
-## ("Scratched", the meet, why).
-func _race_straps(r: Dictionary) -> Array:
+## ("Scratched", the meet, why). `on_card(id)` opens a card (session L2b: static, so "Last week in full" shows them too).
+static func race_straps(r: Dictionary, on_card: Callable) -> Array:
 	var out := []
 	for x in r.get("races", []):
 		var key := str(x.get("meet_key", ""))
@@ -351,7 +342,7 @@ func _race_straps(r: Dictionary) -> Array:
 			top.add_child(_tag("PB"))
 		var place := Race._ordinal(int(res.place)) if ok and res.has("place") else ""
 		var line := str(ui().race_line).format({"meet": str(meet.get("name", x.get("name", ""))), "place": place}).trim_suffix(" · ")
-		out.append(_strap(top, line, Palette.LEAD, card_id))
+		out.append(_strap(top, line, Palette.LEAD, card_id, on_card))
 	var lo := Calendar.date_key(r.monday)
 	var hi := Calendar.date_key(Game.add_days(r.monday, 6))
 	for c in Game.race_cards:
@@ -361,13 +352,13 @@ func _race_straps(r: Dictionary) -> Array:
 		var top := UIKit.hbox(8)
 		top.add_child(UIKit.label(str(Data.recap.strap_scratched), "ItemLabel"))
 		var line := str(Data.recap.strap_scratched_line).format({"meet": str(c.meet_name), "why": str(c.why).trim_suffix(".")})
-		out.append(_strap(top, line, Palette.TEXT_MUTED, str(c.id)))
+		out.append(_strap(top, line, Palette.TEXT_MUTED, str(c.id), on_card))
 	return out
 
 
 ## One strap: a raised row (48 px or more) with the flag, the top line, the line under it, and when it opens a card a chevron and a
 ## transparent button over the whole strap (the panel sizes itself to the text; the button fills it).
-func _strap(top: Control, line_text: String, flag: Color, card_id: String) -> Control:
+static func _strap(top: Control, line_text: String, flag: Color, card_id: String, on_card: Callable) -> Control:
 	var has_card := card_id != "" and not Game.card(card_id).is_empty()
 	var p := PanelContainer.new()
 	var style := ThemeBuilder.raised_box(10)
@@ -410,7 +401,7 @@ func _strap(top: Control, line_text: String, flag: Color, card_id: String) -> Co
 		b.add_theme_stylebox_override("pressed", hover)
 		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.pressed.connect(func(): card_pressed.emit(card_id))
+		b.pressed.connect(func(): on_card.call(card_id))
 		p.add_child(b)
 	return p
 
@@ -433,77 +424,17 @@ static func _result_of(meet_key: String) -> Dictionary:
 	return {}
 
 
-## What changed last week and why, biggest first: [{icon, title, value, color, cause}]. Attributes (the session that trained it
-## most), the moods (▲ / ▼ with the news that moved them), school tests (the grade). L2 adds the body and more causes.
-static func week_chips(r: Dictionary) -> Array:
-	var u := ui()
-	var out := []
-	var sessions := _sessions_of_week(r.monday)
-	var attrs := []
-	var changes: Dictionary = r.get("changes", {})
-	for id in changes:
-		var delta := float(changes[id].after) - float(changes[id].before)
-		if absf(delta) >= 0.05:
-			attrs.append({"id": str(id), "delta": delta})
-	attrs.sort_custom(func(x, y): return absf(x.delta) > absf(y.delta))
-	for x in attrs.slice(0, 4):
-		var def := Data.get_attribute(x.id)
-		out.append({"icon": _attr_icon(x.id, str(def.get("category", ""))), "title": str(def.get("name", x.id)),
-				"value": "%+.1f" % x.delta, "color": Palette.GOOD if x.delta > 0.0 else Palette.BAD,
-				"cause": _trained_by(x.id, sessions)})
-	var mind := MindSystem.sys()
-	if mind != null:
-		for mood in MindSystem.MOODS:
-			var arrow := mind.arrow(mood)
-			if arrow == 0:
-				continue
-			var good := arrow > 0 if mood != "stress" else arrow < 0
-			var recent := mind.recent(mood)
-			out.append({"icon": {"confidence": "smile", "motivation": "zap", "stress": "brain"}.get(mood, "brain"),
-					"title": str(Data.mind.moods[mood].name), "value": "▲" if arrow > 0 else "▼",
-					"color": Palette.GOOD if good else Palette.BAD,
-					"cause": str(recent[0].text) if not recent.is_empty() else str(u.mood_cause_none)})
-	var ss := SchoolSystem.sys()
-	if ss != null and not SchoolSystem.neutral:
-		var lo := Calendar.date_key(r.monday)
-		var hi := Calendar.date_key(Game.add_days(r.monday, 6))
-		for t in ss.tests_log:
-			var k := Calendar.date_key(t.date)
-			if k < lo or k > hi:
-				continue
-			var score := int(t.score)
-			out.append({"icon": "pencil-line", "title": str(u.chip_test).format({"subject": ss.subject_name(str(t.subject))}),
-					"value": str(score), "color": Palette.GOOD if score >= 8 else (Palette.BAD if score <= 5 else Palette.TEXT),
-					"cause": ""})
-	return out
+## What changed last week and why, in the order of importance (session L2b: WeekCauses.rows, every row with its recorded cause and
+## its numbers on a tap): the rows the planner lists = the main ones and the smaller moves, but no attribute that reads under 0.1
+## (L2b decision 2: those are in "Last week in full") and no mood that held steady.
+static func week_rows(r: Dictionary) -> Array:
+	return WeekCauses.rows(r).filter(func(x): return bool(x.main) or (str(x.kind) != "attr" and str(x.value) != str(Data.causes.mood.steady)))
 
 
-## The training sessions of the week starting `monday` from the day log: {session id: count}.
-static func _sessions_of_week(monday: Dictionary) -> Dictionary:
-	var out := {}
-	var lo := Calendar.date_key(monday)
-	var hi := Calendar.date_key(Game.add_days(monday, 6))
-	for e in Game.day_log:
-		var k := Calendar.date_key(e.date)
-		if k < lo or k > hi or str(e.race) != "":
-			continue
-		for sid in e.sessions:
-			out[str(sid)] = int(out.get(str(sid), 0)) + 1
-	return out
-
-
-## "3 × Tempo run": the session that gave an attribute the most last week (its effect × how often it was done), or "".
-static func _trained_by(attr: String, sessions: Dictionary) -> String:
-	var best := ""
-	var most := 0.0
-	for sid in sessions:
-		var amount := float(Data.get_session(sid).get("effects", {}).get(attr, 0.0)) * int(sessions[sid])
-		if amount > most:
-			most = amount
-			best = sid
-	if best == "":
-		return ""
-	return str(ui().chip_sessions).format({"n": int(sessions[best]), "session": Icons.session_short(best)})
+## How many rows show before "+N more": the main ones (at most `most`), and at least two so a quiet week still says something.
+static func shown_rows(rows: Array, most: int) -> int:
+	var mains := rows.filter(func(x): return bool(x.main)).size()
+	return mini(rows.size(), clampi(mains, 2, most))
 
 
 static func _attr_icon(id: String, category: String) -> String:
@@ -988,7 +919,8 @@ static func tired_bar(compact_head: bool) -> Control:
 	var why := "%s · %s" % [str(Training.fatigue_state(f)[0]), str(u.warning_at).format({"n": roundi(line)})]
 	var bar := StatBar.new(str(u.tiredness), f, line, why)
 	bar.compact_head = compact_head
-	return _tappable(bar, str(Data.help.topics.get("fatigue", {}).get("sections", [{}])[0].get("text", "")))
+	bar.set_meta("cause_row", "tired:now")
+	return _tappable(bar, WeekCauses.tired_now())
 
 
 ## The most strained body areas as bars (strain against the line where "Sore" starts: the game's own sore warning).
@@ -1010,11 +942,8 @@ static func area_bars(n: int, compact_head: bool) -> Array:
 		var why := "%s · %s" % [word, str(ui().warning_at).format({"n": roundi(line)})]
 		var bar := StatBar.new(str(x.name), float(x.strain), line, why)
 		bar.compact_head = compact_head
-		var info := h.soreness_info(str(x.id))
-		var detail := " ".join(info.causes)
-		if str(info.helps) != "":
-			detail += (" " if detail != "" else "") + str(info.helps)
-		out.append(_tappable(bar, detail))
+		bar.set_meta("cause_row", "body:" + str(x.id))
+		out.append(_tappable(bar, WeekCauses.area_now(str(x.id))))   # (session L2b: what raised it, day by day, as recorded)
 	return out
 
 
@@ -1111,21 +1040,11 @@ static func mood_row(mind: MindSystem, mood: String) -> Control:
 	var why := does if recent.is_empty() else "%s · %s %s" % [does, str(recent[0].text), "▲" if float(recent[0].delta) > 0.0 else "▼"]
 	var l := UIKit.wrapped(why, "WhyLabel")
 	col.add_child(l)
-	var box := UIKit.vbox(4)
-	box.add_child(col)
-	var detail := MindUI.detail(mind, mood)
-	detail.visible = false
-	box.add_child(detail)
-	col.mouse_filter = Control.MOUSE_FILTER_PASS
-	col.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var press := {"at": Vector2.ZERO}
-	col.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				press.at = event.position
-			elif event.position.distance_to(press.at) < 10.0:
-				detail.visible = not detail.visible)
-	return box
+	col.custom_minimum_size.y = 44
+	col.set_meta("cause_row", "mood:" + mood)
+	# (Session L2b: the tap shows the word with its number and what it does, every recent news with ▲ / ▼, last Sunday's drift with
+	# its pulls, what helps: WeekCauses.mood_now.)
+	return _tappable(col, WeekCauses.mood_now(mood))
 
 
 # --- Phone -------------------------------------------------------------------------------------------------------------------
@@ -1193,21 +1112,11 @@ func _last_week_phone() -> Control:
 	var note := str(u.done_short).format({"done": int(c.get("done", 0)), "planned": int(c.get("planned", 0))}) if not c.is_empty() else ""
 	var head := _head(str(u.last_week), note)
 	box.add_child(head)
-	for strap in _race_straps(r):   # (session L2a: the race straps open their cards, as on PC)
+	for strap in race_straps(r, func(id: String): card_pressed.emit(id)):   # (session L2a: the race straps open their cards, as on PC)
 		box.add_child(strap)
-	var chips := week_chips(r)
-	if not chips.is_empty():
-		var flow := HFlowContainer.new()
-		flow.add_theme_constant_override("h_separation", 6)
-		flow.add_theme_constant_override("v_separation", 6)
-		var shown := mini(4, chips.size())
-		for i in shown:
-			var ch: Dictionary = chips[i]
-			flow.add_child(CauseChip.new(ch.icon, ch.title, ch.value, ch.color, "", true))
-		if chips.size() > shown:
-			var more := CauseChip.new("", str(u.more_short).format({"n": chips.size() - shown}), "", Palette.TEXT, "", true)
-			flow.add_child(more)
-		box.add_child(flow)
+	var rows := week_rows(r)
+	if not rows.is_empty():   # (session L2b: a tap on a pill shows its cause and numbers under them; 4 + "+N more")
+		box.add_child(CausesUI.pill_list(rows, shown_rows(rows, 4)))
 	var line := _coach_line()
 	if line != null:
 		box.add_child(line)

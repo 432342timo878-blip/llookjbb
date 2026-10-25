@@ -303,7 +303,9 @@ func on_week_end(_ctx: Dictionary) -> void:
 		return
 	var t: Dictionary = Data.coaching.trust
 	rel.weeks = int(rel.weeks) + 1
+	var was := float(rel.trust)
 	rel.trust = float(rel.trust) + (float(t.target[fit()]) - float(rel.trust)) * float(t.rate)
+	rel.last_drift = {"date": Game.date.duplicate(), "delta": float(rel.trust) - was}   # (session L2b: recording only)
 
 
 # --- The club coach -----------------------------------------------------------------------------
@@ -462,3 +464,5 @@ func from_dict(d: Dictionary) -> void:
 		rel.since = Game.int_date(rel.since)
 		for cause in rel.get("causes", []):
 			cause.date = Game.int_date(cause.date)
+		if rel.has("last_drift"):
+			rel.last_drift.date = Game.int_date(rel.last_drift.date)

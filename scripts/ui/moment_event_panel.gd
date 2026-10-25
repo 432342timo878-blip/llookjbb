@@ -50,7 +50,7 @@ static func has_result(e: Dictionary) -> bool:
 	if ms == null or str(e.get("kind", "")) != "moment":
 		return false
 	var m := ms.moment(str(e.get("moment", "")))
-	return not m.is_empty() and m.answer != "" and (not PeopleUI.result_messages(ms, m).is_empty() or not m.get("changes", []).is_empty())
+	return not m.is_empty() and m.answer != "" and (not PeopleUI.result_messages(ms, m).is_empty() or PeopleUI.has_changes(m))
 
 
 ## The result card (GDD 4.9.5 "Consequences shown"): the reply that came back, what changed in words with ▲ / ▼, Continue.
@@ -75,8 +75,8 @@ static func result(e: Dictionary, width: float, on_continue: Callable, on_help :
 		box.add_child(caption)
 	for x in PeopleUI.result_messages(ms, m):
 		box.add_child(PeopleUI.message(ms, x))
-	if not m.get("changes", []).is_empty():
-		box.add_child(PeopleUI.changes_panel(m.changes))
+	if PeopleUI.has_changes(m):
+		box.add_child(PeopleUI.changes_panel(m.get("changes", []), m))
 	var go := UIKit.button(str(cfg["continue"]), true, 200)
 	go.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	go.pressed.connect(func(): on_continue.call())

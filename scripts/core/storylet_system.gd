@@ -61,6 +61,7 @@ var stop_tokens := 0.0
 var last_from := {}          # person id -> day number of their last moment
 var standing := {}           # group -> {reply, label, rule, since}: the player's rules
 var standing_history := {}   # group -> the last answers to that recurring choice, newest last
+var _why := {}               # (session L2b) the answer being applied, for the relationship's log (not saved)
 var standing_declined := {}  # group -> true: "Not now" was answered; again_after identical answers needed
 # Session P1 (the cast; saved only once there is something):
 var family := {}             # {attitude} (data/cast.json attitudes; a reply's `attitude` effect changes it)
@@ -657,10 +658,13 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 	var cause := "moment:" + str(m.storylet)
 	var next = null
 	m.changes = []
+	var rel_before := _relations()   # (session L2b: whose relationship this answer moved, for the result card)
 	if reply_id == NONE:
 		var na: Dictionary = s.get("no_answer", Data.moments.no_answer)
+		_why = {"from": str(m.from), "reply": "", "about": _about(m)}
 		_apply(na.get("effects", {}), p, cause)
-		m.changes = _changes_of(na.get("effects", {}), p, false)
+		_why = {}
+		m.changes = _changes_of(na.get("effects", {}), p, false, false)
 		_message(m.thread, "system", str(na.get("result", Data.moments.no_answer.result)).format(fill), m.id, Game.date)
 		next = na.get("next", null)
 	else:
@@ -673,8 +677,10 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 			_message(m.thread, "system", str(Data.moments.standing.applied).format({"label": label}), m.id, Game.date)
 		else:
 			_message(m.thread, "you", label, m.id, Game.date)
+		_why = {"from": str(m.from), "reply": label, "about": _about(m)}
 		_apply(rep.get("effects", {}), p, cause)
-		m.changes = _changes_of(rep.get("effects", {}), p, bool(rep.get("remember", false)))
+		_why = {}
+		m.changes = _changes_of(rep.get("effects", {}), p, bool(rep.get("remember", false)), false)
 		var result := str(rep.get("result", "")).format(fill)
 		if result != "":
 			# (a reply with "result_from": "sender" is the sender's own answer, a bubble from them; else a line of the game)
@@ -682,6 +688,9 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 			_message(m.thread, speaker, result, m.id, Game.date)
 			threads[m.thread].back().read = true   # (it answers the player's own reply: nothing "new" about it)
 		next = rep.get("next", null)
+	var moved := _relations_moved(rel_before)
+	if not moved.is_empty():
+		m.rel = moved
 	if seen.has(m.storylet):
 		seen[m.storylet].reply = reply_id
 	if next is Dictionary:
@@ -719,7 +728,9 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 					_add_trust(float(v), cause)
 				elif not p.is_empty():
 					var rel: Dictionary = Data.moments.relation
+					var was := float(p.relation)
 					p.relation = clampf(float(p.relation) + float(v), float(rel.min), float(rel.max))
+					_note_relation(p, was, _why)
 			"flag":
 				for name in (v if v is Array else [v]):
 					var f: Dictionary = flags.get(name, {"count": 0})
@@ -768,7 +779,9 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 				for t in v:
 					for q in people.values():
 						if bool(q.active) and str(q.thread) == str(t) and q != p and q.get("role", "") != "coach":
+							var was := float(q.relation)
 							q.relation = clampf(float(q.relation) + float(v[t]), float(Data.moments.relation.min), float(Data.moments.relation.max))
+							_note_relation(q, was, _why)
 			_:
 				if not key in Data.moments.effects.prepared:
 					push_warning("Moment effect '%s' is unknown (%s)" % [key, cause])
@@ -778,7 +791,9 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 ## Only what really changes: the coach's trust (his `trust` and `relation` effects), another person's relationship, the moods
 ## (session M1, with the mind model on), and a "remember" note when the reply says so. Prepared effects (sleep, grades, budget)
 ## are listed once they exist.
-func _changes_of(effects: Dictionary, p: Dictionary, remember: bool) -> Array:
+## `with_people` false (session L2b, the answer's own result card): the relationships are left out here; the moment keeps them
+## as `rel` ({pid, before, after}) and the card shows each as a word (PeopleUI.relation_rows).
+func _changes_of(effects: Dictionary, p: Dictionary, remember: bool, with_people := true) -> Array:
 	var cfg: Dictionary = Data.moments.changes
 	var out := []
 	if p.is_empty():
@@ -805,9 +820,9 @@ func _changes_of(effects: Dictionary, p: Dictionary, remember: bool) -> Array:
 		rel = float(effects.get("relation", 0.0))
 	if trust != 0.0:
 		out.append(_change_line(str(cfg.trust).format({"who": who}), trust))
-	if rel != 0.0:
+	if rel != 0.0 and with_people:
 		out.append(_change_line(str(cfg.relation).format({"who": who}), rel))
-	var others: Dictionary = effects.get("relation_thread", {})
+	var others: Dictionary = effects.get("relation_thread", {}) if with_people else {}
 	for t in others:
 		if float(others[t]) != 0.0:
 			out.append(_change_line(str(cfg.thread).format({"thread": thread_name(str(t))}), float(others[t])))
@@ -1110,9 +1125,53 @@ func say(thread: String, from: String, text: String, read := false) -> void:
 
 ## The relationship with a person (not the head coach, whose relationship is his trust): `delta` points (session C6: the old
 ## coach after a goodbye).
-func add_relation(pid: String, delta: float) -> void:
+func add_relation(pid: String, delta: float, why := {"kind": "farewell"}) -> void:
 	if people.has(pid):
-		people[pid].relation = clampf(float(people[pid].get("relation", Data.moments.relation.start)) + delta, 0.0, 100.0)
+		var was := float(people[pid].get("relation", Data.moments.relation.start))
+		people[pid].relation = clampf(was + delta, 0.0, 100.0)
+		_note_relation(people[pid], was, why)
+
+
+## Session L2b (recording only): a person's relationship moved from `was`; kept with its cause in their `log` (the last
+## cast.json relation_log entries): {date, delta, before, after} + `why` ({from: the sender, reply: the label ("" = no answer)}
+## or {kind: "farewell"}).
+func _note_relation(q: Dictionary, was: float, why: Dictionary) -> void:
+	var d := float(q.relation) - was
+	if d == 0.0:
+		return
+	var entry := {"date": Game.date.duplicate(), "delta": d, "before": was, "after": float(q.relation)}
+	entry.merge(why)
+	var list: Array = q.get("log", [])
+	list.append(entry)
+	while list.size() > int(Data.cast.get("relation_log", 6)):
+		list.pop_front()
+	q.log = list
+
+
+## The first words of a moment's message, for a relationship's log (session L2b: what the answer was about).
+static func _about(m: Dictionary) -> String:
+	var text := str(m.get("text", "")).replace("\n", " ").strip_edges()
+	var n := int(Data.causes.people.about_chars)
+	return text if text.length() <= n else text.left(n - 1).strip_edges() + "…"
+
+
+## Everyone's relationship now (person id -> value; the coach's is his trust and is left out).
+func _relations() -> Dictionary:
+	var out := {}
+	for pid in people:
+		if str(people[pid].get("role", "")) != "coach":
+			out[pid] = float(people[pid].get("relation", Data.moments.relation.start))
+	return out
+
+
+## Whose relationship moved since `before` (_relations): [{pid, before, after}].
+func _relations_moved(before: Dictionary) -> Array:
+	var out := []
+	for pid in before:
+		var now := float(people[pid].get("relation", before[pid]))
+		if now != float(before[pid]):
+			out.append({"pid": str(pid), "before": float(before[pid]), "after": now})
+	return out
 
 
 ## The answer to a custom moment: the player's reply in the thread, then the system decides and its reply comes back.
@@ -1956,6 +2015,8 @@ func from_dict(d: Dictionary) -> void:
 func _people_numbers() -> void:
 	for p in people.values():
 		p.relation = float(p.relation)
+		for x in p.get("log", []):   # (session L2b: the relationship's recent causes)
+			x.date = Game.int_date(x.date)
 		if p.has("birth_year"):
 			p.birth_year = int(p.birth_year)
 		var mem: Dictionary = p.get("memory", {})

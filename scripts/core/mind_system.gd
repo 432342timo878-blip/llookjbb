@@ -34,6 +34,11 @@ var plan := []            # the weekly mental plan: up to max_sessions kind ids
 var cue := ""             # the cue word for self-talk ("" = the default)
 var started := false      # false until the first played day (state saved from then on)
 var _ahead := {}          # the Monday of the coming week while Sunday night's drift runs (school's pulls, S1; not saved)
+## Session L2b (recording only): last Sunday's drift, {date, <mood>: {from, to, target, pulls: [{text, delta}]}} ({} before the
+## first Sunday or in an older save).
+var drift := {}
+var week_start := {}      # (session L2b) mood -> value when the week in progress started (recording only)
+var _report_parts = null  # the week report's parts while Sunday's mental plan grows composure (not saved)
 
 
 func _init() -> void:
@@ -48,6 +53,8 @@ func _reset() -> void:
 		snap[m] = v
 		before[m] = v
 		causes[m] = []
+	drift = {}
+	week_start = {}
 
 
 static func cfg() -> Dictionary:
@@ -223,7 +230,7 @@ func on_day_end(ctx: Dictionary) -> void:
 	var note: Dictionary = ctx.get("race_note", {})
 	if not note.is_empty():
 		_race_news(note)
-		_race_growth(note)
+		_race_growth(note, ctx.get("week"))
 	# The day log says when you dragged yourself through the training (motivation Low or Flat).
 	var rec: Dictionary = ctx.get("record", {})
 	if rec.get("race", "") == "" and not rec.get("sessions", []).is_empty() and value("motivation") < float(cfg().effects.dragged_below):
@@ -291,7 +298,8 @@ func _race_news(note: Dictionary) -> void:
 
 
 ## Racing grows consistency (more from a race unlike the last one) and big meets grow composure.
-func _race_growth(note: Dictionary) -> void:
+## `week` (session L2b): the week in progress, told what each change came from (recording only).
+func _race_growth(note: Dictionary, week = null) -> void:
 	var a := Game.athlete
 	var meet := Calendar.get_meet(str(note.get("key", "")))
 	if a == null or meet.is_empty():
@@ -300,22 +308,27 @@ func _race_growth(note: Dictionary) -> void:
 	var level := str(meet.get("level", "local"))
 	var indoor := bool(meet.get("indoor", false))
 	var varied := last_race.is_empty() or str(last_race.level) != level or bool(last_race.indoor) != indoor
-	_grow(a, "consistency", float(g.consistency.per_race) * (float(g.consistency.varied) if varied else 1.0))
+	var grown := _grow(a, "consistency", float(g.consistency.per_race) * (float(g.consistency.varied) if varied else 1.0))
+	if week != null:
+		week.note_change("consistency", ("race_varied:" if varied else "race_growth:") + str(meet.key), grown)
 	if level in cfg().big_levels:
 		var conf := 1.0 + (value("confidence") - 50.0) / 50.0 * float(g.composure.confidence_share)
-		_grow(a, "composure", float(g.composure.per_big_race) * _mental_coaching() * conf)
+		grown = _grow(a, "composure", float(g.composure.per_big_race) * _mental_coaching() * conf)
+		if week != null:
+			week.note_change("composure", "big_meet:" + str(meet.key), grown)
 	last_race = {"level": level, "indoor": indoor}
 
 
-## Adds `amount` x headroom to a mental attribute (and to its recent change, for the Overview's arrows).
-func _grow(a: Athlete, attr_id: String, amount: float) -> void:
+## Adds `amount` x headroom to a mental attribute (and to its recent change, for the Overview's arrows). Returns the change.
+func _grow(a: Athlete, attr_id: String, amount: float) -> float:
 	if amount <= 0.0:
-		return
+		return 0.0
 	var g: Dictionary = cfg().growth
 	var v := a.get_attr(attr_id)
 	var head := clampf((20.0 - v) / float(g.headroom_span), float(g.headroom_min), 1.0)
 	a.set_attr(attr_id, v + amount * head)
 	a.recent_change[attr_id] = a.recent_change.get(attr_id, 0.0) + (a.get_attr(attr_id) - v)
+	return a.get_attr(attr_id) - v
 
 
 ## The coach's mental coaching as a multiplier (1.0 at 10; data coaching.json effects.mental_coaching.composure_per_point).
@@ -336,20 +349,31 @@ func on_week_end(ctx: Dictionary) -> void:
 	started = true
 	var monday: Dictionary = ctx.week.monday if ctx.get("week") != null else Game.week_monday()
 	_track_template(monday)
+	_report_parts = ctx.get("report", {}).get("parts", null)
 	_plan_growth(monday)
+	_report_parts = null
 	_ahead = Game.add_days(monday, 7)   # school's pulls look at the coming week (S1)
 	if not neutral:
+		drift = {"date": Game.date.duplicate()}   # (session L2b: the drift as it happened, recording only)
 		for m in MOODS:
-			var t := target(m, ctx.get("week"))
+			var ps := pulls(m, ctx.get("week"))
+			var t := target_of(m, ps)
 			var rate := float(cfg().drift[m].rate)
 			if m == "confidence" and value(m) < t:
 				var cs := _coach()
 				if cs:
 					rate *= cs.effect("mental_coaching", "confidence_back_per_point")
+			var was := value(m)
 			values[m] = clampf(value(m) + (t - value(m)) * clampf(rate, 0.0, 1.0), 0.0, 100.0)
+			drift[m] = {"from": was, "to": value(m), "target": t, "pulls": ps.map(func(p): return {"text": str(p.text), "delta": float(p.delta)})}
 	_big_meet_nerves(Game.add_days(monday, 7))
 	_school_news(Game.add_days(monday, 7))
 	_ahead = {}
+	if not drift.is_empty():   # (session L2b: the week from its start to Sunday night, the news after the drift included)
+		for m in MOODS:
+			if drift.has(m):
+				drift[m].start = float(week_start.get(m, before.get(m, value(m))))
+				drift[m].end = value(m)
 	before = snap.duplicate()
 	snap = values.duplicate()
 
@@ -392,7 +416,9 @@ func _plan_growth(monday: Dictionary) -> void:
 		if k == "imagery" and target_soon:
 			amount *= float(kinds[k].target_week)
 		total += amount
-	_grow(a, "composure", total * _mental_coaching())
+	var grown := _grow(a, "composure", total * _mental_coaching())
+	if _report_parts != null:   # (session L2b: recording only)
+		WeekSim.add_part(_report_parts, "composure", "mental_plan", grown)
 
 
 func _target_in_week(monday: Dictionary) -> bool:
@@ -408,8 +434,13 @@ func _target_in_week(monday: Dictionary) -> bool:
 
 ## Where the Sunday drift takes a mood: base + the pulls. `week` = the week just played (or the one in progress, for the UI).
 func target(mood: String, week = null) -> float:
+	return target_of(mood, pulls(mood, week))
+
+
+## The target from a list of pulls (base + their deltas).
+func target_of(mood: String, ps: Array) -> float:
 	var t := float(cfg().drift[mood].base)
-	for p in pulls(mood, week):
+	for p in ps:
 		t += float(p.delta)
 	return clampf(t, 0.0, 100.0)
 
@@ -609,8 +640,13 @@ func is_low(mood: String) -> bool:
 func to_dict() -> Dictionary:
 	if not started and plan.is_empty() and cue == "":
 		return {}
-	return {"values": values, "snap": snap, "before": before, "causes": causes, "same_weeks": same_weeks,
+	var out := {"values": values, "snap": snap, "before": before, "causes": causes, "same_weeks": same_weeks,
 			"template_key": template_key, "last_race": last_race, "plan": plan, "cue": cue, "started": started}
+	if not drift.is_empty():
+		out.drift = drift   # (session L2b)
+	if not week_start.is_empty():
+		out.week_start = week_start
+	return out
 
 
 ## An empty state (an older save, or a career that hasn't played a day) starts in the middle.
@@ -634,3 +670,13 @@ func from_dict(d: Dictionary) -> void:
 		plan.append(str(k))
 	cue = str(d.get("cue", ""))
 	started = bool(d.get("started", false))
+	drift = d.get("drift", {})   # (session L2b; older saves: none)
+	if drift.has("date"):
+		drift.date = Game.int_date(drift.date)
+	week_start = d.get("week_start", {})
+
+
+## Session L2b (recording only): the moods when a week starts, for the week report's before / after.
+func on_week_start(_week: WeekSim) -> void:
+	if model_enabled:
+		week_start = values.duplicate()

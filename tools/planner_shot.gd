@@ -68,6 +68,16 @@ func _run() -> void:
 	var planner = hub._planner
 	if planner != null:
 		print("open choices: ", load("res://scripts/ui/week_planner.gd").open_choices().size())
+	# (Session L2b: the first row of last week and the mood row tapped open: their numbers.)
+	var rows := []
+	_collect_meta(hub, rows)
+	for r in rows:
+		if str(r.get_meta("cause_row")).begins_with("attr") or str(r.get_meta("cause_row")).begins_with("mood"):
+			_tap(r)
+	await _frames(4)
+	await _shot("1c_planner_taps")
+	hub._show("week")
+	await _frames(4)
 	hub._scroll.scroll_vertical = 2000
 	await _frames(4)
 	await _shot("1b_planner_bottom")
@@ -86,6 +96,19 @@ func _run() -> void:
 		hub._show(tab)
 		await _frames(6)
 		await _shot("4_" + tab)
+	var rrows := []   # (session L2b: "Last week in full" with its first rows open, then further down)
+	_collect_meta(hub, rrows)
+	for r in rrows.slice(0, 3):
+		_tap(r)
+	await _frames(4)
+	await _shot("4_report_taps")
+	hub._scroll.scroll_vertical = 900
+	await _frames(4)
+	await _shot("4_report_more")
+	hub._scroll.scroll_vertical = 2400
+	await _frames(4)
+	await _shot("4_report_end")
+	hub._scroll.scroll_vertical = 0
 	hub._show("week")
 	await _frames(4)
 	hub._toggle_help()
@@ -103,3 +126,20 @@ func _shot(name: String) -> void:
 func _frames(n: int) -> void:
 	for i in n:
 		await process_frame
+
+
+func _collect_meta(node: Node, out: Array) -> void:
+	if node is Control and node.has_meta("cause_row") and node.is_visible_in_tree():
+		out.append(node)
+	for c in node.get_children():
+		_collect_meta(c, out)
+
+
+## A left-button press and release on a row (the way a tap opens its numbers).
+func _tap(row: Control) -> void:
+	for pressed in [true, false]:
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_LEFT
+		ev.pressed = pressed
+		ev.position = Vector2(5, 5)
+		row.gui_input.emit(ev)

@@ -176,9 +176,14 @@ static func exchange(ms: StoryletSystem, msgs: Array) -> Control:
 	for x in msgs:
 		col.add_child(message(ms, x, x == msgs[0]))
 	var m := ms.moment(str(msgs[0].moment)) if str(msgs[0].moment) != "" else {}
-	if not m.is_empty() and not m.get("changes", []).is_empty():
-		col.add_child(changes_panel(m.changes))
+	if has_changes(m):
+		col.add_child(changes_panel(m.get("changes", []), m))
 	return col
+
+
+## Did answering moment `m` change something to show (the lines, or a relationship: session L2b's `rel`)?
+static func has_changes(m: Dictionary) -> bool:
+	return not m.is_empty() and (not m.get("changes", []).is_empty() or not m.get("rel", []).is_empty())
 
 
 ## What came back after the player's answer to moment `m`: the messages written after their reply (the sender's answer or the
@@ -197,10 +202,19 @@ static func result_messages(ms: StoryletSystem, m: Dictionary) -> Array:
 
 
 ## The result card of an answer: what changed, in words with an arrow (data/moments.json `changes`), green for ▲, red for ▼.
-static func changes_panel(lines: Array) -> Control:
+## Session L2b: with the moment `m`, every relationship it moved is a row of its own, "Elmeri · Good → Close" (or "Good ▲ a
+## little") with what it really does, and a tap shows the number and the recent causes (WeekCauses.person_row); this replaces
+## C3's bare "Elmeri ▼ a little" line (older answers in a save still show their lines).
+static func changes_panel(lines: Array, m := {}) -> Control:
 	var cfg: Dictionary = Data.moments.changes
 	var col := UIKit.vbox(2)
 	col.add_child(UIKit.label(str(cfg.head), "CaptionLabel"))
+	var ms := system()
+	for x in m.get("rel", []):
+		var p: Dictionary = ms.people.get(str(x.pid), {}) if ms != null else {}
+		if p.is_empty():
+			continue
+		col.add_child(CausesUI.line_row(WeekCauses.person_row(ms, p, float(x.before), float(x.after), p.get("log", []))))
 	for line in lines:
 		var l := UIKit.wrapped(str(line), "")
 		var good_up: bool = not cfg.get("bad_up", []).any(func(b): return str(line).begins_with(str(b)))   # (stress ▲ is bad news)
@@ -243,8 +257,14 @@ static func roster(ms: StoryletSystem, thread_id: String) -> Control:
 			sub = str(u.rival_line).format({"club": str(Data.get_club(str(r.get("club_id", ""))).get("name", "")), "met": int(r.get("met", 0))})
 		sub += " · " + Cast.relation_word(ms.relation_of(p))
 		col.add_child(UIKit.wrapped(sub, "MutedLabel"))
+		# (Session L2b: what the relationship really does, when it does something today; a tap shows the number and its causes.)
+		var does := WeekCauses.person_does(p, ms.relation_of(p))
+		if does != "":
+			col.add_child(UIKit.wrapped(does[0].to_upper() + does.substr(1), "WhyLabel"))
 		row.add_child(col)
-		box.add_child(row)
+		row.custom_minimum_size.y = 44
+		row.set_meta("cause_row", "person:" + str(p.get("id", "")))
+		box.add_child(CausesUI.tappable(row, "\n".join(WeekCauses.person_lines(ms, p, p.get("log", [])))))
 	return UIKit.panel(box, 14)
 
 

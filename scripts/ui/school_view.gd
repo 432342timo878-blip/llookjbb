@@ -192,6 +192,14 @@ func _subject_row(ss: SchoolSystem, s: Dictionary) -> Control:
 		var avg := ss.term_average(sid)
 		if avg >= 0.0:
 			lines.append(str(u.term_avg).format({"avg": "%.2f" % avg}))
+	# (Session L2b: what moves where you stand, besides the tests: this week's study evenings, HabitSystem.grade_shift.)
+	var hs := HabitSystem.sys()
+	if hs != null and str(s.kind) == "academic":
+		var study := int(HabitSystem.counts(hs.week_activities(Game.week_monday())).study)
+		var shift := HabitSystem.shift_for(study)
+		var c: Dictionary = Data.causes.slots
+		lines.append(str(Data.causes.tests.evenings).format({"n": study,
+				"grades": str(c.grades_up if shift > 0.0 else (c.grades_down if shift < 0.0 else c.grades_hold))}))
 	var text := "\n".join(lines.filter(func(x): return str(x) != ""))
 	return _tap_row(sid, row, text)
 

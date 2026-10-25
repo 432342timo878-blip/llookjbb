@@ -70,6 +70,7 @@ $checks = @(
 	@{ name = "school_check"; args = "--headless -s res://tools/school_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "habits_check (the free-time slots, habits, invitations)"; args = "--headless -s res://tools/habits_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "race_card_check (what this race did, the scratch card)"; args = "--headless -s res://tools/race_card_check.gd"; marker = "ALL CHECKS PASSED"; limit = 500 },
+	@{ name = "causes_check (causes everywhere: the records add up, recording only)"; args = "--headless -s res://tools/causes_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "load_check (every script loads)"; args = "--headless -s res://tools/load_check.gd"; marker = "LOAD OK"; limit = 180 },
 	# The races: 60 fixed races (quick and watched, every plan, mix and voice) must give the same hash as before session C5. An
 	# engine change that is MEANT to change the races changes it: run tools/quick_fingerprint.gd and put the new hash here.

@@ -133,6 +133,35 @@ Read the paragraphs below with these in mind; they win where they disagree.
   - **Tools:** new `tools/race_card_check.gd` (in run_all_checks); `layout_check` (`_race_views` enters the meet so the card shows,
     `_card_end` / `_full_results` shots; new `_card_views`: the card page and the scratch card), the tour (12 = the card, 12a / 12a2,
     13a the card page, 13b the scratch card, 12c–12e sections and heats).
+- **Session L2b (causes everywhere; GDD 4.10 "L2b's questions" and "Built (step L2b)"; these win over the paragraphs below about
+  the week report, the Report tab, the moods' / body / people's taps):**
+  - **Records (recording only: no dice, no numbers change; proven by the fingerprints and `causes_check` parts 3-4):**
+    `WeekSim._sources` (attr -> {session id / "race:<meet>": stimulus}), `_mods` (tired / motivation stimulus, tired_days;
+    "unrecorded" for a week loaded from an older save), `_extra` (`note_change`: a race evening's consistency / composure),
+    `_attr_start`; `end_week` adds `parts` (`Training._apply_progression(..., parts)`: trained / coach / growth / detrain),
+    `sources`, `stimulus`, `mods`; `Game._end_week` turns `attr_start` into `attrs` {id: {before, after}} after the Sunday hooks
+    and adds `slots` (HabitSystem.week_activities); `WeekSim.add_part` (HealthSystem `long_break` / `no_running`, MindSystem
+    `mental_plan`). `HealthSystem.strain_log` (last 14 days: add by source, fade, after, the day's multipliers; saved).
+    `MindSystem.drift` (last Sunday: from, to, target, pulls, start, end; `target_of(mood, pulls)`) + `week_start` (on_week_start).
+    `StoryletSystem._note_relation` -> a person's `log` (date, delta, before, after, from, reply, about; `cast.json relation_log`
+    6) from `_apply` (relation, relation_thread) and `add_relation`; a moment's `rel` [{pid, before, after}] (`_relations` /
+    `_relations_moved`); `_changes_of(..., with_people=false)` leaves the relationship lines to `rel`. `CoachSystem` relation
+    `last_drift`. `SchoolSystem` day log `life_parts` {part id: value, n_<id>} (school_fingerprint leaves this key out of its hash).
+  - **`WeekCauses`** (`scripts/ui/week_causes.gd`, texts `data/causes.json` = `Data.causes`): rows {kind, id, icon, title, value,
+    short, tone, cause, detail, main, group, size}: `rows(r)` (importance order, L2b decision 7), `attr_rows` / `attr_parts`,
+    `injury_rows`, `body_rows` + `area_detail` / `area_now`, `tired_now`, `mood_rows` + `mood_lines` / `mood_now` / `mood_does`,
+    `people_rows` + `person_row` / `person_lines` / `person_does` (`people_does`, checked against the storylets) / `why_text`,
+    `trust_row` / `trust_cause`, `test_rows`, `slot_rows`, `invite_rows`; `num(v)` (two decimals, three when small).
+  - **`CausesUI`** (`scripts/ui/causes_ui.gd`): `chip` (44 px, tap = detail), `chip_list(rows, shown)` (+N more / Show less,
+    `MoreCauses`), `pill_list` (phone: one detail box under the pills), `line_row` (report / result card), `section`. Every tappable
+    row has meta `cause_row` = "kind:id" (the checks and the tour find them).
+  - **UI:** WeekPlanner `week_rows` (main + smaller moves, no attribute under 0.1, no steady mood) + `shown_rows` (the main ones,
+    2..5; phone 4), `race_straps(r, on_card)` / `_strap` static; the body bars' tap = `area_now`, tiredness = `tired_now`, a mood =
+    `mood_now` (MindUI.detail no longer used there). `ReportView` rewritten in V1 (signal `card_pressed`; two columns on PC).
+    `PeopleUI.changes_panel(lines, m)` + `has_changes(m)`; `roster` rows tappable with the does line. `SchoolView` subject tap adds
+    the study evenings. `RaceRecap` trust causes in words (`WeekCauses.trust_cause`).
+  - **Tools:** new `tools/causes_check.gd` (in run_all_checks); `planner_shot` shoots taps and the report (1c, 4_report_*); the tour
+    13c / 13d / 13e and 54d2.
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)
