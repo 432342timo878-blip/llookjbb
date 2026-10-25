@@ -231,11 +231,23 @@ func _activity_now(d: Dictionary) -> String:
 	if n < StoryletSystem.day_no(Game.date):
 		return str(history.get(str(n), habit(wd)))
 	if Calendar.date_key(Calendar.monday_of(d)) == Calendar.date_key(Game.week_monday()):
+		var away := away_on(d)
+		if not away.is_empty():   # (session L3a: a story beat's days, the confirmation camp)
+			return str(away.activity)
 		var inv := invitation_on(d)
 		if not inv.is_empty() and going(inv):
 			return str(inv.invite.activity)
 		return week_slot(wd)
 	return habit(wd)
+
+
+## Session L3a: the slot a story beat you said yes to, or the confirmation camp, takes on date `d` ({activity, chip, title,
+## moment}) or {}.
+static func away_on(d: Dictionary) -> Dictionary:
+	var ms := Game.get_system("moments") as StoryletSystem
+	if ms == null:
+		return {}
+	return ms.away_on(d)
 
 
 ## The invitation in a date's slot (a moment of StoryletSystem with an `invite` part, waiting or answered), or {}.
@@ -438,8 +450,9 @@ func slot_info(w: WeekSim, d: int) -> Dictionary:
 	var date := Game.add_days(w.monday, d)
 	var played := d < w.day
 	var inv := invitation_on(date)
+	var away := away_on(date) if Calendar.date_key(w.monday) == Calendar.date_key(Game.week_monday()) else {}
 	var info := {"i": d, "date": date, "played": played, "habit": habit(d), "activity": activity_on(date),
-			"changed": not played and changed(d), "invite": inv, "late": false, "clash": "", "highlight": false}
+			"changed": not played and changed(d), "invite": inv, "away": away, "late": false, "clash": "", "highlight": false}
 	var nx := _next_day(w, d)
 	info.next = nx
 	var sleep := 0.0
@@ -451,7 +464,7 @@ func slot_info(w: WeekSim, d: int) -> Dictionary:
 			info.clash = "race"
 		elif nx.hard:
 			info.clash = "hard"
-	info.highlight = not played and (not inv.is_empty() or str(info.clash) != "")
+	info.highlight = not played and (not inv.is_empty() or not away.is_empty() or str(info.clash) != "")
 	return info
 
 

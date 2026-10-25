@@ -20,6 +20,13 @@ extends GameSystem
 ## after a race (not a stop). Both come from CoachTalk (data/coach_talk.json); the topics are storylets with a `topic` field
 ## (data/storylets/week_talk.json). A talk's first topic is part of its stop moment (its replies are the talk's replies, a talk
 ## without a topic has the single reply "Thanks, coach"), a second topic is a normal moment that waits in the thread.
+## Session L3a (GDD 4.10 decision 6, the sort in docs/L3_SORT.md): every real storylet is one of three kinds. A FEED storylet
+## (`feed`: no replies) is a message that asks nothing: it never stops, never waits, changes no mood or relationship, only the
+## story state it carries (`effects`: flags, a sender's memory, the family's attitude); the day picks 2-4 a week. An INVITATION
+## (`invite`, L1b) lands in a free-time slot on Sunday (up to 2 a week, data/habits.json invites). A STORY BEAT (`beat`) is a
+## rare real choice posted on Sunday for the coming week (the stop token: at most 1 a week): a card on the planner whose price is
+## the free-time slots a reply takes (`slots`) and the relationship; left open it takes its stated default when Monday is played.
+## The old `important` (L1a: wait for the planner) stays for the test moments only.
 
 ## Off switch for the tools (like HealthSystem.model_enabled): no moments at all.
 static var enabled := true
@@ -69,6 +76,7 @@ var cast_info := {}          # the creation answers the cast was made from: {ori
 var late_nights := {}        # day number (as text) -> points of life load that day from a late night the evening before
 var rival_stats := {}        # rival id -> {beat, lost, streak (losses in a row), wins (wins in a row), races}
 var planner_line := {}       # session L1a: the coach's one line for the planner: {monday (date key of the week it is for), text}
+var drawn_week := -1         # session L3a: the Monday (day number) whose story beat and invitations were drawn
 ## Not saved, for the tools: every moment posted since the system was made [{day, storylet, variant, stop, auto, from}] and
 ## the chain follow-ups dropped because their conditions never held.
 var fired := []
@@ -246,7 +254,7 @@ func _pick(ctx: Dictionary, today: int, slots: Array, dated_only := false) -> Di
 	for s in content():
 		if bool(s.get("chain_only", false)) or str(s.get("topic", "")) != "" or not _slot_of(s) in slots:
 			continue
-		if s.has("invite"):   # (session L1b: invitations are posted into the coming week's slots on Sunday, never picked by the day)
+		if s.has("invite") or s.has("beat"):   # (sessions L1b / L3a: posted for the coming week on Sunday, never picked by the day)
 			continue
 		if dated_only and not bool(s.get("dated", false)):
 			continue
@@ -276,9 +284,25 @@ func _pick(ctx: Dictionary, today: int, slots: Array, dated_only := false) -> Di
 ## An important moment needs a stop token (about one a week), and none comes while another stop event waits. (Session L1a: it
 ## waits for the planner instead of stopping; the setting "Every moment" is cut.)
 func _stop_allowed(s: Dictionary) -> bool:
-	if not bool(s.get("important", false)):
+	if not bool(s.get("important", false)) and not s.has("beat"):
 		return true
 	return stop_tokens >= 1.0 and Game.pending_event().is_empty()
+
+
+## Session L3a: a message that asks nothing (no replies, never a stop, never waiting).
+static func is_feed(s: Dictionary) -> bool:
+	return bool(s.get("feed", false))
+
+
+## The effects a feed message may carry: story state only (data/moments.json effects.story), never a mood or a relationship.
+static func story_effects(s: Dictionary) -> Dictionary:
+	var out := {}
+	var allowed: Array = Data.moments.effects.story
+	var eff: Dictionary = s.get("effects", {})
+	for k in eff:
+		if str(k) in allowed:
+			out[k] = eff[k]
+	return out
 
 
 ## Conditions that don't depend on who writes: once, cooldown, not already waiting, `when`, enough replies and a text.
@@ -305,7 +329,7 @@ func _senders(s: Dictionary, ctx: Dictionary, today: int) -> Array:
 			continue
 		if not _sender_ok(s.get("when", {}), ctx, p):
 			continue
-		if _valid_replies(s, ctx, p).size() < 2 or _valid_variants(s, ctx, p).is_empty():
+		if (not is_feed(s) and _valid_replies(s, ctx, p).size() < 2) or _valid_variants(s, ctx, p).is_empty():
 			continue
 		out.append(p)
 	return out
@@ -400,6 +424,8 @@ func _fire_due_chain(slot: String, ctx: Dictionary, today: int) -> bool:
 ## a stop whatever the setting, titled "Week talk"), counted (false = outside the week's rate and stop count: talks and
 ## topics).
 func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop := false, opts := {}) -> Dictionary:
+	if is_feed(s):
+		return _post_feed(s, p, ctx, today, opts)
 	var variants := _valid_variants(s, ctx, p)
 	var last_variant := int(seen.get(s.id, {}).get("variant", -1))
 	if variants.size() > 1:
@@ -416,7 +442,8 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 	var talk := bool(opts.get("talk", false))
 	var counted := bool(opts.get("counted", true))
 	var invite := opts.has("invite")   # (session L1b: posted on Sunday for a slot of the coming week: ctx is that slot's day)
-	var posted: Dictionary = Game.date.duplicate() if invite else ctx.date.duplicate()
+	var beat := opts.has("beat")       # (session L3a: a story beat, posted on Sunday for the coming week)
+	var posted: Dictionary = Game.date.duplicate() if invite or beat else ctx.date.duplicate()
 	var m := {"id": "m%d" % _next, "kind": "moment", "storylet": str(s.id), "date": posted, "day": today,
 			"thread": str(s.thread), "from": str(p.id), "text": text, "variant": vi,
 			"replies": replies, "fill": fill, "expires": today + int(s.get("expires_days", Data.moments.expires_days)),
@@ -433,6 +460,13 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 		m.expires = int(m.slot_day)
 		m.planner = true
 		HabitSystem.touch()
+	if beat:
+		var bt: Dictionary = s.beat
+		m.beat = {"title": CoachSystem.words(str(bt.get("title", "")).format(fill)),
+				"chip": CoachSystem.words(str(bt.get("chip", "")).format(fill)), "default": str(bt.get("default", ""))}
+		m.week = day_no(Calendar.monday_of(Game.date))
+		m.planner = true
+		m.expires = today - 1   # (the Monday it was posted for: when that day is played, an open beat takes its default)
 	var sn: Dictionary = seen.get(s.id, {"count": 0, "first": today})
 	sn.count = int(sn.count) + 1
 	sn.last = today
@@ -447,10 +481,13 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 		if group != "" and standing.has(group) and replies.any(func(rep): return rep.id == standing[group].reply):
 			m.auto = true   # (the player's rule plans it; it still happens on its evening)
 			m.planned = str(standing[group].reply)
-		else:
-			stop_tokens -= 1.0
 		fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": false, "auto": bool(m.auto), "from": p.id,
 				"talk": false, "planner": true, "invite": true})
+		return m
+	if beat:   # (session L3a: it waits on the planner; it uses the week's stop token)
+		stop_tokens -= 1.0
+		fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": false, "auto": false, "from": p.id,
+				"talk": false, "planner": true, "beat": true})
 		return m
 	if group != "" and standing.has(group) and replies.any(func(rep): return rep.id == standing[group].reply):
 		# Answered by the player's rule: only the result line shows; it uses neither the day's slot nor the week's rate.
@@ -474,6 +511,36 @@ func _post(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, nonstop :=
 	return m
 
 
+## Session L3a: a feed storylet = a message from its sender that asks nothing: no moment waits, nothing stops; the story state it
+## carries (`effects`, story keys only) is set; it counts in the week's 2-4 like a moment did. Returns {"auto": false, "feed": true}.
+func _post_feed(s: Dictionary, p: Dictionary, ctx: Dictionary, today: int, opts := {}) -> Dictionary:
+	var variants := _valid_variants(s, ctx, p)
+	var last_variant := int(seen.get(s.id, {}).get("variant", -1))
+	if variants.size() > 1:
+		variants.erase(last_variant)   # never the same text twice in a row
+	var vi: int = variants[rng.randi_range(0, variants.size() - 1)]
+	var fill := _fill(ctx, p)
+	var text := CoachSystem.words(_variant_text(s.text[vi]).format(fill))
+	var sn: Dictionary = seen.get(s.id, {"count": 0, "first": today})
+	sn.count = int(sn.count) + 1
+	sn.last = today
+	sn.variant = vi
+	sn.reply = "feed"   # (nothing waits for an answer)
+	seen[s.id] = sn
+	last_from[p.id] = today
+	if str(s.thread) == "coach":
+		_start_threads()
+	_message(str(s.thread), str(p.id), text, "", ctx.date)
+	threads[str(s.thread)].back().feed = str(s.id)   # (which storylet: a message that asks nothing)
+	_apply(story_effects(s), p, "feed:" + str(s.id))
+	if bool(opts.get("counted", true)):
+		week.fired_day = today
+		week.count = int(week.count) + 1
+	fired.append({"day": today, "storylet": s.id, "variant": vi, "stop": false, "auto": false, "from": p.id, "talk": false,
+			"planner": false, "feed": true})
+	return {"auto": false, "feed": true}
+
+
 ## Session L1a: a moment that would have stopped Play week waits for the Sunday planner: it shows there as a card with its replies
 ## (it counts in "N choices waiting") and, unanswered, passes as "you didn't answer" when the next week starts (it expires on the
 ## coming Sunday, so the Monday morning after it resolves it).
@@ -495,20 +562,130 @@ func waiting() -> Array:
 func on_week_start(w: WeekSim) -> void:
 	if not people_enabled or not active() or started_day < 0:
 		return
+	if drawn_week == day_no(w.monday):
+		return   # (session L3a: this week's beat and invitations were drawn already: a game loaded mid-week goes on as without saving)
+	drawn_week = day_no(w.monday)
+	_post_beat(w)
 	_post_invitations(w)
 
 
-## At most data/habits.json invites.max_per_week a week, with its chance, and only with the week's stop token (like the moments
-## that waited for Sunday, so the planner's cards don't grow): a storylet with an `invite` part whose conditions hold for one of
-## its slot days (`invite.days`, weekday numbers) still to come this week; picked by weight among every fitting (storylet, day).
+# --- Story beats (session L3a, GDD 4.10 decision 6; the sort in docs/L3_SORT.md) ------------------------------------------------
+
+## The new week is set up (Sunday evening): a story beat may come for it, with the week's stop token (at most one a week, ~5-7 a
+## year by its storylets' conditions and cooldowns): a storylet with a `beat` part whose conditions hold on the week's first day
+## to play. It waits on the planner as a card; its replies' `slots` take free-time slots of THIS week.
+func _post_beat(w: WeekSim) -> void:
+	if stop_tokens < 1.0 or not Game.pending_event().is_empty():
+		return
+	var monday_no := day_no(w.monday)
+	if moments.any(func(m): return m.has("beat") and int(m.get("week", -1)) == monday_no):
+		return
+	var today := day_no(Game.date)
+	var ctx := {"date": Game.date, "day": Calendar.weekday(Game.date), "day_type": Calendar.day_type(Game.date), "week": w,
+			"race_note": {}}
+	var cands := []
+	var total := 0.0
+	for s in content():
+		if not s.has("beat") or bool(s.get("chain_only", false)):
+			continue
+		if not _eligible(s, ctx, today):
+			continue
+		var senders := _senders(s, ctx, today)
+		if senders.is_empty():
+			continue
+		var wt := float(s.get("weight", 1.0))
+		cands.append({"s": s, "senders": senders, "w": wt})
+		total += wt
+	if cands.is_empty():
+		return
+	var x := rng.randf() * total
+	var chosen: Dictionary = cands.back()
+	for c in cands:
+		x -= c.w
+		if x < 0.0:
+			chosen = c
+			break
+	var senders: Array = chosen.senders
+	_post(chosen.s, senders[rng.randi_range(0, senders.size() - 1)], ctx, today, false, {"beat": true, "counted": false})
+
+
+## The weekdays a beat reply's `slots` take in the week starting `monday`: its `days` (weekday numbers), or "break" = the days of
+## that week inside a school break; only days not played yet.
+func slot_days(slots: Dictionary, monday: Dictionary) -> Array:
+	var out := []
+	var first := Calendar.weekday(Game.date) if Calendar.date_key(Calendar.monday_of(Game.date)) == Calendar.date_key(monday) else 0
+	var days = slots.get("days", [])
+	for i in 7:
+		if i < first:
+			continue
+		if days is String and str(days) == "break":
+			if str(_school_day(Game.add_days(monday, i)).get("break", "")) != "":
+				out.append(i)
+		elif days is Array and float(i) in days.map(func(x): return float(x)):
+			out.append(i)
+	return out
+
+
+## Every weekday of this week that an open or answered beat takes or may take (an invitation never lands on one).
+func beat_days(monday: Dictionary) -> Array:
+	var out := []
+	var key := day_no(monday)
+	for m in moments:
+		if not m.has("beat") or int(m.get("week", -1)) != key:
+			continue
+		if m.has("took"):
+			out.append_array(m.took.days)
+		elif m.answer == "":
+			for r in storylet(str(m.storylet)).get("replies", []):
+				if r.has("slots"):
+					out.append_array(slot_days(r.slots, monday))
+	return out
+
+
+## The free-time slot a story beat or an away week (the confirmation camp) takes on date `d`: {activity, chip, title, moment}
+## or {} (session L3a). HabitSystem reads it for the week being played.
+func away_on(d: Dictionary) -> Dictionary:
+	var monday := Calendar.monday_of(d)
+	var key := day_no(monday)
+	var wd := Calendar.weekday(d)
+	for m in moments:
+		if m.has("took") and int(m.get("week", -1)) == key and float(wd) in (m.took.days as Array).map(func(x): return float(x)):
+			return {"activity": str(m.took.activity), "chip": str(m.beat.chip), "title": str(m.beat.title), "moment": str(m.id)}
+	if people_enabled and not cast_info.is_empty():
+		var camp: Dictionary = Data.cast.away.rippileiri
+		var start := Cast.occurrence("rippileiri", int(d.year), flags)
+		if not start.is_empty() and str(_camp_flag()) in camp.get("flags", []):
+			var n := Calendar.days_between(start, d)
+			if n >= 0 and n < int(camp.days):
+				return {"activity": str(camp.activity), "chip": str(camp.chip), "title": str(camp.title), "moment": ""}
+	return {}
+
+
+func _camp_flag() -> String:
+	for f in ["rippi_june", "rippi_july", "rippi_day", "rippi_none"]:
+		if flags.has(f):
+			return f
+	return ""
+
+
+## Up to data/habits.json invites.max_per_week a week (session L3a: 2), each with its chance (`chances`: the first, the second),
+## no longer using the week's stop token (an invitation never makes Play week ask): a storylet with an `invite` part whose
+## conditions hold for one of its slot days (`invite.days`, weekday numbers) still to come this week and not taken by a story
+## beat; picked by weight among every fitting (storylet, day).
 func _post_invitations(w: WeekSim) -> void:
 	var cfg: Dictionary = Data.habits.invites
+	var chances: Array = cfg.get("chances", [cfg.get("chance", 0.7)])
+	for k in int(cfg.max_per_week):
+		if rng.randf() >= float(chances[mini(k, chances.size() - 1)]):
+			return
+		if not _post_invitation(w):
+			return
+
+
+## One invitation into the coming week; false when none fits.
+func _post_invitation(w: WeekSim) -> bool:
 	var today := day_no(Game.date)
-	var mine := moments.filter(func(m): return m.has("invite") and Calendar.date_key(Calendar.monday_of(_date_of(int(m.slot_day)))) == Calendar.date_key(w.monday))
-	if mine.size() >= int(cfg.max_per_week) or stop_tokens < 1.0:
-		return
-	if rng.randf() >= float(cfg.chance):
-		return
+	var taken := beat_days(w.monday)
 	var cands := []
 	var total := 0.0
 	for s in content():
@@ -516,10 +693,10 @@ func _post_invitations(w: WeekSim) -> void:
 			continue
 		for wd in s.invite.get("days", []):
 			var d := int(wd)
-			if d < w.day or d > 6:
+			if d < w.day or d > 6 or d in taken:
 				continue
 			var date := Game.add_days(w.monday, d)
-			if not invitation_on(date).is_empty():
+			if not invitation_on(date).is_empty() or not away_on(date).is_empty():
 				continue
 			var ctx := {"date": date, "day": d, "day_type": Calendar.day_type(date), "week": w, "race_note": {}}
 			if not _eligible(s, ctx, today):
@@ -531,7 +708,7 @@ func _post_invitations(w: WeekSim) -> void:
 			cands.append({"s": s, "ctx": ctx, "senders": senders, "w": wt})
 			total += wt
 	if cands.is_empty():
-		return
+		return false
 	var x := rng.randf() * total
 	var chosen: Dictionary = cands.back()
 	for c in cands:
@@ -541,6 +718,7 @@ func _post_invitations(w: WeekSim) -> void:
 			break
 	var senders: Array = chosen.senders
 	_post(chosen.s, senders[rng.randi_range(0, senders.size() - 1)], chosen.ctx, today, false, {"invite": true, "counted": false})
+	return true
 
 
 ## The date of a day number (the inverse of day_no).
@@ -675,8 +853,14 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 				label = r.label
 		if m.auto:
 			_message(m.thread, "system", str(Data.moments.standing.applied).format({"label": label}), m.id, Game.date)
+		elif bool(m.get("defaulted", false)):   # (session L3a: a story beat left open took its stated default)
+			_message(m.thread, "system", str(Data.moments.beat.defaulted).format({"label": label}), m.id, Game.date)
 		else:
 			_message(m.thread, "you", label, m.id, Game.date)
+		if m.has("beat") and rep.has("slots"):   # (session L3a: the reply takes free-time slots of the beat's week)
+			var monday := _date_of(int(m.week))
+			m.took = {"days": slot_days(rep.slots, monday), "activity": str(rep.slots.get("activity", "family"))}
+			HabitSystem.touch()
 		_why = {"from": str(m.from), "reply": label, "about": _about(m)}
 		_apply(rep.get("effects", {}), p, cause)
 		_why = {}
@@ -850,7 +1034,11 @@ func _add_trust(delta: float, cause: String) -> void:
 func _expire(today: int) -> void:
 	for m in moments.duplicate():
 		if m.answer == "" and not m.stop and today > int(m.expires):
-			_resolve(m, NONE)
+			if m.has("beat") and str(m.beat.get("default", "")) != "":   # (session L3a: its stated default, said on the card)
+				m.defaulted = true
+				_resolve(m, str(m.beat.default))
+			else:
+				_resolve(m, NONE)
 
 
 func _prune(today: int) -> void:
@@ -946,19 +1134,31 @@ func _post_race_note(ctx: Dictionary, today: int) -> void:
 ## family's talk after a report card or the application's results (queued for the next evening, a moment of the week).
 func _people_evening(ctx: Dictionary, today: int) -> void:
 	var note: Dictionary = ctx.get("race_note", {})
+	var warmth: Dictionary = Data.cast.warmth   # (session L3a: the family's good signs come from what happened, not from replies)
 	if not note.is_empty():
 		_post_rival_note(ctx, today)
+		if CoachTalk.race_outcome(note) == "pb":
+			_warmth(warmth.pb)
 	var ss := SchoolSystem.sys()
 	if ss != null:
 		var wait := int(Data.moments.chain_wait_days)
 		if not ss.reports.is_empty() and day_no(Game.int_date(ss.reports.back().date)) == today and str(ss.reports.back().kind) != "period":
 			queue.append({"topic": "card", "due": today + 1, "until": today + 1 + wait, "after": ""})
+			if float(ss.reports.back().get("academic_average", 0.0)) >= float(warmth.card_avg):
+				_warmth(warmth.card)
 		var year := ss.app_year_now()
 		if year > 0 and Calendar.date_key(SchoolApplication.dates(year).results) == Calendar.date_key(ctx.date):
 			queue.append({"topic": "app", "due": today + 1, "until": today + 1 + wait, "after": ""})
 	for k in late_nights.keys():
 		if int(k) < today:
 			late_nights.erase(k)
+
+
+## Session L3a: a good sign for a family that is against the sport (`cast.json warmth`: a PB, a good report card); enough of them
+## and the family comes round (fam_against_softens, a feed message that changes the attitude).
+func _warmth(points) -> void:
+	if str(family.get("attitude", "")) in Data.cast.warmth.attitudes:
+		counters["family_warmth"] = int(counters.get("family_warmth", 0)) + int(points)
 
 
 ## After a race: every rival who ran it gets the result in `rival_stats`; rivals met often enough become people; with a chance
@@ -1240,7 +1440,7 @@ func _pick_topics(kind: String, ctx: Dictionary, today: int, p: Dictionary, n: i
 			continue
 		if not _sender_ok(s.get("when", {}), ctx, p):   # (session P1: a rival's race; the coach's topics ask nothing of him)
 			continue
-		if _valid_replies(s, ctx, p).size() < 2 or _valid_variants(s, ctx, p).is_empty():
+		if (not is_feed(s) and _valid_replies(s, ctx, p).size() < 2) or _valid_variants(s, ctx, p).is_empty():
 			continue
 		pool.append(s)
 	var out := []
@@ -1410,6 +1610,13 @@ func check_when(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
 					ok = ok and _in_range(Cast.days_after(str(ev), date, flags), v[ev])
 			"school_day": ok = (_school_day(date).get("kind", "") == "school") == bool(v)
 			"break": ok = str(_school_day(date).get("break", "")) in v
+			"break_week":   # (session L3a) a day of this Mon-Sun week is inside one of these breaks
+				var mon := Calendar.monday_of(date)
+				ok = false
+				for i in 7:
+					if str(_school_day(Game.add_days(mon, i)).get("break", "")) in v:
+						ok = true
+						break
 			"stage":
 				var ss := SchoolSystem.sys()
 				ok = ss != null and str(ss.stage_of(date).id) in v
@@ -1426,6 +1633,18 @@ func check_when(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
 			"app_result": ok = _app_result() in v
 			"origin": ok = str(cast_info.get("origin", "")) in v
 			"old_sport": ok = (str(cast_info.get("old_sport", "")) != "") == bool(v)
+			# Session L3a ("content never contradicts the player"):
+			"next_level":   # the next entered race's level (local / district / national / international ...)
+				var nm := Game.next_race()
+				ok = not nm.is_empty() and str(nm.get("level", "")) in v
+			"card_grade":   # {"pe": [10, 10]}: the grade on the latest report card
+				var ss := SchoolSystem.sys()
+				ok = ss != null and not ss.reports.is_empty()
+				for sid in v:
+					ok = ok and _in_range(ss.last_grade(str(sid)), v[sid])
+			"evening":   # the activity of the day's free-time slot (["family"]): what the player planned for it
+				var hs := HabitSystem.sys()
+				ok = hs != null and hs.activity_on(date) in v
 			"memory", "memory_days", "rival_race", "rival_streak", "rival_wins", "trait":
 				ok = p.is_empty() or _sender_key(key, v, ctx, p)   # (who sends it: checked per sender, _sender_ok)
 			_:
@@ -1909,6 +2128,26 @@ func pending() -> Array:
 	return moments.filter(func(m): return m.answer == "")
 
 
+## Session L3a (the planner's quiet line): the people with unread messages, newest first: [{id, thread, name, count}].
+func unread_senders() -> Array:
+	var by := {}
+	var last := {}
+	for t in threads:
+		for x in threads[t]:
+			if bool(x.read) or x.from == "you" or x.from == "system":
+				continue
+			by[x.from] = int(by.get(x.from, 0)) + 1
+			last[x.from] = maxi(int(last.get(x.from, -1)), int(x.day))
+	var out := []
+	for pid in by:
+		var p: Dictionary = people.get(pid, {})
+		if p.is_empty():
+			continue
+		out.append({"id": pid, "thread": str(p.thread), "name": short_name(p), "count": int(by[pid]), "day": int(last[pid])})
+	out.sort_custom(func(a, b): return a.day > b.day or (a.day == b.day and str(a.id) < str(b.id)))
+	return out
+
+
 # --- Save / load ---------------------------------------------------------------------------------------------------
 
 func to_dict() -> Dictionary:
@@ -1936,6 +2175,8 @@ func to_dict() -> Dictionary:
 		d.rival_stats = rival_stats
 	if not planner_line.is_empty():
 		d.planner_line = planner_line
+	if drawn_week >= 0:
+		d.drawn_week = drawn_week
 	return d
 
 
@@ -1957,6 +2198,7 @@ func from_dict(d: Dictionary) -> void:
 	planner_line = d.get("planner_line", {})
 	if planner_line.has("monday"):
 		planner_line.monday = int(planner_line.monday)
+	drawn_week = int(d.get("drawn_week", -1))
 	if not d.has("started_day"):
 		people = d.get("people", {})
 		_people_numbers()
@@ -1989,6 +2231,11 @@ func from_dict(d: Dictionary) -> void:
 			m[k] = int(m[k])
 		if m.has("slot_day"):   # (session L1b: an invitation's slot)
 			m.slot_day = int(m.slot_day)
+		if m.has("week"):   # (session L3a: a story beat's week)
+			m.week = int(m.week)
+		if m.has("took"):
+			m.took.days = (m.took.days as Array).map(func(x): return int(x))
+	_close_retired()
 	queue = d.get("queue", [])
 	for q in queue:
 		for k in ["due", "until"]:
@@ -2009,6 +2256,36 @@ func from_dict(d: Dictionary) -> void:
 	for g in d.get("standing_declined", []):
 		standing_declined[str(g)] = true
 	_next = int(d.get("next", 1))
+	for g in standing.keys():   # (session L3a: a rule for a recurring choice that no longer exists goes)
+		if not _group_exists(str(g)):
+			standing.erase(g)
+
+
+static func _group_exists(group: String) -> bool:
+	return Data.storylets.any(func(s): return str(s.get("standing", "")) == group)
+
+
+## Session L3a (an older save): a moment still open whose storylet is now a message that asks nothing, or gone (docs/L3_SORT.md),
+## closes quietly: no "you didn't answer", no effect. Invitations, beats, the coach's own kinds and stop moments stay.
+func _close_retired() -> void:
+	for m in moments:
+		if m.answer != "" or m.stop or m.has("invite") or m.has("beat"):
+			continue
+		if str(m.kind) == "moment":
+			var s := storylet(str(m.storylet))
+			if not s.is_empty() and not is_feed(s) and (bool(s.get("test", false)) or s.has("replies")):
+				continue
+		elif str(m.kind) == "rule":
+			if _group_exists(str(m.get("group", ""))):
+				continue
+		else:
+			continue
+		m.answer = NONE
+		m.answered_day = int(m.day)
+		m.closed = true
+		for x in threads.get(str(m.thread), []):
+			if str(x.moment) == str(m.id):
+				x.read = true
 
 
 ## JSON makes every number a float: a person's relationship stays a float, their memory days and birth year back to ints.

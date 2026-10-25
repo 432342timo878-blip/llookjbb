@@ -4581,6 +4581,91 @@ Built in one session (no split was needed).
     drift and the moods' drift are one line each, never split per cause (L2b decision 5); a relationship's "does" lines are few
     until P2 gives people real effects.
 
+#### L3's questions (user, 2026-10-25; each the recommended option)
+
+1. **L3 is split** (like S3a / S3b, L2a / L2b): **L3a** = the sort of the moments, "content never contradicts the player", the quiet
+   feed, invitations and story beats, the cue word and the habit goal cut; **L3b** = mental training as sessions (the weekly
+   mental-plan setting goes with it), the goals menu with real stakes and the two reviews, the School page apart with only the
+   agreed stops.
+2. **The sort is approved as drafted** (`docs/L3_SORT.md`: every storylet with its reason): of 166, **90 feed, 26 invitations
+   (3 existed), 7 story beats, 42 deleted** (the question moments with no consequence, and what waits for the session that builds
+   it: money M4, who watches a race / a summer job / a teammate quitting P2, relays, an extra school race).
+3. **A feed message carries story state only** (a rival's memory, the family coming round), never a mood or a relationship
+   nudge: the moods move from real events, relationships from shared time (invitations now, P2 later). Cost: the people's small
+   motivation lift (P1: training quality ~1.004) is gone until P2.
+4. **Where the feed shows:** the threads (People, unread dots), the race card's evening messages (as since L2a), and **one quiet
+   line on the planner's left column** ("3 new messages · Mum, Eino") that opens People. Not in the week report (messages change
+   nothing).
+5. **Story beats come on the Sunday planner, never mid-week**, about 5-7 a year, at most one a week (the stop token); with one
+   open Play week asks once; left open it takes the answer it names.
+6. **"Never contradict" in the format: a `touches` list + guards + a scan** (below).
+7. **Rates:** feed 2-4 messages a week (was 3-5 moments); invitations up to 2 a week (70 % / 35 %) with their own cap; beats ≤ 1.
+
+#### Built (step L3a, 2026-10-25): the sort, never contradict, the quiet feed, story beats, the cue word and the habit goal cut
+
+1. **The sort applied** (`docs/L3_SORT.md`, every storylet with its reason): 123 real storylets remain, **90 feed, 26 invitations,
+   7 story beats**; 43 deleted (the coach's 14 question topics among them, and `talk_ack`, unused since L1a; `mind_talk.json` is empty, `week_talk.json` keeps his
+   first Sunday and the PB word as feed). Every feed text was rewritten as a statement; invitations were written for a day ahead
+   ("on {weekday}"), with a Go and a stay-home reply and no reply about something the game doesn't simulate (a football match, a
+   ride, the bus).
+2. **The quiet feed** (`feed: true`): a message from its sender with no buttons, never a stop, never waiting; it changes no mood or
+   relationship (decision 3), only the story state it carries (`effects`: a rival's "met" / "nemesis", the family coming round, a
+   teammate's memory). The family that is against the sport now counts good signs from what happens (a PB, a report card of 8.0 or
+   more; `cast.json warmth`) and comes round at three. On the planner **one quiet line** under the coach's line, "3 new messages ·
+   Mum, Eino", opens People (decision 4).
+3. **Story beats** (`beat`): the juhannus weekend, the cottage week, the summer trip, the ski trip, the autumn break, the
+   confirmation school and the best friend's "you never have time". Posted on Sunday for the coming week with the stop token; a
+   PEOPLE card on the planner with each reply's price: the slots it takes and what they were ("Thu–Sun family (instead of Thu eve
+   study, Fri eve friends, Sat friends)"), the relationship, a late night, grades, a later cost in its hint ("the camp week in June
+   takes that week's evenings and weekend"), and "If you leave it: …". Saying yes takes the slots (`slots` → `m.took`: the chips
+   show the beat's word, the picker says whose slot it is, the evening line names it); left open it takes its default when Monday
+   is played. The confirmation camp chosen in February takes its own week in June / July (`cast.json away`). Training stays the
+   player's to plan; no text says otherwise.
+4. **Invitations:** up to 2 a week (decision 7), never on a day a beat takes, the same one never twice in a week; the Sunday draw
+   is remembered per week (`drawn_week`), so a game loaded mid-week goes on as without saving.
+5. **Never contradict:** every real storylet lists `touches`; `moments.json touches` names the conditions that guard each touch
+   (`needs` / `topics` / `kinds` / `flag_prefix`) and the words that mean it; `moments.json never` lists what no text may say
+   (promises such as "tell me", "ask your coach"; the game's screens; a question in a feed message; a late night or studying a
+   reply doesn't give). New conditions for it: `next_level` (the veteran's "big meet" only before a national one), `card_grade`
+   (the PE teacher's "a 10 in PE" only with a 10), `evening` (Saturday sauna only on a family Saturday), `break_week` (the autumn
+   and winter breaks). `storylet_check` part 1b found 34 real problems on the first run (e.g. "Something sore?" asked in a message
+   without buttons, "someday that's us on the screen", a sibling's race without a guard) and none now.
+6. **The cuts:** the cue word (the race card's line, the mental plan's row, `MindSystem.cue`; an older save's word is ignored);
+   the habit goal "do N % of the sessions" (its voices now offer "train through a warning on N days at most" or races; an older
+   save's open one is retired with "Retired: the game no longer counts sessions as a goal.", an open offer's levels become the
+   warning-days levels). The weekly mental plan itself stays until L3b.
+7. **Older saves:** a moment still open whose storylet is now feed or gone closes quietly (no "you didn't answer", no effect); a
+   saved rule for a choice that no longer exists goes (the phone at ten, chores, after school, run first). No save-version change:
+   the new fields (`drawn_week`, a beat's `week` / `took`, a message's `feed`) are optional. The user's five save copies (three
+   version 4, two version 5 from today) load in the real game, build the planner and the Season tab, play 7 days and race with a
+   card (`saves_check -- <copies> 7 real`).
+8. **Help:** `week` v5 (Waiting for you = the beats, Messages, Invitations up to two), `people` v9, `school` v8, `moment` v7,
+   `habits` v2 (Days away), `mental_training` v2, `season_goals` v3, `race_running` v12 (no "Your word"), `training_season` v12,
+   `training_repeat` v10.
+9. **Checks:** `storylet_check` (1b never contradict; the data part knows feed / beat / slots; part 6 his topics are feed; part 7
+   the feed rate, beats ≤ 1 a week and their yearly count, no old-style planner moment), `f1_check` 3 / 4 (the camp messages after
+   "I don't want to go"; no feed text states a late night), `mind_check` (no cue word, no mood topic, an older save's word),
+   `goals_check` (no sessions goal; an older save's retired), `habits_check` (2 a week), `people_answer_check` and `causes_check`
+   (what can be answered is an invitation or a beat), `layout_check` / the tour (the beat card and its slots).
+10. **Proven and measured:** fingerprints identical: `training_balance -- 0` coach row 206.798298350 / 14.102831594 /
+    1226.006524079 and every part "identical to part 1: YES" (the school rows 1222.95 / 1228.04 as before), races 73182f4e…, school
+    55076d77…. `storylet_check -- 8 2 12` (12 careers × 2 seasons with the people on): **feed 2.05 messages a week** (sd 1.09; age
+    14: 2.18, 15: 2.02, 16: 1.74), **story beats 5.4 a year, never two in a week**, invitations 0.77 a week, 111 of 121 people
+    storylets came, training quality 1.0014 (P1 with the mood nudges: 1.0042), motivation OK 67 % / Keen 33 %, Flat or Low in no
+    week. `season_playtest`, the whole 2026-27 season through the real hub, phone 390×844, seed 2, policy careful, against the
+    commit before on the same seed (the same health dice): **mid-week stops 0.33 a week (0.33), 36 of 52 weeks straight through
+    (36), clicks a week 2.25 average / median 2 (2.46 / 2)**, 49 invitations (13), autosave 464 KB (507). PC 1280×720, seed 1, policy player (answers every card): 0.44
+    mid-week stops a week (0.44 in L1b and L2a), 32 of 52 weeks straight through, 4.48 clicks a week (4.85 in L2a), 44 invitations;
+    the stops are diagnoses, sore warnings, the season offers, the goals offer and report cards, no new kind.
+    `layout_check` 939 views at the five sizes, no OVERFLOW / SQUEEZED / WRONG; `help_check` 968 checks on the PC layout, 955 on
+    the phone; the tour (209 shots, PC and phone; new 40e–40g the beat card, Play week asking, its slots; 54–54b the friend's beat)
+    looked at; the full `run_all_checks` 28 / 28 PASS with no SCRIPT ERROR in any output.
+11. **Seen and left for later:** the feed sits at the low end of its 2-4 (fewer storylets fit a given day; the 16-year-olds get
+    1.74: P2 brings their content); with no relationship nudges from messages a friendship now falls only when you stay home from an
+    invitation, so the best friend's "you never have time" beat is rare until P2's fading friendships; the never-fired ten (the
+    cottage-week morning, the camp's packing and camp messages, the second application result, four rival follow-ups, the best
+    friend's beat) need rarer situations, as in P1.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

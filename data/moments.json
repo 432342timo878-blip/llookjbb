@@ -1,8 +1,9 @@
 {
 	"_note": "Rules and texts of the moments (storylets) and message threads (GDD 4.9.5, session C2; StoryletSystem). The moments themselves are in data/storylets/*.json (format in data/storylets/README.md). rate: the week's target number of moments is drawn each Monday from per_week (a moment that waits for an answer counts; one answered by a standing order does not); a day gets one with chance (moments still to come this week) / (days left this week); max_per_day and max_per_week are hard limits (chains included); stops_per_week stop tokens are added each Monday (at most stop_tokens_max): with the setting 'Important only' an important moment needs one to be posted (a chain follow-up that runs out of time is posted without stopping); person_gap_days = the same person writes at most once in that many days; start_after_days = quiet days at the start of a career. expires_days = how long a moment waits for an answer when the moment doesn't say (the last day it can be answered = the day it came + this); then it passes as 'you didn't answer' (no_answer). chain_wait_days = how long a chain follow-up may wait past its day for its conditions. standing: the same reply to a recurring choice (storylets with the same 'standing' group) `repeat` times in a row offers a rule; after 'Not now' it is offered again only after `again_after` more identical answers in a row. relation: each person's relationship 0-100 (the head coach's is his trust, CoachSystem). effects.known = what replies can change now; effects.prepared = accepted and recorded for the systems that come later (moods M1, school S1, family budget C6, coach proposals C4), changing nothing yet.",
-	"version": 1,
+	"version": 2,
+	"_note_l3a": "Session L3a (GDD 4.10 decision 6; the sort in docs/L3_SORT.md, user 2026-10-25): rate.per_week is now the quiet FEED's 2-4 messages a week (messages that ask nothing; dated ones and the family's card talk count in it; the coach's topics, rival notes, invitations and story beats sit outside it). A story beat uses the stop token (stops_per_week: at most one a week). effects.story = what a feed message may carry (story state, never a mood or a relationship). beat = the texts of a story beat. never / touches = the rules of 'content never contradicts the player', read by tools/storylet_check.gd.",
 	"rate": {
-		"per_week": [3, 5],
+		"per_week": [2, 4],
 		"max_per_day": 1,
 		"max_per_week": 6,
 		"stops_per_week": 1.0,
@@ -103,6 +104,37 @@
 	},
 	"effects": {
 		"known": ["trust", "relation", "flag", "unflag", "count", "proposal", "confidence", "motivation", "stress", "sleep", "grades", "attitude", "memory", "forget", "relation_thread"],
-		"prepared": ["life_load", "budget"]
+		"prepared": ["life_load", "budget"],
+		"story": ["flag", "unflag", "memory", "forget", "attitude", "count"]
+	},
+	"beat": {
+		"defaulted": "You didn't answer: \"{label}\"."
+	},
+	"never": {
+		"_note": "Content never contradicts the player (GDD 4.10 decision 6): regular expressions (case-insensitive) that no text a person writes may contain. promise = a line that promises what the player cannot do; ui = a line that names the game's screens; question = a feed message (no buttons) may not ask; late / study = a reply's result that narrates a late night or studying needs that reply's sleep / grades effect. Checked on the storylets' texts, hints and results (not on the player's own reply labels).",
+		"promise": ["\\btell me\\b", "\\blet me know\\b", "\\bkeep me posted\\b", "\\bremind me\\b", "\\btell (your coach|the coach|\\{coach_first\\}|\\{coach\\})", "\\btalk to (your coach|the coach|\\{coach_first\\})", "\\bask (\\{coach_first\\}|your coach|the coach)\\b", "\\bi'll check\\b", "\\bon (monday|tuesday|wednesday|thursday|friday)\\b.*\\byou\\b.*\\btell\\b"],
+		"ui": ["\\btab\\b", "\\bpage\\b", "\\bplanner\\b", "\\bscreen\\b", "\\bbutton\\b", "\\bclick", "\\btap\\b", "\\bmenu\\b", "\\bday view\\b", "\\bsettings?\\b", "\\bin the game\\b"],
+		"question": ["\\?"],
+		"late": ["\\blate\\b", "midnight", "until (one|two|three|four)", "nobody slept", "stayed up", "\\bat one\\b", "\\bno sleep\\b"],
+		"study": ["\\bstudied\\b", "\\bwe learned\\b", "\\bhour with the book\\b"]
+	},
+	"touches": {
+		"_note": "What a storylet touches (its `touches` list) and the conditions that guard it: `needs` = at least one of these `when` keys (in the storylet's own `when`, or in every text variant's), or one of `topics`, or the storylet's own kind (`invite` / `beat`); `flag_prefix` = a `flags` condition naming such a flag (or the storylet being the beat that sets them). `words` = text that means the storylet touches it: a storylet whose text, hint or result matches a word must list the touch. storylet_check fails any storylet with a touch not guarded, or a word without its touch.",
+		"race": {"needs": ["race_today", "race_tomorrow", "race_in_days", "raced_days_ago", "race_outcome", "pb_days_ago", "rival_race", "next_level"], "topics": ["rival"], "words": ["\\brace\\b", "\\braces\\b", "\\{meet\\}", "call room", "\\{pb\\}", "\\bPB\\b", "bell lap", "at the bell"]},
+		"big_meet": {"needs": ["next_level"], "words": ["nuorten sm", "big meet coming"]},
+		"test": {"needs": ["test_today", "test_tomorrow", "tests_week"], "words": ["\\btests?\\b", "\\{test_subject\\}"]},
+		"card": {"needs": ["cards", "card_days_ago", "card_change", "card_avg", "card_grade"], "topics": ["card"], "words": ["report card", "\\{avg\\}", "a 10 in"]},
+		"application": {"needs": ["app", "app_result", "stage"], "topics": ["app"], "words": ["joint application", "\\blukio\\b", "first choice"]},
+		"injury": {"needs": ["injured", "sore"], "words": ["injur", "\\blimping\\b", "the leg\\b", "stress fracture"]},
+		"illness": {"needs": ["ill"], "words": ["\\bin bed\\b", "\\bsoup\\b"]},
+		"session": {"needs": ["today_tags", "tomorrow_tags", "tomorrow_rest"], "words": ["(session|reps|rep|intervals|hills|long run) today", "today's (session|reps|long run)", "tomorrow's (session|reps|long run)", "(session|reps|long run) tomorrow", "key session"]},
+		"tired": {"needs": ["fatigue", "mood"], "words": ["look(ed)? (very )?tired", "\\bstressed\\b"]},
+		"evening": {"needs": ["evening"], "kinds": ["invite", "beat"], "words": ["\\btonight\\b", "\\bparty (at|on)\\b", "sleepover", "\\bsauna\\b"]},
+		"away": {"needs": ["flags", "flag_days", "days_after"], "kinds": ["beat"], "words": ["\\bcottage\\b", "lapland", "tallinn", "\\bpärnu\\b"]},
+		"rippi": {"flag_prefix": "rippi_", "kinds": ["beat"], "words": ["rippi", "confirmation"]},
+		"family_attitude": {"needs": ["family"], "words": []},
+		"rival": {"needs": ["memory", "rival_race", "rival_streak", "rival_wins"], "topics": ["rival"], "words": ["\\bnemesis\\b"]},
+		"season": {"needs": ["month", "phase", "days_to", "days_after", "break", "break_week"], "words": ["indoor season", "base training", "\\bsummer!", "this summer", "this winter", "winter break", "autumn break", "\\bsnow(ed)?\\b"]},
+		"school": {"needs": ["stage", "school_day", "break", "break_week", "days_to", "days_after"], "words": ["\\bin class\\b", "\\bat school today\\b"]}
 	}
 }

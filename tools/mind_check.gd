@@ -77,7 +77,7 @@ func _check_data() -> void:
 	_ok("the coach's lines exist for the four voices", data.mind.coach.lines.has("calm") and data.mind.coach.lines.has("drill")
 			and data.mind.coach.lines.has("warm") and data.mind.coach.lines.has("tactician"))
 	var topics: Array = data.storylets.filter(func(s): return str(s.get("topic", "")) == "mood")
-	_ok("three mood topics in data/storylets (%d)" % topics.size(), topics.size() == 3)
+	_ok("no mood topics in data/storylets since L3a (the sort: his planner line says it) (%d)" % topics.size(), topics.is_empty())
 
 
 func _check_numbers() -> void:
@@ -337,10 +337,9 @@ func _check_growth() -> void:
 	var year: float = a.get_attr("composure") - 10.0
 	_ok("all three mental sessions for a year at composure 10: +%.2f composure (GDD: at best about +0.5)" % year, year > 0.4 and year < 0.55)
 	_ok("relaxation lowers the stress target, self-talk lifts confidence's", ms.target("stress") < 20.0 and ms.target("confidence") > 50.0)
-	ms.set_cue("Strong")
-	_ok("the cue word with self-talk: %s; without: none" % ms.cue_word(), ms.cue_word() == "Strong")
 	ms.toggle_kind("self_talk", false)
-	_ok("  (self-talk off: no word)", ms.cue_word() == "" and ms.plan == ["imagery", "relaxation"])
+	_ok("the cue word is cut (L3a): no word anywhere, self-talk toggles off", not ms.has_method("cue_word") and ms.plan == ["imagery", "relaxation"]
+			and not data.mind.mental_plan.has("cue_words") and not data.mind.ui.has("cue_line"))
 
 
 # --- 8. Moments ------------------------------------------------------------------------------------------------------
@@ -382,16 +381,14 @@ func _check_talk() -> void:
 	var st = game.get_system("moments")
 	var talk_text := ""
 	for x in st.thread("coach"):
-		if str(x.moment) == "" and str(x.from) != "you" and str(x.from) != "system":
+		if str(x.moment) == "" and str(x.from) != "you" and str(x.from) != "system" and not x.has("feed"):
 			talk_text = str(x.text)
 	var voice := str(game.get_system("coach").head().voice)
 	var line: String = str(data.mind.coach.lines[voice].motivation_low)
 	_ok("the talk (his thread) has his motivation line (%s)" % voice, talk_text.contains(line))
-	var topic := ""
-	for f in st.fired:
-		if str(st.storylet(f.storylet).get("topic", "")) == "mood":
-			topic = str(f.storylet)
-	_ok("its mood topic was posted to his thread, not as a stop (%s)" % topic, topic == "mood_flat"
+	# Session L3a: the "how are you?" topics are gone (the sort): his line says it, nothing waits for an answer.
+	_ok("no mood topic: nothing of his waits for an answer, nothing stopped",
+			not st.fired.any(func(f): return str(st.storylet(f.storylet).get("topic", "")) == "mood")
 			and not st.fired.any(func(f): return bool(f.get("stop", false))))
 	_ok("a coach of few words (communication 5) has no mood line", true if _short_coach_line() == "" else false)
 	ms.neutral = false
@@ -415,7 +412,6 @@ func _check_save_load() -> void:
 	for key in game.entries.duplicate():   # (a season-plan career starts entered in its targets: no races here)
 		game.withdraw(key)
 	ms.set_plan(["imagery", "self_talk"])
-	ms.set_cue("Tall")
 	ms.add("confidence", 25.0, "test")
 	ms.add("motivation", -20.0, "test")
 	_play_weeks(10)
@@ -431,8 +427,13 @@ func _check_save_load() -> void:
 		print("    athlete same: %s, moods same: %s" % [a_again == a_end, m_again == m_end])
 		print("    without saving: %s\n    after the load: %s" % [m_end.left(600), m_again.left(600)])
 	_ok("a loaded game goes on exactly as without saving (athlete and moods)", a_again == a_end and m_again == m_end)
-	_ok("the mental plan and the cue word are saved", game.get_system("mind").plan == ["imagery", "self_talk"] and game.get_system("mind").cue == "Tall")
+	_ok("the mental plan is saved", game.get_system("mind").plan == ["imagery", "self_talk"])
 	var st: Dictionary = game.to_dict()
+	var old: Dictionary = _parse(_json(st))   # (session L3a: an older save with the cut cue word loads, the word ignored)
+	old.systems.mind.cue = "Tall"
+	game.from_dict(old)
+	_ok("an older save with a cue word loads (the word is ignored)", game.get_system("mind").plan == ["imagery", "self_talk"]
+			and not game.get_system("mind").to_dict().has("cue"))
 	st.systems.erase("mind")
 	game.from_dict(st)
 	_ok("a save without the mind (older) loads with the moods in the middle", game.get_system("mind").value("confidence") == 50.0

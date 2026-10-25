@@ -792,6 +792,7 @@ func _build_week() -> void:
 		_refresh_week_ui()
 		_rebuild_view())
 	_planner.report_pressed.connect(func(): _show("report"))
+	_planner.messages_pressed.connect(func(): _show("people"))   # (session L3a: the quiet feed's line)
 	_planner.card_pressed.connect(func(id: String):
 		_card_id = id
 		_show("race_card"))

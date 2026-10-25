@@ -5,8 +5,8 @@ extends SceneTree
 ##      `_note`s, sources and the one friend "Joonas" aside), CoachSystem.words fills {he} {his} {v:a|b}, and with a woman as head
 ##      coach the help, the standing orders, a coach moment's hints and every hub tab say she / her (no placeholder left).
 ##   2. The race card's confidence line is "Confidence: Confident. You race ...", not "CONFIDENCE CONFIDENT: you race ...".
-##   3. fr_rippi_together never comes after "I don't want to go" (rippi_none).
-##   4. fam_screen states no late night the game never played, and never comes again after "OK, phone off at ten".
+##   3. No confirmation-camp message comes after "I don't want to go" (rippi_none). (Session L3a: fr_rippi_together is gone.)
+##   4. No message states a late night the game never played. (Session L3a: fam_screen is gone: late nights come from the slots.)
 ##   5. Adding mobility & stretching moves no strain, so no coach (even a load manager of 1) sees a risk in it.
 ##   6. A LIGHTER change that gives more training has its own reason (work_light), never "you're fresh enough for it".
 ##   7. A day the player asked the coach about gets no proposal of his.
@@ -82,9 +82,11 @@ func _run() -> void:
 		_words()
 	_help_pronouns()
 	var ms = game.get_system("moments")
-	var s: Dictionary = ms.storylet("wt_tired")
-	var m: Dictionary = ms._post(s, ms._coach_person(), {"date": game.date.duplicate(), "day": 6, "day_type": "weekend"}, ms.day_no(game.date), true, {"counted": false})
+	# (session L3a: the coach's question topics are gone; a moment of his with the same hints, posted the way his moments are)
+	var m: Dictionary = ms.post_custom("f1_check", "", "A test.", [{"id": "a", "label": "A", "hint": "{He} {v:keeps|keep} the plan"},
+			{"id": "b", "label": "B", "hint": "{He} will remember"}], false)
 	var hints := ", ".join(m.replies.map(func(r): return str(r.hint)))
+	ms.moments.erase(m)
 	_ok("a coach moment's hints say she ('%s')" % hints, hints.contains("She keeps the plan") and hints.contains("She will remember") and not hints.contains("{"))
 	await _hub_pronouns(hub)
 
@@ -241,34 +243,40 @@ func _hub_pronouns(hub: Control) -> void:
 
 # --- 3, 4 -------------------------------------------------------------------------------------------------
 
+## Session L3a: fr_rippi_together is gone (the sort); the camp's own messages (packing, the camp week) never come after "I don't
+## want to go" and do come with a camp chosen.
 func _rippi(ms) -> void:
-	var s: Dictionary = ms.storylet("fr_rippi_together")
+	var CA = load("res://scripts/core/cast.gd")
 	var birth := int(game.athlete.birth_date.year)
-	var ctx := {"date": {"year": birth + 15, "month": 2, "day": 10}, "day": 2, "day_type": "weekday"}
-	var seen_before: Dictionary = ms.seen.duplicate(true)
+	var start: Dictionary = CA.occurrence("rippileiri", birth + 15, {"rippi_july": {}})
 	var flags_before: Dictionary = ms.flags.duplicate(true)
-	ms.seen["fam_rippi_choice"] = {"count": 1, "first": 0, "last": 0, "variant": 0, "reply": "none"}
-	ms.flags = {"rippi_none": {"day": 0, "count": 1}}
-	var after_none: bool = ms.check_when(s.when, ctx, {})
-	ms.flags = {"rippi_july": {"day": 0, "count": 1}}
-	var after_july: bool = ms.check_when(s.when, ctx, {})
-	ms.seen = seen_before
+	var bad := []
+	for pair in [["fam_rippi_leaving", -1], ["fr_rippi_camp", 2]]:
+		var s: Dictionary = ms.storylet(str(pair[0]))
+		var d: Dictionary = game.add_days(start, int(pair[1]))
+		var ctx := {"date": d, "day": 0, "day_type": "weekday"}
+		ms.flags = {"rippi_none": {"day": 0, "count": 1}}
+		if s.is_empty() or ms.check_when(s.when, ctx, {}):
+			bad.append("%s after 'none'" % pair[0])
+		ms.flags = {"rippi_july": {"day": 0, "count": 1}}
+		if s.is_empty() or not ms.check_when(s.when, ctx, {}):
+			bad.append("%s missing after 'July'" % pair[0])
 	ms.flags = flags_before
-	_ok("after 'I don't want to go' the friends' camp question cannot come (%s)" % after_none, not after_none)
-	_ok("after 'The July camp' it can (%s)" % after_july, after_july)
+	_ok("after 'I don't want to go' no camp message comes; after 'The July camp' they do (%s)" % ", ".join(bad), bad.is_empty())
+	_ok("the friends' camp question is gone (L3a)", ms.storylet("fr_rippi_together").is_empty())
 
 
+## Session L3a: fam_screen is gone (late nights come from the evening slots); no message that asks nothing states a late night.
 func _phone(ms) -> void:
-	var s: Dictionary = ms.storylet("fam_screen")
-	var texts := " ".join(s.text.map(func(t): return str(t)))
-	_ok("fam_screen says no late night the game never played ('one o'clock', 'midnight')", not texts.contains("one o'clock") and not texts.contains("midnight"))
-	var ok_reply: Dictionary = {}
-	for r in s.replies:
-		if str(r.id) == "ok":
-			ok_reply = r
-	_ok("'OK, phone off at ten' remembers it (flag phone_off_ten)", str(ok_reply.get("effects", {}).get("flag", "")) == "phone_off_ten")
-	var flags: Array = s.when.get("flags", [])
-	_ok("... and fam_screen never comes again after it", "!phone_off_ten" in flags)
+	_ok("fam_screen is gone (late nights come from your evening slots since L1b)", ms.storylet("fam_screen").is_empty())
+	var bad := []
+	for s in data.storylets:
+		if bool(s.get("feed", false)):
+			for t in s.text:
+				var text := str(t.text) if t is Dictionary else str(t)
+				if text.contains("one o'clock") or text.contains("you stayed up") or text.contains("until one"):
+					bad.append(str(s.id))
+	_ok("no message that asks nothing states a late night of yours (%s)" % ", ".join(bad), bad.is_empty())
 
 
 # --- 5, 6, 7 -----------------------------------------------------------------------------------------------

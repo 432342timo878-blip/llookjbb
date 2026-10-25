@@ -124,12 +124,3 @@ static func race_line(meet: Dictionary) -> Control:
 ## The confidence line's text: "Confidence: Confident. You race a little faster at a meet like this." (`term` > 0 = faster).
 static func race_text(word_name: String, term: float) -> String:
 	return str(ui().race_line).format({"word": word_name, "effect": str(ui().race_faster if term > 0.0 else ui().race_slower)})
-
-
-## "Your word: Smooth" for the race cards, or "" without self-talk in the mental plan.
-static func cue_text() -> String:
-	var ms := system()
-	if ms == null:
-		return ""
-	var c := ms.cue_word()
-	return "" if c == "" else str(ui().cue_line).format({"word": c})

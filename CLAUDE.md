@@ -25,7 +25,11 @@ tab, the coach's notes, moments wait for Sunday, the new tabs; GDD 4.10 "Built (
 habits replacing the school's two settings, invitations in the slots, save v5; "Built (step L1b)"). **L2 is split** (user, 2026-10-25,
 GDD 4.10 "L2's questions"): **L2a done** (the "what this race did" card after every race + the scratch card, kept in
 `Game.race_cards`; "Built (step L2a)") and **L2b done** (causes everywhere: recorded causes for attributes, body, moods, people,
-the slots, a tap on every row; "Last week in full" in V1; "Built (step L2b)"). Next, in `docs/ROADMAP.md` order: L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+the slots, a tap on every row; "Last week in full" in V1; "Built (step L2b)"). **L3 is split** (user, 2026-10-25, GDD 4.10 "L3's
+questions"): **L3a done** (the sort of every storylet in `docs/L3_SORT.md`: 90 feed messages that ask nothing, 26 invitations, 7
+story beats on the Sunday planner, 42 deleted; "never contradict" as `touches` + guards + a scan in `storylet_check`; the cue word
+and the habit goal cut; "Built (step L3a)"). Next, in `docs/ROADMAP.md` order: L3b (mental sessions, the goals menu + reviews, the
+School page) → K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -142,13 +146,16 @@ the cards kept in `Game.race_cards` (the planner's race strap opens one), the sc
 - `CoachSystem` (coach records with 11 attributes, trust, fit; `data/coaching.json`; 12 real coaches in `real`), `CoachMarket` (Find a coach,
   scouting, offers: **under 18 an offer comes through a parent in the family thread and waits on the coach's page; remote coaches from 16**,
   ending chain; `data/market.json`).
-- `StoryletSystem` (moments engine: threads, the 3–5 a week rate, standing orders, custom kinds; since L1a an important moment WAITS
-  for the Sunday planner (`waiting()`), no people stops; storylets in `data/storylets/`, format in its README; the Sunday talk = the
+- `StoryletSystem` (moments engine: threads, standing orders, custom kinds; **since L3a every real storylet is `feed` (a message
+  that asks nothing, 2–4 a week, story state only), `invite` (a slot, ≤ 2 a week) or `beat` (a Sunday planner card whose replies
+  take slots, ≤ 1 a week)**, each with `touches` and guards; `important` = test moments only; storylets in `data/storylets/`,
+  format in its README; the Sunday talk = the
   coach's `planner_line` + a thread message, race message and mood topics; `Cast` = family, friends, school people, partners, rivals;
   `data/cast.json`), `CoachTalk`, `CoachVerdict` (the coach's judgement of a change: truth + his noise), `CoachProposals` (his NOTES on
   the planner days, written on Sunday, ≤ 2 a week, Make it easy / Keep mine = the Veto; mid-week only the "scratch?" stop), `CoachAsk`,
-  `SeasonGoals` (time / milestone / habit with real standards), `RaceAdvice`, `CoachSuggests` (a planner card on Sunday).
-- `MindSystem` (confidence / motivation / stress, mental plan, effects on training and races; `data/mind.json`).
+  `SeasonGoals` (time / milestone / habit with real standards; L3a cut the "N % of the sessions" habit), `RaceAdvice`,
+  `CoachSuggests` (a planner card on Sunday).
+- `MindSystem` (confidence / motivation / stress, mental plan, effects on training and races; `data/mind.json`; L3a cut the cue word).
 - `HabitSystem` (L1b: the 9 free-time slots (evenings + Sat + Sun) with study / rest / friends / family, the standing habits, this
   week's changes; they move grades, the life load and the moods where the old study effort / free time did; the default habit = the
   neutral one; `data/habits.json`; **call `HabitSystem.touch()` after changing anything a slot reads**) + invitations (storylets with

@@ -3,21 +3,22 @@
  "screens": {
   "week": {
    "title": "This week",
-   "version": 4,
+   "version": 5,
    "sections": [
     {"heading": "Plan, then play", "text": "Every Sunday evening the week stops here. Look at the days, change any you like, answer what waits for you, then press Play week. A normal week is two taps. Next day plays one day at a time."},
     {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Tap the race to see what it did again; a race you scratched says why. Last week in full shows every change and every day."},
     {"heading": "What changed and why", "text": "The most important changes first: an injury, a body area over its line, attributes, moods and people whose word changed, tests, late nights and study evenings, invitations. Each says where it came from. Tap one for the exact numbers: an attribute shows each session's share, the race's, growing up and your coach.", "see": ["causes"]},
     {"heading": "The days", "text": "Each day shows its sessions. The line's colour says how hard: blue Easy, grey Normal, red Hard, dark a rest day, yellow a race. Violet chips are tests. Tap a day to change it or to ask your coach about it.", "see": ["ask_coach"]},
     {"heading": "Free time", "text": "Under each day (on a phone, the icon on its right) is what you do after training: each evening, and Saturday and Sunday. It follows your habits from the Season tab. Tap it to change it for this week only. It lights up only when something lands on it.", "see": ["habits"]},
-    {"heading": "Invitations", "text": "A party or a group work lands in its evening, with its price: the late night and the day after it, and what staying home costs the friendship. Go or Stay home; you can change your mind until that evening. If you leave it, you stay home: Play week won't ask.", "see": ["habits"]},
+    {"heading": "Invitations", "text": "A party, a film night or a study evening lands in its evening, up to two a week, with its price: the late night and the day after it, and what staying home costs the friendship. Go or Stay home; you can change your mind until that evening. Left open, you stay home: Play week won't ask.", "see": ["habits"]},
     {"heading": "Amber evenings", "text": "An evening turns amber with a warning sign when it means a late night before a race or a hard session: friends on a school night, or an invitation you said yes to. Tap it to change it, or keep it: it's your call.", "see": ["habits"]},
     {"heading": "Your coach's notes", "text": "When your coach would change a day, the day gets a ! and a note says why and what it costs. Make it easy (or Do it) puts the change in. Keep mine keeps your plan: a reason costs nothing. A note you leave costs nothing either.", "see": ["coach_changes"]},
-    {"heading": "Waiting for you", "text": "Messages that need an answer wait here instead of stopping the week, each answer with what it may cost. Left unanswered, they pass when the next week starts. A meet your coach suggests and a meet-and-tests clash wait here too. Invitations sit in their evening; Play week doesn't ask about them."},
+    {"heading": "Waiting for you", "text": "A rare real choice waits here, like a week at the cottage or a friend who feels left out: each answer with its price, the evenings it takes and the friendship. Left open, it takes the answer it names when the week starts. A meet your coach suggests and a meet-and-tests clash wait here too."},
+    {"heading": "Messages", "text": "Most messages ask nothing: your people's news and how they see your races. They are in People. A quiet line under your coach's line says how many are new and from whom; tap it to read them. They never stop the week."},
     {"heading": "Body", "text": "Tiredness and your most strained body areas as bars. The white tick is the warning line: green is fine, yellow near the line, red at or over it. At the line for a body area it starts to feel sore. Tap a bar for what raised it, day by day, and what helps.", "see": ["fatigue", "soreness"]},
     {"heading": "Form and mind", "text": "Race form says how you would race today, with how sharp and how fresh you are. Your confidence, motivation and stress are words with what they do now. Tap one for its number, the news that moved it and where last Sunday pulled it.", "see": ["form", "moods"]},
     {"heading": "The four facts", "text": "Load: this week against your normal week. Plan risk: how risky the week is for your body now. The next race you entered, and your season goal with how far you are from it.", "see": ["load_vs_normal", "plan_risk"]},
-    {"heading": "Play week", "text": "It plays to Sunday night and stops early only for real things: a race, a sore warning, an injury or illness, a clash you left open, or a rare moment that matters. With choices still waiting it asks once: Show me, or Play anyway."},
+    {"heading": "Play week", "text": "It plays to Sunday night and stops early only for real things: a race, a sore warning, an injury or illness, a clash you left open. With choices still waiting it asks once: Show me, or Play anyway."},
     {"heading": "Saving", "text": "The game saves itself after every day. The menu (top right) has Save, an extra copy you can load later, and Main menu. On a computer, Ctrl+S saves too."}
    ]
   },
@@ -33,7 +34,7 @@
   },
   "training_season": {
    "title": "Season: the season plan",
-   "version": 11,
+   "version": 12,
    "sections": [
     {"heading": "What a season plan is", "text": "Your club coach's training year, November to October, split into phases that build up to your target meets. Every week's training comes from the phase it is in, so you don't have to plan each week yourself."},
     {"heading": "The coach's three plans", "text": "Steady, Balanced and Ambitious differ in how much you train. ★ is the plan your coach would pick for you now. More training brings more progress but more risk: Ambitious only pays off if you back off when your body warns you. Change plan shows the three side by side."},
@@ -48,7 +49,7 @@
     {"heading": "One repeating week", "text": "The switch at the top lets you plan one week yourself instead, repeated every week. Your season plan is kept, and you can switch back at any time."},
     {"heading": "Ask your coach", "text": "Under this week's plan, ask your coach what {he} {v:thinks|think} of the plan from next week on: changed against {his}, or as it is against an easier week.", "see": ["ask_coach"]},
     {"heading": "Your habits", "text": "Under the plan: what each evening, Saturday and Sunday are for: study, rest, friends or family. Every week plays like this unless you change an evening on This week. The line under them says what it adds up to: your grades, motivation and how heavy school days are.", "see": ["habits"]},
-    {"heading": "Mental training", "text": "Under your habits: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
+    {"heading": "Mental training", "text": "Under your habits: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain.", "see": ["mental_training"]},
     {"heading": "Standing orders", "text": "At the bottom: whether your coach writes notes on your days, from grade 9 on how your lukio courses are planned (you every period, or the counsellor), and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes", "lukio"]}
    ]
   },
@@ -67,7 +68,7 @@
   },
   "training_repeat": {
    "title": "Season: one repeating week",
-   "version": 9,
+   "version": 10,
    "sections": [
     {"heading": "Easing back in", "text": "After two weeks or more without running, your coach can put a few easier weeks over your plan. While they run, a box at the top shows them, and you can stop them early.", "see": ["easing_back_in"]},
     {"heading": "Your week", "text": "You plan one week and it repeats every week until you change it. Up to two sessions a day; an empty day is a rest day. To change only one day of this week, tap it in This week."},
@@ -79,7 +80,7 @@
     {"heading": "Back to the season plan", "text": "The switch at the top takes you back to your coach's season plan, with your earlier changes to it."},
     {"heading": "The same week for months", "text": "A week that never changes wears your motivation down after about two months, and low motivation trains you a little less. Changing the week now and then keeps it fresh.", "see": ["moods"]},
     {"heading": "Your habits", "text": "Under your week: what each evening, Saturday and Sunday are for: study, rest, friends or family. Every week plays like this unless you change an evening on This week. The line under them says what it adds up to: your grades, motivation and how heavy school days are.", "see": ["habits"]},
-    {"heading": "Mental training", "text": "Under your habits: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain. Self-talk has a cue word that shows on your race cards.", "see": ["mental_training"]},
+    {"heading": "Mental training", "text": "Under your habits: imagery, relaxation and self-talk, one short session of each a week if you switch it on. No body strain.", "see": ["mental_training"]},
     {"heading": "Standing orders", "text": "At the very bottom: whether your coach writes notes on your days, from grade 9 on how your lukio courses are planned (you every period, or the counsellor), and the rules you made from repeated answers, each with Remove.", "see": ["coach_changes", "lukio"]}
    ]
   },
@@ -117,27 +118,27 @@
   },
   "people": {
    "title": "People",
-   "version": 8,
+   "version": 9,
    "sections": [
-    {"heading": "The people around you", "text": "Your coach, your training group, your family, your friends from school and, once you have raced someone a few times, your rivals. A number or a dot means something is new or waits for your answer. Tap a row to open the conversation."},
-    {"heading": "Who they are", "text": "At the top of a thread: who the people are and how you get on with each (Close, Good, Fine, Cool, Strained). Your family's attitude comes from your story: some are proud, some think grades come first. Your answers slowly change both."},
+    {"heading": "The people around you", "text": "Your coach, your training group, your family, your friends from school and, once you have raced someone a few times, your rivals. A number or a dot means something new. Tap a row to open the conversation."},
+    {"heading": "Who they are", "text": "At the top of a thread: who the people are and how you get on with each (Close, Good, Fine, Cool, Strained). Your family's attitude comes from your story: some are proud, some think grades come first. Your choices and your results slowly change both."},
     {"heading": "How close", "text": "Tap a person for how close you are (out of 100) and the answers that changed it. Where it changes something today, it says so: a best friend you drift from may tell you they feel left out.", "see": ["causes"]},
-    {"heading": "What an answer changes", "text": "Never your training. An answer can move your moods, how someone feels about you, give you a late night (a heavier next day) or nudge your schoolwork. The card after an answer says what changed.", "see": ["moods"]},
+    {"heading": "Messages and choices", "text": "Most messages ask nothing: news and reactions. The choices are invitations and the rare bigger ones, answered on This week with their price. Never your training: they take evenings, change how close you are, give a late night or nudge your schoolwork.", "see": ["habits"]},
     {"heading": "School", "text": "The School row opens your grades, tests and report cards, your evenings in one line, the joint application and the school after grade 9. Your teachers' messages are at the top of that page.", "see": ["moods"]},
     {"heading": "Invitations", "text": "When a friend or a teacher asks you to something on a coming evening, the message is here, but you answer it on This week, where it sits in its evening with its price.", "see": ["habits"]},
     {"heading": "Other coaches", "text": "Other coaches write to you in their own thread: answers when you ask one to coach you, and offers after a breakthrough. At a sports lukio the school's morning-practice coach writes in your first week. Find a coach shows every coach you can see now."},
-    {"heading": "Answering", "text": "Tap an answer. The line under each button says what it may cost, like \"{he} will remember\". A message you leave unanswered passes after a day or two as \"You didn't answer\", and the other person notices a little. The newest talk is on top."},
-    {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one. One line of it is on This week; the whole talk is in {his} thread, and a question in it is answered there. After a race {he} {v:writes|write} to you that evening."},
+    {"heading": "Answering", "text": "An invitation or a bigger choice can be answered here too. The line under each button says what it may cost. An invitation left open means you stay home; a bigger choice left open takes the answer it names. The newest talk is on top."},
+    {"heading": "The Sunday talk", "text": "Every Sunday evening your coach looks back at the week and ahead at the next one. One line of it is on This week; the whole talk is in {his} thread. After a race {he} {v:writes|write} to you that evening."},
     {"heading": "Coach profile", "text": "Who your coach is, the character, how well you fit and how much you trust each other. The skills are a range that narrows week by week and is exact after eight weeks together. Below them is the training group."},
-    {"heading": "Settings", "text": "Your habits, your coach's notes and your saved rules are in the Season tab. A message that needs an answer also waits on This week."}
+    {"heading": "Settings", "text": "Your habits, your coach's notes and your saved rules are in the Season tab. A choice that needs an answer also waits on This week."}
    ]
   },
   "school": {
    "title": "School",
-   "version": 7,
+   "version": 8,
    "sections": [
     {"heading": "What school does", "text": "School changes how heavy your days are and how your grades go. It never changes what you train. A normal school week with the usual habits (study Monday to Thursday) is just your normal game."},
-    {"heading": "Messages from school", "text": "Your class teacher, PE teacher and study counsellor write at the top of this page: tests, the school's cross-country run, the work-experience week, the application. Some answers nudge your grades a little or cost you a late night."},
+    {"heading": "Messages from school", "text": "Your class teacher, PE teacher and study counsellor write at the top of this page: tests, the winter sports day, the application. Their messages ask nothing. A group work at the library comes as an invitation into its evening on This week."},
     {"heading": "Your evenings", "text": "Your study evenings move your grades: more than four a week lifts them, fewer lets them slide, and a lot of study makes school days heavier. Friends on a school night means a late night; a rest evening makes the next day lighter. Change your habits in the Season tab.", "see": ["habits", "moods"]},
     {"heading": "Focus subjects", "text": "Pick up to two subjects to push. They rise faster while the others slip a little. Change them any time: grades move slowly, so switching back and forth gains nothing."},
     {"heading": "Grades and tests", "text": "Each subject shows where you stand, written like a test: 8, 8+, 8½, 9-. Tap one for its latest tests and how your study evenings move it. A week with more than two tests is a busy test week: heavier and more stressful."},
@@ -167,9 +168,9 @@
   },
   "moment": {
    "title": "A message that stops the week",
-   "version": 6,
+   "version": 7,
    "sections": [
-    {"heading": "Why it stops", "text": "Most messages no longer stop the week: they wait on This week. A few still do, because the answer can't wait: your coach advising you to scratch a race while you are hurt, or a coach close to giving up on you. Pick an answer to carry on."},
+    {"heading": "Why it stops", "text": "Messages from your people never stop the week: most ask nothing, and the choices wait on This week. A few coach messages still do, because the answer can't wait: your coach advising you to scratch a race while you are hurt, or a coach close to giving up on you."},
     {"heading": "Scratch or race", "text": "{He} {v:advises|advise} you to scratch from a race because something hurts. Scratch lets {him}. Race anyway keeps your plan: a reason costs nothing, but many without one cost a little trust.", "see": ["coach_changes"]},
     {"heading": "Goals and suggestions", "text": "Your coach also writes about your season goals, when one is met or the season is looked back on. Nothing is decided without you.", "see": ["standards"]},
     {"heading": "The answers", "text": "The line under each button says what it may cost, like \"{he} will remember\"."},
@@ -219,7 +220,7 @@
   },
   "race_running": {
    "title": "The race",
-   "version": 11,
+   "version": 12,
    "sections": [
     {"heading": "The track", "text": "Each dot is a runner; yours is highlighted. The buttons at the top change the speed: 1x is real time. Outdoors the race runs in lanes until the first bend is over, indoors until the second, then everyone cuts in. In a section or heat, the line under the clock says about what time you need."},
     {"heading": "Pause", "text": "The pause button next to 1x, 2x and 4x (on a PC also the Space bar) stops the race, so you can look at the track and the positions. The action bar still works: your command is given at once and the race acts on it when you run on. Tap it again to go on."},
@@ -232,7 +233,6 @@
     {"heading": "Boxed in and falls", "text": "Stuck on the inside behind a runner, with one on your shoulder, you're boxed in. Someone right on your shoulder: wait, a gap usually comes soon (rarely on a bend). Room on your outside: ease off and step out, or push through near the line. Tight bunches clip heels: stumbles, now and then a fall."},
     {"heading": "Decisions", "text": "The race pauses when something really happens: after the break, at the bell, a rival's move, being boxed in, losing contact, a slow pace, your own kick, the home straight, after a fall. If your coach can see you, the coach shouts what to do. The advice is usually right, not always."},
     {"heading": "The card", "text": "A decision card sits beside the track (on a phone, in a sheet below it), so you can see what is happening while you choose. The race waits until you answer, and the action bar is dimmed meanwhile."},
-    {"heading": "Your word", "text": "With self-talk in your mental training (Season tab), the cue word you picked shows on every card: the word you say to yourself when it hurts.", "see": ["mental_training"]},
     {"heading": "Commentary", "text": "A stadium announcer calls small meets; at championships a commentator and an expert explain what you may miss: moves that get away, kicks that die, boxes, heat runners easing off. Key moments flash over the top of the track. The newest line is also under the track (a phone: the ticker; tap it for the whole log, the race waits)."},
     {"heading": "Your coach", "text": "Your coach sits in the stands: outdoors by the 200 m start (the diamond), indoors at the hall rail. {He} {v:speaks|speak} only about what {he} can see: your splits as you pass {him}, the cards, your kick. Each coach has a personality: calm, hard, warm or tactical. About ten seconds after a choice you hear how it is working out."}
    ]
@@ -293,9 +293,9 @@
   },
   "season_goals": {
    "title": "Season goals",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "Three goals", "text": "With {his} plan for a season your coach offers three goals: a time you run, a milestone (a real limit or a place at a meet) and a habit (sessions you do, warnings you respect, races you run). You pick the level of each."},
+    {"heading": "Three goals", "text": "With {his} plan for a season your coach offers three goals: a time you run, a milestone (a real limit or a place at a meet) and a habit counted honestly (warnings you respect, or races you run). You pick the level of each."},
     {"heading": "Choosing a level", "text": "The arrows step through the levels, from Safe to Dream. The star marks the level {he} would pick; it follows how demanding the coach is. The words say how likely it is, in {his} eyes."},
     {"heading": "{His} estimate", "text": "{He} {v:plays|play} your plan forward and {v:guesses|guess} what you can run at the season's peak. A coach who judges you well sets goals that fit. A poor judge may set goals that are too easy or too hard, and you won't see it until the season shows.", "see": ["ask_coach"]},
     {"heading": "Real limits", "text": "A milestone can be a real limit of the Finnish Athletics Federation: the SM limit, the Team Finland criteria or the Kalevan kisat limit.", "see": ["standards"]},
@@ -331,12 +331,13 @@
   },
   "habits": {
    "title": "Free time and habits",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "Nine slots a week", "text": "Every school evening, and Saturday and Sunday after training, is a slot: study, rest, friends or family. Your habits in the Season tab fill them, so a week you don't touch plays as you set it once. This week's slots change on This week."},
     {"heading": "What each does", "text": "Study: more than four study slots a week lift your grades, fewer let them slide; a lot makes school days heavier. Rest: the next school day is lighter. Friends: more than two lift motivation, fewer let it sag. Family: eases stress."},
     {"heading": "Late nights", "text": "Friends on a school night means a late night: the next day weighs more, so you end it a bit more tired, with a little more risk of a cold. Before Saturday or Sunday it costs nothing. A party you say yes to is a late night whatever the day."},
-    {"heading": "Invitations", "text": "Now and then someone asks you to something on a coming evening. It shows in that slot with its price. Say Go or Stay home; you can change your mind until that evening. Left open, you simply don't go."},
+    {"heading": "Invitations", "text": "Now and then someone asks you to something on a coming evening, up to two a week. It shows in that slot with its price. Say Go or Stay home; you can change your mind until that evening. Left open, you simply don't go."},
+    {"heading": "Days away", "text": "A bigger choice on This week, like a week at the cottage or midsummer with the family, can take several slots at once. Its card lists the slots and what they were; say yes and they show its name. A confirmation camp you chose in February takes its week in summer."},
     {"heading": "Your call", "text": "The game never changes your evenings by itself. An amber evening is a warning, not a rule: a late night before a race is allowed."}
    ]
   },
@@ -438,11 +439,10 @@
   },
   "mental_training": {
    "title": "Mental training",
-   "version": 1,
+   "version": 2,
    "sections": [
-    {"heading": "The three kinds", "text": "Imagery: picturing the race before it happens, strongest the week before a target. Relaxation and breathing: lowers stress, and halves the nerves before a big meet. Self-talk: what you tell yourself when it hurts, with a cue word."},
+    {"heading": "The three kinds", "text": "Imagery: picturing the race before it happens, strongest the week before a target. Relaxation and breathing: lowers stress, and halves the nerves before a big meet. Self-talk: what you tell yourself when it hurts; it lifts your confidence a little."},
     {"heading": "Small on purpose", "text": "Each is one short session a week with no body strain. Together, over a year, they make you about half a point calmer under pressure (composure). Research finds real but modest effects, so don't expect miracles."},
-    {"heading": "Your cue word", "text": "Pick it with the arrows. It shows on every decision card in your races."},
     {"heading": "Other ways to grow", "text": "Consistency grows with every race, more from races unlike your last one. Composure also grows at big meets: national and international ones. A good mental coach helps both."}
    ]
   },

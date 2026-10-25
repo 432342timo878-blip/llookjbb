@@ -204,7 +204,9 @@ func _data() -> void:
 			for r in (g.met.replies if tbl == g.met.answers else g.review.replies):
 				ok = ok and str(tbl[v].get(r.id, "")) != ""
 	_ok("every voice has every goal text and every reply an answer", ok)
-	_ok("the four process kinds have 4 levels, falling counts for the limits", g.process.kinds.sessions.levels.size() == 4 and g.process.kinds.limits.levels[0] > g.process.kinds.limits.levels[3])
+	_ok("the process kinds have 4 levels, falling counts for the limits; the sessions goal is cut (L3a) and no voice picks it",
+			g.process.kinds.races.levels.size() == 4 and g.process.kinds.limits.levels[0] > g.process.kinds.limits.levels[3]
+			and not g.process.kinds.has("sessions") and g.process.by_voice.values().all(func(v): return g.process.kinds.has(str(v))))
 	var a: Dictionary = data.advice
 	_ok("race advice: every personality has a lean per plan and a kick lean",
 			voices.all(func(v): return a.race.lean.has(v) and a.race.kick.lean_m.has(v) and a.race.shouts.lean.has(v) and a.race.shouts.flip.has(v)))
@@ -338,7 +340,7 @@ func _met_missed() -> void:
 	gs.seasons[2026].goals = [
 		_goal("g1", "time", "time", {"time": 540.0, "label": "Run 9:00.00 or faster", "higher": true}),
 		_goal("g2", "milestone", "place", {"meet": "sm_14_15@2027", "place": 0, "time": 1.0, "label": "Finish in the top 0 at the SM"}),
-		_goal("g3", "process", "sessions", {"n": 101, "label": "Do 101 % of the sessions in your plan"})]
+		_goal("g3", "process", "races", {"n": 999, "label": "Race at least 999 times"})]   # (session L3a: the sessions goal is cut)
 	var trust0: float = cs.trust()
 	var caused := 0
 	var g1_met_day := ""
@@ -384,6 +386,14 @@ func _met_missed() -> void:
 	# the progress texts
 	for g in goals:
 		print("    %s %s -> %s" % [gs.goal_text(g, 2026), str(g.status), gs.progress_text(g, 2026)])
+	# Session L3a: an older save with the cut habit goal ("do 92 % of the sessions") still open loads with it retired.
+	var d: Dictionary = JSON.parse_string(JSON.stringify(gs.to_dict()))
+	d.seasons["2026"].goals[2].sub = "sessions"
+	d.seasons["2026"].goals[2].status = "open"
+	gs.from_dict(d)
+	var g3: Dictionary = gs.goals_of(2026)[2]
+	_ok("an older save's open sessions goal loads retired: '%s'" % gs.progress_text(g3, 2026), str(g3.status) == "void"
+			and gs.progress_text(g3, 2026) == str(gs.cfg().ui.retired))
 
 
 func _counters() -> void:

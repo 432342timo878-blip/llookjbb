@@ -168,7 +168,7 @@ func _data() -> void:
 				bad.append("%s: 'tonight' in a text posted days before" % s.id)
 	for b in bad:
 		print("    " + b)
-	_ok("%d invitations (the weekend party, the party before a race, the group work), each with slot days, an activity, Go replies + a stay-home reply, a title and a chip, no 'tonight' (%d faults)" % [invites.size(), bad.size()],
+	_ok("%d invitations (L3a: 26 after the sort, the weekend party, the party before a race and the group work among them), each with slot days, an activity, Go replies + a stay-home reply, a title and a chip, no 'tonight' (%d faults)" % [invites.size(), bad.size()],
 			invites.size() >= 3 and bad.is_empty() and ["fr_party_weekend", "fr_party_race", "sch_group_work"].all(func(x): return invites.any(func(s): return s.id == x)))
 
 
@@ -345,8 +345,8 @@ func _post_invite(sid: String, d: int) -> Dictionary:
 func _invites() -> void:
 	print("-- 8. invitations land in a slot, are answered on the planner and happen on their evening")
 	MS.people_enabled = true
-	var keep_chance: float = data.habits.invites.chance
-	data.habits.invites.chance = 0.0   # (no Sunday draw in this part: the invitations are posted by hand)
+	var keep_chance: Array = data.habits.invites.chances
+	data.habits.invites.chances = [0.0, 0.0]   # (no Sunday draw in this part: the invitations are posted by hand)
 	var hs = _fresh(1)
 	hs.set_habit(5, "rest")   # (so Go visibly changes Saturday)
 	_play_to(_d("2026-11-03"))   # (the moments run from the first day)
@@ -385,7 +385,7 @@ func _invites() -> void:
 	var friend3: Dictionary = ms.people[str(m3.from)]
 	var rel3 := float(friend3.relation)
 	ms.answer(str(m3.id), "no")
-	_ok("two in a week are possible by hand (the Sunday draw allows one): Thursday's group work open, Friday's party planned as Stay home",
+	_ok("two in a week (the Sunday draw allows two since L3a): Thursday's group work open, Friday's party planned as Stay home",
 			not m2.is_empty() and ms.waiting().has(m2) and str(m3.planned) == "no" and hs.activity_on(_d("2026-11-13")) == "friends")
 	_play_to(_d("2026-11-14"))
 	_ok("unanswered by Thursday evening: 'you didn't answer', the slot kept its habit (study)", str(m2.answer) == MS.NONE
@@ -413,7 +413,7 @@ func _invites() -> void:
 	_ok("friends on Thursday (a school night) before a hard Friday: a late night and the 'hard' clash", bool(info3.late) and str(info3.clash) == "hard")
 	hs.reset_slot(3)
 	_ok("the default Thursday (study) has no clash", str(hs.slot_info(w, 3).clash) == "")
-	data.habits.invites.chance = keep_chance
+	data.habits.invites.chances = keep_chance
 	MS.people_enabled = false
 
 
@@ -445,8 +445,9 @@ func _season(weeks: int) -> void:
 	for f in faults:
 		print("    " + f)
 	print("    invitations: %d in %d weeks %s" % [invs.size(), weeks, kinds])
-	_ok("invitations come (%d in %d weeks), at most one a week, never after or more than a week before their slot, each settled on its evening"
-			% [invs.size(), weeks], invs.size() > 0 and per_week.values().all(func(n): return int(n) <= 1) and faults.is_empty())
+	var most := int(data.habits.invites.max_per_week)
+	_ok("invitations come (%d in %d weeks), at most %d a week, never after or more than a week before their slot, each settled on its evening"
+			% [invs.size(), weeks, most], invs.size() > 0 and per_week.values().all(func(n): return int(n) <= most) and faults.is_empty())
 	_ok("no old-style moment of the three invitations came (they are only posted into slots)",
 			ms.fired.filter(func(f): return str(f.storylet) in ["fr_party_weekend", "fr_party_race", "sch_group_work"] and not bool(f.get("invite", false))).is_empty())
 	MS.people_enabled = false

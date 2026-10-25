@@ -39,7 +39,9 @@ const CONDITIONS := ["age", "month", "weekday", "day_type", "weeks_in_career", "
 		# session P1:
 		"family", "has", "turns", "days_to", "days_after", "school_day", "break", "stage", "test_today", "test_tomorrow",
 		"tests_week", "cards", "card_days_ago", "card_avg", "card_change", "app", "app_result", "origin", "old_sport",
-		"memory", "memory_days", "trait", "rival_race", "rival_streak", "rival_wins"]
+		"memory", "memory_days", "trait", "rival_race", "rival_streak", "rival_wins",
+		# session L3a (never contradict):
+		"next_level", "card_grade", "evening", "break_week"]
 const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "teammate", "club", "meet", "race_days", "pb",
 		"weekday", "tomorrow",
 		# session P1:
@@ -149,11 +151,36 @@ func _data_checks() -> void:
 		var topic := str(s.get("topic", ""))
 		if not topic in TOPICS:   # (mood: session M1; card, app, rival: session P1)
 			problems.append("%s: unknown topic '%s'" % [sid, topic])
-		if topic == "ack":   # (a talk without a topic: the single reply "Thanks, coach")
+		if bool(s.get("feed", false)):   # (session L3a: a message that asks nothing)
+			if not replies.is_empty() or s.has("invite") or s.has("beat") or bool(s.get("important", false)):
+				problems.append("%s: a feed message has no replies and is no invitation, beat or important moment" % sid)
+			for key in s.get("effects", {}):
+				if not key in mo.effects.story:
+					problems.append("%s: a feed message may only carry story state, not '%s'" % [sid, key])
+		elif topic == "ack":   # (a talk without a topic: the single reply "Thanks, coach")
 			if replies.size() != 1:
 				problems.append("%s: the talk's plain storylet has exactly 1 reply" % sid)
 		elif replies.size() < 2 or replies.size() > 4:
 			problems.append("%s: %d replies (2-4)" % [sid, replies.size()])
+		var rid_list: Array = replies.map(func(r): return str(r.get("id", "")))
+		if s.has("beat"):   # (session L3a: a story beat)
+			var bt: Dictionary = s.beat
+			if str(bt.get("title", "")) == "" or not str(bt.get("default", "")) in rid_list:
+				problems.append("%s: a beat needs a title and a default that is one of its replies" % sid)
+			for r in replies:
+				if r.has("slots"):
+					var sl: Dictionary = r.slots
+					var days = sl.get("days", [])
+					var days_ok: bool = (days is String and str(days) == "break") or (days is Array and not days.is_empty() and days.all(func(x): return int(x) >= 0 and int(x) <= 6))
+					if not days_ok or not data.habits.activities.has(str(sl.get("activity", ""))):
+						problems.append("%s/%s: slots need days 0-6 (or \"break\") and a known activity" % [sid, r.id])
+		elif replies.any(func(r): return r.has("slots")):
+			problems.append("%s: only a story beat's replies take slots" % sid)
+		if s.has("invite"):
+			var iv: Dictionary = s.invite
+			if not data.habits.activities.has(str(iv.get("activity", ""))) or iv.get("go", []).is_empty() \
+					or not iv.go.all(func(g): return str(g) in rid_list) or iv.get("days", []).is_empty():
+				problems.append("%s: an invitation needs an activity, slot days and its accepting replies" % sid)
 		var rids := {}
 		var rules := 0
 		for r in replies:
@@ -190,6 +217,130 @@ func _data_checks() -> void:
 	_ok("moments.json: rate, settings (default %s), no-answer text, standing texts" % mo.settings.default,
 			mo.settings.stops.has(mo.settings.default) and str(mo.no_answer.result) != "" and mo.rate.per_week.size() == 2
 			and mo.day_names.size() == 7)
+	_never_contradict()
+
+
+## Session L3a (GDD 4.10 decision 6, "Content never contradicts the player"; the rules in data/moments.json `never` / `touches`):
+## every real storylet is a feed message, an invitation or a story beat; it lists what it touches and has the condition that guards
+## each; no text, hint or result promises what the player cannot do or names the game's screens; a feed message asks nothing; a
+## result that narrates a late night or studying has that reply's sleep / grades effect; a word that means a touch is listed.
+func _never_contradict() -> void:
+	print("== 1b. Content never contradicts the player (session L3a)")
+	var mo: Dictionary = data.moments
+	var tdef: Dictionary = mo.touches
+	var rx := {}
+	for group in ["promise", "ui", "question", "late", "study"]:
+		rx[group] = (mo.never[group] as Array).map(func(p): return RegEx.create_from_string("(?i)" + str(p)))
+	var words := {}
+	for t in tdef:
+		if t.begins_with("_"):
+			continue
+		words[t] = (tdef[t].get("words", []) as Array).map(func(p): return RegEx.create_from_string("(?i)" + str(p)))
+	var real: Array = data.storylets.filter(func(s): return not bool(s.test))
+	var faults := []
+	var kinds := {"feed": 0, "invite": 0, "beat": 0, "other": 0}
+	var touch_count := {}
+	for s in real:
+		var sid := str(s.id)
+		var kind := "feed" if bool(s.get("feed", false)) else ("invite" if s.has("invite") else ("beat" if s.has("beat") else "other"))
+		kinds[kind] += 1
+		if kind == "other":
+			faults.append("%s: neither a feed message, an invitation nor a story beat" % sid)
+		if bool(s.get("important", false)):
+			faults.append("%s: 'important' is for the test moments only since L3a" % sid)
+		if not s.get("touches") is Array:
+			faults.append("%s: no `touches` list" % sid)
+			continue
+		var declared: Array = s.touches
+		for t in declared:
+			touch_count[t] = int(touch_count.get(t, 0)) + 1
+			if not tdef.has(str(t)):
+				faults.append("%s: unknown touch '%s'" % [sid, t])
+		var when: Dictionary = s.get("when", {})
+		# The texts (each variant with its own conditions).
+		var texts: Array = s.text
+		var mentioned := {}   # touch -> true when every variant that mentions it is guarded (false = one is not)
+		for v in texts:
+			var t_text := str(v.text) if v is Dictionary else str(v)
+			var vw: Dictionary = v.get("when", {}) if v is Dictionary else {}
+			for f in _matches(rx.promise, t_text):
+				faults.append("%s: promises what the player cannot do: \"%s\"" % [sid, f])
+			for f in _matches(rx.ui, t_text):
+				faults.append("%s: names the game's screens: \"%s\"" % [sid, f])
+			if kind == "feed":
+				for f in _matches(rx.question, t_text):
+					faults.append("%s: a feed message asks a question it cannot let you answer: \"%s\"" % [sid, t_text.left(60)])
+			for t in words:
+				if _matches(words[t], t_text).is_empty():
+					continue
+				if not t in declared:
+					faults.append("%s: the text touches '%s' (\"%s\") but `touches` doesn't list it" % [sid, t, _matches(words[t], t_text)[0]])
+				var guarded := _guarded(str(t), when, s) or _guarded(str(t), vw, s)
+				mentioned[t] = bool(mentioned.get(t, true)) and guarded
+				if not guarded:
+					faults.append("%s: the text touches '%s' with no condition that guards it" % [sid, t])
+		# The replies' hints and results.
+		for r in s.get("replies", []):
+			var rw: Dictionary = r.get("when", {})
+			var eff: Dictionary = r.get("effects", {})
+			for field in ["hint", "result"]:
+				var t_text := str(r.get(field, ""))
+				for f in _matches(rx.promise, t_text):
+					faults.append("%s/%s: promises what the player cannot do: \"%s\"" % [sid, r.id, f])
+				for f in _matches(rx.ui, t_text):
+					faults.append("%s/%s: names the game's screens: \"%s\"" % [sid, r.id, f])
+			var result := str(r.get("result", ""))
+			if not _matches(rx.late, result).is_empty() and float(eff.get("sleep", 0.0)) >= 0.0:
+				faults.append("%s/%s: the result narrates a late night the reply doesn't give: \"%s\"" % [sid, r.id, result])
+			if not _matches(rx.study, result).is_empty() and float(eff.get("grades", 0.0)) <= 0.0:
+				faults.append("%s/%s: the result narrates studying the reply doesn't give: \"%s\"" % [sid, r.id, result])
+			for t in words:
+				if _matches(words[t], result).is_empty():
+					continue
+				if not t in declared:
+					faults.append("%s/%s: the result touches '%s' but `touches` doesn't list it" % [sid, r.id, t])
+				if not (_guarded(str(t), when, s) or _guarded(str(t), rw, s)):
+					faults.append("%s/%s: the result touches '%s' with no condition that guards it" % [sid, r.id, t])
+		# Every declared touch is guarded: by the storylet's own conditions / kind / topic, or in each text that mentions it.
+		for t in declared:
+			if tdef.has(str(t)) and not _guarded(str(t), when, s) and not bool(mentioned.get(t, false)):
+				faults.append("%s: touches '%s' but nothing guards it" % [sid, t])
+	for f in faults.slice(0, 40):
+		print("    " + f)
+	print("    %d real storylets: %d feed, %d invitations, %d story beats; touches: %s" % [real.size(), kinds.feed, kinds.invite, kinds.beat,
+			", ".join(touch_count.keys().map(func(t): return "%s %d" % [t, touch_count[t]]))])
+	_ok("content never contradicts the player: every real storylet is feed / invitation / beat, lists its touches with a guard for each, promises nothing, names no screen, asks nothing in the feed, narrates no late night or study it doesn't give (%d faults)" % faults.size(),
+			faults.is_empty())
+
+
+## The texts in `s` that the regular expressions find.
+static func _matches(list: Array, s: String) -> Array:
+	var out := []
+	for re in list:
+		var m: RegExMatch = re.search(s)
+		if m != null:
+			out.append(m.get_string())
+	return out
+
+
+## A touch is guarded by `when` (one of its `needs`; `flag_prefix` = a flags condition naming such a flag), the storylet's topic, or
+## its kind (invitation / beat).
+func _guarded(t: String, when: Dictionary, s: Dictionary) -> bool:
+	var def: Dictionary = data.moments.touches.get(t, {})
+	for k in def.get("needs", []):
+		if when.has(k):
+			return true
+	if str(s.get("topic", "")) in def.get("topics", []):
+		return true
+	for k in def.get("kinds", []):
+		if s.has(k):
+			return true
+	var prefix := str(def.get("flag_prefix", ""))
+	if prefix != "":
+		for f in when.get("flags", []):
+			if str(f).trim_prefix("!").begins_with(prefix):
+				return true
+	return false
 
 
 func _when_problems(sid: String, when: Dictionary) -> Array:
@@ -625,7 +776,9 @@ func _seasons(careers: int, seasons: int) -> void:
 	for sid in ids:
 		parts.append("%s %d" % [sid.trim_prefix("test_"), fired_ids[sid]])
 	print("    fired: " + ", ".join(parts))
-	_ok("rate: 3-5 moments a week on average (%.2f)" % mean, mean >= 3.0 and mean <= 5.0)
+	var lo := float(data.moments.rate.per_week[0])   # (session L3a: 2-4 a week, the quiet feed's rate)
+	var hi := float(data.moments.rate.per_week[1])
+	_ok("rate: %d-%d moments a week on average (%.2f)" % [lo, hi, mean], mean >= lo and mean <= hi)
 	_ok("never more than %d in a week (most %d) or %d in a day (%d days over)" % [data.moments.rate.max_per_week,
 			week_counts.max() if not week_counts.is_empty() else 0, data.moments.rate.max_per_day, per_day_bad],
 			(week_counts + all_counts).all(func(x): return x <= int(data.moments.rate.max_per_week)) and per_day_bad == 0)
@@ -850,7 +1003,7 @@ func _talks() -> void:
 	var words: int = line.split(" ", false).size()
 	_ok("the coach's line for the planner: %d words, at most ~30, no placeholder (\"%s\")" % [words, line],
 			line != "" and words <= 30 and not "{" in line)
-	var talk_msgs: Array = ms.thread("coach").filter(func(x): return x.moment == "" and x.from != "you" and x.from != "system")
+	var talk_msgs: Array = ms.thread("coach").filter(func(x): return x.moment == "" and x.from != "you" and x.from != "system" and not x.has("feed"))
 	var full: String = str(talk_msgs.back().text) if not talk_msgs.is_empty() else ""
 	var paragraphs: int = full.split("\n\n").size()
 	_ok("the whole talk is in his thread, already read: open, review, preview (+ focus, close): %d paragraphs, no placeholder" % paragraphs,
@@ -897,7 +1050,10 @@ func _talks() -> void:
 	_ok("13 Sundays, 13 lines, no talk stop (%d, %d races on the way), nothing stuck" % [talks, races_run], talks == 13 and not stuck)
 	_ok("only the right kinds of moment were posted, none of them a stop (%s)" % ", ".join(bad_topics), bad_topics.is_empty())
 	print("    topics posted to the thread %d (week topics %d) in 12 weeks" % [with_topic, second_topics])
-	_ok("some Sundays post a topic to the thread", with_topic > 0)
+	# Session L3a: his topics are messages that ask nothing (wt_first, wt_pb): nothing of his waits for an answer.
+	_ok("every topic he posted is a message without buttons: none waits for an answer (L3a)",
+			ms.fired.all(func(f): return str(ms.storylet(f.storylet).get("topic", "")) == "" or bool(f.get("feed", false)))
+			and not ms.moments.any(func(m): return str(m.thread) == "coach" and str(m.kind) == "moment" and m.answer == ""))
 
 	# The coach's detail and voice: communication short / normal / full, the four personalities.
 	var lengths := {}
@@ -1070,7 +1226,7 @@ func _people_data(CA) -> void:
 	for s in p1:
 		per_file[s.file] = int(per_file.get(s.file, 0)) + 1
 	print("    P1 storylets: %d (%s)" % [p1.size(), ", ".join(per_file.keys().map(func(f): return "%s %d" % [f.trim_suffix(".json"), per_file[f]]))])
-	_ok("about 100-150 P1 storylets (%d)" % p1.size(), p1.size() >= 100 and p1.size() <= 160)
+	_ok("about 100-150 P1 storylets after the L3a sort (%d)" % p1.size(), p1.size() >= 100 and p1.size() <= 160)
 	var faults := []
 	for q in data.background_questions:
 		if q.id == "family":
@@ -1083,7 +1239,7 @@ func _people_data(CA) -> void:
 		for t in s.text:
 			if t is Dictionary:
 				whens.append(t.get("when", {}))
-		for r in s.replies:
+		for r in s.get("replies", []):
 			whens.append(r.get("when", {}))
 			for key in ["attitude"]:
 				if r.get("effects", {}).has(key) and not cast.attitudes.has(str(r.effects[key])):
@@ -1287,8 +1443,9 @@ func _people_seasons(careers: int, cal) -> void:
 	var answered := 0
 	var none := 0
 	var auto := 0
-	var invites := 0           # session L1b: invitations (outside the 3-5 a week and the one a day)
+	var invites := 0           # session L1b: invitations (outside the 2-4 a week and the one a day)
 	var invite_week_max := 0
+	var beats := 0             # session L3a: story beats (the stop token: at most 1 a week)
 	var moods := {}   # mood -> word id -> weeks (Sunday night, answers at random)
 	var quality_sum := 0.0   # the mind's training quality at each week's end (M1: ~1.0005 on average without the people)
 	var quality_n := 0
@@ -1348,17 +1505,22 @@ func _people_seasons(careers: int, cal) -> void:
 			if str(s.get("topic", "")) == "rival":
 				rival_notes += 1
 				continue   # (a rival's note sits outside the 3-5 a week, like the coach's race message)
-			if bool(f.get("invite", false)):   # (session L1b: posted when the week opens, outside the day's slot: at most 1 a week)
+			if bool(f.get("invite", false)):   # (session L1b: posted when the week opens, outside the day's slot: at most 2 a week since L3a)
 				invites += 1
 				var iwk := floori((int(f.day) - start_monday) / 7.0)
 				invite_weeks[iwk] = int(invite_weeks.get(iwk, 0)) + 1
 				continue
+			if bool(f.get("beat", false)):   # (session L3a: a story beat, posted for the coming week on Sunday: the stop token)
+				beats += 1
+				var bwk := floori((int(f.day) - start_monday) / 7.0)
+				stops_week[bwk] = int(stops_week.get(bwk, 0)) + 1
+				continue
 			var wk := floori((int(f.day) - start_monday) / 7.0)
 			per_week[wk] = int(per_week.get(wk, 0)) + 1
-			if f.stop or bool(f.get("planner", false)):   # (session L1a: an important moment waits for the planner instead of stopping)
-				stops_week[wk] = int(stops_week.get(wk, 0)) + 1
-			if f.stop and not bool(f.get("talk", false)):
-				stuck.append("career %d: %s stopped Play week (no people stops since L1a)" % [c, f.storylet])
+			if not bool(f.get("feed", false)):
+				stuck.append("career %d: %s is no feed message, invitation or beat (L3a)" % [c, f.storylet])
+			if f.stop or bool(f.get("planner", false)):
+				stuck.append("career %d: %s stopped Play week or waited for the planner (only beats do since L3a)" % [c, f.storylet])
 			per_day[f.day] = int(per_day.get(f.day, 0)) + 1
 		for dd in per_day:
 			if per_day[dd] > int(data.moments.rate.max_per_day):
@@ -1391,12 +1553,15 @@ func _people_seasons(careers: int, cal) -> void:
 	var secs := (Time.get_ticks_msec() - t0) / 1000.0
 	var mean := _mean(week_counts)
 	var stops := _mean(week_stops)
-	print("    %.0f s; %d weeks: moments a week mean %.2f (sd %.2f, %s), people stops a week %.2f (most in a week %d)" % [
-			secs, week_counts.size(), mean, _sd(week_counts), _dist(week_counts), stops, week_stops.max() if not week_stops.is_empty() else 0])
+	var lo := float(data.moments.rate.per_week[0])
+	var hi := float(data.moments.rate.per_week[1])
+	print("    %.0f s; %d weeks: feed messages a week mean %.2f (sd %.2f, %s); story beats %d = %.2f a week, %.1f a year (most in a week %d)" % [
+			secs, week_counts.size(), mean, _sd(week_counts), _dist(week_counts), beats, stops, stops * 52.0,
+			week_stops.max() if not week_stops.is_empty() else 0])
 	var ages := by_age.keys()
 	ages.sort()
 	for age in ages:
-		print("    age %d: %.2f moments a week over %d weeks" % [age, float(by_age[age][0]) / by_age[age][1], by_age[age][1]])
+		print("    age %d: %.2f feed messages a week over %d weeks" % [age, float(by_age[age][0]) / by_age[age][1], by_age[age][1]])
 	print("    by person: %s" % ", ".join(by_thread.keys().map(func(t): return "%s %d" % [t, by_thread[t]])))
 	print("    rivals who became people %d, rival notes %d, late nights %d, answered %d, unanswered %d, by a rule %d" % [rival_people, rival_notes, late_nights, answered, none, auto])
 	for mood in moods:
@@ -1410,11 +1575,12 @@ func _people_seasons(careers: int, cal) -> void:
 	ids.sort()
 	print("    fired: " + ", ".join(ids.map(func(i): return "%s %d" % [i, fired_ids[i]])))
 	print("    never fired (%d): %s" % [never.size(), ", ".join(never)])
-	_ok("rate with the people: 3-5 moments a week on average (%.2f)" % mean, mean >= 3.0 and mean <= 5.0)
+	_ok("the feed: %d-%d messages a week on average (%.2f)" % [lo, hi, mean], mean >= lo and mean <= hi)
 	_ok("never more than %d in a week (most %d) or %d in a day (%d days over)" % [data.moments.rate.max_per_week,
 			week_counts.max() if not week_counts.is_empty() else 0, data.moments.rate.max_per_day, per_day_bad],
 			week_counts.all(func(x): return x <= int(data.moments.rate.max_per_week)) and per_day_bad == 0)
-	_ok("at most ~1 moment a week waits for the planner on average (%.2f), none stops Play week" % stops, stops <= 1.05)
+	_ok("story beats came, at most 1 a week, about 5-7 a year or fewer (%.1f a year), none stops Play week" % (stops * 52.0),
+			beats > 0 and (week_stops.max() if not week_stops.is_empty() else 0) <= 1 and stops * 52.0 <= 8.0)
 	print("    invitations (session L1b, posted into a slot when the week opens; outside the counts above): %d, %.2f a week" % [
 			invites, invites / float(maxi(1, week_counts.size()))])
 	_ok("invitations come, and at most %d a week (most %d)" % [int(data.habits.invites.max_per_week), invite_week_max],
@@ -1431,10 +1597,11 @@ func _people_seasons(careers: int, cal) -> void:
 			p1.size() - never.size() >= ceili(need * p1.size()))
 	_ok("every person writes: family, friends, group, school, rivals (%s)" % ", ".join(by_thread.keys()),
 			["family", "friends", "group", "school", "rivals"].all(func(t): return int(by_thread.get(t, 0)) > 0))
-	_ok("both ages 14 and 15 have 3-5 a week", [14, 15].all(func(a): return by_age.has(a) and float(by_age[a][0]) / by_age[a][1] >= 3.0 and float(by_age[a][0]) / by_age[a][1] <= 5.0))
+	_ok("both ages 14 and 15 have %d-%d feed messages a week" % [lo, hi], [14, 15].all(func(a): return by_age.has(a) and float(by_age[a][0]) / by_age[a][1] >= lo and float(by_age[a][0]) / by_age[a][1] <= hi))
 	_ok("the family's report card talk and the application talk came", fired_ids.keys().any(func(i): return str(i).begins_with("fam_card_"))
 			and fired_ids.keys().any(func(i): return str(i).begins_with("fam_app_")))
-	_ok("late nights happened (a reply's sleep) and moments were both answered and left", late_nights > 0 and answered > 0 and none > 0)
+	# (session L3a: what can be answered is an invitation or a beat; they wait for days, so the random policy answers nearly all)
+	_ok("late nights happened (a reply's sleep) and invitations / beats were answered (%d answered, %d left)" % [answered, none], late_nights > 0 and answered > 0)
 	var q := quality_sum / maxi(quality_n, 1)
 	_ok("the moods stay calibrated: mean training quality %.4f (M1 without the people ~1.0005; within 1 %%)" % q, absf(q - 1.0) < 0.01)
 	var mot: Dictionary = moods.get("motivation", {})

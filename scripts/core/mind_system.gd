@@ -13,7 +13,8 @@ extends GameSystem
 ## set by Game.current_week()); confidence = a race-day term at its ends (race_term(meet): up to +-0.3 % of race time, by meet
 ## level; RaceDay._player_entrant); stress pulls motivation down. Nothing here ever changes WHAT is done (the player decides).
 ## Mental attributes that grow: consistency from every race, composure from big meets and from the weekly mental plan
-## (`plan` of up to 3 kinds + the cue word shown on the race cards). Ambition (hidden) scales how goals move motivation.
+## (`plan` of up to 3 kinds; session L3a cut the cue word: it did nothing the player could see). Ambition (hidden) scales how
+## goals move motivation.
 ## Off switches for the tools: `model_enabled` (off = no moods, no effects, no growth) and `neutral` (the moods stay at their
 ## start values in the middle, so every effect is exactly neutral; the attribute growth still works).
 ## No dice: same days = same moods; a loaded game goes on exactly as without saving.
@@ -31,7 +32,6 @@ var same_weeks := 0       # weeks in a row on the same training template (monoto
 var template_key := ""    # that template ("" = none seen yet)
 var last_race := {}       # {level, indoor} of the last race (consistency grows more from a different one)
 var plan := []            # the weekly mental plan: up to max_sessions kind ids
-var cue := ""             # the cue word for self-talk ("" = the default)
 var started := false      # false until the first played day (state saved from then on)
 var _ahead := {}          # the Monday of the coming week while Sunday night's drift runs (school's pulls, S1; not saved)
 ## Session L2b (recording only): last Sunday's drift, {date, <mood>: {from, to, target, pulls: [{text, delta}]}} ({} before the
@@ -158,13 +158,6 @@ static func term_for(v: float, level: String) -> float:
 	else:
 		return 0.0
 	return t * float(e.level_scale.get(level, 1.0))
-
-
-## The cue word shown on the race cards ("" = no self-talk in the mental plan).
-func cue_word() -> String:
-	if not model_enabled or not "self_talk" in plan:
-		return ""
-	return cue if cue != "" else str(cfg().mental_plan.default_cue)
 
 
 # --- News -----------------------------------------------------------------------------------------------------------
@@ -578,11 +571,6 @@ func toggle_kind(kind: String, on: bool) -> void:
 	set_plan(kinds)
 
 
-func set_cue(word_text: String) -> void:
-	if word_text in cfg().mental_plan.cue_words:
-		cue = word_text
-
-
 # --- The coach's words -----------------------------------------------------------------------------------------------
 
 ## The mood the coach talks about on Sunday, with its side ("low" / "high"), or {}: the one furthest out of its middle, or
@@ -638,10 +626,10 @@ func is_low(mood: String) -> bool:
 # --- Save / load ------------------------------------------------------------------------------------------------------
 
 func to_dict() -> Dictionary:
-	if not started and plan.is_empty() and cue == "":
+	if not started and plan.is_empty():
 		return {}
 	var out := {"values": values, "snap": snap, "before": before, "causes": causes, "same_weeks": same_weeks,
-			"template_key": template_key, "last_race": last_race, "plan": plan, "cue": cue, "started": started}
+			"template_key": template_key, "last_race": last_race, "plan": plan, "started": started}
 	if not drift.is_empty():
 		out.drift = drift   # (session L2b)
 	if not week_start.is_empty():
@@ -668,8 +656,7 @@ func from_dict(d: Dictionary) -> void:
 	plan = []
 	for k in d.get("plan", []):
 		plan.append(str(k))
-	cue = str(d.get("cue", ""))
-	started = bool(d.get("started", false))
+	started = bool(d.get("started", false))   # (an older save's "cue" (the cut cue word) is ignored)
 	drift = d.get("drift", {})   # (session L2b; older saves: none)
 	if drift.has("date"):
 		drift.date = Game.int_date(drift.date)

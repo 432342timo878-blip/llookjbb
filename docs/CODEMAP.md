@@ -162,6 +162,34 @@ Read the paragraphs below with these in mind; they win where they disagree.
     the study evenings. `RaceRecap` trust causes in words (`WeekCauses.trust_cause`).
   - **Tools:** new `tools/causes_check.gd` (in run_all_checks); `planner_shot` shoots taps and the report (1c, 4_report_*); the tour
     13c / 13d / 13e and 54d2.
+- **Session L3a (the sort of the moments, "never contradict", the quiet feed, story beats, the cue word and the habit goal cut; GDD
+  4.10 "L3's questions" and "Built (step L3a)", the sort itself in `docs/L3_SORT.md`; these win over the paragraphs below about
+  moments, important moments, the coach's topics, the cue word and the habit goal):**
+  - **Storylet kinds:** `feed` (no replies: `StoryletSystem._post_feed`: a thread message with `feed` = the storylet id, no moment,
+    `story_effects(s)` = the storylet's own `effects` limited to `moments.json effects.story`; counted in the week's 2-4),
+    `invite` (L1b; up to `habits.json invites.max_per_week` 2 with `chances`, `_post_invitations` → `_post_invitation`, no stop
+    token, never on a beat's day), `beat` (`_post_beat` on `on_week_start`: one a week with the stop token; moment fields `beat`
+    {title, chip, default}, `week` (its Monday's day number), `expires` = the Sunday before, so Monday's `_expire` takes the
+    `default` reply (`defaulted`, `moments.json beat.defaulted`); a reply's `slots` {days or "break", activity} → `m.took`
+    {days, activity} via `slot_days`). `away_on(d)` = a beat's taken slot or the confirmation camp (`cast.json away.rippileiri`),
+    read by `HabitSystem._activity_now` / `away_on` / `slot_info.away` (the chip, the picker, the evening line). `beat_days(monday)`.
+    `important` stays for the test moments only. `_close_retired` (load): an open moment whose storylet is now feed or gone closes
+    quietly; rules for groups that no longer exist go. `unread_senders()` for the planner's line. The family's good signs
+    (`cast.json warmth`, `_warmth`): a PB, a report card ≥ 8.0.
+  - **New conditions:** `next_level`, `card_grade`, `evening`, `break_week`. **Never contradict:** every real storylet has
+    `touches`; `moments.json never` (promise / ui / question / late / study) and `touches` (needs / topics / kinds / flag_prefix /
+    words); `storylet_check` part 1b checks it.
+  - **UI:** `HabitsUI.beat_card` / `beat_price` / `day_span` (each reply's price: its hint, the slots it takes and what they were,
+    the relationship, a late night, grades; "If you leave it: …"), the chip / picker / evening line for `away`;
+    `WeekPlanner.messages_line()` + signal `messages_pressed` (the hub opens People), beat cards among `_cards`.
+  - **Cuts:** the cue word (`MindSystem.cue` / `cue_word` / `set_cue`, `MindUI.cue_text`, the race card's line, `MentalPlanUI`'s
+    row, `mind.json cue_words` / `cue_line`; an older save's "cue" is ignored); the habit goal (`goals.json process` has no
+    "sessions": `fallback` limits, `by_voice` remapped, `ui.retired`; `SeasonGoals.from_dict` retires an open sessions goal and
+    turns an open offer's sessions levels into the fallback's). `mind_talk.json` is empty; `week_talk.json` keeps `wt_first`,
+    `wt_pb` as feed.
+  - **Tools:** `storylet_check` (1b never contradict; part 6 his topics are feed; 7f the feed rate, beats ≤ 1 a week, no
+    old-style planner moment), `f1_check` 3 / 4, `mind_check`, `goals_check`, `habits_check`, `people_answer_check`,
+    `causes_check`, `layout_check` / the tour (beats: `_cast_views`, 40e–40g, 54–54b).
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

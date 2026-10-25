@@ -517,9 +517,16 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           recording only; mid-week stops 0.35 a week (0.33), a careful week still 2 clicks; fingerprints identical)*: attribute changes with their sessions (and the race's share), the moods' / body areas' / people's
           words + what they do with the numbers and recent causes on a tap, the week report (5 + "+N more") and "Last week in full"
           restyled to V1, help. *(Opus, high)*
-  - [ ] **L3. The cuts + goals + school page** (decisions 3–5 and the cut list): sort P1's ~150 storylets into delete / feed / invitation /
-        story beat, a "never contradict" check in `storylet_check`, the habit goal and the cue word cut, mental training as sessions, the
-        goals menu with stakes + the two reviews, the School page apart from the messages with tests in the week report. *(Opus, high)*
+  - [ ] **L3. The cuts + goals + school page** (decisions 3–5 and the cut list; split by the user 2026-10-25, GDD 4.10 "L3's questions"):
+    - [x] **L3a. The sort + never contradict + the feed + the cuts** *(done 2026-10-25: GDD 4.10 "Built (step L3a)", the sort in
+          `docs/L3_SORT.md`)*: every storylet sorted into delete / feed / invitation / story beat, "never contradict" as `touches` +
+          guards + a scan in `storylet_check`, the quiet feed (People + one planner line), story beats on the Sunday planner, up to 2
+          invitations a week, the habit goal and the cue word cut. *(Opus, high)*
+    - [ ] **L3b. Mental sessions + goals + reviews + the School page**: mental training as sessions in the week (the weekly
+          mental-plan setting goes; an older save's plan: asked at the start), the goals menu with real stakes (today: trust, the
+          moods, next season's level, the coach putting you up for a bigger meet; camps / the wild card / bigger meets wait for G3 /
+          K1), the two reviews as a section of that Sunday's planner, the School page apart from the messages with only the agreed
+          stops (the report card stop and the meet-and-tests Monday stop: asked at the start), save version 6 if needed. *(Opus, high)*
         Done: the cut list done; `storylet_check` finds no contradicting or promising lines; stops a week measured.
   - [ ] **K1. Career tab + the next big thing + reputation + the season review** (decision 10). *(Sonnet, high)*
         Done: every result in one list, the milestones timeline, the Overview's countdown and long path, a season ends as a chapter.

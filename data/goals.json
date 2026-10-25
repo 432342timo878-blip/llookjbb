@@ -25,9 +25,10 @@
 		"min_gap_s": 0.4
 	},
 	"process": {
-		"by_voice": {"calm": "sessions", "drill": "sessions", "warm": "limits", "tactician": "races", "analyst": "sessions", "mentor": "sessions", "motivator": "races", "speed": "limits"},
+		"_note_l3a": "Session L3a (GDD 4.10 decision 3): the habit goal 'do N % of the sessions in your plan' is cut (a day the coach or an injury changed counted as done, so it was always met: 352 of 352 in season playtest 2). Process goals stay only when counted honestly: days trained through a warning (HealthSystem's overrides) and races run. The voices that picked sessions now pick `fallback` (limits) or races; an older save's open sessions goal is retired (ui.retired), an open offer's sessions levels become the fallback's.",
+		"fallback": "limits",
+		"by_voice": {"calm": "limits", "drill": "races", "warm": "limits", "tactician": "races", "analyst": "limits", "mentor": "limits", "motivator": "races", "speed": "limits"},
 		"kinds": {
-			"sessions": {"levels": [75, 85, 92, 97], "unit": "%", "label": "do {n} % of the sessions in your plan", "count_note": "{done} of {planned} planned sessions done ({share} %)"},
 			"limits": {"levels": [6, 3, 1, 0], "unit": "days", "label": "train through a warning on {n} days at most", "label_zero": "never train through a warning", "count_note": "{done} days trained through a warning"},
 			"races": {"levels": [3, 5, 7, 9], "unit": "races", "label": "race at least {n} times", "max_age": 19, "count_note": "{done} races run"}
 		}
@@ -51,6 +52,7 @@
 		"progress_head": "SEASON GOALS",
 		"past_line": "{season}: {met} of {total} met",
 		"status": {"open": "Open", "met": "Met", "missed": "Missed", "void": "Not decided"},
+		"retired": "Retired: the game no longer counts sessions as a goal.",
 		"marks": {"open": "○", "met": "✓", "missed": "✗", "void": "–"},
 		"met_on": "Met on {date}",
 		"level_line": "{level} level",
@@ -171,7 +173,6 @@
 			"time_none": "no race with a time",
 			"place": "{result}",
 			"place_none": "you didn't start",
-			"process_sessions": "{done} of {planned} sessions",
 			"process_limits": "{done} days trained through a warning",
 			"process_races": "{done} races"
 		},

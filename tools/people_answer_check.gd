@@ -67,7 +67,8 @@ func _run() -> void:
 			game.finish_race()
 		var waiting := {}
 		for m in ms.pending():
-			if not bool(m.stop) and str(m.thread) in ["family", "friends", "group", "school", "rivals"] and str(m.kind) == "moment":
+			if not bool(m.stop) and str(m.thread) in ["family", "friends", "group", "school", "rivals"] and str(m.kind) == "moment" \
+					and str(m.get("planned", "")) == "":
 				waiting = m
 				break
 		if waiting.is_empty():
@@ -84,7 +85,9 @@ func _run() -> void:
 		btn.pressed.emit()
 		await _frames(4)
 		var after: Dictionary = ms.moment(str(waiting.id))
-		_ok("... pressing it answers the message with that reply (%s)" % after.answer, str(after.answer) == str(pick.id))
+		# (session L3a: what waits in a thread is an invitation or a story beat; an invitation's answer only plans it until its evening)
+		var got := str(after.get("planned", "")) if after.has("invite") else str(after.answer)
+		_ok("... pressing it answers the %s with that reply (%s)" % ["invitation" if after.has("invite") else "message", got], got == str(pick.id))
 		tested += 1
 	_ok("three waiting messages were found and tested in %d days" % days, tested == 3)
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)

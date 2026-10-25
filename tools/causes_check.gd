@@ -317,12 +317,18 @@ func _people() -> void:
 	var guard := 0
 	while answered.is_empty() and guard < 20:
 		guard += 1
+		game.current_week()   # (session L3a: the new week opens as the planner does: its invitations and story beat are posted)
 		for m in ms.pending():
 			var s: Dictionary = ms.storylet(str(m.get("storylet", "")))
 			for rep in s.get("replies", []):
 				if float(rep.get("effects", {}).get("relation", 0.0)) != 0.0 and str(ms.people.get(str(m.from), {}).get("role", "")) != "coach" \
 						and m.replies.any(func(x): return str(x.id) == str(rep.id)):
 					ms.answer(str(m.id), str(rep.id))
+					# (session L3a: what waits is an invitation or a story beat; an invitation's answer happens on its evening)
+					var days := 0
+					while m.has("invite") and str(m.answer) == "" and days < 9:
+						days += 1
+						_day()
 					answered = ms.moment(str(m.id))
 					break
 			if not answered.is_empty():

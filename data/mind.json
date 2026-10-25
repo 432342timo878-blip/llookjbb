@@ -79,15 +79,13 @@
   "composure": {"per_big_race": 0.1, "confidence_share": 0.2}
  },
  "mental_plan": {
-  "_note": "The weekly mental plan (GDD 4.9.4; Training tab): none, one, two or all three kinds, one short session of each a week (so 0-3 sessions). Sunday night each session grows composure by `composure` x headroom x the coach's mental coaching (imagery x target_week when a target is in the coming week); relaxation lowers the stress target (drift.stress.relaxation); self-talk lifts the confidence target by `confidence`. All three at a composure of 10: about +0.5 a year (the 2023 meta-analysis: moderate effects at best). No body strain. The cue word (self-talk) is shown on the race cards. Life load (school) comes with S1.",
+  "_note": "The weekly mental plan (GDD 4.9.4; Training tab): none, one, two or all three kinds, one short session of each a week (so 0-3 sessions). Sunday night each session grows composure by `composure` x headroom x the coach's mental coaching (imagery x target_week when a target is in the coming week); relaxation lowers the stress target (drift.stress.relaxation); self-talk lifts the confidence target by `confidence`. All three at a composure of 10: about +0.5 a year (the 2023 meta-analysis: moderate effects at best). No body strain. Session L3a cut the cue word (it did nothing the player could see; older saves' word is ignored). Life load (school) comes with S1.",
   "max_sessions": 3,
   "kinds": {
    "imagery": {"name": "Imagery", "composure": 0.004, "target_week": 2.0, "text": "Picture the race before it happens: the start, the bell, the kick. Strongest the week before a target."},
    "relaxation": {"name": "Relaxation and breathing", "composure": 0.003, "text": "Slow breathing and letting go of tension. Lowers stress a little."},
-   "self_talk": {"name": "Self-talk", "composure": 0.003, "confidence": 2, "text": "What you say to yourself when it hurts, with a cue word you pick. Your word shows on the race cards."}
-  },
-  "cue_words": ["Smooth", "Relax", "Strong", "Tall", "Fast feet", "Now", "Patience", "Fight"],
-  "default_cue": "Smooth"
+   "self_talk": {"name": "Self-talk", "composure": 0.003, "confidence": 2, "text": "What you say to yourself when it hurts. Lifts confidence a little."}
+  }
  },
  "causes": {
   "_note": "The lines of the recent causes (tap a mood row). {meet} {who} {goal} {injury} are filled in.",
@@ -149,12 +147,10 @@
   "race_faster": "You race a little faster at a meet like this.",
   "race_slower": "You race a little slower at a meet like this.",
   "dragged": "You dragged yourself through it.",
-  "cue_line": "Your word: {word}",
   "plan_head": "MENTAL TRAINING",
   "plan_text": "Short sessions without body strain. Small on purpose: over a year they make you a little calmer under pressure.",
   "plan_none": "None",
   "plan_session": "Session {n}",
-  "plan_cue": "Cue word",
   "plan_off": "No mental training this week.",
   "effects": {
    "confidence": {

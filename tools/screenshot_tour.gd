@@ -139,9 +139,6 @@ func _run() -> void:
 	await _shot("8d_stop_event")
 	hub._on_event_answer(game.pending_event().id, "easy")
 	await _frames(3)
-	# Self-talk in the mental plan (session M1), so the race's decision card shows the cue word.
-	game.get_system("mind").set_plan(["self_talk"])
-	game.get_system("mind").set_cue("Strong")
 	# Play weeks until the first race day stops the week.
 	var router = main.get_node("/root/Router")
 	var weeks_played := 0
@@ -377,10 +374,10 @@ func _cast_tour(main: Node, hub_in: Control) -> void:
 		ok_card.pressed.emit()
 		await _frames(3)
 	game.scratch_card = {}
-	# Session L1a: a family moment that matters waits on the Sunday planner as a card (no stop); answered there, the result card.
-	var fm: Dictionary = ms._post(ms.storylet("fam_against_tests"), parent, ctx, today, false, {"counted": false})
-	if not fm.is_empty() and not bool(fm.get("planner", false)):
-		ms._wait_for_planner(fm)
+	# Session L3a: the best friend's story beat waits on the Sunday planner as a card with each reply's price; answered there, the
+	# result card (and Saturday's slot becomes "friends").
+	var best: Dictionary = ms.people_for("best_friend")[0]
+	var fm: Dictionary = ms._post(ms.storylet("fr_left_out"), best, ctx, today, false, {"beat": true, "counted": false})
 	hub._refresh_week_ui()
 	hub._show("week")
 	await _frames(6)
@@ -388,14 +385,16 @@ func _cast_tour(main: Node, hub_in: Control) -> void:
 	await _frames(3)
 	await _shot("54_cast_family_card")
 	if not fm.is_empty():
-		ms.answer(str(fm.id), "study")
+		ms.answer(str(fm.id), "sorry")
 		hub._result_event = {"kind": "moment", "moment": str(fm.id), "date": game.date.duplicate(), "source": "moments"}
 		hub._show_pending_event()
 		await _frames(6)
 		await _shot("54b_cast_result_card")
 		hub._end_result_card()
 		await _frames(3)
-	for pair in [["fam_shoes", "parent"], ["fr_gaming", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
+	ms._apply({"sleep": -1}, parent, "tour")   # (a late night tonight, for the day editor's shot below)
+	# Messages that ask nothing (the feed, L3a) in every thread.
+	for pair in [["fam_race_good", "parent"], ["fr_why_running", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_busy_week", "school:class_teacher"]]:
 		var who: Array = ms.people_for(str(pair[1]))
 		if not who.is_empty():
 			ms._post(ms.storylet(str(pair[0])), who[0], ctx, today, true, {"counted": false})
@@ -878,7 +877,6 @@ func _mind_tour(main: Node, hub_in: Control) -> void:
 	await _shot("49a_mind_rows_open")
 	load("res://scripts/ui/mind_ui.gd").open = {}
 	ms.set_plan(["imagery", "relaxation", "self_talk"])
-	ms.set_cue("Fast feet")
 	hub._show("training")
 	await _frames(5)
 	var imagery = _find_button_prefix(hub, "✓ Imagery")
@@ -1482,12 +1480,20 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 	hub._close_help()
 	_close_help_overlays(hub)
 
-	# 2. A moment waiting on the planner, answered there: the result card (what changed, in words) over the page.
+	# 2. A story beat waiting on the planner (session L3a: the people switched on for it), answered there: the result card (what
+	# changed, in words) over the page.
 	var coach: Dictionary = ms.people_for("coach")[0]
 	var ctx := {"date": game.date.duplicate(), "day": 0, "day_type": "weekday", "week": game.current_week()}
-	var q: Dictionary = ms._post(ms.storylet("mood_doubt"), coach, ctx, MS.day_no(game.date), true, {"counted": false})
+	MS.people_enabled = true
+	ms.ensure_cast(game.athlete)
+	ms._sync_people()
+	var ok_scratch = _find_button(hub, str(data.recap.ok))   # (a scratch card left open would cover these shots)
+	if ok_scratch:
+		ok_scratch.pressed.emit()
+		await _frames(3)
+	game.scratch_card = {}
+	var q: Dictionary = ms._post(ms.storylet("fam_juhannus"), ms.people_for("parent")[0], ctx, MS.day_no(game.date), false, {"beat": true, "counted": false})
 	if not q.is_empty():
-		ms._wait_for_planner(q)
 		hub._refresh_week_ui()
 		hub._show("week")
 		await _frames(6)
@@ -1498,16 +1504,20 @@ func _people_tour(main: Node, hub_in: Control) -> void:
 		await _frames(4)
 		await _shot("40d_play_week_asks")
 		hub._close_play_confirm()
-		ms.answer(str(q.id), str(q.replies[0].id))
+		ms.answer(str(q.id), "go")
 		hub._result_event = {"kind": "moment", "moment": str(q.id), "date": game.date.duplicate(), "source": "moments"}
 		hub._show_pending_event()
 		await _frames(6)
 		await _shot("40f_result_card")
 		hub._end_result_card()
-		await _frames(3)
+		hub._show("week")
+		await _frames(6)
+		await _shot("40g_beat_slots")   # (Thu-Sun with the family: the slot chips say "Cottage")
+	MS.people_enabled = false
+	ms._sync_people()
 
-	# 3. A second moment waits in the thread; a race message from the coach is there too.
-	ms._post(ms.storylet("wt_fresh"), coach, ctx, MS.day_no(game.date), true, {"counted": false})
+	# 3. A message of his that asks nothing (the feed, L3a); a race message from the coach is there too.
+	ms._post(ms.storylet("wt_first"), coach, ctx, MS.day_no(game.date), true, {"counted": false})
 	var fake_note := {"meet": "Kalevan kisat", "key": "x", "story": {"case": "pb", "line": "A new best. That is the work paying off."},
 			"result": {"place": 2, "field": 8, "time": 128.4, "pb": true, "round": "Final", "meet_key": "x"}}
 	ctx.race_note = fake_note

@@ -56,7 +56,14 @@ static func chip(info: Dictionary, icon_only: bool, on_press: Callable) -> Butto
 	var text := HabitSystem.activity_name(str(info.activity))
 	var bg := Color.TRANSPARENT
 	var inv: Dictionary = info.invite
-	if not inv.is_empty() and not bool(info.played):
+	var away: Dictionary = info.get("away", {})
+	if not away.is_empty() and not bool(info.played):   # (session L3a: a story beat's days, the confirmation camp)
+		color = Palette.PEOPLE
+		bg = Palette.PEOPLE_BG
+		icon = HabitSystem.activity_icon(str(away.activity))
+		text = str(away.chip) if str(away.chip) != "" else text
+		inv = away   # (no moon / sun marker either)
+	elif not inv.is_empty() and not bool(info.played):
 		color = Palette.PEOPLE
 		bg = Palette.PEOPLE_BG
 		icon = "party-popper"
@@ -114,14 +121,17 @@ static func picker(w: WeekSim, d: int, on_change: Callable, on_close: Callable) 
 	var u := ui()
 	var info := hs.slot_info(w, d)
 	var act := str(info.activity)
-	var edge := Palette.PEOPLE if not info.invite.is_empty() else (Palette.WARN if str(info.clash) != "" else Palette.ACCENT)
+	var edge := Palette.PEOPLE if not info.invite.is_empty() or not info.get("away", {}).is_empty() else (Palette.WARN if str(info.clash) != "" else Palette.ACCENT)
 	var title := str(u.picker_title).format({"slot": slot_label(d, true), "activity": HabitSystem.activity_name(act)})
 	var card := CalloutCard.new(edge, HabitSystem.activity_icon(act), title, _state_line(info), [])
 	card.set_meta("slot_picker", d)
+	var away: Dictionary = info.get("away", {})
 	if not info.invite.is_empty():
 		card.add_row(_invite_part(info.invite, on_change))
 	if bool(info.played):
 		card.add_row(UIKit.wrapped(str(u.picker_played), "WhyLabel"))
+	elif not away.is_empty():   # (session L3a: the beat you said yes to, or the camp, has this slot)
+		card.add_row(UIKit.wrapped(str(u.picker_away).format({"title": str(away.title)}), "BodyLabel"))
 	elif info.invite.is_empty() or not HabitSystem.going(info.invite):   # (going out: the evening is the invitation's)
 		card.add_row(_activity_buttons(hs, d, info, on_change))
 	var close := UIKit.button(str(u.picker_close), false, 0.0)
@@ -299,6 +309,90 @@ static func _day_name(date: Dictionary) -> String:
 	return str(Data.moments.day_names[Calendar.weekday(date)])
 
 
+# --- Story beats (session L3a, GDD 4.10 decision 6) ------------------------------------------------------------------------------
+
+## A story beat as a planner card: who and what, the text, each reply with its price under it (the slots it takes and what they
+## were, the relationship, a late night, grades), and what happens if you leave it.
+static func beat_card(m: Dictionary, on_answer: Callable) -> CalloutCard:
+	var ms := moments()
+	var u := ui()
+	var p: Dictionary = ms.people.get(str(m.from), {})
+	var who := StoryletSystem.person_name(p) if not p.is_empty() else StoryletSystem.thread_name(str(m.thread))
+	var title := str(u.beat_title).format({"title": str(m.beat.title), "name": who})
+	var card := CalloutCard.new(Palette.PEOPLE, "users", title, str(m.text), [])
+	card.set_meta("beat", str(m.id))
+	var col := UIKit.vbox(6)
+	var default_label := ""
+	for r in m.replies:
+		var b := UIKit.button(str(r.label), false, 0.0)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.set_meta("reply", str(r.id))
+		b.pressed.connect(func():
+			ms.answer(str(m.id), str(r.id))
+			on_answer.call(m))
+		col.add_child(b)
+		var price := UIKit.wrapped(" ".join(beat_price(m, str(r.id))), "WhyLabel")
+		price.add_theme_font_size_override("font_size", 16 if Layout.compact else 13)
+		col.add_child(price)
+		if str(r.id) == str(m.beat.get("default", "")):
+			default_label = str(r.label)
+	if default_label != "":
+		col.add_child(UIKit.wrapped(str(u.beat_leave).format({"label": default_label}), "WhyLabel"))
+	card.add_row(col)
+	return card
+
+
+## What one reply of a beat costs, honest about what the game simulates: the free-time slots it takes this week (and what they
+## were), the sender's relationship, a late night, the grades.
+static func beat_price(m: Dictionary, reply_id: String) -> Array:
+	var ms := moments()
+	var hs := system()
+	var u := ui()
+	var out := []
+	if ms == null or hs == null:
+		return out
+	var rep := ms._reply(ms.storylet(str(m.storylet)), reply_id)
+	var monday := StoryletSystem._date_of(int(m.week))
+	for r in m.replies:   # (a cost that comes later, in the reply's hint: "the camp week in June takes its evenings")
+		if str(r.id) == reply_id and str(r.get("hint", "")) != "":
+			out.append(str(r.hint).substr(0, 1).to_upper() + str(r.hint).substr(1) + ".")
+	if rep.has("slots"):
+		var days := ms.slot_days(rep.slots, monday)
+		var act := str(rep.slots.get("activity", "family"))
+		if not days.is_empty():
+			var was := []
+			for d in days:
+				var a := hs.week_slot(int(d))
+				if a != act:
+					was.append("%s %s" % [slot_label(int(d)), HabitSystem.activity_name(a).to_lower()])
+			var line := str(u.beat_slots).format({"days": day_span(days), "activity": HabitSystem.activity_name(act).to_lower()})
+			if not was.is_empty():
+				line += str(u.beat_instead).format({"list": ", ".join(was)})
+			out.append(line + ".")
+	var eff: Dictionary = rep.get("effects", {})
+	var p: Dictionary = ms.people.get(str(m.from), {})
+	if float(eff.get("relation", 0.0)) != 0.0 and not p.is_empty():
+		out.append(ms._change_line(StoryletSystem.short_name(p), float(eff.relation)) + ".")
+	if float(eff.get("sleep", 0.0)) < 0.0:
+		out.append(str(u.price_sleep_2 if float(eff.sleep) <= -2.0 else u.price_sleep_1) + ".")
+	if float(eff.get("grades", 0.0)) > 0.0:
+		out.append(str(u.price_grades))
+	if out.is_empty():
+		out.append(str(u.price_none))
+	return out
+
+
+## "Thu–Sun" for days in a row, "Mon, Wed, Fri" otherwise (weekday numbers).
+static func day_span(days: Array) -> String:
+	var names: Array = ui().day_short
+	var list := days.map(func(x): return int(x))
+	list.sort()
+	if list.size() > 2 and int(list.back()) - int(list[0]) == list.size() - 1:
+		return "%s–%s" % [names[int(list[0])], names[int(list.back())]]
+	return ", ".join(list.map(func(x): return str(names[int(x)])))
+
+
 # --- The day editor and the day's blocks -----------------------------------------------------------------------------------------
 
 ## The evening line of the day's blocks: "Friends (your habit)" / "Study (this week only)" / "A party on Friday? (an invitation)".
@@ -313,6 +407,9 @@ static func evening_text(date: Dictionary) -> String:
 	var how := str(u.habit_word)
 	if not played and Calendar.date_key(Calendar.monday_of(date)) == Calendar.date_key(Game.week_monday()) and hs.changed(d):
 		how = str(u.changed_word)
+	var away := HabitSystem.away_on(date) if not played and Calendar.date_key(Calendar.monday_of(date)) == Calendar.date_key(Game.week_monday()) else {}
+	if not away.is_empty():   # (session L3a)
+		return str(u.evening_invite).format({"title": str(away.title), "how": HabitSystem.activity_name(str(away.activity)).to_lower()})
 	if not inv.is_empty() and HabitSystem.going(inv):
 		return str(u.evening_invite).format({"title": str(inv.invite.title), "how": str(u.chip_more)})
 	return str(u.evening_line).format({"activity": HabitSystem.activity_name(hs.activity_on(date)), "how": how})

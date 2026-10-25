@@ -1,354 +1,166 @@
 {
-	"_note": "The SCHOOL's moments (session P1, GDD 4.9.3 / 4.9.5; format in README.md). Senders: school:class_teacher, school:pe_teacher (with the creation answer 'A PE teacher spotted you' the one who did: condition origin), school:counsellor (the study counsellor, opo). Shown on the School page of the People tab (user 2026-10-18). Real yläkoulu life in grades 8-9: tests (the moments read SchoolSystem's tests), the Move! fitness measurement of grade 8, the school's cross-country run, the winter sports day, the work-experience week (TET), the joint application with the counsellor, the class trip and the spring party. A `grades` reply nudges the school levels a little; nothing changes what is trained. Grades 8-9 only (lukio staff come in P2).",
+	"_note": "The SCHOOL's moments (session P1, GDD 4.9.3 / 4.9.5; format in README.md). Senders: school:class_teacher, school:pe_teacher (with the creation answer 'A PE teacher spotted you' the one who did: condition origin), school:counsellor (the study counsellor, opo). Real yläkoulu life in grades 8-9: tests (the messages read SchoolSystem's tests and report cards), the Move! fitness measurement of grade 8, the winter sports day, the joint application with the counsellor and the spring party. Session L3a (the sort, docs/L3_SORT.md, user 2026-10-25): FEED messages that ask nothing, and one INVITATION (the group work at the library). The decisions about school are the School page's and the planner's (the meet-and-tests clash, the report card's evenings), never a teacher's question. Grades 8-9 only (lukio staff come in P2).",
 	"storylets": [
 		{
-			"id": "sch_spotted", "thread": "school", "from": "school:pe_teacher", "slot": "evening", "once": true,
+			"id": "sch_spotted", "feed": true, "thread": "school", "from": "school:pe_teacher", "slot": "evening", "once": true,
+			"touches": [],
 			"when": {"origin": ["pe_teacher"], "stage": ["grade_8"], "weeks_in_career": [0, 6]},
 			"text": [
-				"I hear you're training properly at {club} now. Ever since that school cross-country I knew you had it. How is it going?",
-				"So the cross-country winner joined a club! I'm glad. Tell me how the training feels."
-			],
-			"replies": [
-				{"id": "thanks", "label": "It's great. Thanks for pushing me", "hint": "", "effects": {"relation": 4, "motivation": 2},
-					"result": "That makes my week. Keep me posted on your races.", "result_from": "sender"},
-				{"id": "hard", "label": "Harder than I thought", "hint": "", "effects": {"relation": 2},
-					"result": "Good things usually are. Hang in there.", "result_from": "sender"}
+				"I hear you're training properly at {club} now. Ever since that school cross-country I knew you had it.",
+				"So the cross-country winner joined a club! I'm glad. That makes my week."
 			]
 		},
 		{
-			"id": "sch_move", "thread": "school", "from": "school:pe_teacher", "slot": "evening", "once": true,
+			"id": "sch_move", "feed": true, "thread": "school", "from": "school:pe_teacher", "slot": "evening", "once": true,
+			"touches": ["season"],
 			"when": {"stage": ["grade_8"], "month": [11, 12]},
 			"text": [
 				"Your Move! fitness results came back from the autumn. The shuttle run: best in the whole grade. Not a surprise.",
-				"The Move! measurements are in. You beat the shuttle run record of the school. The others want a rematch."
-			],
-			"replies": [
-				{"id": "proud", "label": "Nice, I'm happy with that", "hint": "", "effects": {"relation": 2, "confidence": 1},
-					"result": "You should be. I'll put it on the wall.", "result_from": "sender"},
-				{"id": "modest", "label": "It's my sport, so...", "hint": "", "effects": {"relation": 1},
-					"result": "Still. Let the others have a small chance next time.", "result_from": "sender"}
+				"The Move! measurements are in. You beat the school's shuttle run record. The others want a rematch."
 			]
 		},
 		{
-			"id": "sch_xc", "important": true, "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 300,
-			"when": {"stage": ["grade_8", "grade_9"], "month": [9, 10], "school_day": true},
-			"text": [
-				"The schools' cross-country run is next week. Will you run for the school? Everybody expects you to win.",
-				"Cross-country day for the school team next Thursday. I've written your name down. In pencil."
-			],
-			"replies": [
-				{"id": "run", "label": "Of course I'll run", "hint": "an extra race for your legs", "effects": {"relation": 3, "motivation": 1},
-					"result": "Excellent. The trophy has been in the other school's case for too long.", "result_from": "sender"},
-				{"id": "coach", "label": "I'll ask {coach_first} first", "hint": "", "effects": {"relation": 1, "trust": 1},
-					"result": "Sensible. Let me know by Monday.", "result_from": "sender"},
-				{"id": "no", "label": "Not this year", "hint": "{from} will be disappointed", "effects": {"relation": -2},
-					"result": "Pity. The younger ones look up to you.", "result_from": "sender"}
-			]
-		},
-		{
-			"id": "sch_winter_day", "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 300,
+			"id": "sch_winter_day", "feed": true, "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 300,
+			"touches": ["season"],
 			"when": {"stage": ["grade_8", "grade_9"], "month": [2, 3], "school_day": true},
 			"text": [
-				"Winter sports day on Friday. Skiing, skating or the snowshoe trip. What do you choose?",
-				"The winter sports day is coming. The 5 km ski race or the skating? Pick one."
-			],
-			"replies": [
-				{"id": "ski", "label": "The ski race", "hint": "", "effects": {"relation": 2, "motivation": 1},
-					"result": "Bring your own skis if you have them."},
-				{"id": "skate", "label": "Skating with my friends", "hint": "", "effects": {"relation": 1, "relation_thread": {"friends": 1}, "stress": -1},
-					"result": "A calm day. Hot juice at the lean-to shelter."},
-				{"id": "snowshoe", "label": "The snowshoe trip", "hint": "", "effects": {"relation": 1, "stress": -1},
-					"result": "Quiet forest, sausages on a fire. Not bad for a school day."}
+				"Winter sports day on Friday: skiing, skating or the snowshoe trip. Bring your own skis if you have them.",
+				"The winter sports day is coming: the 5 km ski trip or the skating. Hot juice at the lean-to shelter either way."
 			]
 		},
 		{
-			"id": "sch_pe_help", "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 300,
-			"when": {"stage": ["grade_8", "grade_9"], "month": [5], "school_day": true},
-			"text": [
-				"The primary school sports day is next week. Could you help me with the running events? The little ones would love it.",
-				"I need a few big pupils to run the relay station at the 3rd graders' sports day. Are you in?"
-			],
-			"replies": [
-				{"id": "yes", "label": "Happy to help", "hint": "", "effects": {"relation": 4, "motivation": 1},
-					"result": "Twenty eight-year-olds asked for your autograph. True story.", "result_from": "sender"},
-				{"id": "no", "label": "I'm too busy", "hint": "", "effects": {"relation": -1},
-					"result": "No problem. Maybe next year.", "result_from": "sender"}
-			]
-		},
-		{
-			"id": "sch_tired", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 60,
+			"id": "sch_tired", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 60,
+			"touches": ["tired", "school"],
 			"when": {"stage": ["grade_8", "grade_9"], "school_day": true, "fatigue": [40, null]},
 			"text": [
-				"You looked very tired in class today. Is everything all right? Is the training too much?",
+				"You looked very tired in class today. Sleep matters too.",
 				"You fell asleep in the history lesson. I didn't say anything. But I noticed."
-			],
-			"replies": [
-				{"id": "honest", "label": "Training is heavy right now", "hint": "", "effects": {"relation": 2, "stress": -1},
-					"result": "Thank you for telling me. Get some sleep. And tell your coach too.", "result_from": "sender"},
-				{"id": "fine", "label": "I'm fine, just a bad night", "hint": "", "effects": {"relation": -1},
-					"result": "All right. My door is open.", "result_from": "sender"}
 			]
 		},
 		{
-			"id": "sch_test_reminder", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 30,
+			"id": "sch_test_reminder", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 30,
+			"touches": ["test", "session"],
 			"when": {"stage": ["grade_8", "grade_9"], "test_tomorrow": true, "today_tags": ["hard", "long"]},
 			"text": [
-				"Remember the {test_subject} test tomorrow. I know you had practice today, but an hour with the book helps.",
-				"{test_subject} tomorrow. Reading the summary pages tonight is enough."
-			],
-			"replies": [
-				{"id": "study", "label": "I'll read tonight", "hint": "grades ▲ a little · a late night", "effects": {"relation": 2, "grades": 2, "sleep": -1},
-					"result": "Good luck tomorrow.", "result_from": "sender"},
-				{"id": "ready", "label": "I'm ready already", "hint": "", "effects": {"relation": 1},
-					"result": "Then sleep well.", "result_from": "sender"}
+				"Remember the {test_subject} test tomorrow. I know you had a hard session today, but an hour with the book helps.",
+				"{test_subject} tomorrow. Reading the summary pages is enough."
 			]
 		},
 		{
-			"id": "sch_test_after", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 45,
-			"when": {"stage": ["grade_8", "grade_9"], "test_today": true},
-			"text": [
-				"How did the test go today? You finished early. Confident or just done?",
-				"I saw you writing until the last minute. How did it feel?"
-			],
-			"replies": [
-				{"id": "good", "label": "It went well", "hint": "", "effects": {"relation": 1, "confidence": 1},
-					"result": "Good. Results on Friday.", "result_from": "sender"},
-				{"id": "bad", "label": "Not great", "hint": "", "effects": {"relation": 1, "stress": 1},
-					"result": "One test is one test. There's always the next one.", "result_from": "sender"}
-			]
-		},
-		{
-			"id": "sch_busy_week", "thread": "school", "from": "school:class_teacher", "slot": "morning", "cooldown_days": 40,
+			"id": "sch_busy_week", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "morning", "cooldown_days": 40,
+			"touches": ["test"],
 			"when": {"stage": ["grade_8", "grade_9"], "weekday": [0], "tests_week": [3, null]},
 			"text": [
-				"A busy week: three tests. Make a plan, and don't leave it all to the night before.",
-				"This week has a lot of tests. How are you planning to fit it around training?"
-			],
-			"replies": [
-				{"id": "plan", "label": "I've made a plan", "hint": "", "effects": {"relation": 2, "stress": -1},
-					"result": "Good. That's half the work.", "result_from": "sender"},
-				{"id": "panic", "label": "Honestly, I'm stressed", "hint": "", "effects": {"relation": 2, "stress": 1},
-					"result": "Come and see me at lunch. We'll sort it out.", "result_from": "sender"}
+				"A busy week of tests. Make a plan, and don't leave it all to the night before.",
+				"This week has a lot of tests. Fit them around training as well as you can."
 			]
 		},
 		{
-			"id": "sch_absence", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 60,
-			"when": {"stage": ["grade_8", "grade_9"], "race_in_days": [2, 5], "school_day": true},
-			"text": [
-				"If you need to leave early on Friday for {meet}, your parents have to send me a message in Wilma.",
-				"Travelling to {meet}? Remember to ask for the homework of the lessons you miss."
-			],
-			"replies": [
-				{"id": "ok", "label": "I'll sort it out", "hint": "", "effects": {"relation": 2},
-					"result": "Good luck at the race!", "result_from": "sender"},
-				{"id": "forgot", "label": "Oops, I forgot to ask", "hint": "", "effects": {"relation": -1, "stress": 1},
-					"result": "Do it tonight, then.", "result_from": "sender"}
-			]
-		},
-		{
-			"id": "sch_praise", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 120,
+			"id": "sch_praise", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 120,
+			"touches": ["card"],
 			"when": {"stage": ["grade_8", "grade_9"], "card_days_ago": [2, 14], "card_change": [0.15, null]},
 			"text": [
 				"I wanted to say: your report card was really good this time. Sport and school together. Well done.",
 				"Your grades went up. I know how much you train. That's impressive."
-			],
-			"replies": [
-				{"id": "thanks", "label": "Thank you!", "hint": "", "effects": {"relation": 3, "confidence": 1},
-					"result": "Keep it up.", "result_from": "sender"},
-				{"id": "hard", "label": "It took some late nights", "hint": "", "effects": {"relation": 2},
-					"result": "Don't overdo it. Sleep matters too.", "result_from": "sender"}
 			]
 		},
 		{
-			"id": "sch_concern", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 120, "important": true,
+			"id": "sch_concern", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 120,
+			"touches": ["card"],
 			"when": {"stage": ["grade_8", "grade_9"], "card_days_ago": [2, 14], "card_change": [null, -0.2]},
 			"text": [
-				"Your grades dropped this term. Can we talk about how to balance school and training?",
-				"I'm a bit worried about your report card. Is the training taking too much time?"
-			],
-			"replies": [
-				{"id": "plan", "label": "Let's make a plan", "hint": "grades ▲ a little", "effects": {"relation": 3, "grades": 2, "stress": -1},
-					"result": "Good. Tuesday after school, my classroom.", "result_from": "sender"},
-				{"id": "handle", "label": "I can handle it", "hint": "", "effects": {"relation": -1},
-					"result": "I hope so. We'll see in the spring.", "result_from": "sender"},
-				{"id": "parents", "label": "My parents already talked to me", "hint": "", "effects": {"relation": 1, "stress": 1},
-					"result": "Then you know where we all stand.", "result_from": "sender"}
+				"Your grades dropped this term. Balancing school and training is hard. My door is open.",
+				"I'm a bit worried about your report card. The spring is a new start."
 			]
 		},
 		{
-			"id": "sch_pe_grade", "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 150,
-			"when": {"stage": ["grade_8", "grade_9"], "card_days_ago": [1, 10]},
+			"id": "sch_pe_grade", "feed": true, "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 150,
+			"touches": ["card"],
+			"when": {"stage": ["grade_8", "grade_9"], "card_days_ago": [1, 10], "card_grade": {"pe": [10, 10]}},
 			"text": [
 				"A 10 in PE, of course. But next term I want you to try the ball games properly too.",
 				"Your PE grade is the easiest one I give all year."
-			],
-			"replies": [
-				{"id": "thanks", "label": "Thanks!", "hint": "", "effects": {"relation": 2, "confidence": 1},
-					"result": "Keep the pace up.", "result_from": "sender"},
-				{"id": "balls", "label": "Ball games, really?", "hint": "", "effects": {"relation": 1},
-					"result": "Yes, really. Footwork is footwork.", "result_from": "sender"}
 			]
 		},
 		{
-			"id": "sch_homework", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 50,
-			"when": {"stage": ["grade_8", "grade_9"], "school_day": true, "weeks_in_career": [4, null]},
-			"weight": 0.7,
-			"text": [
-				"Three homework assignments missing this week. I know you train a lot. Can you catch up by Friday?",
-				"Your Swedish homework hasn't been done for a while. Is something going on?"
-			],
-			"replies": [
-				{"id": "catch", "label": "I'll catch up this week", "hint": "a late night · grades ▲ a little", "effects": {"relation": 2, "grades": 1, "sleep": -1},
-					"result": "Thank you.", "result_from": "sender"},
-				{"id": "busy", "label": "I'm just too busy", "hint": "", "effects": {"relation": -2, "grades": -1},
-					"result": "Busy is no excuse. Talk to me if you need help.", "result_from": "sender"}
-			]
-		},
-		{
-			"id": "sch_tet", "thread": "school", "from": "school:counsellor", "slot": "evening", "once": true,
-			"when": {"stage": ["grade_8"], "month": [1, 2, 3]},
-			"text": [
-				"Time to choose your TET place: two weeks of work experience in the spring. Any ideas? A sports shop, the club, a kindergarten?",
-				"Your TET weeks are coming. Where would you like to try working?"
-			],
-			"replies": [
-				{"id": "shop", "label": "The sports shop", "hint": "", "effects": {"relation": 1, "motivation": 1, "flag": "tet_sports_shop"},
-					"result": "Good choice. You'll learn about shoes, at least.", "result_from": "sender"},
-				{"id": "club", "label": "The club office", "hint": "", "effects": {"relation": 1, "trust": 1, "flag": "tet_club"},
-					"result": "I'll call {club}. They'll be happy to have you.", "result_from": "sender"},
-				{"id": "kids", "label": "A kindergarten", "hint": "", "effects": {"relation": 2, "flag": "tet_kindergarten"},
-					"result": "Lovely. Prepare to be very tired.", "result_from": "sender"}
-			]
-		},
-		{
-			"id": "sch_counsellor_intro", "thread": "school", "from": "school:counsellor", "slot": "evening", "once": true,
+			"id": "sch_counsellor_intro", "feed": true, "thread": "school", "from": "school:counsellor", "slot": "evening", "once": true,
+			"touches": ["application"],
 			"when": {"stage": ["grade_9"], "month": [9, 10]},
 			"text": [
-				"Grade 9: the year of the joint application. Let's meet in October and talk about your options. Sports lukio, general lukio, vocational?",
-				"Hi {name}, I'm booking talks with every ninth grader. You do athletics, I hear. Have you looked at the sports lukio options?"
-			],
-			"replies": [
-				{"id": "sports", "label": "I'm interested in a sports lukio", "hint": "", "effects": {"relation": 2, "motivation": 1, "flag": "wants_sports_lukio"},
-					"result": "Then your grade average matters. Most need at least 7-7.5. We'll look at your grades.", "result_from": "sender"},
-				{"id": "general", "label": "A general lukio, I think", "hint": "", "effects": {"relation": 2, "flag": "wants_general_lukio"},
-					"result": "A good plan. We'll check the averages they asked for last year.", "result_from": "sender"},
-				{"id": "dunno", "label": "No idea yet", "hint": "", "effects": {"relation": 1, "stress": 1},
-					"result": "That's normal. That's why we talk.", "result_from": "sender"}
+				"Grade 9: the year of the joint application. I'm booking a talk with you about your options: a sports lukio, a general lukio or vocational school.",
+				"Hi {name}, I'm booking talks with every ninth grader. You do athletics, I hear: the sports lukio options are worth a look."
 			]
 		},
 		{
-			"id": "sch_counsellor_grades", "thread": "school", "from": "school:counsellor", "slot": "evening", "once": true,
-			"when": {"stage": ["grade_9"], "month": [12, 1], "flags": ["wants_sports_lukio"], "card_avg": [null, 7.6]},
+			"id": "sch_counsellor_grades", "feed": true, "thread": "school", "from": "school:counsellor", "slot": "evening", "once": true,
+			"touches": ["application", "card"],
+			"when": {"stage": ["grade_9"], "month": [12, 1], "card_avg": [null, 7.6]},
 			"text": [
-				"Your average is close to the limit for the sports lukiot. This spring's grades count. Can you push a bit?",
-				"About the application: your sport points look good, but the grade average could decide it. Let's talk."
-			],
-			"replies": [
-				{"id": "push", "label": "I'll push this spring", "hint": "grades ▲ a little · stress ▲", "effects": {"relation": 3, "grades": 2, "stress": 1},
-					"result": "Good. Focus on the subjects where you are close to the next grade.", "result_from": "sender"},
-				{"id": "backup", "label": "What's my backup?", "hint": "", "effects": {"relation": 2, "stress": -1},
-					"result": "A general lukio here, and you keep training with your club. Many do.", "result_from": "sender"}
+				"Your average is close to the limit for the sports lukiot. This spring's grades count.",
+				"About the application: your sport points look good, but the grade average could decide it."
 			]
 		},
 		{
-			"id": "sch_counsellor_window", "thread": "school", "from": "school:counsellor", "slot": "morning", "once": true,
+			"id": "sch_counsellor_window", "feed": true, "thread": "school", "from": "school:counsellor", "slot": "morning", "once": true,
+			"touches": ["application"],
 			"when": {"stage": ["grade_9"], "app": ["open"]},
 			"text": [
-				"The joint application is open! Up to seven wishes, best first. Have you made your list on the School page?",
+				"The joint application is open! Up to seven wishes, the one you want most first.",
 				"Reminder: the application window is open now. Put the place you want most first, not the one you think you'll get."
-			],
-			"replies": [
-				{"id": "done", "label": "Working on it", "hint": "", "effects": {"relation": 1},
-					"result": "Good. Ask me if you're unsure about the order.", "result_from": "sender"},
-				{"id": "help", "label": "Can you check my list?", "hint": "", "effects": {"relation": 3, "stress": -1},
-					"result": "Of course. Bring it on Wednesday.", "result_from": "sender"}
 			]
 		},
 		{
-			"id": "sch_class_trip", "thread": "school", "from": "school:class_teacher", "slot": "evening", "once": true,
-			"when": {"stage": ["grade_9"], "month": [4, 5]},
-			"text": [
-				"The class trip! We're thinking of two days in Tallinn, or a day at Linnanmäki. You get a vote.",
-				"The class trip money from the kiosk sales is enough for an overnight trip. Vote: Tallinn or a cottage weekend?"
-			],
-			"replies": [
-				{"id": "tallinn", "label": "Tallinn!", "hint": "a weekend away", "effects": {"relation": 2, "relation_thread": {"friends": 2}, "motivation": 2, "sleep": -1},
-					"result": "Tallinn won. The ferry, the old town, and nobody slept."},
-				{"id": "cottage", "label": "A cottage weekend", "hint": "", "effects": {"relation": 2, "relation_thread": {"friends": 2}, "motivation": 1},
-					"result": "Sauna, the lake, and the whole class together one last time."}
-			]
-		},
-		{
-			"id": "sch_spring_party", "dated": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 300,
+			"id": "sch_spring_party", "feed": true, "dated": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 300,
+			"touches": ["season"],
 			"when": {"stage": ["grade_8", "grade_9"], "days_to": {"school_end": [1, 4]}},
 			"text": [
 				{"text": "The spring party is on Saturday. Then summer. You've done well this year. See you in August.", "when": {"stage": ["grade_8"]}},
-				{"text": "Your last spring party at this school. I've enjoyed having you in my class. Remember us when you're famous.", "when": {"stage": ["grade_9"]}}
-			],
-			"replies": [
-				{"id": "thanks", "label": "Thank you for everything", "hint": "", "effects": {"relation": 4, "motivation": 1},
-					"result": "Have a wonderful summer.", "result_from": "sender"},
-				{"id": "summer", "label": "Summer, finally!", "hint": "", "effects": {"relation": 1, "stress": -2},
-					"result": "Ha! Enjoy it.", "result_from": "sender"}
+				{"text": "Your last spring party here. I've enjoyed having you in my class. Remember us when you're famous.", "when": {"stage": ["grade_9"]}}
 			]
 		},
 		{
-			"id": "sch_group_work", "important": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 60,
+			"id": "sch_group_work", "thread": "school", "from": "school:class_teacher", "slot": "evening", "cooldown_days": 60,
+			"touches": ["evening", "school"],
 			"invite": {"days": [3], "activity": "study", "go": ["yes"], "title": "Group work at the library?", "chip": "Library?"},
 			"when": {"stage": ["grade_8", "grade_9"], "school_day": true},
 			"text": [
-				"Your group's history project is due on Friday. The others say they can only meet on Thursday evening. Can you be there?",
-				"The biology group work: your group is waiting for your part. Thursday evening, the library?"
+				"Your group's history project is due on Friday. The others say they can only meet on {weekday} evening. Can you be there?",
+				"The biology group work: your group is waiting for your part. {weekday} evening, the library?"
 			],
 			"replies": [
 				{"id": "yes", "label": "I'll be there", "hint": "a late night · grades ▲ a little", "effects": {"relation": 2, "grades": 1, "sleep": -1, "relation_thread": {"friends": 1}},
-					"result": "The project got done. Mostly by you, the others say.", "result_from": "sender"},
+					"result": "The project got done, late. Mostly by you, the others say.", "result_from": "sender"},
 				{"id": "online", "label": "I'll do my part online", "hint": "", "effects": {"relation": 1},
 					"result": "Fine, as long as it's on time.", "result_from": "sender"},
-				{"id": "no", "label": "I have training", "hint": "grades ▼ a little", "effects": {"relation": -2, "grades": -1},
+				{"id": "no", "label": "I can't that evening", "hint": "grades ▼ a little", "effects": {"relation": -2, "grades": -1},
 					"result": "Your group will not be pleased.", "result_from": "sender"}
 			]
 		},
 		{
-			"id": "sch_swedish_oral", "thread": "school", "from": "school:class_teacher", "slot": "evening", "once": true,
+			"id": "sch_swedish_oral", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "once": true,
+			"touches": ["season"],
 			"when": {"stage": ["grade_9"], "month": [3, 4]},
 			"text": [
-				"The Swedish oral exam is next week. Five minutes about your hobby. Easy for you: talk about running!",
+				"The Swedish oral exam is next week. Five minutes about your hobby. Easy for you: talk about running.",
 				"Oral Swedish next week. Prepare a short talk about something you love. I wonder what you'll pick."
-			],
-			"replies": [
-				{"id": "prepare", "label": "I'll prepare properly", "hint": "grades ▲ a little", "effects": {"relation": 2, "grades": 1, "confidence": 1},
-					"result": "\"Jag springer 800 meter.\" Your teacher looked very pleased."},
-				{"id": "wing", "label": "I'll improvise", "hint": "", "effects": {"stress": 1},
-					"result": "You said 'löpning' eleven times. It went fine. Mostly."}
 			]
 		},
 		{
-			"id": "sch_floorball", "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 150,
+			"id": "sch_floorball", "feed": true, "thread": "school", "from": "school:pe_teacher", "slot": "evening", "cooldown_days": 150,
+			"touches": ["season"],
 			"when": {"stage": ["grade_8", "grade_9"], "month": [11, 12, 1, 2, 3], "school_day": true},
 			"text": [
 				"Floorball tournament in PE next week. You're one of the captains. Pick your team wisely.",
-				"Next week in PE: the orienteering course round the school. I'd like you to set it with me. Interested?"
-			],
-			"replies": [
-				{"id": "yes", "label": "Sounds fun", "hint": "", "effects": {"relation": 3, "relation_thread": {"friends": 1}, "motivation": 1},
-					"result": "Good. The others already know who they want to be with."},
-				{"id": "meh", "label": "Do I have to?", "hint": "", "effects": {"relation": -1},
-					"result": "Yes. PE is still a school subject.", "result_from": "sender"}
+				"Next week in PE: the orienteering course round the school. I'd like you to help me set it."
 			]
 		},
 		{
-			"id": "sch_counsellor_stress", "thread": "school", "from": "school:counsellor", "slot": "evening", "cooldown_days": 120,
+			"id": "sch_counsellor_stress", "feed": true, "thread": "school", "from": "school:counsellor", "slot": "evening", "cooldown_days": 120,
+			"touches": ["tired"],
 			"when": {"stage": ["grade_8", "grade_9"], "mood": {"stress": ["stressed", "overwhelmed"]}},
 			"text": [
-				"Your class teacher said you look tired and stressed. Do you want to come and talk? No forms, just talking.",
-				"Hi, I'm checking in with some pupils who have a lot going on. My door is open on Wednesdays."
-			],
-			"replies": [
-				{"id": "talk", "label": "Yes, I'd like that", "hint": "", "effects": {"relation": 4, "stress": -2},
-					"result": "Wednesday at twelve. We'll look at your week together.", "result_from": "sender"},
-				{"id": "fine", "label": "I'm OK, thanks", "hint": "", "effects": {"relation": 1},
-					"result": "All right. The offer stands.", "result_from": "sender"}
+				"Your class teacher said you look tired and stressed. My door is open: no forms, just talking.",
+				"I'm checking in with some pupils who have a lot going on. My door is open on Wednesdays."
 			]
 		}
 	]

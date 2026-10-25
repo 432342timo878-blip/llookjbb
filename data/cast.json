@@ -63,6 +63,8 @@
 	"mood_scale": 0.4,
 	"sleep": {"life_load_per_point": 0.75},
 	"grades": {"grades_per_point": 0.05},
+	"warmth": {"_note": "Session L3a: a family that is against the sport counts good signs (counter family_warmth) from what happens, not from replies: a PB, a report card with an academic average of at least card_avg. At 3 it comes round (fam_against_softens, a feed message that changes the attitude).", "attitudes": ["against"], "pb": 1, "card": 1, "card_avg": 8.0},
+	"away": {"_note": "Session L3a: weeks away that take the free-time slots when they come (StoryletSystem.away_on). The confirmation camp of the flag chosen in February (the story beat fam_rippi_choice): `days` days from its start (Cast.occurrence), the slots `activity` with the chip `chip`. The day confirmation school (rippi_day) takes no slots.", "rippileiri": {"flags": ["rippi_june", "rippi_july"], "days": 7, "activity": "friends", "chip": "Camp", "title": "the confirmation camp"}},
 	"life": {
 		"_note": "Events of the year for the moments' conditions days_to / days_after {event: [min, max]} (0 = today). kind fixed = month + day every year; juhannus = midsummer eve (the Friday between 19 and 25 June); easter = Easter Sunday; school_start / school_end = the first / last school day of the school year (SchoolCalendar, the athlete's town); birthday = the athlete's; meet = a meet of competitions.json by id (the nearest year it is held); rippileiri = the confirmation camp week the player chose (camps: the Monday it starts, `nth` Monday of `month` in the year the athlete turns 15; the flag of the choice names it).",
 		"vappu": {"kind": "fixed", "month": 4, "day": 30},

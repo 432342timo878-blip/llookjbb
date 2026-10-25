@@ -23,6 +23,7 @@ signal changed                       # a card was answered: the hub refreshes th
 signal report_pressed                # "Last week in full"
 signal card_pressed(id: String)      # a race strap: open its "what this race did" card (session L2a)
 signal moment_answered(e: Dictionary)   # a waiting moment was answered: the hub shows what it changed (MomentEventPanel.result)
+signal messages_pressed         # session L3a: the quiet line "3 new messages · Mum, Eino" opens the People tab
 
 const PC_LEFT := 268.0
 const PC_RIGHT := 290.0
@@ -278,6 +279,7 @@ func _last_week_box() -> Control:
 		var line := _coach_line()
 		if line != null:
 			box.add_child(line)
+		_add_messages_line(box)
 		return box
 	box.add_child(_head(str(u.last_week), range_text(r.monday)))
 	box.add_child(_done_row(r))
@@ -290,6 +292,7 @@ func _last_week_box() -> Control:
 	var line := _coach_line()
 	if line != null:
 		box.add_child(line)
+	_add_messages_line(box)
 	var full := UIKit.button(str(u.report_button), false, 0.0)
 	full.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	full.pressed.connect(func(): report_pressed.emit())
@@ -475,6 +478,50 @@ static func _coach_line() -> Control:
 	col.add_child(UIKit.wrapped(text, "BodyLabel"))
 	row.add_child(col)
 	return row
+
+
+## Session L3a (the quiet feed, user 2026-10-25): one quiet line "3 new messages · Mum, Eino" when people wrote; a tap opens the
+## People tab. Messages change nothing, so they are not rows of the week report.
+func _add_messages_line(box: Control) -> void:
+	var b := messages_line()
+	if b != null:
+		b.pressed.connect(func(): messages_pressed.emit())
+		box.add_child(b)
+
+
+static func messages_line() -> Button:
+	var ms := PeopleUI.system()
+	if ms == null:
+		return null
+	var who := ms.unread_senders()
+	if who.is_empty():
+		return null
+	var n := 0
+	for x in who:
+		n += int(x.count)
+	var u := ui()
+	var names := who.slice(0, 3).map(func(x): return str(x.name))
+	var text := str(u.messages_one if n == 1 else u.messages_many).format({"n": n, "names": ", ".join(names)})
+	if who.size() > 3:
+		text += str(u.messages_more)
+	var b := Button.new()
+	b.theme_type_variation = "FlatButton"
+	b.custom_minimum_size = Vector2(0, 44)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.set_meta("messages_line", n)
+	var row := UIKit.hbox(8)
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(Icons.rect("message-circle", 14.0, Palette.PEOPLE))
+	var l := UIKit.label(text, "WhyLabel")
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(l)
+	row.add_child(Icons.rect("chevron-right", 14.0, Palette.TEXT_FAINT))
+	b.add_child(row)
+	return b
 
 
 ## A round avatar with an initial.
@@ -704,7 +751,11 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 				if slot_open() != Calendar.weekday(StoryletSystem._date_of(int(m.slot_day))):   # (the open picker has it)
 					grid.add_child(HabitsUI.invite_card(m, func(): changed.emit()))
 		for m in ms.waiting():
-			if not m.has("invite"):
+			if m.has("beat"):   # (session L3a: a story beat with each reply's price)
+				grid.add_child(HabitsUI.beat_card(m, func(x: Dictionary):
+					moment_answered.emit({"kind": "moment", "moment": str(x.id), "date": Game.date.duplicate(), "source": "moments"})
+					changed.emit()))
+			elif not m.has("invite"):
 				grid.add_child(_moment_card(m))
 	for c in grid.get_children():
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1107,6 +1158,7 @@ func _last_week_phone() -> Control:
 		var first_line := _coach_line()
 		if first_line != null:
 			box.add_child(first_line)
+		_add_messages_line(box)
 		return box
 	var c: Dictionary = r.get("count", {})
 	var note := str(u.done_short).format({"done": int(c.get("done", 0)), "planned": int(c.get("planned", 0))}) if not c.is_empty() else ""
@@ -1120,6 +1172,7 @@ func _last_week_phone() -> Control:
 	var line := _coach_line()
 	if line != null:
 		box.add_child(line)
+	_add_messages_line(box)
 	var full := UIKit.button(str(u.report_button), false, 0.0)
 	full.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	full.pressed.connect(func(): report_pressed.emit())

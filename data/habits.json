@@ -69,9 +69,9 @@
   "school_line": "Your evenings: {study} study slots a week · {grades}"
  },
  "invites": {
-  "_note": "Invitations (GDD 4.10 decision 6 'Invitations land in the slots'): a storylet with an `invite` part (data/storylets/README.md) is posted on Sunday evening, when the planner opens, into a slot of the coming week whose day fits its `when` (checked for that day: `race_tomorrow` = the day after the slot). At most max_per_week a week, with chance `chance` a week, and like the moments that waited for Sunday it needs the week's stop token (so the planner's cards don't grow). Go = the slot becomes the invitation (its `activity`) and its reply's effects come on that evening (a `sleep` effect = a late night for the next day); Stay home = the slot keeps its activity, the reply's effects come that evening too; unanswered by that evening it passes as 'you didn't answer'. An invitation is not one of Play week's 'choices waiting' (user 2026-10-24): it never makes Play week ask.",
-  "chance": 0.7,
-  "max_per_week": 1
+  "_note": "Invitations (GDD 4.10 decision 6 'Invitations land in the slots'): a storylet with an `invite` part (data/storylets/README.md) is posted on Sunday evening, when the planner opens, into a slot of the coming week whose day fits its `when` (checked for that day: `race_tomorrow` = the day after the slot). At most max_per_week a week (session L3a, user 2026-10-25: 2), the first with chances[0], a second with chances[1]; since L3a an invitation no longer uses the week's stop token (that is the story beats'), never lands on a day a story beat takes, and the same storylet never twice in a week. Go = the slot becomes the invitation (its `activity`) and its reply's effects come on that evening (a `sleep` effect = a late night for the next day); Stay home = the slot keeps its activity, the reply's effects come that evening too; unanswered by that evening it passes as 'you didn't answer'. An invitation is not one of Play week's 'choices waiting' (user 2026-10-24): it never makes Play week ask.",
+  "chances": [0.7, 0.35],
+  "max_per_week": 2
  },
  "ui": {
   "_note": "Every text the slots show: the planner's chips and picker, the invitation card, the day editor's evening, the Season tab's habits, the School page's line.",
@@ -107,6 +107,12 @@
   "evening_invite": "{title} ({how})",
   "editor_head": "FREE TIME",
   "school_button": "Change my habits",
-  "chip_more": "invitation"
+  "chip_more": "invitation",
+  "picker_away": "This slot is {title}: you said yes to it.",
+  "beat_title": "{title} · {name}",
+  "beat_slots": "{days} {activity}",
+  "beat_instead": " (instead of {list})",
+  "beat_leave": "If you leave it: \"{label}\" when the week starts.",
+  "day_short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
  }
 }

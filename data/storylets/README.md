@@ -5,10 +5,32 @@ Every `.json` file in this folder is read by `Data` (sorted by name) and holds `
 them, never a normal career. Rules, rates and shared texts are in `data/moments.json`; the engine is
 `scripts/core/storylet_system.gd` (GDD 4.9.5). Check with `tools/storylet_check.gd`.
 
+## The three kinds (session L3a, GDD 4.10 decision 6; the sort in `docs/L3_SORT.md`)
+
+Every real storylet is one of:
+- **feed** (`"feed": true`, no `replies`): a message that asks nothing. It never stops Play week and never waits for an answer;
+  the day picks 2-4 a week (`moments.json rate`). It changes no mood or relationship; its own `effects` may only set story state
+  (`moments.json effects.story`: a flag, the sender's memory, the family's attitude). Its texts ask no question (no "?").
+- **invitation** (`invite`, below): lands in a free-time slot on Sunday; Go / Stay home with its visible price.
+- **story beat** (`beat`, below): a rare real choice, a card on the Sunday planner for the coming week; its replies' `slots` take
+  free-time slots of that week.
+A storylet with replies and none of these (the old `important` moments that waited for the planner) is for the test moments only.
+
+**Content never contradicts the player.** Every real storylet lists what it touches in `touches` (ids in `moments.json touches`:
+race, big_meet, test, card, application, injury, illness, session, tired, evening, away, rippi, family_attitude, rival, season,
+school), and has a condition that guards each one (the touch's `needs`, `topics`, `kinds` or `flag_prefix`). A word in a text or a
+result that means a touch (the touch's `words`) must be listed. No text, hint or result may promise what the player cannot do or name
+the game's screens (`moments.json never`); a reply's result that narrates a late night or studying needs that reply's `sleep` /
+`grades` effect. `tools/storylet_check.gd` checks all of this.
+
 ## A storylet
 
 | Field | Meaning |
 |---|---|
+| `feed` | (session L3a) true = a message that asks nothing (no replies); see above |
+| `effects` | (session L3a, feed only) story state the message sets: `flag`, `unflag`, `memory`, `forget`, `attitude`, `count` |
+| `beat` | (session L3a) a **story beat**: `{"title": "...", "chip": "the slot chip's word", "default": "the reply id taken when it is left open"}`. Never picked by the day: on Sunday evening, when the planner opens, one may come for the coming week (the week's stop token: at most one a week); its `when` is checked for the week's first day to play (Monday). It is a card on the planner with each reply's price (the slots it takes and what they were, the relationship, a late night, grades; a reply's `hint` is shown first, for a cost that comes later). Left open, its `default` is taken when Monday is played ("You didn't answer: …") |
+| `touches` | (session L3a) what the storylet touches (see above), `[]` when nothing |
 | `id` | unique id (across all files) |
 | `thread` | `coach` / `family` / `friends` / `group` / `school` / `rivals` (the threads of `moments.json`) |
 | `from` | who writes: `coach` (the head coach), `teammate` (anyone in the coach's training group), `teammate:<role>` (e.g. `teammate:joker`, roles in `coaching.json club.group.roles`). Session P1 (the cast, `data/cast.json`): `partner` / `partner:<role>` (the close training partners), `family` (anyone in the family), `parent` / `parent:mum` / `parent:dad` / `parent:athlete` (the parent who ran), `sibling`, `best_friend`, `friend` (the other friends), `friends` (any friend), `school` / `school:class_teacher` / `school:pe_teacher` / `school:counsellor`, `rival`. No such person = the moment can't come. |
@@ -17,7 +39,7 @@ them, never a normal career. Rules, rates and shared texts are in `data/moments.
 | `weight` | how likely it is picked among the moments that fit (default 1) |
 | `cooldown_days` | at least this many days before it can come again (default 14) |
 | `once` | comes only once in a career |
-| `important` | the reply changes something: Play week stops for it with the setting *Important only* (it then needs a stop token, `moments.json rate`) |
+| `important` | (test moments only since L3a) the reply changes something: it needs a stop token and waits for the planner (L1a) |
 | `expires_days` | days it waits for an answer (default `moments.json expires_days`); then "you didn't answer" |
 | `chain_only` | comes only as a chain follow-up (a reply's `next`) |
 | `dated` | (session P1) a moment of a day of the year (Christmas Eve, vappu, the birthday, the camp week): it comes whenever it fits, before the day's roll, inside the day's and the week's limits (it counts in the 3-5) |
@@ -30,7 +52,10 @@ them, never a normal career. Rules, rates and shared texts are in `data/moments.
 
 ## A reply
 
-`{"id", "label", "hint", "effects", "result", "rule", "next", "when"}`: `label` is the button, `hint` the cost hint under it
+`{"id", "label", "hint", "effects", "result", "rule", "next", "when", "slots"}`: `slots` (session L3a, a story beat's reply) =
+`{"days": [weekday numbers] or "break" (the days of that week inside a school break), "activity": "family" / "friends" / ...}`:
+saying yes takes those free-time slots of the beat's week (the chip shows the beat's `chip`; the picker says whose slot it is).
+`label` is the button, `hint` the cost hint under it
 ("tired tomorrow", "{from} will remember"), `result` the line shown after, `rule` the standing-order text ("Always say no
 to weekday parties before a hard session"), `next` a chain follow-up `{"id": storylet, "days": [min, max]}`, `when` makes the
 reply appear only when its conditions hold (at least two replies must remain).
@@ -74,6 +99,11 @@ ids: autumn, christmas, winter, easter, public, summer] · `stage` [school stage
 `card_days_ago` / `card_avg` / `card_change` [min, max] (the latest report card, its academic average, the change from the
 card before) · `app` [before, open, locked, done] (the joint application of grade 9) · `app_result` [first, other, none] ·
 `origin` [creation answer ids: pe_teacher, friends, parents, old_coach, tv, international, own] · `old_sport` true / false.
+
+Session L3a (never contradict): `next_level` [meet levels: local, district, national, elite, international] (the next entered
+race) · `card_grade` {"pe": [min, max]} (a subject's grade on the latest report card) · `evening` [activities] (the free-time
+slot of that day as planned: study / rest / friends / family) · `break_week` [break ids] (a day of that Mon-Sun week is in the
+break).
 **About the sender** (checked per person): `relation`, `memory` ["name", "!name"], `memory_days` {"name": [min, max]},
 `trait` [friend traits], `rival_race` ["beat", "lost"] (the race that just ended), `rival_streak` / `rival_wins` [min,
 max] (their / your wins in a row).

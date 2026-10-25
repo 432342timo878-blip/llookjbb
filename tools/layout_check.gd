@@ -898,23 +898,10 @@ func _people_views(main: Node, game, tag: String) -> void:
 	await _frames(6)
 	await _shot("%s_planner_coach_line" % tag)
 	_check_overflow(hub, "%s planner_coach_line" % tag)
-	# A moment waiting on the planner, answered there: the result card (what changed, in words) over the page.
+	# (Session L3a: his "how are you?" and week questions are gone; a story beat's card and its result card are in _cast_views.)
 	ctx.day = 0
-	var mm: Dictionary = ms._post(ms.storylet("mood_doubt"), coach, ctx, today, true, {"counted": false})
-	if not mm.is_empty():
-		ms._wait_for_planner(mm)
-		hub._show("week")
-		await _frames(6)
-		ms.answer(str(mm.id), str(mm.replies[0].id))
-		hub._result_event = {"kind": "moment", "moment": str(mm.id), "date": game.date.duplicate(), "source": "moments"}
-		hub._show_pending_event()
-		await _frames(6)
-		await _shot("%s_result_card" % tag)
-		_check_overflow(hub, "%s result_card" % tag)
-		hub._end_result_card()
-		await _frames(3)
-	# A moment waiting (not a stop) and the message after a race.
-	ms._post(ms.storylet("wt_fresh"), coach, ctx, today, true, {"counted": false})
+	# A message of his that asks nothing (the feed) and the message after a race.
+	ms._post(ms.storylet("wt_first"), coach, ctx, today, true, {"counted": false})
 	ctx.race_note = {"meet": "Kalevan kisat", "key": "x", "story": {"case": "pb", "line": "A new best. That is the work paying off."},
 			"result": {"place": 2, "field": 8, "time": 128.4, "pb": true, "round": "Final", "meet_key": "x"}}
 	ms._post_race_note(ctx, today)
@@ -974,10 +961,9 @@ func _cast_views(main: Node, game, tag: String) -> void:
 	var ctx := {"date": game.date.duplicate(), "day": 2, "day_type": "weekday", "week": game.current_week()}
 	var today: int = MS.day_no(game.date)
 	var parent: Dictionary = ms.people_for("parent")[0]
-	# Session L1a: a family moment that matters waits on the Sunday planner as a card (no stop); answered there, the result card.
-	var fm: Dictionary = ms._post(ms.storylet("fam_card_down"), parent, ctx, today, false, {"counted": false})
-	if not fm.is_empty() and not bool(fm.get("planner", false)):
-		ms._wait_for_planner(fm)
+	# Session L3a: a story beat waits on the Sunday planner as a card with each reply's price (no stop); answered there, the result
+	# card, and its days' slots show the beat's chip.
+	var fm: Dictionary = ms._post(ms.storylet("fam_juhannus"), parent, ctx, today, false, {"beat": true, "counted": false})
 	hub._refresh_week_ui()
 	hub._show("week")
 	await _frames(6)
@@ -986,15 +972,19 @@ func _cast_views(main: Node, game, tag: String) -> void:
 	await _shot("%s_cast_planner_card" % tag)
 	_check_overflow(hub, "%s cast_planner_card" % tag)
 	if not fm.is_empty():
-		ms.answer(str(fm.id), "promise")
+		ms.answer(str(fm.id), "go")
 		hub._result_event = {"kind": "moment", "moment": str(fm.id), "date": game.date.duplicate(), "source": "moments"}
 		hub._show_pending_event()
 		await _frames(6)
 		await _shot("%s_cast_result" % tag)
 		_check_overflow(hub, "%s cast_result" % tag)
 		hub._end_result_card()
-		await _frames(3)
-	for pair in [["fam_shoes", "parent"], ["fr_gaming", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_test_after", "school:class_teacher"]]:
+		hub._show("week")
+		await _frames(6)
+		await _shot("%s_cast_beat_slots" % tag)
+		_check_overflow(hub, "%s cast_beat_slots" % tag)
+	# Messages that ask nothing (the feed) in every thread.
+	for pair in [["fam_race_good", "parent"], ["fr_why_running", "best_friend"], ["gr_racer", "partner"], ["rv_first", "rival"], ["sch_busy_week", "school:class_teacher"]]:
 		var who: Array = ms.people_for(str(pair[1]))
 		if not who.is_empty():
 			ms._post(ms.storylet(str(pair[0])), who[0], ctx, today, true, {"counted": false})
@@ -1286,7 +1276,6 @@ func _mind_views(main: Node, game, tag: String) -> void:
 	_check_overflow(hub, "%s mind_overview_alone" % tag)
 	SG.enabled = was
 	ms.set_plan(["imagery", "relaxation", "self_talk"])
-	ms.set_cue("Fast feet")
 	hub._show("training")
 	await _frames(5)
 	var imagery = _find_button_prefix(hub, "✓ Imagery")   # (on: all three kinds are in the plan)

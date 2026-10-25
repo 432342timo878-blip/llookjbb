@@ -340,13 +340,16 @@ func _place_items(year: int, factor: float) -> Array:
 	return out
 
 
-## The HABIT goal: sessions done / days trained through a warning / races, by his personality.
+## The HABIT goal: days trained through a warning / races, by his personality. (Session L3a cut "do 92 % of the sessions": it
+## counted every day the coach or an injury changed as done, so it was always met; only goals counted honestly stay.)
 func _process_options(year: int, pick: int) -> Dictionary:
 	var p: Dictionary = cfg().process
-	var measure := str(p.by_voice.get(Coaches.id_of(Game.athlete), "sessions"))
+	var measure := str(p.by_voice.get(Coaches.id_of(Game.athlete), p.fallback))
+	if not p.kinds.has(measure):
+		measure = str(p.fallback)
 	var kind: Dictionary = p.kinds[measure]
 	if kind.has("max_age") and Standards.age_in(Game.athlete, year + 1) > int(kind.max_age):
-		measure = "sessions"
+		measure = str(p.fallback)
 		kind = p.kinds[measure]
 	var options := []
 	for i in kind.levels.size():
@@ -414,7 +417,7 @@ func _say_set(year: int) -> void:
 
 # --- Goal texts -------------------------------------------------------------------------------------------------------
 
-## "Run 2:12.00 or faster by 31 Oct 2027" / "Finish in the top 8 at Nuorten SM 14-15" / "Do 85 % of the sessions in your plan".
+## "Run 2:12.00 or faster by 31 Oct 2027" / "Finish in the top 8 at Nuorten SM 14-15" / "Race at least 5 times".
 static func goal_text(g: Dictionary, year: int) -> String:
 	var text := _uc_first(str(g.label))
 	if str(g.sub) in ["time", "standard"]:
@@ -457,11 +460,10 @@ func progress_text(g: Dictionary, year: int) -> String:
 
 func _count_note(g: Dictionary, year: int) -> String:
 	var c: Dictionary = counts.get(year, {"planned": 0, "done": 0, "through": 0, "races": 0})
-	var kind: Dictionary = cfg().process.kinds[str(g.sub)]
+	var kind: Dictionary = cfg().process.kinds.get(str(g.sub), {})
+	if kind.is_empty():
+		return str(cfg().ui.retired)
 	match str(g.sub):
-		"sessions":
-			var share := roundi(100.0 * float(c.done) / float(c.planned)) if int(c.planned) > 0 else 100
-			return str(kind.count_note).format({"done": int(c.done), "planned": int(c.planned), "share": share})
 		"limits":
 			return str(kind.count_note).format({"done": int(c.through)})
 	return str(kind.count_note).format({"done": int(c.races)})
@@ -564,10 +566,6 @@ func _close_if_over(ctx: Dictionary, year: int) -> void:
 			"time", "standard":
 				ok = best > 0.0 and best <= float(g.time) + 0.0001
 				detail = str(rd.time).format({"best": Calendar.format_time(best)}) if best > 0.0 else str(rd.time_none)
-			"sessions":
-				var share := 100.0 * float(c.done) / float(c.planned) if int(c.planned) > 0 else 100.0
-				ok = share >= float(g.n)
-				detail = str(rd.process_sessions).format({"done": int(c.done), "planned": int(c.planned)})
 			"limits":
 				ok = int(c.through) <= int(g.n)
 				detail = str(rd.process_limits).format({"done": int(c.through)})
@@ -721,6 +719,9 @@ func from_dict(d: Dictionary) -> void:
 				g.place = int(g.place)
 			if not g.met_on.is_empty():
 				g.met_on = Game.int_date(g.met_on)
+			if str(g.get("sub", "")) == "sessions" and str(g.status) == "open":   # (session L3a: the habit goal is cut)
+				g.status = "void"
+				g.detail = str(cfg().ui.retired)
 		if not r.est.is_empty() and r.est.has("peak"):
 			r.est.peak = Game.int_date(r.est.peak)
 		seasons[int(y)] = r
@@ -739,6 +740,12 @@ func from_dict(d: Dictionary) -> void:
 					op.n = int(op.n)
 				if op.has("place"):
 					op.place = int(op.place)
+				if str(op.get("sub", "")) == "sessions":   # (session L3a: an open offer's habit levels become the honest fallback)
+					var fb := str(cfg().process.fallback)
+					var levels: Array = cfg().process.kinds[fb].levels
+					op.sub = fb
+					op.n = int(levels[clampi(int(op.get("level", 0)), 0, levels.size() - 1)])
+					op.label = process_label(fb, int(op.n))
 		offers[int(y)] = o
 	lean = int(d.get("lean", 0))
 	counts = {}

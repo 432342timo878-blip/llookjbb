@@ -881,11 +881,6 @@ func _show_decision(d: Dictionary) -> void:
 	head.add_child(help)
 	box.add_child(head)
 	box.add_child(UIKit.wrapped(d.text, ""))
-	var cue := MindUI.cue_text()   # the cue word of the mental plan's self-talk (session M1)
-	if cue != "":
-		var cue_label := UIKit.label(cue, "SubheadingLabel")
-		cue_label.add_theme_color_override("font_color", Palette.ACCENT)
-		box.add_child(cue_label)
 	if d.has("coach"):   # the coach by the track shouts (when he can see you, GDD 4.3.1)
 		var shout := UIKit.vbox(2)
 		var tag := UIKit.label(Data.race_cards.coach.label, "CaptionLabel")
