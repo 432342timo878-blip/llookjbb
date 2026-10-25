@@ -38,6 +38,9 @@ static func build(race: Race, ctx := {}) -> Dictionary:
 	for m in Race.SPLIT_MARKS:
 		out.splits.append({"label": cfg.marks[str(m)], "you": _mark_text(p, m), "winner": _mark_text(other, m)})
 	out.splits.append({"label": cfg.marks["800"], "you": _finish_text(p), "winner": _finish_text(other)})
+	# Session L2a (the race card's chart): each 200 m as seconds, for you and the other runner (0.0 = not run).
+	out.segments = {"you": segments(p), "other": segments(other), "other_time": other.t if other != null and other.done and other.status == "" else 0.0,
+			"other_is": "second" if other_head == "2ND PLACE" else "winner"}
 	out.moments = _moments(race, ctx.get("commentary", null), cfg)
 	var case_id := verdict_case(race, place, {"kind": kind, "overall": overall, "pre_rank": int(ctx.get("pre_rank", -1)),
 			"mark": str(ctx.get("mark", "")), "time": float(ctx.get("time", 0.0)), "ref": float(ctx.get("ref", 0.0))})
@@ -50,6 +53,23 @@ static func build(race: Race, ctx := {}) -> Dictionary:
 	out.coach_name = coach.name
 	out.coach_title = coach.title
 	out.coach = str(list[randi() % list.size()]) if not list.is_empty() else ""
+	return out
+
+
+## A runner's four 200 m times in seconds (0.0 for a part not run: a DNF, or no runner).
+static func segments(r: Race.Runner) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0]
+	if r == null:
+		return out
+	var prev := 0.0
+	for i in Race.SPLIT_MARKS.size():
+		var m: int = Race.SPLIT_MARKS[i]
+		if not r.marks.has(m):
+			return out
+		out[i] = float(r.marks[m].t) - prev
+		prev = float(r.marks[m].t)
+	if r.done and r.status == "":
+		out[3] = r.t - prev
 	return out
 
 

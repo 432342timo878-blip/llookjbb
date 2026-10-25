@@ -65,6 +65,20 @@ func _run() -> void:
 		var mode: String = game.season.mode
 		var athlete: String = game.athlete.full_name()
 		var played := 0
+		# Session L2a: the days played include a race (one is entered when none is), and it ends with its card.
+		var cal = load("res://scripts/core/calendar.gd")
+		var has_race := false
+		for m in cal.meets_between(game.date, game.add_days(game.date, days - 1)):
+			has_race = has_race or m.key in game.entries
+		var added := ""
+		if not has_race and days >= 3:
+			for m in cal.meets_between(game.add_days(game.date, 1), game.add_days(game.date, days - 2)):
+				if cal.can_enter(game.athlete, m, game.date).ok:
+					game.enter(m.key)
+					added = str(m.name)
+					break
+		var cards_before: int = game.race_cards.size()
+		var raced := 0
 		for i in days:
 			var r: String = game.advance_day()
 			if r == game.RACE:
@@ -74,6 +88,7 @@ func _run() -> void:
 					race.run()
 					rd.finish_round()
 				r = game.finish_race()
+				raced += 1
 			while not game.pending_event().is_empty():
 				var e: Dictionary = game.pending_event()
 				var choice: String = e.choices[0].id if not e.choices.is_empty() else "ok"
@@ -87,6 +102,32 @@ func _run() -> void:
 		_ok("%s plays %d days (%s)" % [slot, days, "repeat mode" if version < 3 else mode],
 				(mode == "repeat" or version >= 3) and played == days and week.days.size() == 7
 				and (mode != "phases" or str(week.get("phase", "")) != ""))
+		if days >= 3:
+			# No race could be entered in those days (the season is over, nothing open): play on to the next one it can enter.
+			var more := 0
+			if raced == 0:
+				for m in cal.meets_between(game.add_days(game.date, 1), game.add_days(game.date, 150)):
+					if not m.key in game.entries and cal.can_enter(game.athlete, m, game.date).ok:
+						game.enter(m.key)
+						added = "%s, %s" % [m.name, cal.format_day(m.date)]
+						break
+				while raced == 0 and more < 160:
+					more += 1
+					var r2: String = game.advance_day()
+					if r2 == game.RACE:
+						var rd2 = game.race_day
+						while not rd2.is_done():
+							var race2 = rd2.start_round(false, "pack")
+							race2.run()
+							rd2.finish_round()
+						game.finish_race()
+						raced += 1
+					while not game.pending_event().is_empty():
+						var e2: Dictionary = game.pending_event()
+						game.answer_event(e2.id, e2.choices[0].id if not e2.choices.is_empty() else "ok")
+			_ok("%s: %d race(s)%s%s, each with its card (%d new)" % [slot, raced, " (entered %s)" % added if added != "" else "",
+					" after %d more days" % more if more > 0 else "", game.race_cards.size() - cards_before],
+					raced >= 1 and game.race_cards.size() - cards_before >= raced)
 	print("ALL CHECKS PASSED" if _fails == 0 else "%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 

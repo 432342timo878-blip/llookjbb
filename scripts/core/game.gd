@@ -41,9 +41,18 @@ var autosave := true
 ## nothing) and the health model is off. A new or loaded career ends it.
 var dev_test := false
 
+## Session L2a: the "what this race did" cards (RaceRecap), oldest first, the last data/race_recap.json `keep` (race and scratch
+## cards; saved with the career; older saves have none).
+var race_cards: Array = []
+## Session L2a: the scratch card the hub shows once, where the player scratched (not saved).
+var scratch_card := {}
+
 var _week: WeekSim
 var _playing_week := false   # the current day is being played by advance_week (it goes on after a race)
 var _race_note := {}         # the race just finished, for the coach's evening message (cleared when the day ends)
+var _card_before := {}       # RaceRecap.before of the race day being ended (cleared when its card is made)
+var _card_race: RaceDay      # that race day
+var _race_end := ""          # what the race day's end returned (end_race_day), for resume_after_race
 var _next_event := 1
 
 
@@ -64,6 +73,8 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 		season = SeasonPlan.repeating(WeekPlan.coach())
 	last_report = {}
 	race_day = null
+	race_cards = []
+	scratch_card = {}
 	events = []
 	day_log = []
 	progress = [ProgressLog.snapshot(athlete, date, "start")]
@@ -122,7 +133,8 @@ func to_dict() -> Dictionary:
 	return {"athlete": athlete.to_dict(), "date": date, "season": season.to_dict(), "entries": entries,
 			"rivals": rivals, "week": _week.to_dict() if _week else {}, "last_report": last_report,
 			"events": events, "next_event": _next_event, "day_log": day_log, "systems": system_states,
-			"progress": progress, "stats_year": "calendar"}   # season bests by calendar year (decision 30; older saves are converted on load)
+			"progress": progress, "stats_year": "calendar",   # season bests by calendar year (decision 30; older saves are converted on load)
+			"race_cards": race_cards}
 
 
 ## Works for every save version: version 1 is always on a Monday with no week in progress, so the
@@ -165,6 +177,10 @@ func from_dict(d: Dictionary) -> void:
 	for entry in day_log:
 		entry.date = int_date(entry.date)
 	_next_event = int(d.get("next_event", 1))
+	race_cards = d.get("race_cards", [])   # (session L2a; older saves: none)
+	for c in race_cards:
+		RaceRecap.fixed(c)
+	scratch_card = {}
 	progress = ProgressLog.fixed(d.get("progress", []))
 	if progress.is_empty():   # a save from before the monthly record: it starts now (the earlier months are not known)
 		progress = [ProgressLog.snapshot(athlete, date, "first")]
@@ -225,6 +241,10 @@ func withdraw(meet_key: String) -> void:
 ## own scratch advice); the head coach says a line in his thread unless it was his advice (CoachTalk.scratch_line).
 func scratch_race(meet_key: String, cause := "player") -> void:
 	var meet := Calendar.get_meet(meet_key)
+	# (Session L2a, the scratch card: why and what the plan was, read before the entry goes.)
+	var why := RaceRecap.scratch_why(cause)
+	var plan_before := RaceRecap.plan_until(meet)
+	var was_target := not meet.is_empty() and season.mode == SeasonPlan.PHASES and meet_key in season.targets(SeasonPlan.year_of(meet.date))
 	withdraw(meet_key)
 	if race_day != null and race_day.meet.key == meet_key:
 		race_day = null
@@ -236,8 +256,31 @@ func scratch_race(meet_key: String, cause := "player") -> void:
 	if health:
 		health.refresh()   # injury limits for the day that was a race day
 	var ms := get_system("moments") as StoryletSystem
+	var line := ""
 	if ms != null and ms.active():
 		ms.coach_says(CoachTalk.scratch_line(meet, cause))
+		line = CoachTalk.scratch_line(meet, cause, false)   # (the card shows the next race itself)
+		if cause == "coach":   # (his own advice: nothing new in his thread, F1; his word on the card)
+			line = CoachTalk.scratch_reply(meet, RaceRecap.sore_area_name())
+	if not meet.is_empty():
+		scratch_card = RaceRecap.scratch(meet, cause, why, plan_before, was_target, line)
+		add_card(scratch_card)
+
+
+## Keeps a card (RaceRecap) with the career: the last data/race_recap.json `keep` (a card with the same id replaces the old one).
+func add_card(card: Dictionary) -> void:
+	race_cards = race_cards.filter(func(c): return str(c.get("id", "")) != str(card.get("id", "")))
+	race_cards.append(card)
+	while race_cards.size() > int(Data.recap.get("keep", 40)):
+		race_cards.pop_front()
+
+
+## A kept card by its id ({} when it is gone).
+func card(id: String) -> Dictionary:
+	for c in race_cards:
+		if str(c.get("id", "")) == id:
+			return c
+	return {}
 
 
 ## The next entered meet from today on, or {}.
@@ -292,15 +335,40 @@ func advance_week() -> String:
 ## Call after the race screen is done with `race_day`: completes the race day. If the race came up
 ## during Play week, the week goes on. Same return values as advance_day().
 func finish_race() -> String:
+	end_race_day()
+	return resume_after_race()
+
+
+## Session L2a: the first half of finish_race(): ends the race day (the result, the evening, the card in race_cards) and stops
+## there, so the race screen can show "what this race did" before Play week goes on. Returns what the day's end returned
+## (DAY_DONE / WEEK_DONE / STOP); then call resume_after_race().
+func end_race_day() -> String:
+	_card_before = RaceRecap.before(race_day)
+	_card_race = race_day
 	_record(race_day)
 	_week.race_done(race_day.summary(), race_day.incidents)
 	_race_note = _make_race_note(race_day)
 	race_day = null
-	var result := _end_day()
+	_race_end = _end_day()
+	return _race_end
+
+
+## True when `race_day` is the race of today in the week being played (a tool may open the race screen on any meet: then the
+## race screen keeps its old result view and no card is made).
+func can_end_race_day() -> bool:
+	if race_day == null or _week == null or not _week.is_race_day(_week.day):
+		return false
+	return str(_week.races[_week.day].get("key", "")) == str(race_day.meet.get("key", ""))
+
+
+## The second half: if the race came up during Play week, the week goes on. Same return values as advance_day().
+func resume_after_race() -> String:
+	var result := _race_end
+	_race_end = ""
 	if result == DAY_DONE and _playing_week:
 		return _play_on()
 	_playing_week = false
-	return result
+	return result if result != "" else DAY_DONE
 
 
 func _play_on() -> String:
@@ -337,6 +405,12 @@ func _end_day() -> String:
 	ctx.record = _week.played[-1]
 	_hook("on_health", ctx)
 	_hook("on_day_end", ctx)
+	if not _card_before.is_empty():   # (session L2a: the race day's card, after the evening and before Sunday's week end)
+		var made := RaceRecap.build(_card_race, _card_before)
+		_card_before = {}
+		_card_race = null
+		if not made.is_empty():
+			add_card(made)
 	_race_note = {}
 	var rec: Dictionary = ctx.record
 	var entry := {"date": date.duplicate(), "day_type": ctx.day_type, "sessions": rec.sessions,

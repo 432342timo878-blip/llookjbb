@@ -13,7 +13,7 @@ const VIEWS := ["week", "season", "calendar", "people", "career", "rankings"]
 const PHONE_VIEWS := ["week", "season", "calendar", "people", "career"]
 ## Old view ids (tools, older code) -> their place now; pages that belong to a tab -> that tab.
 const ALIASES := {"overview": "week", "training": "season"}
-const TAB_OF := {"report": "week", "progress": "career", "rankings": "rankings"}
+const TAB_OF := {"report": "week", "progress": "career", "rankings": "rankings", "race_card": "week"}
 const SIDE_PANEL_WIDTH := 480.0       # the day editor's side panel on PC (a bit less on a short, wide window)
 const TAB_BAR_WIDTH := 690.0          # what the planner's week needs next to the side panel
 const MONTH_NAMES := ["January", "February", "March", "April", "May", "June", "July", "August",
@@ -43,6 +43,7 @@ var _phase_open := ""           # Training tab: the season phase open in the Pha
 var _people_page := ""          # People tab: "" = the list (PC: the coach thread), a thread id, or "profile"
 var _people_dot: Control        # the mark on the People tab: something unread or waiting for an answer
 var _result_event := {}         # a moment just answered whose result card (what changed) is showing over the page
+var _card_id := ""              # the race card page (session L2a): the id of the kept card it shows (Game.card)
 # Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
 # (Close goes back to the day); phone: a HelpOverlay sheet. `_help_stack` is what is open ([] = closed), kept across
 # layout switches.
@@ -415,6 +416,8 @@ func _refresh_week_ui() -> void:
 		_apply_editor_visibility()
 	if _selected_day >= 0:
 		_editor.refresh()
+	if not Game.scratch_card.is_empty():   # (session L2a: a scratch from the planner, the day editor or a stop panel)
+		_show_pending_event.call_deferred()
 
 
 # --- The planner's days and the day editor -----------------------------------------------------------------
@@ -457,6 +460,8 @@ func _mark_open_day() -> void:
 func _on_day_changed() -> void:
 	if _view == "week":
 		_rebuild_view()
+	if not Game.scratch_card.is_empty():   # (session L2a: scratched in the day editor)
+		_show_pending_event.call_deferred()
 
 
 ## The side panel (PC) shows the help when it is open, else the day editor; the phone sheet only the day editor
@@ -602,7 +607,8 @@ func _fit_sheet() -> void:
 func _show_pending_event() -> void:
 	var e := Game.pending_event()
 	var showing_result := not _result_event.is_empty()   # (the card of the moment just answered comes first, session C3)
-	if e.is_empty() and not showing_result:
+	var showing_scratch := not Game.scratch_card.is_empty()   # (session L2a: the scratch card first, where the player scratched)
+	if e.is_empty() and not showing_result and not showing_scratch:
 		if _event_overlay:
 			_event_overlay.visible = false
 		return
@@ -633,7 +639,11 @@ func _show_pending_event() -> void:
 		widest = LukioEventPanel.MAX_WIDTH
 	var width := minf(widest, Layout.logical_width - 32.0 - 36.0 - 12.0)
 	var box: Control
-	if showing_result:   # what the answer changed (GDD 4.9.5 "Consequences shown"): the reply, ▲ / ▼ lines, Continue
+	if showing_scratch:
+		box = RaceRecapView.scratch_box(Game.scratch_card, width, func():
+			Game.scratch_card = {}
+			_show_pending_event())
+	elif showing_result:   # what the answer changed (GDD 4.9.5 "Consequences shown"): the reply, ▲ / ▼ lines, Continue
 		box = MomentEventPanel.result(_result_event, width, _end_result_card,
 				func(): HelpOverlay.open(self, MomentEventPanel.HELP))
 	elif HealthEventPanel.handles(e):   # injury diagnosis and the "sore" warning have their own panels (with a "?")
@@ -738,6 +748,20 @@ func _show(view: String) -> void:
 		"report":
 			_content.add_child(_back_button("week"))
 			_content.add_child(ReportView.new())
+		"race_card":   # (session L2a: a kept card, opened from the planner's race strap)
+			_content.add_child(_back_button("week"))
+			var c := Game.card(_card_id)
+			if not c.is_empty():
+				if str(c.get("kind", "")) == "scratch":
+					var p := PanelContainer.new()
+					p.add_theme_stylebox_override("panel", ThemeBuilder.panel_box(16))
+					p.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if not Layout.compact else Control.SIZE_FILL
+					p.add_child(RaceRecapView.scratch_box(c, minf(480.0, Layout.logical_width - 56.0), func(): _show("week")))
+					_content.add_child(p)
+				else:
+					_content.add_child(RaceRecapView.head(str(c.meet_name)))
+					_content.add_child(UIKit.wrapped(str(c.get("sub", "")), "WhyLabel"))
+					_content.add_child(RaceRecapView.new(c, true))
 		"people": _build_people()
 		"career": _build_profile(Game.athlete)
 		"progress":
@@ -764,6 +788,9 @@ func _build_week() -> void:
 		_refresh_week_ui()
 		_rebuild_view())
 	_planner.report_pressed.connect(func(): _show("report"))
+	_planner.card_pressed.connect(func(id: String):
+		_card_id = id
+		_show("race_card"))
 	_planner.moment_answered.connect(func(e: Dictionary):
 		if MomentEventPanel.has_result(e):   # what the answer changed, as after a stop moment (GDD 4.9.5)
 			_result_event = e
@@ -791,6 +818,8 @@ func _help_entry() -> String:
 		return "market"   # Find a coach and a coach's page (session C6)
 	if _view == "people" and _people_page == "school":
 		return "school"   # the School page (session S2)
+	if _view == "race_card":
+		return "race_result"   # a kept race card (session L2a): the same help as after the race
 	return _view
 
 

@@ -17,6 +17,12 @@ const SCREENS := {
 }
 
 
+## A stage of a screen that wants another backdrop than its screen's (session L2a: the race screen's card is a data screen, so
+## "race_card" = the plain background). Only the backdrop listens to it.
+func backdrop(id: String) -> void:
+	screen_changed.emit(id)
+
+
 func go(screen_id: String) -> void:
 	assert(SCREENS.has(screen_id), "Unknown screen: %s" % screen_id)
 	screen_changed.emit(screen_id)

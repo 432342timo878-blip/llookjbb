@@ -122,6 +122,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _race_views(main, game, data, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _card_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		await _season_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _coach_views(main, game, tag)
@@ -369,6 +371,8 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 			print("  (no %s meet found for the race views)" % place)
 			continue
 		game.date = meet.date.duplicate()
+		var entered: bool = meet.key in game.entries
+		game.enter(meet.key)   # (session L2a: the race day really ends, so the result is the card)
 		game._week = null
 		game.current_week()
 		game.race_day = load("res://scripts/core/race_day.gd").new(meet, game.athlete, game.rivals)
@@ -453,7 +457,23 @@ func _race_views(main: Node, game, data, tag: String) -> void:
 		await _frames(4)
 		await _shot(t + "_result")
 		_check_overflow(screen, t + "_result")
+		if screen._card.is_empty():
+			print("  %s: no race card after the race   <-- WRONG" % t)
+		else:   # (session L2a: the card's lower part, then Full results)
+			var sc = _find_class(screen._body, "ScrollContainer")
+			if sc != null:
+				sc.scroll_vertical = 100000
+				await _frames(3)
+				await _shot(t + "_card_end")
+				_check_overflow(screen, t + "_card_end")
+			screen._full_open = true
+			screen._show_result(false)
+			await _frames(4)
+			await _shot(t + "_full_results")
+			_check_overflow(screen, t + "_full_results")
 		game.race_day = null
+		if not entered:
+			game.entries.erase(meet.key)
 		router.go("career_hub")
 		await _frames(6)
 	# The result lists of a round of groups outdoors and indoors: sections (overall + your section, Finnish
@@ -595,6 +615,43 @@ func _heat_result_views(main: Node, game, cal, place: String, tag: String, fmt: 
 	game.race_day = null
 	router.go("career_hub")
 	await _frames(6)
+
+
+## Session L2a: a kept race card as the hub's page (opened from the planner's strap), the planner with the strap, and the scratch
+## card over the hub.
+func _card_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var cards: Array = game.race_cards.filter(func(c): return str(c.get("kind", "")) == "race")
+	if cards.is_empty():
+		print("  %s: no race card to show   <-- WRONG" % tag)
+		return
+	hub._card_id = str(cards.back().id)
+	hub._show("race_card")
+	await _frames(5)
+	await _shot("%s_race_card_page" % tag)
+	_check_overflow(hub, "%s race_card_page" % tag)
+	hub._scroll.scroll_vertical = 100000
+	await _frames(3)
+	_check_overflow(hub, "%s race_card_page_end" % tag)
+	var cal = load("res://scripts/core/calendar.gd")
+	var meet := {}
+	for m in cal.meets_between(game.add_days(game.date, 1), game.add_days(game.date, 60)):
+		if not m.key in game.entries:
+			meet = m
+			break
+	if not meet.is_empty():
+		game.enter(meet.key)
+		game.scratch_race(meet.key)
+		hub._show("week")
+		hub._refresh_week_ui()
+		await _frames(5)
+		await _shot("%s_scratch_card" % tag)
+		_check_overflow(hub, "%s scratch_card" % tag)
+		game.scratch_card = {}
+		hub._show_pending_event()
+		await _frames(3)
+	hub._show("week")
+	await _frames(3)
 
 
 ## Plays the race by hand until `until` is true (answering every card with its first answer).

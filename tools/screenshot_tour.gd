@@ -213,11 +213,49 @@ func _run() -> void:
 			screen._running = true
 	Engine.time_scale = 1.0
 	await _frames(5)
-	await _shot("12_race_result")
+	await _shot("12_race_result")   # (session L2a: the race ends on "what this race did")
+	if not screen._card.is_empty():
+		var sc = _find_class(screen._body, "ScrollContainer")   # (the card scrolls: its lower part)
+		if sc != null:
+			sc.scroll_vertical = 100000
+		await _frames(3)
+		await _shot("12a_race_card_lower")
+		screen._full_open = true
+		screen._show_result(false)
+		await _frames(4)
+		await _shot("12a2_race_full_results")
+		screen._full_open = false
+		screen._show_result(false)
+		await _frames(3)
+	else:
+		print("  (no race card after the first race   <-- WRONG)")
 	screen._leave()
 	await _frames(5)
 	await _shot("13_week_report_after_race")
 	hub = main.get_node("ScreenHost").get_child(-1)
+	# The race strap on the planner opens the card again (session L2a).
+	var strap := _find_named(hub, "OpenCard")
+	if strap != null:
+		strap.pressed.emit()
+		await _frames(5)
+		await _shot("13a_race_card_page")
+		hub._show("week")
+		await _frames(3)
+	else:
+		print("  (no race strap with a card on the planner   <-- WRONG)")
+	# A scratch: the card where you scratched (session L2a).
+	for m in cal.meets_between(game.add_days(game.date, 1), game.add_days(game.date, 60)):
+		if not m.key in game.entries and cal.can_enter(game.athlete, m, game.date).ok:
+			game.enter(m.key)
+			game.scratch_race(m.key)
+			hub._refresh_week_ui()
+			await _frames(5)
+			await _shot("13b_scratch_card")
+			var ok := _find_button(hub, str(game.get_node("/root/Data").recap.ok))
+			if ok:
+				ok.pressed.emit()
+			await _frames(3)
+			break
 	hub._show("overview")
 	await _frames(5)
 	await _shot("14_overview_with_pb")
@@ -869,6 +907,8 @@ func _heats_tour(main: Node) -> void:
 		if rd == null:
 			continue
 		game.date = rd.meet.date.duplicate()
+		var entered: bool = rd.meet.key in game.entries
+		game.enter(rd.meet.key)   # (session L2a: entered, so the race day really ends and the card shows)
 		game._week = null
 		game.current_week()
 		game.race_day = rd
@@ -878,8 +918,21 @@ func _heats_tour(main: Node) -> void:
 		await _shot("12b_race_%s_before" % fmt)
 		screen._start(false)
 		await _frames(4)
-		await _shot("12c_race_%s_results" % fmt)
+		await _shot("12c_race_%s_results" % fmt)   # (sections: the card; heats: every heat's result, "On to the final")
+		if not screen._result.done:
+			screen._show_pre()
+			await _frames(3)
+			screen._start(false)
+			await _frames(4)
+			await _shot("12d_race_%s_final_card" % fmt)
+		if not screen._card.is_empty():
+			screen._full_open = true
+			screen._show_result(false)
+			await _frames(4)
+			await _shot("12e_race_%s_full_results" % fmt)
 		game.race_day = null
+		if not entered:
+			game.entries.erase(rd.meet.key)
 	game.date = saved_date
 	game._week = saved_week
 	game.current_week()
@@ -1777,6 +1830,16 @@ func _find_class(node: Node, cls: String):
 		return node
 	for c in node.get_children():
 		var found = _find_class(c, cls)
+		if found:
+			return found
+	return null
+
+
+func _find_named(node: Node, node_name: String) -> Node:
+	if node.name == node_name:
+		return node
+	for c in node.get_children():
+		var found := _find_named(c, node_name)
 		if found:
 			return found
 	return null

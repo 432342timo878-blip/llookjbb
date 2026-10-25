@@ -3,10 +3,10 @@
  "screens": {
   "week": {
    "title": "This week",
-   "version": 2,
+   "version": 3,
    "sections": [
     {"heading": "Plan, then play", "text": "Every Sunday evening the week stops here. Look at the days, change any you like, answer what waits for you, then press Play week. A normal week is two taps. Next day plays one day at a time."},
-    {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Last week in full opens every day of that week."},
+    {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Tap the race to see what it did again; a race you scratched says why. Last week in full opens every day of that week."},
     {"heading": "The days", "text": "Each day shows its sessions. The line's colour says how hard: blue Easy, grey Normal, red Hard, dark a rest day, yellow a race. Violet chips are tests. Tap a day to change it or to ask your coach about it.", "see": ["ask_coach"]},
     {"heading": "Free time", "text": "Under each day (on a phone, the icon on its right) is what you do after training: each evening, and Saturday and Sunday. It follows your habits from the Season tab. Tap it to change it for this week only. It lights up only when something lands on it.", "see": ["habits"]},
     {"heading": "Invitations", "text": "A party or a group work lands in its evening, with its price: the late night and the day after it, and what staying home costs the friendship. Go or Stay home; you can change your mind until that evening. If you leave it, you stay home: Play week won't ask.", "see": ["habits"]},
@@ -234,11 +234,15 @@
    ]
   },
   "race_result": {
-   "title": "The result",
-   "version": 9,
+   "title": "What this race did",
+   "version": 10,
    "sections": [
-    {"heading": "Results", "text": "Your place and time. PB marks a personal best and SB the best time of the year, for you and for the others in every list. The time counts in the season rankings."},
-    {"heading": "Race story", "text": "Your times at 200, 400 and 600 m and the finish with your place at each, next to the winner's (or the runner-up's when you won), the key moments of the race and what your coach thinks of it. The coach judges your time against your own level too: a personal best is never a bad race."},
+    {"heading": "The result", "text": "Your place out of the field and your time. PB marks a personal best, SB the best time of the year; the green number is how much faster than your best going in, a red one how far off your season's best. The time counts in the season rankings."},
+    {"heading": "Your splits", "text": "Each 200 m of your race in seconds (orange) next to the winner's, or the runner-up's when you won; in sections and heats, the winner of your own section or heat. Lower is faster: you see where you lost or won time."},
+    {"heading": "Form on the day", "text": "How ready you were that morning: freshness (how rested) and sharpness (recent fast sessions and races), with what made them so, like the taper or an easy day before. Confidence at its ends adds or costs a little time too. Tap it for the exact numbers.", "see": ["form"]},
+    {"heading": "What changed", "text": "Only what this race really changed tonight: your moods and why, consistency (every race) and composure (big meets), the body area it strained most, tiredness. Race training counts on Sunday night with the week's sessions. Tap a row for the exact numbers.", "see": ["moods", "soreness"]},
+    {"heading": "Coach, goal, next", "text": "Your coach's one line about the race, your season goal and how much closer you are, and your next race. Full results opens every result list and the key moments. You can open this card again from the race on next week's planner."},
+    {"heading": "Scratching", "text": "If you scratch from a race, a short card says why, what your coach thinks, what the day becomes and your next race. Scratching itself costs no mood or trust; the day becomes training. A place goal at that meet is then missed."},
     {"heading": "Sections", "text": "After sections you see everyone by time across all of them (S2 = section 2): that is the official result. Your section's own list comes below it, then the other sections. Winning a slow section can still be 10th overall."},
     {"heading": "DNF and DQ", "text": "DNF: did not finish, after a bad fall. DQ: disqualified for obstruction, after pushing your way out of a box. Neither counts for a personal best or the rankings. A fall can leave you with grazes or a bruise, rarely a sprained ankle.", "see": ["injuries"]},
     {"heading": "Heats and final", "text": "Senior and international meets have heats; after yours you see every heat's result, yours first. Q = through on place, q = through on time: the fastest of the rest. How many go through follows the World Athletics table; a big field adds semi-finals. Runners safely through ease off before the line."}

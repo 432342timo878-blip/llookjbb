@@ -21,6 +21,7 @@ signal day_pressed(d: int)
 signal play_pressed(week: bool)
 signal changed                       # a card was answered: the hub refreshes the page
 signal report_pressed                # "Last week in full"
+signal card_pressed(id: String)      # a race strap: open its "what this race did" card (session L2a)
 signal moment_answered(e: Dictionary)   # a waiting moment was answered: the hub shows what it changed (MomentEventPanel.result)
 
 const PC_LEFT := 268.0
@@ -331,35 +332,87 @@ static func _done_row(r: Dictionary) -> Control:
 	return row
 
 
-## A broadcast strap per race of the week: the flag, the time, a PB tag in LEAD, the meet and the place.
-static func _race_straps(r: Dictionary) -> Array:
+## A broadcast strap per race of the week: the flag, the time, a PB tag in LEAD, the meet and the place. Session L2a: a strap is a
+## button that opens the race's "what this race did" card (kept in Game.race_cards); a race scratched that week has its own strap
+## ("Scratched", the meet, why).
+func _race_straps(r: Dictionary) -> Array:
 	var out := []
 	for x in r.get("races", []):
-		var res := _result_of(str(x.get("meet_key", "")))
+		var key := str(x.get("meet_key", ""))
+		var res := _result_of(key)
 		if res.is_empty():
 			continue
-		var p := PanelContainer.new()
-		p.add_theme_stylebox_override("panel", ThemeBuilder.raised_box(10))
-		var row := UIKit.hbox(8)
-		row.add_child(Icons.rect("flag", 16.0, Palette.LEAD))
-		var col := UIKit.vbox(0)
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var meet := Calendar.get_meet(key)
+		var card_id := "%d_%s" % [Calendar.date_key(meet.date), key] if not meet.is_empty() else ""
 		var top := UIKit.hbox(8)
 		var ok := str(res.get("status", "")) == ""
 		top.add_child(UIKit.label(Calendar.format_time(float(res.time)) if ok else str(res.status).to_upper(), "BigNumber"))
 		if ok and bool(res.get("pb", false)):
 			top.add_child(_tag("PB"))
-		col.add_child(top)
-		var meet := str(Calendar.get_meet(str(x.meet_key)).get("name", x.get("name", "")))
 		var place := Race._ordinal(int(res.place)) if ok and res.has("place") else ""
-		var line := UIKit.label(str(ui().race_line).format({"meet": meet, "place": place}).trim_suffix(" · "), "WhyLabel")
-		line.clip_text = true
-		line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		col.add_child(line)
-		row.add_child(col)
-		p.add_child(row)
-		out.append(p)
+		var line := str(ui().race_line).format({"meet": str(meet.get("name", x.get("name", ""))), "place": place}).trim_suffix(" · ")
+		out.append(_strap(top, line, Palette.LEAD, card_id))
+	var lo := Calendar.date_key(r.monday)
+	var hi := Calendar.date_key(Game.add_days(r.monday, 6))
+	for c in Game.race_cards:
+		var k := Calendar.date_key(c.date)
+		if str(c.get("kind", "")) != "scratch" or k < lo or k > hi:
+			continue
+		var top := UIKit.hbox(8)
+		top.add_child(UIKit.label(str(Data.recap.strap_scratched), "ItemLabel"))
+		var line := str(Data.recap.strap_scratched_line).format({"meet": str(c.meet_name), "why": str(c.why).trim_suffix(".")})
+		out.append(_strap(top, line, Palette.TEXT_MUTED, str(c.id)))
 	return out
+
+
+## One strap: a raised row (48 px or more) with the flag, the top line, the line under it, and when it opens a card a chevron and a
+## transparent button over the whole strap (the panel sizes itself to the text; the button fills it).
+func _strap(top: Control, line_text: String, flag: Color, card_id: String) -> Control:
+	var has_card := card_id != "" and not Game.card(card_id).is_empty()
+	var p := PanelContainer.new()
+	var style := ThemeBuilder.raised_box(10)
+	style.set_content_margin_all(0)   # (the margin is inside, so the button over the strap covers all of it)
+	p.add_theme_stylebox_override("panel", style)
+	p.custom_minimum_size.y = 48
+	var pad := MarginContainer.new()
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right"]:
+		pad.add_theme_constant_override("margin_" + side, 10)
+	for side in ["top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, 7)
+	p.add_child(pad)
+	var row := UIKit.hbox(8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(Icons.rect("flag", 16.0, flag))
+	var col := UIKit.vbox(0)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(top)
+	var line := UIKit.label(line_text, "WhyLabel")
+	line.clip_text = true
+	line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	col.add_child(line)
+	row.add_child(col)
+	pad.add_child(row)
+	if has_card:
+		var chev := Icons.rect("chevron-right", 16.0, Palette.TEXT_MUTED)
+		chev.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(chev)
+		var b := Button.new()
+		b.name = "OpenCard"
+		b.flat = true
+		var hover := StyleBoxFlat.new()
+		hover.bg_color = Color(1, 1, 1, 0.05)
+		hover.set_corner_radius_all(Palette.RADIUS_RAISED)
+		b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+		b.add_theme_stylebox_override("hover", hover)
+		b.add_theme_stylebox_override("pressed", hover)
+		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.pressed.connect(func(): card_pressed.emit(card_id))
+		p.add_child(b)
+	return p
 
 
 ## The LEAD tag (results only): "PB".
@@ -1139,15 +1192,9 @@ func _last_week_phone() -> Control:
 	var c: Dictionary = r.get("count", {})
 	var note := str(u.done_short).format({"done": int(c.get("done", 0)), "planned": int(c.get("planned", 0))}) if not c.is_empty() else ""
 	var head := _head(str(u.last_week), note)
-	for x in r.get("races", []):
-		var res := _result_of(str(x.get("meet_key", "")))
-		if not res.is_empty() and str(res.get("status", "")) == "":
-			var t := UIKit.label(Calendar.format_time(float(res.time)), "ItemLabel")
-			t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			head.add_child(t)
-			if bool(res.get("pb", false)):
-				head.add_child(_tag("PB"))
 	box.add_child(head)
+	for strap in _race_straps(r):   # (session L2a: the race straps open their cards, as on PC)
+		box.add_child(strap)
 	var chips := week_chips(r)
 	if not chips.is_empty():
 		var flow := HFlowContainer.new()

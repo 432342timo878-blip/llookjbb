@@ -101,6 +101,38 @@ Read the paragraphs below with these in mind; they win where they disagree.
     `habits` state.
   - **Tools:** new `tools/habits_check.gd` (in run_all_checks); `layout_check` `_slot_views`, the tour `_slots_tour` (56…),
     `season_playtest` prints "Clicks by week" and the invitations, `saves_check` checks the habits of older saves.
+- **Session L2a (the "what this race did" card + the scratch card; GDD 4.10 "L2's questions" and "Built (step L2a)"; these win over
+  the paragraphs below about the race screen's result, `finish_race` and `scratch_race`):**
+  - **`RaceRecap`** (`scripts/core/race_recap.gd`, texts `data/race_recap.json` = `Data.recap`): RECORDING ONLY. `before(rd)` reads
+    race morning (attributes, fatigue, strain, moods + their cause lists, trust + its causes, the goals, the thread sizes, Form from
+    `rd.form` / `rd.mind` / `rd.slowdown` with the plan's taper / easy-day-before as causes); `build(rd, b)` after the evening hooks
+    (Game._end_day, before Sunday's week end): the result (place / field, PB / SB delta vs `pb_before` / `sb_before` of the player's
+    row in `rd.last_rows`, a section's place, the rounds, "Out"), the splits from `rd.story.segments`, `changes` (injury / mood / attr
+    / body / tired / trust / later, each {title, value, tone, cause, detail}; mood and trust causes = `new_entries(before, after)`,
+    only this evening's), the coach's line (`rd.story.line`), the evening's messages (thread entries after the snapshot, not the coach),
+    the goal (a goal settled today, else the time goal with its gap and how much closer; bar from `est.seen`), `next_race(after)`.
+    Scratch: `scratch_why(cause)`, `plan_until(meet)` (the plan's weeks to the meet, to count the days that go back), `scratch(...)`,
+    `sore_area_name()`. `fixed(card)` makes a loaded card's whole numbers ints. `signed(v, decimals)` ("−6.51").
+  - **Game:** `race_cards` (saved, the last `keep` 40; older saves: none), `scratch_card` (not saved: the hub shows it once),
+    `add_card` / `card(id)`; **`finish_race()` = `end_race_day()` + `resume_after_race()`** (tools keep calling finish_race; the race
+    screen ends the day when the last round is shown and resumes Play week on Continue); `can_end_race_day()` (a tool that opens the
+    race screen on a meet that is not today's entered race keeps the old result view). `scratch_race` reads why / the plan before the
+    entry goes, posts his thread line as before (F1; not after his own advice) and makes the card (his line without the "Next up" tail;
+    after his own advice `CoachTalk.scratch_reply`, only on the card).
+  - **Race screen:** `_show_result` stores `story.segments / kind / round_label / group / group_name` in `rd.story`; on the last round
+    `Game.end_race_day()` → `_card` → `_show_card()` (RaceRecapView; PC in a scroll, phone with Continue + Full results sticky);
+    `_full_open` = the old tables with "Back to the card"; `_leave` resumes. `Router.backdrop("race_card")` = the plain background.
+    `RaceStory.build` adds `segments` {you, other, other_time, other_is} (`RaceStory.segments(runner)`).
+  - **UI:** `RaceRecapView` (`scripts/ui/race_recap_view.gd`: `head(text)` = the broadcast section head, the strap, `_splits_box`,
+    `_form_box`, `_changes_box(shown)` (5 / 4 + "+N more" opens the rest; a tap on a row = its detail, `WeekPlanner._tappable`),
+    `_goal_box`, `coach_row`, `next_box`, `buttons_row` / `broadcast_button`, `scratch_box(card, width, on_ok)`), `SplitsChart`
+    (`scripts/ui/splits_chart.gd`, `_draw`). Hub: view `race_card` (`_card_id`, Back to This week; help = `race_result`), the scratch
+    card first in `_show_pending_event` (shown from `_refresh_week_ui` / `_on_day_changed` when `Game.scratch_card` is set). Planner:
+    `_race_straps` / `_strap` (a raised strap with a transparent `OpenCard` button over it; scratched races of the week too),
+    signal `card_pressed(id)`; the phone's last week shows the straps (the head no longer repeats the time).
+  - **Tools:** new `tools/race_card_check.gd` (in run_all_checks); `layout_check` (`_race_views` enters the meet so the card shows,
+    `_card_end` / `_full_results` shots; new `_card_views`: the card page and the scratch card), the tour (12 = the card, 12a / 12a2,
+    13a the card page, 13b the scratch card, 12c–12e sections and heats).
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

@@ -200,7 +200,8 @@ static func _sore_names() -> Array:
 ## The head coach's message when the player scratches from `meet` (session F1, playtest 2: he said nothing before or after):
 ## why he thinks it was right (hurt: an injury or a sore area today; school: a busy test week; plain) and the next race. `cause` =
 ## Game.scratch_race's: "coach" (his own advice, answered already) = "". The line is picked by the meet's key (no dice).
-static func scratch_line(meet: Dictionary, cause: String) -> String:
+## `with_next` = false leaves out the next race's tail (the scratch card shows the next race itself, session L2a).
+static func scratch_line(meet: Dictionary, cause: String, with_next := true) -> String:
 	if cause == "coach" or meet.is_empty():
 		return ""
 	var c: Dictionary = cfg().scratched
@@ -215,9 +216,21 @@ static func scratch_line(meet: Dictionary, cause: String) -> String:
 	var list: Array = c[kind]
 	var fill := {"meet": str(meet.get("name", "")), "area": CoachVerdict._area_name(CoachVerdict.now_start())}
 	var text := str(list[absi(str(meet.get("key", "")).hash()) % list.size()]).format(fill)
+	if not with_next:
+		return text
 	var nxt := Game.next_race()
 	var tail := str(c.no_next) if nxt.is_empty() else str(c.next).format({"next_meet": str(nxt.name), "next_date": Calendar.format_day(nxt.date)})
 	return text + " " + tail
+
+
+## Session L2a: his line on the scratch card when the scratch was his own advice (it is not posted: his advice in the thread was
+## his word on it, F1). With an area at the sore line it names the area. Picked by the meet's key (no dice).
+static func scratch_reply(meet: Dictionary, area_name: String) -> String:
+	if meet.is_empty():
+		return ""
+	var c: Dictionary = cfg().scratched
+	var list: Array = c.coach if area_name != "" else c.coach_plain
+	return str(list[absi(str(meet.get("key", "")).hash()) % list.size()]).format({"meet": str(meet.get("name", "")), "area": area_name})
 
 
 ## The athlete's last result at a meet (the race of the week), or {}.

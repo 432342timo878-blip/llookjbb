@@ -9,7 +9,7 @@ tools, numbers: **read the paragraph of a system when you work on it**; it holds
 
 **User:** no programming experience: explain how to run and test things in plain steps; Claude writes all code.
 
-**Status (2026-10-24):** M1 done (character creation, training, calendar, saves, the 800 m race, rankings, responsive UI). M2 part 1
+**Status (2026-10-25):** M1 done (character creation, training, calendar, saves, the 800 m race, rankings, responsive UI). M2 part 1
 done (day-by-day mode, health, season periodization, race realism R1–R5 + commentary R4, meet formats, the multi-year check and the
 talent balance). M2 part 2 built so far: the coaching + school + people design (GDD 4.9), sessions C1–C6 (coach model, moments,
 People tab + Sunday talk, proposals + Veto, goals + race advice, the coach market), M1 (the mind), D1 (research data), S1–S3b (school,
@@ -22,8 +22,9 @@ playtest bugs) done (GDD 4.10 "Built (step F1)"; coach texts say `{he}` / `{his}
 "The look (V1)"** is the style guide for every new or restyled screen (dark "Stadium Night", condensed numbers, TV-style race card;
 mock-ups in `docs/v1/`). **L1 done** in two sessions (user, 2026-10-23): L1a (the V1 kit, the Sunday week planner = the This week
 tab, the coach's notes, moments wait for Sunday, the new tabs; GDD 4.10 "Built (step L1a)") and L1b (the 9 free-time slots + standing
-habits replacing the school's two settings, invitations in the slots, save v5; "Built (step L1b)"). Next, in `docs/ROADMAP.md` order:
-L2–L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
+habits replacing the school's two settings, invitations in the slots, save v5; "Built (step L1b)"). **L2 is split** (user, 2026-10-25,
+GDD 4.10 "L2's questions"): **L2a done** (the "what this race did" card after every race + the scratch card, kept in
+`Game.race_cards`; "Built (step L2a)"). Next, in `docs/ROADMAP.md` order: L2b (causes everywhere) → L3 (the loop) → K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -128,7 +129,9 @@ in-game Credits screen is still to do). **Help:** texts only in `data/help.json`
 **Races.** `RaceDay` runs a meet as `single` / `sections` / `heats` (World Athletics table); `Race` = the pack engine (drafting, moves,
 kick chain, boxes, falls, DNF/DQ; every number in `data/races.json`; same seed = same race); the player's cards and action bar
 (`data/race_cards.json`); quick mode with a kick plan; `RacePerformance` maps attributes → time. `RaceCommentary` + `RaceStory` + the
-coach voices (`data/race_commentary.json`, `data/coaches.json`) only READ the race. UI: `race_screen.gd`, `RaceActionBar`, `CommentaryBox`
+coach voices (`data/race_commentary.json`, `data/coaches.json`) only READ the race. **L2a:** the race ends on "what this race did"
+(`RaceRecap` records it, read-only; `RaceRecapView`; `data/race_recap.json`): `finish_race()` = `end_race_day()` + `resume_after_race()`,
+the cards kept in `Game.race_cards` (the planner's race strap opens one), the scratch card from `Game.scratch_race`. UI: `race_screen.gd`, `RaceActionBar`, `CommentaryBox`
 / Strip / Ticker. Checks: `race_rounds`, `commentary_check`, `race_check`, `race_shape`, `quick_fingerprint`.
 
 **People and school (M2 part 2; every one has a switch in `GameConfig`).**

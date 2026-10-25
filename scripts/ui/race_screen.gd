@@ -923,8 +923,14 @@ func _show_decision(d: Dictionary) -> void:
 # --- Results ----------------------------------------------------------------------------------
 
 var _result := {}   # what the result stage shows (kept so a layout change can redraw it)
+var _card := {}     # session L2a: the race's "what this race did" card (RaceRecap) once the race day has ended
+var _day_ended := false   # Game.end_race_day() was called: Continue only resumes the week
+var _full_open := false   # the card's Full results: the tables and the Race story instead of the card
 
 
+## The result of a round. After the LAST round (session L2a) the race day ends at once (Game.end_race_day: the result, the
+## evening, the card) and the card is shown; Full results opens the old tables. A heat or semi before the final keeps the tables
+## with "On to the final".
 func _show_result(fresh := true) -> void:
 	_stage = "result"
 	_drop_decision()
@@ -932,6 +938,7 @@ func _show_result(fresh := true) -> void:
 		var res := _race.results()
 		var kind: String = _rd.rounds[_rd.round_index]   # race / sections / heat / semi / final
 		var group := _rd.player_heat
+		var round_label := _rd.round_name()   # ("Section 4 of 5": before the round is over)
 		var pre_rank := _rd.pre_race_rank()   # (before the round is over: the seeding picture, decision 47)
 		_rd.finish_round()
 		res = _rd.last_rows   # (the same rows, with the PB / SB marks of everyone)
@@ -990,10 +997,24 @@ func _show_result(fresh := true) -> void:
 		var story := RaceStory.build(_race, {"commentary": _comm, "athlete": Game.athlete, "kind": kind,
 				"overall_place": overall_place, "pre_rank": pre_rank, "mark": str(own_run.get("mark", "")),
 				"time": float(own_run.get("time", 0.0)), "ref": float(own_run.get("ref", 0.0))})
-		_rd.story = {"case": str(story.get("case", "")), "line": str(story.get("coach", ""))}   # (the coach's evening message)
+		# (the coach's evening message; session L2a: the card's splits, its round and group)
+		_rd.story = {"case": str(story.get("case", "")), "line": str(story.get("coach", "")), "coach_name": str(story.get("coach_name", "")),
+				"segments": story.get("segments", {}), "kind": kind, "round_label": round_label, "group": group + 1,
+				"group_name": round_label.get_slice(" of ", 0).to_lower() if kind in ["heat", "semi", "sections"] else ""}
 		_result = {"res": res, "headline": headline, "lists": lists, "marks": marks, "story": story,
 				"via": marks.get(mine.name, ""), "next": _rd.rounds[_rd.round_index] if not _rd.is_done() else "",
 				"done": _rd.is_done(), "qualified": _rd.qualified, "heats": kind in ["heat", "semi"]}
+		if _result.done and not _day_ended and Game.can_end_race_day():
+			var meet_key := str(_rd.meet.key)
+			Game.end_race_day()
+			_day_ended = true
+			_full_open = false
+			_card = {}
+			if not Game.race_cards.is_empty() and str(Game.race_cards.back().get("meet", "")) == meet_key:
+				_card = Game.race_cards.back()
+	if _result.done and not _card.is_empty() and not _full_open:
+		_show_card()
+		return
 
 	var col := UIKit.vbox(12)
 	col.add_child(UIKit.wrapped(_result.headline, "HeadingLabel"))
@@ -1039,7 +1060,17 @@ func _show_result(fresh := true) -> void:
 			col.add_child(UIKit.wrapped(_text("not_through"), ""))
 		next.text = "Continue"
 		next.pressed.connect(_leave)
-	col.add_child(next)
+	if _result.done and not _card.is_empty():   # (session L2a: Full results of the card; back to it)
+		var row := UIKit.hbox(10)
+		var back := UIKit.button(str(Data.recap.back_to_card), false, 220)
+		back.pressed.connect(func():
+			_full_open = false
+			_show_result(false))
+		row.add_child(back)
+		row.add_child(next)
+		col.add_child(row)
+	else:
+		col.add_child(next)
 
 	if Layout.compact:
 		_set_body(col)
@@ -1089,9 +1120,47 @@ func _results_grid(res: Array, marks: Dictionary, notes := {}) -> GridContainer:
 	return grid
 
 
-## Completes the race day. If the race came up during Play week, the week goes on (and may reach another race).
+## "What this race did" (session L2a, RaceRecapView): PC = the card in a scroll; phone = the card scrolling with Continue and Full
+## results sticky at the bottom.
+func _show_card() -> void:
+	_stage = "result"
+	Router.backdrop("race_card")   # (a data screen: the plain background, GDD 5 "Backdrop")
+	_title.text = str(_card.get("meet_name", _rd.meet.name))
+	_subtitle.text = str(_card.get("sub", ""))
+	var view := RaceRecapView.new(_card)
+	view.continue_pressed.connect(_leave)
+	view.results_pressed.connect(func():
+		_full_open = true
+		_show_result(false))
+	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_child(view)
+	if not Layout.compact:
+		_set_body(scroll)
+		return
+	view.with_buttons = false
+	var col := UIKit.vbox(10)
+	col.add_child(scroll)
+	var row := UIKit.hbox(8)
+	var buttons := view.buttons_row()
+	for i in buttons.size():
+		var b: Button = buttons[i]
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.size_flags_stretch_ratio = 1.6 if i == 0 else 1.0
+		b.custom_minimum_size = Vector2(0, 52)
+		row.add_child(b)
+	col.add_child(row)
+	_set_body(col)
+
+
+## Completes the race day (after the card it is already ended: the week goes on). If the race came up during Play week, the week
+## goes on (and may reach another race).
 func _leave() -> void:
-	if Game.finish_race() == Game.RACE:
+	var result := Game.resume_after_race() if _day_ended else Game.finish_race()
+	_day_ended = false
+	if result == Game.RACE:
 		Router.go("race")
 	else:
 		Router.go("career_hub")   # the hub shows the weekly report or a stop event if there is one

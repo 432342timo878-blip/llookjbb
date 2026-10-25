@@ -38,6 +38,7 @@ var lukio: Dictionary = {}             # data/lukio.json: lukio courses and the 
 var cast: Dictionary = {}              # data/cast.json: the people around the athlete (family, friends, partners, school, rivals; session P1)
 var planner: Dictionary = {}           # data/planner.json: the Sunday week planner's texts, the sessions' short names and icons (session L1a)
 var habits: Dictionary = {}            # data/habits.json: the free-time slots, the activities and the standing habits (session L1b)
+var recap: Dictionary = {}             # data/race_recap.json: the "what this race did" card and the scratch card (session L2a)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
 
@@ -85,6 +86,7 @@ func _ready() -> void:
 	cast = _load("res://data/cast.json")
 	planner = _load("res://data/planner.json")
 	habits = _load("res://data/habits.json")
+	recap = _load("res://data/race_recap.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))
 	files.sort()

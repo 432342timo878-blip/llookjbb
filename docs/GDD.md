@@ -4413,6 +4413,91 @@ and is not one of the "N choices waiting": a careful player's week stays two cli
     but does not slow the race itself (a race session's question, B1 / R7); "the third skip and he stops asking" (friendships that
     fade) is P2; the sizes above wait for playtest 3 (memory: feel it before tuning).
 
+#### L2's questions (user, 2026-10-25; each the recommended option)
+
+What the code showed first: a race changes things at two times (the evening: the moods, the body areas' strain, consistency from
+every race and composure from a big meet, `MindSystem._race_growth`; Sunday night: the race's own training stimulus, race tactics,
+speed endurance, composure, competitiveness and pain tolerance, counted with the week's sessions in `Training._apply_progression`);
+the real sizes are smaller than the mock-up's (consistency ~+0.04 a race); nothing records who watched a race.
+
+1. **L2 is split** (like S3a / S3b): **L2a** = the "what this race did" card + the scratch card (and recording what a race changed);
+   **L2b** = causes everywhere (attribute changes with their sessions, the mood / body / people taps, the week report and "Last week
+   in full" restyled to V1).
+2. **The card replaces the result screen**: after the last round the race ends on the card; **Full results** opens the tables and the
+   key moments; a heat or semi before the final keeps a short result with "On to the final". Same clicks as before.
+3. **Attributes on the card:** the evening's changes with their exact number (two decimals when small), the race's training as a row
+   without a number "counts on Sunday" (L2b's week report says how much came from the race); anything that rounds to 0 is hidden; with
+   nothing else moved, one line says so.
+4. **"Who saw it" waits for P2** (who comes to races and what it does belongs to people as state); until then the card shows only
+   the real messages that came that evening, if any.
+5. **The scratch card** shows where you scratched (a short panel, OK): why (your call / the sore area with its % / school tests / his
+   advice), his one line (also after his own advice), what it means (the day becomes training; a target race's taper goes back to
+   normal), the next race; nothing invented (no mood or trust change the game does not make). The planner's race strap says
+   "Scratched" the next Sunday.
+6. **The phone card scrolls with nothing behind a tap:** the strap (with the Form word) → what changed (4 + "+N more") → his line →
+   the goal and the next race → the splits chart and Form's why; Continue sticky at the bottom.
+7. **The cards are kept** with the career (the last ones; older saves have none and load as before): a tap on the race strap on the
+   planner opens its card again (K1's Career tab will too). Recording only: no dice or numbers change.
+
+#### Built (step L2a, 2026-10-25): the "what this race did" card and the scratch card
+
+1. **The card** (`RaceRecap` records, `RaceRecapView` shows; texts `data/race_recap.json`): after the last round the race day ends at
+   once (`Game.end_race_day`: the result, the health day, the evening's news, the card) and the race screen shows the card in place
+   of the result; Continue resumes Play week (`Game.resume_after_race`; `finish_race` = both, so the tools are unchanged). PC: two
+   columns as `docs/v1/race_card_pc.png` (the strap: the place box in LEAD out of the field, the time, the PB / SB tag and the delta
+   against the best going in; a section's place or the rounds of a meet with heats, "Out" when eliminated; the 200 m splits against the
+   winner of the race, section or heat (the runner-up when you won) as paired bars; FORM ON THE DAY with freshness and sharpness and
+   their causes; the evening's messages) | (WHAT THIS RACE DID, the goal, the coach's line, CONTINUE / FULL RESULTS, the next race).
+   Phone: one column in the agreed order, Continue + Full results sticky. **Full results** = the old tables and the Race story with
+   "Back to the card". Heats and semis before the final keep their tables. Quick and watched races, single / sections / heats: all
+   end on the card (`tools/race_card_check.gd` part 2). The card is a data screen: the plain background (`Router.backdrop`).
+2. **What changed** lists only what the race day moved, each row a word + value + one cause, **a tap shows the exact numbers**: an
+   injury found that day; each mood that the evening's news moved ("OK → Confident", the news, what it does now; only this race's news:
+   `new_entries`); attributes that changed that evening (consistency from every race, more from a different kind of race; composure
+   from a big meet), two decimals when small; the body area the race strained most (the others in its detail) and tiredness, with
+   the warning lines; trust when it moved; one **Race training · Sunday** row (the race's training counts with the week's sessions on
+   Sunday night). A change that rounds to 0 is left out; with only the body and Sunday rows left, "Nothing else moved tonight."
+3. **Form on the day** = the race's own form term (`RaceDay.form`, made on race morning) with freshness (100 − tiredness) and
+   sharpness and their causes: the plan's taper for this race, an easy day before, a tiring week; few fast sessions lately / races and
+   fast sessions; the confidence term when it is not 0; a niggle's or a cold's slowdown. **Not shown: "a late night"**: it does not
+   change race-day form in the game (L1b: it adds life load to the race day only), so the card does not say it.
+4. **The goal**: one settled that day (met / missed), else the season's time goal with the gap and how much closer the race brought it;
+   the bar runs from where you stood when it was set (`est.seen`) to the goal. **The next race** = the next entered meet after this one.
+   **Messages** = what people (not the coach: his line is the card's) wrote that evening; **who watched is not shown** (P2).
+5. **The scratch card** (`Game.scratch_race` makes it; the hub shows it once where the player scratched: the planner's note, the day
+   editor, the race screen, the sore warning, the school's card or stop): SCRATCHED + the meet, WHY (your call / your call with the
+   injury or the sore area and its % / a busy test week / his advice with the area and its %), his line (his thread line as in F1,
+   without the "Next up" tail; after his own advice a line of `coach_talk.json scratched.coach` on the card only, so his thread does
+   not get a second reaction), WHAT IT MEANS (the day as it is now if it is this week, "no longer a target race", how many days of the
+   plan go back to normal training: counted from the plan before and after), the next race. Nothing is said about moods or trust: the
+   scratch changes none (the help says a place goal at that meet is then missed, which is true).
+6. **Kept:** `Game.race_cards` (the last 40, race and scratch cards, saved; a save without them loads with none; `RaceRecap.fixed`
+   turns a loaded card's whole numbers back into ints). The planner's race strap (PC and now also the phone's last week) is a button
+   that opens the card as a page of This week (Back); a race scratched that week has a "Scratched" strap. K1's Career tab can list them.
+7. **Recording only:** the card reads the game and never draws a die or changes a number: `race_card_check` part 3 builds it again
+   and again and the career's save text stays identical; `training_balance -- 0` coach row 206.798298350 / 14.102831594 /
+   1226.006524079, races 73182f4e…, school 55076d77… (42fd3635… / 01dd20d7…) identical. `race.gd` and the races hash untouched
+   (`RaceStory` only adds the splits as numbers).
+8. **Help:** `race_result` v10 (the card: the result, your splits, Form on the day, what changed, coach / goal / next, scratching),
+   `week` v3 (tap the race; a scratched race). The card page uses `race_result`.
+9. **Checks:** new `tools/race_card_check.gd` (in run_all_checks); `saves_check` now makes sure each save races (enters a race when
+   none falls in the days played, or plays on to the next one it can enter) and gets the card; `layout_check` enters the meets of its
+   race views so the card is checked (+ `_card_end`, `_full_results`, new `_card_views`: the card page and the scratch card); the tour
+   (12 the card, 12a, 12a2 Full results, 12c–12e sections and heats, 13a the card page, 13b the scratch card). `layout_check`: 940
+   views at the five sizes, no OVERFLOW / SQUEEZED / WRONG; `help_check` 942 checks in the PC layout and passes in the phone layout.
+   Found by the tour and fixed: a value that rounds to 0 had a sign ("−0.0 %"); with the same meet run twice on one date (the tour) a
+   mood row showed no cause, so the card now tells tonight's news from an equal older one by identity (`new_entries`, `is_same`).
+10. **Measured** (`season_playtest`, the whole 2026-27 season through the real hub, same seed on the commit before L2a): phone
+    390×844, seed 2, policy `careful`: **0.33 mid-week stops a week (0.33 before), 36 of 52 weeks straight through (36), clicks a
+    week 2.48 average / median 2 (2.52 / 2)**; the autosave 463 KB (432: the kept cards, ~2 KB each). PC 1280×720, seed 1,
+    policy `player`: 0.44 mid-week stops a week (0.42), clicks 4.85 (4.58): the new run had 5 diagnoses against 3 (the health dice
+    differ between runs, as in L1b); no new kind of stop. The race's Continue is the same one press it was.
+    The user's three saves (copies, version 4) load in the real game, play 7 days and race (`saves_check -- <copies> 7 real`), each race
+    with its card.
+11. **Seen and left for later:** the Form word "Tired" can stand next to a positive form term (FormSystem's word goes by tiredness
+    alone; e.g. "Tired · Form +0.8 %"): the planner shows the same; a question for the playtest / B1. The coach's race line comes from
+    the Race story's pick, which uses the global dice (since R4): not a card matter.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

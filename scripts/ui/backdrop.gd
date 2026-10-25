@@ -7,7 +7,7 @@ const FOLDER := "res://assets/backgrounds/"
 const EXTENSIONS := ["jpg", "jpeg", "png", "webp"]
 ## V1 (GDD 5 "Backdrop", session L1a): data screens get the plain BG; the photo belongs to the big moments (main menu, race intro,
 ## career start, the season review).
-const PLAIN_SCREENS := ["career_hub"]
+const PLAIN_SCREENS := ["career_hub", "race_card"]   # (race_card: the race screen's "what this race did", session L2a)
 
 var _material := ShaderMaterial.new()
 

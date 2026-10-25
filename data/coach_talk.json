@@ -76,6 +76,8 @@
 		"hurt": ["Good call on {meet}. Racing on sore {area} can cost you weeks; one race costs nothing.", "Right decision. {meet} isn't worth your {area}. We let it settle first."],
 		"school": ["Fine. School comes first this week; {meet} can wait.", "Understood. A busy school week is a good reason to skip {meet}."],
 		"plain": ["You've scratched from {meet}. Your call; we use the day for training.", "No {meet}, then. We'll make it a good training day instead."],
+		"coach": ["Right call. {meet} wasn't worth the risk to your {area}.", "Good. We skip {meet} and let your {area} settle."],
+		"coach_plain": ["Right call. {meet} can wait.", "Good. We skip {meet} and train instead."],
 		"next": "Next up: {next_meet} on {next_date}.",
 		"no_next": "Pick another race when you're ready."
 	},

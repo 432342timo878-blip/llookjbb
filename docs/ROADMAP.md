@@ -508,6 +508,14 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         column (one "done"), the "what this race did" card (incl. a scratch), effects as words + what they do with numbers on a tap.
         *(Opus, high)*
         Done: every number the player cares about has a "why" one tap away; the tour shows each.
+        **Split (user, 2026-10-25; the answers are in GDD 4.10 "L2's questions"):**
+    - [x] **L2a. The race card + the scratch card** *(done 2026-10-25: GDD 4.10 "Built (step L2a)"; mid-week stops 0.33 a week as
+          before, a careful week still 2 clicks; fingerprints identical)*: "what this race did" after every race (quick and watched, single / sections /
+          heats, PC + phone) in place of the result screen, Full results behind a button, the scratch card, the cards kept and opened
+          again from the planner's race strap, help. *(Opus, high)*
+    - [ ] **L2b. Causes everywhere**: attribute changes with their sessions (and the race's share), the moods' / body areas' / people's
+          words + what they do with the numbers and recent causes on a tap, the week report (5 + "+N more") and "Last week in full"
+          restyled to V1, help. *(Opus, high)*
   - [ ] **L3. The cuts + goals + school page** (decisions 3–5 and the cut list): sort P1's ~150 storylets into delete / feed / invitation /
         story beat, a "never contradict" check in `storylet_check`, the habit goal and the cue word cut, mental training as sessions, the
         goals menu with stakes + the two reviews, the School page apart from the messages with tests in the week report. *(Opus, high)*
