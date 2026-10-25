@@ -76,7 +76,7 @@ func _list(with_selection: bool) -> Control:
 			continue
 		col.add_child(_thread_row(str(t), with_selection and (current == t or (current == "profile" and t == "coach"))))
 	if CoachMarket.enabled:   # Find a coach (session C6)
-		col.add_child(_find_row(with_selection and (current == "market" or current.begins_with("coach:"))))
+		col.add_child(_find_row(with_selection and (current == "market" or current == "profile:market" or current.begins_with("coach:"))))
 	return col
 
 
@@ -207,6 +207,8 @@ func _waiting(thread_id: String) -> Array:
 func _page(shown: String) -> Control:
 	if shown == "profile":
 		return _profile("")
+	if shown == "profile:market":   # (your own coach opened from Find a coach: the way back to the list too)
+		return _profile("", true)
 	if shown == "market":
 		return _market()
 	if shown == "school" and SchoolUI.system() != null:
@@ -217,11 +219,11 @@ func _page(shown: String) -> Control:
 
 
 ## A coach's page: the head coach's (`coach_id` "") or another coach's from Find a coach (session C6).
-func _profile(coach_id: String) -> Control:
+func _profile(coach_id: String, from_market := false) -> Control:
 	var col := UIKit.vbox(12)
-	if Layout.stacked() and coach_id == "":
+	if Layout.stacked() and coach_id == "" and not from_market:
 		col.add_child(_back_button())
-	var profile := CoachProfile.new(coach_id)
+	var profile := CoachProfile.new(coach_id, from_market)
 	profile.messages_requested.connect(_go.bind("coach"))
 	profile.back_requested.connect(_go.bind("market"))
 	profile.changed.connect(func(): changed.emit())
@@ -236,7 +238,7 @@ func _market() -> Control:
 		col.add_child(_back_button())
 	var view := CoachMarketView.new()
 	view.coach_requested.connect(func(cid: String):
-		_go("profile" if cid == Game.athlete.coach_id else "coach:" + cid))
+		_go("profile:market" if cid == Game.athlete.coach_id else "coach:" + cid))
 	view.changed.connect(func(): changed.emit())
 	col.add_child(view)
 	return col

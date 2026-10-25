@@ -526,7 +526,9 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           mental-plan setting goes; an older save's plan: asked at the start), the goals menu with real stakes (today: trust, the
           moods, next season's level, the coach putting you up for a bigger meet; camps / the wild card / bigger meets wait for G3 /
           K1), the two reviews as a section of that Sunday's planner, the School page apart from the messages with only the agreed
-          stops (the report card stop and the meet-and-tests Monday stop: asked at the start), save version 6 if needed. *(Opus, high)*
+          stops (the report card stop and the meet-and-tests Monday stop: asked at the start), save version 6 if needed. **First, from
+          the user's notes (docs/PLAYTESTS.md 2026-10-25): "Ask the coach" = same plan, same answer** (his error tied to the plan,
+          not to the button; the Season page says which week it judges). *(Opus, high)*
         Done: the cut list done; `storylet_check` finds no contradicting or promising lines; stops a week measured.
   - [ ] **K1. Career tab + the next big thing + reputation + the season review** (decision 10). *(Sonnet, high)*
         Done: every result in one list, the milestones timeline, the Overview's countdown and long path, a season ends as a chapter.
@@ -534,10 +536,13 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         `docs/PLAYTESTS.md`; the sizes of things are tuned after it (memory: feel it before tuning).
   - [ ] **P2. People as state** (decision 6, replaces the old "moments part 2"): new people from places, person pages, friendship by
         shared time and fading, invitations from the calendar and the state, a first relationship from ~15, the training group's card
-        (level, fixed days, pull, leaving it), Find a coach's comparison, moments for ages 16–17 in the new form. Research first: Finnish
+        (level, fixed days, pull, leaving it), Find a coach's comparison **with sort, filter and search, and a talk with a
+        candidate (user's notes 2026-10-25)**, moments for ages 16–17 in the new form. Research first: Finnish
         teens' time use, sleep and dating age; training group sizes and schedules. *(Opus, high)*
         Done: a friend can be made and lost through slots; the group's pull shows in the week report; `storylet_check` covers the new kinds.
-  - [ ] **R6. Race presentation** (decision 8): research (athletics TV graphics, World Athletics track specs outdoor + indoor, Godot 2D /
+  - [ ] **R6. Race presentation** (decision 8): **first a race-logic audit (user's notes 2026-10-25: "check that everything works
+        100 % and is logical": every card, move, box, kick and fall against its rules, odd cases listed and fixed or deferred to R7)**,
+        then research (athletics TV graphics, World Athletics track specs outdoor + indoor, Godot 2D /
         2.5D techniques, CC0 runner art), then **two short prototypes** (TV-style 2D and a 2.5D broadcast angle) for the user to pick from,
         then the build: the stadium from specs, figures, follow camera + zoom, TV graphics, the kick slow-motion setting (Off / Short /
         Full), plain labels. Presentation only: the races hash stays. *(Opus, high)*
@@ -560,7 +565,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
   - [ ] **Restyle the remaining screens** in V1's look (GDD 5 "The look (V1)": the text-cutting rules, the 56 px header, the photo only on
         big moments, the race card's broadcast shapes; with layout_check, the tour and help_check updated). *(Sonnet, high)*
   - [ ] **B1. Balance session:** every target of GDD 4.9.7 + 4.10 over many seasons in the `real` preset (`career_check`, `season_check`,
-        `storylet_check`, the slots' and the group's effect sizes). *(Opus, high)*
+        `storylet_check`, the slots' and the group's effect sizes; **mobility & stretching stacked every day is an exploit** (user's
+        notes 2026-10-25: tiredness 10.6 vs 17.0, mobility +3.7 in half a year): diminishing returns or a cap). *(Opus, high)*
   - Then the user's playtest and the **check-in at the end of M2** *(Opus)*. Gym day comes with the specialists (later).
 - [x] Coaching (original item; designed above) (hire, veto; also the coach's race advice by personality instead of the 80 % dice: the hard driver
       over-tells you to go / push, the calm one to wait, the race reader the most accurate; check-in 2026-10-10).

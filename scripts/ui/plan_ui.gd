@@ -134,6 +134,7 @@ static func fill_summary(box: VBoxContainer, a: Athlete, plan: Variant, monday: 
 		var l := UIKit.label(UIKit.attr_name(id))
 		l.custom_minimum_size.x = 150 if Layout.stacked() else 200
 		row.add_child(l)
+		row.add_child(UIKit.attr_value_label(a.get_attr(str(id))))   # (user's playtest note 2026-10-25: where you stand now, beside what it trains)
 		var bar := ColorRect.new()
 		bar.color = Palette.ACCENT
 		bar.custom_minimum_size = Vector2(minf(p.stimulus[id], 6.0) * (30.0 if Layout.stacked() else 50.0), 12)

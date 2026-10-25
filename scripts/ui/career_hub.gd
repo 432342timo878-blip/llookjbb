@@ -819,7 +819,7 @@ func _help_entry() -> String:
 		if Game.season.mode != SeasonPlan.PHASES:
 			return "training_repeat"
 		return "phase_editor" if _phase_open != "" else "training_season"
-	if _view == "people" and (_people_page == "market" or _people_page.begins_with("coach:")):
+	if _view == "people" and (_people_page == "market" or _people_page == "profile:market" or _people_page.begins_with("coach:")):
 		return "market"   # Find a coach and a coach's page (session C6)
 	if _view == "people" and _people_page == "school":
 		return "school"   # the School page (session S2)

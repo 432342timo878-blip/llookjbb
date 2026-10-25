@@ -13,13 +13,15 @@ signal back_requested       # another coach: back to Find a coach
 signal changed              # something was done (asked, a visit planned, a change of coach): the hub redraws its marks
 
 var coach_id := ""
+var from_market := false    # opened from Find a coach (the head coach's page then has the way back to the list too)
 var _confirm := false       # "Start on Monday" pressed once: the warning and the confirm button show
 var _visit_open := false    # the visit's day picker is open
 var _note := ""             # the line of the last scouting step (results / asking around)
 
 
-func _init(id := "") -> void:
+func _init(id := "", market := false) -> void:
 	coach_id = id
+	from_market = market
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation", 12)
 	_build()
@@ -59,7 +61,15 @@ func _build() -> void:
 	add_child(head)
 	var back := UIKit.button(PeopleUI.ui("messages_button") if is_head else str(mui.back_market), false, 160)
 	back.pressed.connect(func(): (messages_requested if is_head else back_requested).emit())
-	add_child(back)
+	if is_head and from_market:   # (user's playtest note 2026-10-25: your own coach opened from the list had no way back to it)
+		var row := UIKit.flex(8)
+		var to_list := UIKit.button(str(mui.back_market), false, 160)
+		to_list.pressed.connect(func(): back_requested.emit())
+		row.add_child(to_list)
+		row.add_child(back)
+		add_child(row)
+	else:
+		add_child(back)
 
 	if mk != null and not mk.pending.is_empty() and (is_head or str(mk.pending.coach) == cid):
 		add_child(_pending_panel(mk, cs))
