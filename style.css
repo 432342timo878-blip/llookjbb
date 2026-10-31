@@ -1,0 +1,69 @@
+:root {
+  --bg: #05070a; --panel: #10151c; --panel2: #171e28; --text: #f2f6fa;
+  --muted: #7f8c9b; --accent: #3da9fc; --ok: #34d399; --bad: #f87171;
+  --radius: 2.2vmin;
+}
+body[data-resolved="day"] {
+  --bg: #e9eef4; --panel: #ffffff; --panel2: #dfe7f0; --text: #0c1722;
+  --muted: #5b6978; --accent: #0a6cd1;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif; overflow: hidden;
+  transition: background .6s, color .6s; }
+
+.dash {
+  height: 100%; padding: 2vmin; gap: 2vmin; display: grid;
+  grid-template-columns: 1.1fr 1.4fr 1fr;
+  grid-template-rows: 1fr 1fr auto;
+  grid-template-areas:
+    "clock speed trip"
+    "apps  apps  apps"
+    "bar   bar   bar";
+}
+.panel { background: var(--panel); border-radius: var(--radius); padding: 2vmin;
+  display: flex; flex-direction: column; justify-content: center; transition: background .6s; }
+.clock-panel { grid-area: clock; }
+.speed-panel { grid-area: speed; align-items: center; text-align: center; }
+.trip-panel  { grid-area: trip; gap: 1.5vmin; }
+
+.time  { font-size: 13vmin; font-weight: 700; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.date  { font-size: 3.4vmin; color: var(--muted); margin-top: 1vmin; }
+.speed { font-size: 22vmin; font-weight: 800; line-height: .95; font-variant-numeric: tabular-nums; }
+.unit  { font-size: 3.6vmin; color: var(--muted); }
+.meta  { display: flex; gap: 3vmin; margin-top: 1.5vmin; font-size: 3.2vmin; color: var(--muted); align-items: center; }
+.gps { padding: .3em .8em; border-radius: 99px; background: var(--panel2); font-size: 2.6vmin; }
+.gps.on { color: var(--ok); } .gps.off { color: var(--bad); }
+
+.stat { display: flex; justify-content: space-between; align-items: baseline; }
+.label { color: var(--muted); font-size: 3vmin; }
+.value { font-size: 6vmin; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.apps { grid-area: apps; display: grid; gap: 2vmin;
+  grid-template-columns: repeat(auto-fit, minmax(18vmin, 1fr)); }
+.app { background: var(--panel); border-radius: var(--radius); border: 0; color: var(--text);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1vmin;
+  font-size: 3.2vmin; text-decoration: none; min-height: 18vmin; transition: transform .08s, background .2s; }
+.app .icon { font-size: 8vmin; line-height: 1; }
+.app:active, .chip:active { transform: scale(.96); background: var(--accent); color: #fff; }
+
+.bar { grid-area: bar; display: flex; gap: 2vmin; }
+.chip { flex: 1; min-height: 11vmin; background: var(--panel); color: var(--text); border: 0;
+  border-radius: var(--radius); font-size: 3.2vmin; font-weight: 600; transition: transform .08s, background .2s; }
+.trip-panel .chip { flex: none; min-height: 9vmin; background: var(--panel2); }
+
+#dimmer { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .4s; }
+
+/* Narrow strip displays (e.g. 1280x480): tighten layout */
+@media (min-aspect-ratio: 2/1) {
+  .dash { grid-template-rows: 1.2fr 1fr auto; }
+  .time { font-size: 17vmin; } .speed { font-size: 30vmin; }
+  .app { min-height: 0; flex-direction: row; } .app .icon { font-size: 9vmin; }
+  .chip { min-height: 13vmin; }
+}
+/* Portrait */
+@media (orientation: portrait) {
+  .dash { grid-template-columns: 1fr 1fr; grid-template-areas: "clock trip" "speed speed" "apps apps" "bar bar";
+    grid-template-rows: auto 1.4fr 1fr auto; }
+  .time { font-size: 11vmin; } .speed { font-size: 26vmin; }
+}

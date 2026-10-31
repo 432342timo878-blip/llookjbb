@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Car Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="auto">
+<main class="dash">
+  <section class="panel clock-panel">
+    <div class="time" id="time">--:--</div>
+    <div class="date" id="date"></div>
+  </section>
+
+  <section class="panel speed-panel">
+    <div class="speed" id="speed">--</div>
+    <div class="unit" id="unit">km/h</div>
+    <div class="meta">
+      <span id="heading">—</span>
+      <span id="gpsState" class="gps off">GPS off</span>
+    </div>
+  </section>
+
+  <section class="panel trip-panel">
+    <div class="stat"><span class="label">Trip</span><span class="value" id="trip">0.0</span></div>
+    <div class="stat"><span class="label">Top speed</span><span class="value" id="top">0</span></div>
+    <button class="chip" id="resetTrip">Reset</button>
+  </section>
+
+  <nav class="apps" id="apps" aria-label="Shortcuts"></nav>
+
+  <footer class="bar">
+    <button class="chip" id="themeBtn">Theme: Auto</button>
+    <button class="chip" id="unitBtn">km/h</button>
+    <button class="chip" id="dimBtn">Dim</button>
+    <button class="chip" id="gpsBtn">Start GPS</button>
+    <button class="chip" id="fsBtn">Fullscreen</button>
+  </footer>
+</main>
+<div id="dimmer"></div>
+<script src="app.js"></script>
+</body>
+</html>
