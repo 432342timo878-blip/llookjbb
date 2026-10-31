@@ -16,6 +16,12 @@ static func ui() -> Dictionary:
 	return Data.school_life.ui
 
 
+## The hub's School tab is shown (session L3b1): the school model is on and the athlete still goes to school.
+static func has_page() -> bool:
+	var ss := system()
+	return ss != null and str(ss.stage_of(Game.date).get("kind", "")) != "none"
+
+
 ## The colour of a grade or a standing (green from 9, light green from 8, amber from 6.5, red below).
 static func grade_color(v: float) -> Color:
 	for c in ui().grade_colors:

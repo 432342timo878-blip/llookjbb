@@ -51,7 +51,7 @@
   },
   "goal": {"met_confidence": 6, "met_motivation": 4, "missed_confidence": -2, "set_motivation": 4, "ambition_step": 2.0},
   "new_phase_motivation": 3,
-  "big_meet": {"_note": "Sunday night before a week with a big meet (big_levels): stress + stress x (1 - (composure - 10) x composure_per_point), x relaxation_share with relaxation training in the mental plan. The next Sunday's drift takes it back down.", "stress": 20, "composure_per_point": 0.04, "relaxation_share": 0.5},
+  "big_meet": {"_note": "Sunday night before a week with a big meet (big_levels): stress + stress x (1 - (composure - 10) x composure_per_point), x relaxation_share with a relaxation session in the week before (session L3b1: the week just played). The next Sunday's drift takes it back down.", "stress": 20, "composure_per_point": 0.04, "relaxation_share": 0.5},
   "moment_point": 5,
   "trust_factor": {"new": 0.9, "good": 1.0, "strong": 1.25, "strained": 0.6}
  },
@@ -78,13 +78,28 @@
   "consistency": {"per_race": 0.05, "varied": 1.5},
   "composure": {"per_big_race": 0.1, "confidence_share": 0.2}
  },
- "mental_plan": {
-  "_note": "The weekly mental plan (GDD 4.9.4; Training tab): none, one, two or all three kinds, one short session of each a week (so 0-3 sessions). Sunday night each session grows composure by `composure` x headroom x the coach's mental coaching (imagery x target_week when a target is in the coming week); relaxation lowers the stress target (drift.stress.relaxation); self-talk lifts the confidence target by `confidence`. All three at a composure of 10: about +0.5 a year (the 2023 meta-analysis: moderate effects at best). No body strain. Session L3a cut the cue word (it did nothing the player could see; older saves' word is ignored). Life load (school) comes with S1.",
-  "max_sessions": 3,
+ "mental": {
+  "_note": "Mental training as sessions in the week (GDD 4.9.4; session L3b1 replaced M1's weekly mental plan, GDD 4.10 'L3b's questions' 2-5). A mental session is a short extra on a day (WeekPlan's `mental`: one kind or none per day, rest days too); it takes none of the day's two training places, has no body strain and no tiredness, and each KIND counts once a week (a second one of a kind that week adds nothing). What a week's kinds do (MindSystem, Sunday night, recorded as causes): each grows composure by `composure` x headroom x the coach's mental coaching (imagery x target_week when a target meet is in the coming week); relaxation pulls the stress target by drift.stress.relaxation and halves the next week's big-meet nerves (news.big_meet.relaxation_share); self-talk lifts the confidence target by `confidence`. On a school day each adds `life_load` (school_life.json texts.pulls.mental). All three at a composure of 10: about +0.5 a year (the 2023 meta-analysis: moderate effects at best; self-talk has the clearest performance evidence, Hatzigeorgiadis et al. 2011). coach: his plans (SeasonPlan.template_for, WeekPlan.coach) carry the kinds of the last level his mental coaching reaches, each on the lightest free day (rest first, then Easy, Normal; Monday first); the lab's coach of 10s gets none. An older save's mental plan (version < 6) becomes the same sessions on the plan's lightest days (convert).",
+  "per_day": 1,
+  "life_load": 0.15,
   "kinds": {
-   "imagery": {"name": "Imagery", "composure": 0.004, "target_week": 2.0, "text": "Picture the race before it happens: the start, the bell, the kick. Strongest the week before a target."},
-   "relaxation": {"name": "Relaxation and breathing", "composure": 0.003, "text": "Slow breathing and letting go of tension. Lowers stress a little."},
-   "self_talk": {"name": "Self-talk", "composure": 0.003, "confidence": 2, "text": "What you say to yourself when it hurts. Lifts confidence a little."}
+   "imagery": {"name": "Imagery", "short": "Imagery", "composure": 0.004, "target_week": 2.0, "text": "Picture the race before it happens: the start, the bell, the kick. Grows composure; twice as much in the week before a target race."},
+   "relaxation": {"name": "Relaxation and breathing", "short": "Relaxation", "chip": "Relax", "composure": 0.003, "text": "Slow breathing and letting go of tension. Grows composure, eases stress and halves the nerves before a big meet."},
+   "self_talk": {"name": "Self-talk", "short": "Self-talk", "composure": 0.003, "confidence": 2, "text": "Practise what you say to yourself when it hurts. Grows composure and lifts confidence a little."}
+  },
+  "coach": {"levels": [{"from": 12, "kinds": ["relaxation"]}, {"from": 15, "kinds": ["relaxation", "imagery"]}, {"from": 18, "kinds": ["relaxation", "imagery", "self_talk"]}]},
+  "ui": {
+   "none": "No mental session",
+   "add": "Add a mental session",
+   "head": "MENTAL SESSION",
+   "editor_hint": "15 minutes on top of the day: no strain, no tiredness. Each kind counts once a week.",
+   "again": "Already on {day} this week: a second {name} adds nothing.",
+   "row_title": "Mental training",
+   "row_none": "No mental sessions this week.",
+   "week_line": "{n} mental · {kinds}",
+   "converted_title": "Mental training is now sessions",
+   "converted": "Your weekly mental plan is now sessions on your days: {list}. Change them on any day like a training session.",
+   "converted_day": "{name} on {day}"
   }
  },
  "causes": {
@@ -104,6 +119,7 @@
   "goals_set": "New season goals",
   "new_phase": "A new phase of training",
   "big_meet": "Nerves: {meet} this week",
+  "big_meet_relaxed": "Nerves: {meet} this week (halved by last week's relaxation session)",
   "moment": "Talking with {who}",
   "week": "The week"
  },

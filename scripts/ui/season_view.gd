@@ -326,6 +326,8 @@ func _this_week() -> void:
 			line += ", ".join(names) if not names.is_empty() else "Rest day"
 			if not names.is_empty() and info.intensity != WeekPlan.NORMAL:
 				line += " (%s)" % Training.intensity(info.intensity).name
+		if str(info.get("mental", "")) != "":   # (session L3b1)
+			line += " + " + str(Data.mind.mental.kinds[str(info.mental)].short)
 		if info.played:
 			line += "  · played"
 		elif info.changed:
@@ -338,7 +340,7 @@ func _this_week() -> void:
 		plan_days.append(info.sessions)
 		plan_intensity.append(info.intensity)
 	var plan := WeekPlan.make(plan_days, plan_intensity)
-	days.add_child(UIKit.wrapped("To change a single day of this week, tap it in the week strip above.", "MutedLabel"))
+	days.add_child(UIKit.wrapped("To change a single day of this week, tap it in This week.", "MutedLabel"))
 	var col := UIKit.vbox(8)
 	col.add_child(UIKit.label("THIS WEEK · " + SeasonUI.week_text(template).to_upper(), "CaptionLabel"))
 	col.add_child(days)

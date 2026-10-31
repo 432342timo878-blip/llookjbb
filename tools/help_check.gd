@@ -122,8 +122,8 @@ func _run() -> void:
 		await _frames(3)
 		await _press_help(hub, "hub a coach's page", "market", true)
 	# The School page (session S2): the header "?" opens the school's help.
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(3)
 	await _press_help(hub, "hub school page", "school", true)
 	hub._people_page = ""

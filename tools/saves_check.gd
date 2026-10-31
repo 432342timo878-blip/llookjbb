@@ -61,6 +61,13 @@ func _run() -> void:
 				hs.habits if hs != null else [], effort, free, hs.summary() if hs != null else "-"], habits_ok and section != null)
 		if section != null:
 			section.free()
+		# Session L3b1 (save version 6): an older save's weekly mental plan became the same sessions on the plan's days.
+		var old_plan: Array = parsed_save.get("game", {}).get("systems", {}).get("mind", {}).get("plan", [])
+		var WPl = load("res://scripts/core/week_plan.gd")
+		var on_days: Array = WPl.mental(game.season.week_for(game.week_monday()))
+		var all_in := old_plan.all(func(k): return str(k) in on_days or str(k) in WPl.mental(game.season.week_for(game.add_days(game.week_monday(), 7))))
+		_ok("%s: its mental plan %s is now sessions on the days (this week: %s)" % [slot, old_plan, on_days.filter(func(k): return k != "")],
+				all_in and game.get_system("mind").legacy_plan.is_empty())
 		var start: Dictionary = game.date.duplicate()
 		var mode: String = game.season.mode
 		var athlete: String = game.athlete.full_name()

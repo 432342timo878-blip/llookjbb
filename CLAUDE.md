@@ -9,7 +9,7 @@ tools, numbers: **read the paragraph of a system when you work on it**; it holds
 
 **User:** no programming experience: explain how to run and test things in plain steps; Claude writes all code.
 
-**Status (2026-10-25):** M1 done (character creation, training, calendar, saves, the 800 m race, rankings, responsive UI). M2 part 1
+**Status (2026-10-31):** M1 done (character creation, training, calendar, saves, the 800 m race, rankings, responsive UI). M2 part 1
 done (day-by-day mode, health, season periodization, race realism R1–R5 + commentary R4, meet formats, the multi-year check and the
 talent balance). M2 part 2 built so far: the coaching + school + people design (GDD 4.9), sessions C1–C6 (coach model, moments,
 People tab + Sunday talk, proposals + Veto, goals + race advice, the coach market), M1 (the mind), D1 (research data), S1–S3b (school,
@@ -28,8 +28,11 @@ GDD 4.10 "L2's questions"): **L2a done** (the "what this race did" card after ev
 the slots, a tap on every row; "Last week in full" in V1; "Built (step L2b)"). **L3 is split** (user, 2026-10-25, GDD 4.10 "L3's
 questions"): **L3a done** (the sort of every storylet in `docs/L3_SORT.md`: 90 feed messages that ask nothing, 26 invitations, 7
 story beats on the Sunday planner, 42 deleted; "never contradict" as `touches` + guards + a scan in `storylet_check`; the cue word
-and the habit goal cut; "Built (step L3a)"). Next, in `docs/ROADMAP.md` order: L3b (mental sessions, the goals menu + reviews, the
-School page) → K1 (Career tab) → the user's playtest 3 → P2 →
+and the habit goal cut; "Built (step L3a)"). **L3b is split** (user, 2026-10-31, GDD 4.10 "L3b's questions"): **L3b1 done** ("Ask
+the coach" = same plan, same answer; mental training as sessions on the days (WeekPlan `mental`, the weekly setting gone); the
+School tab with only the agreed stops (report card and meet-and-tests = planner cards; an exam clash still stops); save v6; "Built
+(step L3b1)"). Next, in `docs/ROADMAP.md` order: L3b2 (the goals menu with real stakes + the two reviews) → K1 (Career tab) → the
+user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -105,7 +108,7 @@ sets `content_scale_size`, rebuilds the theme (`ThemeBuilder.build(compact)`) an
 FM-style `attr_row`, `ChoiceCard`), `Layout.page_margin()`, `Layout.stacked()`, **44 px minimum for anything tappable, no hover-only
 info** (use `attr_row(..., description)` / `UIKit.tap_to_explain`). Hub = a 56 px header bar with the tabs on PC (`TabButton`), a
 bottom bar with icons on a phone (`BottomTabButton`): This week (`WeekPlanner`, the one place the week is shown and changed) / Season /
-Calendar / People / Career / Rankings (old ids overview / training still work). Theme in code: `ui/palette.gd`, `ui/theme_builder.gd`;
+Calendar / People / School (L3b1; hidden without school) / Career / Rankings (old ids overview / training still work). Theme in code: `ui/palette.gd`, `ui/theme_builder.gd`;
 the V1 kit for new screens: variations BigNumber / CardHeading / BodyLabel / ItemLabel / WhyLabel / SectionLabel …, `Icons` (Lucide,
 `assets/icons`), `StatBar`, `CauseChip`, `CalloutCard`; fonts Inter + Barlow Condensed (numbers). Backdrop (big moments only; the hub
 is plain BG): `scripts/ui/backdrop.gd` + a blurred photo in `assets/backgrounds/` (CC BY-SA, credits in its README; the `.import` files must keep `mipmaps/generate=true`; an
@@ -122,7 +125,8 @@ them with a tap for the numbers (meta `cause_row`). Never state a cause the game
   `data/training.json progression`), `Rivals` (the rival pool, age curves, bloom / drift / pace, churn), `Rankings`, `Calendar` (meets from
   `data/competitions.json`, eligibility, standards, date helpers; `Calendar.SEASONS_AHEAD` 20), `Standards` (real SM / TF / Kalevan limits
   with sources).
-- Week plan: `WeekPlan` = `{days, intensity}`; `SeasonPlan` (`Game.season`; repeat or phases mode, `week_for(monday)` = the one place that
+- Week plan: `WeekPlan` = `{days, intensity}` + an optional `mental` (L3b1: 7 × a mental session kind or "", the key only when the
+  week has one; a short extra that takes no training place); `SeasonPlan` (`Game.season`; repeat or phases mode, `week_for(monday)` = the one place that
   answers "what is the plan for this week"; the coach's three plans Steady / Balanced / Ambitious + the ★ pick); `SeasonSystem` (the "three
   plans" stop, the rollover, easing back in); `FormSystem` (race-day Form from sharpness + freshness).
 - **Day engine** (GDD 4.5/4.7): `Game.date` = today (the next day to play); `Game.advance_day()` / `advance_week()` / `finish_race()` return
@@ -131,8 +135,9 @@ them with a tap for the numbers (meta `cause_row`). Never state a cause the game
   `answer_event`; `Game.systems` order: Health, Season, Form, Coach, School, Mind, Moments (StoryletSystem), Goals, Suggests, Proposals,
   Market (see `_make_systems`).
 - `HealthSystem` (soreness, injuries, illness, adaptation; `data/health.json`, `data/injuries.json`), UI in `HealthUI` / `HealthEventPanel`.
-- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 5** (L1b: the habits); older saves load (each
-  system's state is `{}` until it first runs; a v4 save's study effort / free time become habits).
+- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 6** (L3b1: mental sessions; v5 L1b: the
+  habits); older saves load (each system's state is `{}` until it first runs; a v4 save's study effort / free time become habits; an
+  older save's weekly mental plan becomes sessions on the plan's days, `MindSystem.convert_legacy`).
 
 **Races.** `RaceDay` runs a meet as `single` / `sections` / `heats` (World Athletics table); `Race` = the pack engine (drafting, moves,
 kick chain, boxes, falls, DNF/DQ; every number in `data/races.json`; same seed = same race); the player's cards and action bar
@@ -151,22 +156,26 @@ the cards kept in `Game.race_cards` (the planner's race strap opens one), the sc
   take slots, ≤ 1 a week)**, each with `touches` and guards; `important` = test moments only; storylets in `data/storylets/`,
   format in its README; the Sunday talk = the
   coach's `planner_line` + a thread message, race message and mood topics; `Cast` = family, friends, school people, partners, rivals;
-  `data/cast.json`), `CoachTalk`, `CoachVerdict` (the coach's judgement of a change: truth + his noise), `CoachProposals` (his NOTES on
+  `data/cast.json`), `CoachTalk`, `CoachVerdict` (the coach's judgement of a change: truth + his noise; L3b1: a weekly plan's noise
+  comes from the plan alone, so the same plan gets the same answer on any button and any date), `CoachProposals` (his NOTES on
   the planner days, written on Sunday, ≤ 2 a week, Make it easy / Keep mine = the Veto; mid-week only the "scratch?" stop), `CoachAsk`,
   `SeasonGoals` (time / milestone / habit with real standards; L3a cut the "N % of the sessions" habit), `RaceAdvice`,
   `CoachSuggests` (a planner card on Sunday).
-- `MindSystem` (confidence / motivation / stress, mental plan, effects on training and races; `data/mind.json`; L3a cut the cue word).
+- `MindSystem` (confidence / motivation / stress, effects on training and races; `data/mind.json`; L3a cut the cue word; L3b1: the
+  weekly mental plan became mental sessions on the days (imagery / relaxation / self-talk, each kind once a week, read from the week
+  on Sunday, recorded as causes); the coach's plans include them by his mental coaching (none for the lab's coach of 10s)).
 - `HabitSystem` (L1b: the 9 free-time slots (evenings + Sat + Sun) with study / rest / friends / family, the standing habits, this
   week's changes; they move grades, the life load and the moods where the old study effort / free time did; the default habit = the
   neutral one; `data/habits.json`; **call `HabitSystem.touch()` after changing anything a slot reads**) + invitations (storylets with
   `invite`, posted on Sunday into a slot, planned on the planner, happening on their evening; never a Play-week ask) + `HabitsUI`.
-- `SchoolSystem` (stages, 17 subjects, tests, report cards, life load, the meet-and-tests decision; `data/school_life.json`) +
+- `SchoolSystem` (stages, 17 subjects, tests, report cards, life load, the meet-and-tests decision; `data/school_life.json`; L3b1:
+  the report card and the meet-and-tests clash are planner cards with a named default, only a matriculation exam clash stops) +
   `SchoolCalendar` (real 2026–27 dates, rules after) + `SchoolApplication` (the joint application, points, the path, moving; a rejection
   offers a **TUVA year**, stored as path kind `grade_10`) + `Lukio` / `Matriculation` (courses, periods, exams; `data/lukio.json`).
   Research data: `towns.json`, `urheilulukiot.json`, `school.json`, `application.json`, `standards.json`, each fact with a source.
-- UI: `PeopleView` (People tab: threads, profile, Find a coach, School page, Rivals), `PeopleUI`, `MomentEventPanel`, `StandingOrders`
-  (Season tab, under YOUR HABITS and the mental plan: the coach's notes on / off, **"Lukio courses: ask me every period / let the counsellor plan them"**, saved rules),
-  `SchoolUI` / `SchoolView` / `LukioUI` / `MatricPlanView` / `SchoolApplyView`, `MindUI`, `GoalsUI`, `CoachProfile`, `CoachMarketView`.
+- UI: `PeopleView` (People tab: threads incl. the teachers' School thread, profile, Find a coach, Rivals), `PeopleUI`, `MomentEventPanel`, `StandingOrders`
+  (Season tab, under YOUR HABITS: the coach's notes on / off, **"Lukio courses: ask me every period / let the counsellor plan them"**, saved rules),
+  `SchoolUI` / `SchoolView` (the School tab) / `LukioUI` / `MatricPlanView` / `SchoolApplyView`, `MindUI`, `GoalsUI`, `CoachProfile`, `CoachMarketView`.
 
 **Tools and docs.** All checks live in `tools/` (see "How to run and check"); `tools/json_check.gd` parses every data file (and the research
 data's sources). The GDD has a "Built (…)" note per session with the decisions.

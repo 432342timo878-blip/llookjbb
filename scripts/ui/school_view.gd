@@ -30,6 +30,14 @@ func _build() -> void:
 	add_child(UIKit.label(str(u.page_head), "HeadingLabel"))
 	add_child(UIKit.wrapped(str(u.stage_line).format({"stage": str(stage.name), "town": ss.town()}), "MutedLabel"))
 	add_child(UIKit.wrapped(str(u.page_note), "MutedLabel"))
+	# (session L3b1, the user's "what is subject focus for": one clear line on what grades are for, by stage)
+	var for_key := "grades_for_lukio" if ss.lukio_active(Game.date) else ("grades_for" if bool(stage.get("subjects", false)) else "")
+	if for_key != "":
+		var line := UIKit.wrapped(str(u[for_key]), "BodyLabel")
+		var callout := PanelContainer.new()
+		callout.add_theme_stylebox_override("panel", ThemeBuilder.callout_box(Palette.ACCENT))
+		callout.add_child(line)
+		add_child(callout)
 	var left := UIKit.vbox(12)
 	var right := UIKit.vbox(12)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL

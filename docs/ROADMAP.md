@@ -522,7 +522,17 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           `docs/L3_SORT.md`)*: every storylet sorted into delete / feed / invitation / story beat, "never contradict" as `touches` +
           guards + a scan in `storylet_check`, the quiet feed (People + one planner line), story beats on the Sunday planner, up to 2
           invitations a week, the habit goal and the cue word cut. *(Opus, high)*
-    - [ ] **L3b. Mental sessions + goals + reviews + the School page**: mental training as sessions in the week (the weekly
+    - [x] **L3b1. Same answer + mental sessions + the School tab** *(done 2026-10-31: GDD 4.10 "L3b's questions" and "Built (step
+          L3b1)"; L3b split by the user 2026-10-31)*: "Ask the coach" = same plan, same answer (his dice from the plan; the Season tab
+          names the week it judged), mental training as sessions on the days (the weekly setting gone, older saves' plans converted,
+          the coach's plans by his mental coaching), the School tab apart from the messages (the report card and the meet-and-tests
+          clash = planner cards with a named default; only an exam clash stops), save version 6, help. *(Opus, high)*
+    - [ ] **L3b2. The goals menu + the two reviews** (its own conversation): the goals agreed at the season start from a bigger menu
+          (times, milestones: standards, selections, a final, a place; process goals only if counted honestly), met goals open only
+          what the game really has (trust, the moods, next season's level, the coach putting you up for a bigger meet through
+          CoachSuggests; the camps / the TF-juniorit wild card / bigger meets / reputation wait for G3 / K1), the reviews at the end
+          of the indoor season and at midsummer as a section of that Sunday's planner (on track / adjust / drop). *(Opus, high)*
+    - [ ] **L3b (the original item, now L3b1 + L3b2). Mental sessions + goals + reviews + the School page**: mental training as sessions in the week (the weekly
           mental-plan setting goes; an older save's plan: asked at the start), the goals menu with real stakes (today: trust, the
           moods, next season's level, the coach putting you up for a bigger meet; camps / the wild card / bigger meets wait for G3 /
           K1), the two reviews as a section of that Sunday's planner, the School page apart from the messages with only the agreed

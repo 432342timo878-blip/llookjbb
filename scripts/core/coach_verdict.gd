@@ -159,8 +159,12 @@ static func week_change(cand: Dictionary, base: Dictionary, compare: String, sta
 		var m := Game.add_days(monday, 7 * i)
 		base_weeks.append({"plan": base, "monday": m})
 		cand_weeks.append({"plan": cand, "monday": m})
+	# (session L3b1, the user's "same plan, same answer": his dice for a weekly plan come from the plan and what it is compared
+	# with, not from the button, the date or the week, so the Season page and the phase page answer the same plan the same way and
+	# his word stays until the plan or the body (the truth) changes)
 	return {"kind": "week", "start": s, "base": base_weeks, "cand": cand_weeks, "days": [], "compare": compare,
-			"sig": "week|%s|%s|%s" % [compare, JSON.stringify(cand), Calendar.date_key(monday)]}
+			"sig": "plan|%s|%s" % [JSON.stringify(WeekPlan.make(cand.days, cand.intensity)),
+					JSON.stringify(WeekPlan.make(base.days, base.intensity))], "steady": true}
 
 
 ## Ask the coach about the weekly plan (the Training tab): the plan from next week on as it is now against the coach's (repeat
@@ -175,6 +179,15 @@ static func for_week() -> Dictionary:
 		cand = WeekPlan.make(plan.days, plan.intensity)
 		var year := Game.season.plan_year(next)
 		var phase := str(plan.get("phase", ""))
+		# (session L3b1) Next week is the phase's own week: the very question of the phase's page, so the same answer. Otherwise
+		# (a lighter week, a taper, easing back in) next week as it is; `next_plan` lets the card say which week he judged.
+		if phase != "":
+			var own: Dictionary = Game.season.edit_phase(year, phase) if Game.season.is_edited(year, phase) \
+					else Game.season.template_for(year, phase)
+			if WeekPlan.equals(cand, WeekPlan.make(own.days, own.intensity)):
+				var same := for_phase(year, phase)
+				same.next_plan = plan
+				return same
 		if phase != "" and Game.season.is_edited(year, phase):
 			var coach := Game.season.copy()
 			coach.reset_phase(year, phase)
@@ -184,9 +197,11 @@ static func for_week() -> Dictionary:
 		cand = WeekPlan.copy_of(Game.season.repeat_week)
 		if not WeekPlan.equals(cand, WeekPlan.coach()):
 			base = WeekPlan.coach()
-	if base.is_empty() or WeekPlan.equals(base, cand):
-		return week_change(cand, lighter_of(cand), "week_plan")
-	return week_change(cand, base, "week_changed")
+	var out := week_change(cand, lighter_of(cand), "week_plan") if base.is_empty() or WeekPlan.equals(base, cand) \
+			else week_change(cand, base, "week_changed")
+	if Game.season.mode == SeasonPlan.PHASES:
+		out.next_plan = Game.season.week_for(next)
+	return out
 
 
 ## Ask the coach about a phase's week (the phase editor): as you changed it against the coach's template, or (unchanged) against
@@ -256,7 +271,7 @@ static func simulate(start: Dictionary, weeks: Array) -> Dictionary:
 				h.day_no += 1
 				var inj_mult := 1.0   # a heavier school day makes overuse injuries a little more likely (as in HealthSystem.on_health)
 				if school != null:
-					inj_mult = SchoolSystem.injury_mult(school.life_load(date, rec.sessions))
+					inj_mult = SchoolSystem.injury_mult(school.life_load(date, rec.sessions, str(rec.get("mental", ""))))
 				for area in HealthSystem.areas():
 					expected += h.hazard(a, area, false) * inj_mult
 			var gain := 0.0
@@ -549,6 +564,8 @@ static func noise_sd(attr: float) -> float:
 
 ## His dice for a change on a date.
 static func seed_for(coach: Dictionary, change: Dictionary) -> int:
+	if bool(change.get("steady", false)):   # (session L3b1: a weekly plan's dice have no date)
+		return ("verdict|%s|%s" % [coach.id, change.sig]).hash()
 	return ("verdict|%s|%s|%s" % [coach.id, Calendar.date_key(Game.date), change.sig]).hash()
 
 

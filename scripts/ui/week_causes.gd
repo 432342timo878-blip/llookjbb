@@ -9,7 +9,7 @@ extends RefCounted
 ## strain_log, MindSystem's causes + drift, the people's relationship logs (StoryletSystem._note_relation), the coach's trust
 ## causes + last_drift, the day log (life_parts, loads), SchoolSystem.tests_log, the moments (invitations). Texts: data/causes.json.
 
-const GROUPS := {"injury": 0, "body": 1, "attr": 2, "mood": 3, "person": 4, "trust": 4, "test": 5, "slot": 6, "invite": 7, "tired": 8}
+const GROUPS := {"injury": 0, "body": 1, "attr": 2, "mood": 3, "person": 4, "trust": 4, "test": 5, "slot": 6, "mental": 6, "invite": 7, "tired": 8}
 
 
 static func cfg() -> Dictionary:
@@ -29,6 +29,7 @@ static func rows(r: Dictionary) -> Array:
 	out.append_array(people_rows(r))
 	out.append_array(test_rows(r))
 	out.append_array(slot_rows(r))
+	out.append_array(mental_rows(r))
 	out.append_array(invite_rows(r))
 	out.sort_custom(func(x, y):
 		if bool(x.main) != bool(y.main):
@@ -145,8 +146,13 @@ static func attr_parts(r: Dictionary, id: String) -> Array:
 		if str(key) == "trained" or float(p[key]) == 0.0:
 			continue
 		var kind := str(key).get_slice(":", 0)
-		var meet := Calendar.get_meet(str(key).get_slice(":", 1)) if str(key).contains(":") else {}
-		var label := str(c.parts.get(kind, kind)).format({"meet": str(meet.get("name", "")), "value": num(float(p[key]))})
+		var meet := Calendar.get_meet(str(key).get_slice(":", 1)) if str(key).contains(":") and kind != "mental" else {}
+		var fill := {"meet": str(meet.get("name", "")), "value": num(float(p[key]))}
+		if kind == "mental":   # (session L3b1: "mental:<kind>", the session and its day)
+			var mk := str(key).get_slice(":", 1)
+			fill.session = str(Data.mind.mental.kinds.get(mk, {}).get("short", mk))
+			fill.day = _days_text(_mental_days(r).get(mk, []))
+		var label := str(c.parts.get(kind, kind)).format(fill).replace(" ()", "")
 		out.append({"key": str(key), "label": label, "short": str(c.parts_short.get(kind, kind)), "value": float(p[key]), "share": 0.0, "source": false})
 	return out
 
@@ -685,6 +691,22 @@ static func test_rows(r: Dictionary) -> Array:
 		out.append(_row("test", sid, "pencil-line", str(c.title).format({"subject": subject}), SchoolSystem.score_text(score),
 				"good" if score >= 8.0 else ("bad" if score <= 5.0 else "plain"), str(c.cause).format({"grade": grade}),
 				[str(c.detail).format({"subject": subject, "list": ", ".join(recent), "grade": grade})], true, score))
+	# (session L3b1: the report card is no longer a stop; its grades are a row of the week, every subject in the tap)
+	for i in ss.reports.size():
+		var rep: Dictionary = ss.reports[i]
+		if not _in_week(r, rep.date):
+			continue
+		var avg := float(rep.average)
+		var prev: Dictionary = ss.reports[i - 1] if i > 0 else {}
+		var grades := []
+		for s in ss.subject_list():
+			if rep.grades.has(str(s.id)):
+				grades.append("%s %d" % [str(s.name), int(rep.grades[str(s.id)])])
+		out.append(_row("test", "card%d" % i, "graduation-cap", str(Data.school_life.card.title[str(rep.kind)]), "%.2f" % avg,
+				"good" if avg >= 8.0 else ("bad" if avg < 7.0 else "plain"),
+				str(Data.school_life.card.first) if prev.is_empty() else SchoolSystem.verdict_text(avg - float(prev.average)),
+				[str(Data.school_life.card.average_line).format({"avg": "%.2f" % avg, "acad": "%.2f" % float(rep.academic_average)}),
+				", ".join(grades)], true, 10.0 + avg))
 	return out
 
 
@@ -737,6 +759,68 @@ static func slot_rows(r: Dictionary) -> Array:
 		out.append(_row("slot", "study", "book-open", str(c.study_title), str(n), "good" if shift > 0.0 else ("bad" if shift < 0.0 else "plain"),
 				str(c.study_cause_load if study_load > 0.0 else c.study_cause).format({"grades": grades}),
 				[str(c.study_detail).format({"n": n, "neutral": neutral, "grades": grades, "load": load})], true, absf(shift)))
+	return out
+
+
+## The week's mental sessions by kind: {kind: [day index]} (the day log's `mental`, session L3b1).
+static func _mental_days(r: Dictionary) -> Dictionary:
+	var out := {}
+	var keys := _week_keys(r.monday)
+	for e in _log_of(r):
+		var k := str(e.get("mental", ""))
+		if k == "":
+			continue
+		var list: Array = out.get(k, [])
+		list.append(int(keys.get(Calendar.date_key(e.date), 0)))
+		out[k] = list
+	return out
+
+
+## The week's mental sessions as one row (session L3b1): which kinds on which days, and in the tap what each did as recorded (the
+## composure part of each kind, relaxation's and self-talk's pull in Sunday's drift, the halved nerves, the school days' life
+## load) and a repeat that added nothing.
+static func mental_rows(r: Dictionary) -> Array:
+	var out := []
+	var days := _mental_days(r)
+	if days.is_empty():
+		return out
+	var c: Dictionary = cfg().mental
+	var defs: Dictionary = Data.mind.mental.kinds
+	var parts: Dictionary = r.get("parts", {}).get("composure", {})
+	var items := []
+	var lines := []
+	var n := 0
+	for k in defs:
+		if not days.has(k):
+			continue
+		var list: Array = days[k]
+		n += list.size()
+		var name := str(defs[k].short)
+		items.append(str(c.item).format({"name": name, "day": _day_name(int(list[0]))}))
+		var grown := float(parts.get("mental:" + str(k), 0.0))
+		lines.append(str(c.composure).format({"name": name, "day": _day_name(int(list[0])), "value": num(grown)}))
+		if list.size() > 1:
+			lines.append(str(c.again).format({"name": name, "days": _days_text(list.slice(1))}))
+	var ms := _mind()
+	if ms != null and not ms.drift.is_empty() and _in_week(r, ms.drift.date):
+		var pt: Dictionary = Data.mind.pulls
+		for mood in ["stress", "confidence"]:
+			for p in ms.drift.get(mood, {}).get("pulls", []):
+				if str(p.text) == str(pt.relaxation) or str(p.text) == str(pt.self_talk):
+					lines.append(str(c.pull).format({"what": str(p.text), "mood": str(Data.mind.moods[mood].name).to_lower(),
+							"value": "%+d" % roundi(float(p.delta))}))
+		var tail := str(Data.mind.causes.big_meet_relaxed).get_slice("{meet}", 1)
+		var next_monday := Calendar.date_key(Game.add_days(r.monday, 7))
+		for x in ms.causes.get("stress", []):   # (the nerves are news on Sunday night: dated that Sunday or the Monday after)
+			if str(x.text).ends_with(tail) and (_in_week(r, x.date) or Calendar.date_key(x.date) == next_monday):
+				lines.append(str(c.nerves).format({"text": str(x.text)}))
+	var school_days := 0
+	for e in _log_of(r):
+		if e.get("life_parts", {}).has("mental"):
+			school_days += 1
+	if school_days > 0:
+		lines.append(str(c.load).format({"n": school_days, "each": "%.2f" % float(Data.mind.mental.life_load)}))
+	out.append(_row("mental", "week", "brain", str(c.title), str(n), "good", ", ".join(items), lines, false, n))
 	return out
 
 

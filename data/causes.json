@@ -27,7 +27,8 @@
       "race_growth": "Racing ({meet}) {value}",
       "race_varied": "A different kind of race ({meet}) {value}",
       "big_meet": "A big meet ({meet}) {value}",
-      "mental_plan": "Mental training {value}"
+      "mental_plan": "Mental training {value}",
+      "mental": "{session} ({day}) {value}"
     },
     "parts_short": {
       "coach": "coach",
@@ -38,7 +39,8 @@
       "race_growth": "racing",
       "race_varied": "a new kind of race",
       "big_meet": "big meet",
-      "mental_plan": "mental training"
+      "mental_plan": "mental training",
+      "mental": "mental training"
     },
     "tired": "Trained tired ({days}): {pct} % less effect.",
     "motivation_up": "Motivation: {pct} % more effect.",
@@ -153,6 +155,16 @@
     "stayed": "Stayed home",
     "none": "No answer",
     "detail": "{title} on {day}: {answer}. {changes}"
+  },
+  "mental": {
+    "_note": "Session L3b1: the week's mental sessions as one row (WeekCauses.mental_rows), only what was recorded: each kind's composure part, relaxation's / self-talk's pull in Sunday's drift, the halved nerves, the school days' life load.",
+    "title": "Mental training",
+    "item": "{name} {day}",
+    "composure": "{name} ({day}): composure {value}",
+    "again": "A second {name} ({days}) added nothing: each kind counts once a week.",
+    "pull": "{what}: Sunday's {mood} target {value}",
+    "nerves": "{text}",
+    "load": "A little more on {n} school days (+{each} life load each)."
   },
   "injury": {
     "cause": "{tier} · back in {range}",

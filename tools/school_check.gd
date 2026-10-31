@@ -643,8 +643,9 @@ func _drop_test_meet() -> void:
 	Cal._index_of = []
 
 
-## A new career that plays to the Monday of the clash week with the test meet entered, plays that Monday morning, answers the
-## decision with `answer` (when it is there) and returns what happened.
+## A new career that plays to the Monday of the clash week with the test meet entered, answers the planner's card with `answer`
+## on the Sunday evening before (session L3b1; "" = leaves it open), plays that Monday morning and returns what happened (the card,
+## a stop event if one came, the answer kept for the week).
 func _decision_run(answer: String, meet: Dictionary, monday: Dictionary) -> Dictionary:
 	var ss = _fresh()
 	game.entries = [str(meet.key)]
@@ -652,11 +653,14 @@ func _decision_run(answer: String, meet: Dictionary, monday: Dictionary) -> Dict
 		game.advance_day()
 		while not game.pending_event().is_empty():
 			game.answer_event(game.pending_event().id, "ok")
+	var card: Dictionary = ss.meet_test_card(game.date) if SC.decisions_enabled and not SC.neutral else {}
+	if answer != "" and not card.is_empty():
+		ss.settle_week(int(card.monday), str(card.meet), answer)
 	game.advance_day()
 	var e: Dictionary = game.pending_event()
-	var out := {"event": e.duplicate(true), "ss": ss}
+	var out := {"event": e.duplicate(true), "ss": ss, "card": card}
 	if str(e.get("kind", "")) == "school_week":
-		game.answer_event(e.id, answer)
+		game.answer_event(e.id, "race")
 	out.choice = ss.choice_of(monday)
 	out.entries = game.entries.duplicate()
 	return out
@@ -674,12 +678,17 @@ func _check_decisions() -> void:
 	var monday: Dictionary = weeks[0].monday
 	var meet := _add_test_meet(monday)
 	var race := _decision_run("race", meet, monday)
-	var e: Dictionary = race.event
-	print("    the week of %s: %s" % [Cal.format_day(monday), str(e.get("text", "(no event)")).left(160)])
-	var ids: Array = (e.get("choices", []) as Array).map(func(c): return str(c.id))
-	_ok("a race in a busy test week: Monday morning a stop 'school_week' with the three answers", str(e.get("kind", "")) == "school_week"
-			and bool(e.get("stop", false)) and ids == ["race", "study", "bus"])
-	_ok("... 'race': the week is marked, the race stays entered", race.choice == "race" and meet.key in race.entries)
+	var card: Dictionary = race.card
+	print("    the week of %s: %s" % [Cal.format_day(monday), str(card.get("text", "(no card)")).left(160)])
+	var ids: Array = (card.get("choices", []) as Array).map(func(c): return str(c.id))
+	_ok("a race in a busy test week: the Sunday planner's card with the three answers and what leaving it does (session L3b1)",
+			ids == ["race", "study", "bus"] and not bool(card.get("matric", true)) and str(card.get("left", "")) != "")
+	_ok("... 'race' on the card: the week is marked, the race stays entered, no stop on Monday", race.choice == "race"
+			and meet.key in race.entries and str(race.event.get("kind", "")) != "school_week")
+	var left := _decision_run("", meet, monday)
+	_ok("... left open: Monday morning takes the default 'race and risk it' with no stop, and a line says so",
+			left.choice == "race" and str(left.event.get("kind", "")) != "school_week"
+			and game.events.any(func(x): return str(x.source) == "school" and str(x.text).begins_with("You left it open")))
 	var ss1 = race.ss
 	_ok("... and the same week is never asked twice", ss1.meet_test_clash(monday).is_empty())
 	# Tests that week come out lower by the option's penalty (the rolls are the same, only the penalty differs).
@@ -719,53 +728,55 @@ func _check_decisions() -> void:
 	SC.neutral = false
 	_drop_test_meet()
 
-	# The report card day: a stop with the card, then the choice for the next term.
+	# The report card day (session L3b1: never a stop): a line in the day's events, the next term's choice as a planner card.
 	var ss2 = _fresh()
-	var card: Dictionary = {}
-	while Cal.date_key(game.date) <= 20261218 and card.is_empty():
+	var stops := 0
+	while Cal.date_key(game.date) <= 20261218:
 		game.advance_day()
 		var p: Dictionary = game.pending_event()
 		if str(p.get("kind", "")) == "school_card":
-			card = p
-		elif not p.is_empty():
+			stops += 1
+		if not p.is_empty():
 			game.answer_event(p.id, "ok")
-	var card_ids: Array = (card.get("choices", []) as Array).map(func(c): return str(c.id))
-	_ok("Fri 18 Dec 2026: the Christmas report card is a stop with keep / harder / ease", not card.is_empty() and card_ids == ["keep", "harder", "ease"]
-			and Cal.date_key(game.date) in [20261218, 20261219])
-	var panel = load("res://scripts/ui/school_event_panel.gd")
-	_ok("the card panel handles it, and the report is the one just made", not card.is_empty() and panel.handles(card) and ss2.reports.size() == 1 and int(card.index) == 0)
-	if not card.is_empty():
-		game.answer_event(card.id, "harder")
+	var rc: Dictionary = ss2.report_card_card()
+	var card_ids: Array = (rc.get("choices", []) as Array).map(func(c): return str(c.id))
+	_ok("Fri 18 Dec 2026: the Christmas report card is no stop; the planner's card has keep / harder / ease and what leaving it does",
+			stops == 0 and card_ids == ["keep", "harder", "ease"] and ss2.reports.size() == 1 and int(rc.index) == 0 and str(rc.left) != "")
+	var has_line: bool = game.events.any(func(x): return str(x.source) == "school" and str(x.text).contains("Average"))
+	_ok("... and the day's events have its line with the average", has_line)
+	var saved_card: Dictionary = _parse(_json(ss2.to_dict()))
+	var back_card = SC.new()
+	back_card.from_dict(saved_card)
+	_ok("... the waiting card is saved and loaded", back_card.card_wait == ss2.card_wait and not ss2.card_wait.is_empty())
+	if not rc.is_empty():
+		ss2.answer_report_card("harder")
 		var hs_card = game.get_system("habits")
 		_ok("'One more study evening' turns Sunday (family) into study: 5 study slots, grades rise (session L1b)",
 				hs_card.habit(6) == "study" and ss2.effort_word() == "heavy" and ss2.study_shift(game.date) > 0.0)
-		_ok("... and it says so in the day's events", game.events.any(func(x): return str(x.source) == "school" and str(x.text).contains("Sunday")))
+		var said: bool = game.events.any(func(x): return str(x.source) == "school" and str(x.text).contains("Sunday"))
+		_ok("... it says so in the day's events, and the card is gone", said and ss2.report_card_card().is_empty())
 	var ss3 = _fresh()
-	var card2: Dictionary = {}
-	while Cal.date_key(game.date) <= 20261219 and card2.is_empty():
+	while Cal.date_key(game.date) <= 20261221:
 		game.advance_day()
-		var p: Dictionary = game.pending_event()
-		if str(p.get("kind", "")) == "school_card":
-			card2 = p
-		elif not p.is_empty():
-			game.answer_event(p.id, "ok")
-	if not card2.is_empty():
-		game.answer_event(card2.id, "ok")
-		_ok("an unknown answer = keep going (the habits stay the default)", game.get_system("habits").is_default() and ss3.effort_word() == "normal")
-	# The final certificate: Continue only.
+		while not game.pending_event().is_empty():
+			game.answer_event(game.pending_event().id, "ok")
+	_ok("left open, it passes when the next week starts: the evenings stay as they were", ss3.report_card_card().is_empty()
+			and game.get_system("habits").is_default() and ss3.effort_word() == "normal")
+	# The final certificate: a line, no choice.
 	var a2 = _athlete()
 	a2.birth_date = {"year": 2011, "month": 5, "day": 1}
 	game.start_career(a2, "repeat")
-	var fin: Dictionary = {}
-	while Cal.date_key(game.date) <= 20270606 and fin.is_empty():
+	var fin_stop := false
+	while Cal.date_key(game.date) <= 20270606 and not game.get_system("school").reports.any(func(r): return str(r.kind) == "final"):
 		game.advance_day()
 		var p: Dictionary = game.pending_event()
-		if str(p.get("kind", "")) == "school_card" and str(game.get_system("school").reports.back().kind) == "final":
-			fin = p
-		elif not p.is_empty():
+		if str(p.get("kind", "")) == "school_card":
+			fin_stop = true
+		if not p.is_empty():
 			game.answer_event(p.id, "ok")
-	_ok("a grade-9 career's June card is the final certificate with Continue only", not fin.is_empty()
-			and (fin.choices as Array).map(func(c): return str(c.id)) == ["done"])
+	_ok("a grade-9 career's June card is the final certificate: a line, no stop and no choice", not fin_stop
+			and game.get_system("school").reports.any(func(r): return str(r.kind) == "final")
+			and game.get_system("school").report_card_card().is_empty())
 	SC.decisions_enabled = false
 
 	# The coach's view: his simulation plays the school days' life load. At Normal / Normal in a normal week = without the school.
@@ -1413,10 +1424,19 @@ func _check_matric() -> void:
 	var old_entries: Array = game.entries.duplicate()
 	game.entries = [str(meet.key)]
 	var clash: Dictionary = ss.meet_test_clash(monday)
-	game.entries = old_entries
 	var reg_a: Array = Lm.matric.registered.get("a2027", [])
 	_ok("a race in a week with a matriculation exam asks (the exam is in the list): %s" % ", ".join(clash.get("list", [])),
 			reg_a.is_empty() or (not clash.is_empty() and ", ".join(clash.list).contains("on ")))
+	if not clash.is_empty():   # (session L3b1: exam vs meet is the one meet-and-tests clash that still stops when left open)
+		var was_dec: bool = SC.decisions_enabled
+		SC.decisions_enabled = true
+		ss._ask_meet_test(monday)
+		var stops: Array = game.events.filter(func(x): return str(x.get("kind", "")) == "school_week" and str(x.answer) == "")
+		_ok("... it is an exam clash, and left open it still asks as a stop", bool(clash.matric) and not stops.is_empty() and bool(stops.back().stop))
+		for x in stops:
+			game.answer_event(x.id, "race")
+		SC.decisions_enabled = was_dec
+	game.entries = old_entries
 	_drop_test_meet()
 	# To the end: the certificate after the last spring and the final card (or a retake).
 	_play_to("2028-06-10")

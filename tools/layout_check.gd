@@ -1275,17 +1275,36 @@ func _mind_views(main: Node, game, tag: String) -> void:
 	await _shot("%s_mind_overview_alone" % tag)
 	_check_overflow(hub, "%s mind_overview_alone" % tag)
 	SG.enabled = was
-	ms.set_plan(["imagery", "relaxation", "self_talk"])
+	# Session L3b1: mental training is sessions on the days (the weekly plan is gone): the three on the plan's lightest days, on the
+	# planner and in the day editor.
+	var season_before = game.season.copy()
+	ms.legacy_plan = ["imagery", "relaxation", "self_talk"]
+	ms.convert_legacy()
+	game.current_week()
+	hub._show("week")
+	await _frames(5)
+	if not ["Relax", "Imagery", "Self-talk"].any(func(w): return _label_with(hub, w) != null):   # (a phone row has it inside the day's line)
+		print("WRONG: no mental session on the planner at ", tag)
+	await _shot("%s_mind_planner" % tag)
+	_check_overflow(hub, "%s mind_planner" % tag)
+	var mday := -1
+	var wk = game.current_week()
+	for d in range(wk.day, 7):
+		if mday < 0 and wk.mental(d) != "" and wk.can_change(d):
+			mday = d
+	if mday >= 0:
+		hub._on_day_pressed(mday)
+		await _frames(5)
+		await _shot("%s_mind_day_editor" % tag)
+		_check_overflow(hub, "%s mind_day_editor" % tag)
+		hub._close_day()
+		await _frames(3)
 	hub._show("training")
 	await _frames(5)
-	var imagery = _find_button_prefix(hub, "✓ Imagery")   # (on: all three kinds are in the plan)
-	if imagery == null:
-		print("WRONG: no mental plan in the Training tab at ", tag)
-	else:
-		hub._scroll.ensure_control_visible(imagery)
-	await _frames(4)
 	await _shot("%s_mind_training" % tag)
 	_check_overflow(hub, "%s mind_training" % tag)
+	game.season = season_before
+	game.current_week()
 	# The MIND panel scrolled into view (its rows still open).
 	MUI.open = {"confidence": true, "motivation": true, "stress": true}
 	hub._show("overview")
@@ -1296,7 +1315,6 @@ func _mind_views(main: Node, game, tag: String) -> void:
 	await _frames(4)
 	await _shot("%s_mind_rows" % tag)
 	MUI.open = {}
-	ms.set_plan([])
 	ms.values = {"confidence": 50.0, "motivation": 50.0, "stress": 20.0}
 	ms.before = ms.values.duplicate()
 	ms.causes = {"confidence": [], "motivation": [], "stress": []}
@@ -1349,8 +1367,8 @@ func _school_views(main: Node, game, tag: String) -> void:
 	await _frames(5)
 	await _shot("%s_school_strip" % tag)
 	_check_overflow(hub, "%s school_strip" % tag)
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	await _shot("%s_school_page" % tag)
 	_check_overflow(hub, "%s school_page" % tag)
@@ -1403,18 +1421,23 @@ func _school_views(main: Node, game, tag: String) -> void:
 		await _shot("%s_school_editor_%s" % [tag, d[1]])
 		_check_overflow(hub, "%s school_editor_%s" % [tag, d[1]])
 	hub._close_day()
-	# The report card as a stop, then the decision.
+	# The report card (session L3b1: a card on the planner, never a stop), then the decision as the stop it still is for an exam.
+	var dec_was: bool = load("res://scripts/core/school_system.gd").decisions_enabled
+	load("res://scripts/core/school_system.gd").decisions_enabled = true
 	ss._post_card(ss.reports.size() - 1)
-	hub._show_pending_event()
+	hub._show("overview")
 	await _frames(6)
+	var see_text := str(root.get_node("/root/Data").school_life.card.see_grades)
+	if ss.report_card_card().is_empty() or _find_button_prefix(hub, see_text) == null:
+		print("WRONG: no report card on the planner at ", tag)
+	var see = _find_button_prefix(hub, see_text)
+	if see != null:
+		hub._scroll.ensure_control_visible(see)
+	await _frames(4)
 	await _shot("%s_school_card" % tag)
 	_check_overflow(hub, "%s school_card" % tag)
-	var scroll = _find_class(hub._event_overlay, "ScrollContainer")
-	if scroll != null:
-		scroll.scroll_vertical = 100000
-		await _frames(3)
-		await _shot("%s_school_card_choices" % tag)
-	hub._on_event_answer(game.pending_event().id, "keep")
+	ss.card_wait = {}
+	load("res://scripts/core/school_system.gd").decisions_enabled = dec_was
 	var c: Dictionary = game.get_system("school").cfg().decisions.meet_test
 	var options := []
 	for o in c.options:
@@ -1521,8 +1544,8 @@ func _slot_views(main: Node, game, tag: String) -> void:
 		await _shot("%s_slots_habits%s" % [tag, "" if row < 0 else "_row_open"])
 		_check_overflow(hub, "%s slots_habits %d" % [tag, row])
 	HUI.open_row = -1
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	_check_overflow(hub, "%s slots_school_line" % tag)
 	hub._people_page = ""
@@ -1572,8 +1595,8 @@ func _application_views(main: Node, game, tag: String) -> void:
 	ss.applications = {}
 	ss._app(2028).wishes = ["sports:sammon_keskuslukio", "sports:lahden_lyseo", "general"]
 	SAV.open = {"sports:makelanrinteen_lukio": true, "sports:kuortaneen_urheilulukio": true}
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	await _shot("%s_apply_page" % tag)
 	_check_overflow(hub, "%s apply_page" % tag)
@@ -1673,8 +1696,8 @@ func _lukio_views(main: Node, game, tag: String) -> void:
 	game.date = {"year": 2028, "month": 12, "day": 6}
 	ss.lukio = {}
 	ss._start_lukio(ss.segment_for(2028), game.date)
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	await _shot("%s_lukio_page" % tag)
 	_check_overflow(hub, "%s lukio_page" % tag)
@@ -2054,6 +2077,17 @@ func _find_label(node: Node, text: String) -> Label:
 		return node
 	for c in node.get_children():
 		var found := _find_label(c, text)
+		if found:
+			return found
+	return null
+
+
+## The first visible label whose text contains `part` (session L3b1), or null.
+func _label_with(node: Node, part: String) -> Label:
+	if node is Label and (node as Label).text.contains(part) and (node as Label).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var found := _label_with(c, part)
 		if found:
 			return found
 	return null

@@ -327,19 +327,28 @@ func _check_growth() -> void:
 	_ok("a local race does not grow composure", a.get_attr("composure") == 10.0)
 	ms._race_growth({"key": national.key})
 	_ok("a national race grows composure (+%.3f)" % (a.get_attr("composure") - 10.0), is_equal_approx(a.get_attr("composure") - 10.0, 0.1))
-	# The mental plan: all three kinds for a year at composure 10, a coach of 10s: about +0.5.
+	# Mental sessions (session L3b1: sessions on the days, each kind once a week): all three kinds for a year at composure 10, a
+	# coach of 10s: about +0.5.
 	ms = _fresh()
 	a = game.athlete
 	a.set_attr("composure", 10.0)
-	ms.set_plan(["imagery", "relaxation", "self_talk"])
+	var all := {"imagery": 0, "relaxation": 2, "self_talk": 4}
 	for w in 52:
-		ms._plan_growth(game.add_days(game.START_DATE, 7 * w))
+		ms._mental_growth(game.add_days(game.START_DATE, 7 * w), all)
 	var year: float = a.get_attr("composure") - 10.0
-	_ok("all three mental sessions for a year at composure 10: +%.2f composure (GDD: at best about +0.5)" % year, year > 0.4 and year < 0.55)
-	_ok("relaxation lowers the stress target, self-talk lifts confidence's", ms.target("stress") < 20.0 and ms.target("confidence") > 50.0)
-	ms.toggle_kind("self_talk", false)
-	_ok("the cue word is cut (L3a): no word anywhere, self-talk toggles off", not ms.has_method("cue_word") and ms.plan == ["imagery", "relaxation"]
-			and not data.mind.mental_plan.has("cue_words") and not data.mind.ui.has("cue_line"))
+	_ok("all three mental sessions a week for a year at composure 10: +%.2f composure (GDD: at best about +0.5)" % year, year > 0.4 and year < 0.55)
+	var stress0: float = ms.target("stress")
+	var conf0: float = ms.target("confidence")
+	var wk = game.current_week()
+	_ok("a mental session goes on a day (not a played one), not as one of its two training places",
+			wk.set_mental(2, "relaxation") and wk.set_mental(4, "self_talk") and wk.session_ids(2).size() <= 2 and wk.mental(2) == "relaxation")
+	_ok("relaxation this week lowers the stress target (%.0f -> %.0f), self-talk lifts confidence's (%.0f -> %.0f)" % [stress0, ms.target("stress"), conf0, ms.target("confidence")],
+			ms.target("stress") < stress0 and ms.target("confidence") > conf0)
+	wk.set_mental(5, "relaxation")
+	_ok("a second relaxation that week counts once (the week's kinds: %s)" % [wk.mental_week()], wk.mental_week().size() == 2
+			and int(wk.mental_week().relaxation) == 2)
+	_ok("the cue word and the weekly mental plan are gone (L3a, L3b1)", not ms.has_method("cue_word") and not ms.has_method("set_plan")
+			and not data.mind.has("mental_plan") and not data.mind.ui.has("cue_line"))
 
 
 # --- 8. Moments ------------------------------------------------------------------------------------------------------
@@ -411,7 +420,9 @@ func _check_save_load() -> void:
 	var ms = _fresh("balanced")
 	for key in game.entries.duplicate():   # (a season-plan career starts entered in its targets: no races here)
 		game.withdraw(key)
-	ms.set_plan(["imagery", "self_talk"])
+	ms.legacy_plan = ["imagery", "self_talk"]   # (session L3b1: the plan as sessions on the plan's days, the way an older save's is converted)
+	var where: Dictionary = ms.convert_legacy()
+	game.current_week()
 	ms.add("confidence", 25.0, "test")
 	ms.add("motivation", -20.0, "test")
 	_play_weeks(10)
@@ -427,13 +438,18 @@ func _check_save_load() -> void:
 		print("    athlete same: %s, moods same: %s" % [a_again == a_end, m_again == m_end])
 		print("    without saving: %s\n    after the load: %s" % [m_end.left(600), m_again.left(600)])
 	_ok("a loaded game goes on exactly as without saving (athlete and moods)", a_again == a_end and m_again == m_end)
-	_ok("the mental plan is saved", game.get_system("mind").plan == ["imagery", "self_talk"])
+	var planned: Array = load("res://scripts/core/week_plan.gd").mental(game.season.week_for(game.week_monday()))
+	_ok("the converted sessions sit on the plan's days (%s) and are saved with it: %s" % [where, planned],
+			where.size() == 2 and "imagery" in planned and "self_talk" in planned and not game.get_system("mind").to_dict().has("plan"))
 	var st: Dictionary = game.to_dict()
 	var old: Dictionary = _parse(_json(st))   # (session L3a: an older save with the cut cue word loads, the word ignored)
 	old.systems.mind.cue = "Tall"
+	old.systems.mind.plan = ["relaxation"]   # (session L3b1: an older save's weekly mental plan)
 	game.from_dict(old)
-	_ok("an older save with a cue word loads (the word is ignored)", game.get_system("mind").plan == ["imagery", "self_talk"]
-			and not game.get_system("mind").to_dict().has("cue"))
+	var after: Array = load("res://scripts/core/week_plan.gd").mental(game.season.week_for(game.week_monday()))
+	_ok("an older save with a cue word and a mental plan loads (the word ignored, the plan now sessions: %s)" % [after],
+			"relaxation" in after and "imagery" in after and game.get_system("mind").legacy_plan.is_empty()
+			and not game.get_system("mind").to_dict().has("cue") and not game.get_system("mind").to_dict().has("plan"))
 	st.systems.erase("mind")
 	game.from_dict(st)
 	_ok("a save without the mind (older) loads with the moods in the middle", game.get_system("mind").value("confidence") == 50.0

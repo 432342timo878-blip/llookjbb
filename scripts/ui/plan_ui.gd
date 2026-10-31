@@ -36,6 +36,24 @@ static func day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_chang
 	if not Layout.stacked():
 		load_label.custom_minimum_size.x = 80
 		row.add_child(load_label)
+	# The day's mental session (session L3b1): a short extra that takes neither of the two places; on PC on a line of its own.
+	var mental := mental_picker(plan, day)
+	mental.item_selected.connect(func(i):
+		WeekPlan.set_mental(plan, day, str(mental.get_item_metadata(i)))
+		on_change.call())
+	var outer: BoxContainer = row
+	if Layout.stacked():
+		row.add_child(mental)
+	else:
+		outer = UIKit.vbox(6)
+		outer.add_child(row)
+		var line := UIKit.hbox(10)
+		var pad := Control.new()
+		pad.custom_minimum_size.x = 100
+		line.add_child(pad)
+		mental.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		line.add_child(mental)
+		outer.add_child(line)
 
 	# Easy / Normal / Hard for the day (44 px high; on a phone they share the width).
 	var group := ButtonGroup.new()
@@ -72,7 +90,32 @@ static func day_row(plan: Dictionary, day: int, a: Athlete, month: int, on_chang
 			update.call()
 			on_change.call())
 	update.call()
-	return row
+	return outer
+
+
+## The mental session picker of day `day` in a week plan (session L3b1): none or one of the kinds; a kind already on another day
+## of the plan says so in its text ("Imagery (also Tue)": the second adds nothing).
+static func mental_picker(plan: Dictionary, day: int) -> OptionButton:
+	var ui: Dictionary = Data.mind.mental.ui
+	var pick := OptionButton.new()
+	pick.custom_minimum_size = Vector2(0 if Layout.stacked() else 200, 44)
+	pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pick.add_item(str(ui.none))
+	pick.set_item_metadata(0, "")
+	var m := WeekPlan.mental(plan)
+	for k in Data.mind.mental.kinds:
+		var text := str(Data.mind.mental.kinds[k].short)
+		var other := []
+		for d in 7:
+			if d != day and m[d] == k:
+				other.append(Training.DAY_NAMES[d])
+		if not other.is_empty():
+			text += " (also %s)" % ", ".join(other)
+		pick.add_item(text)
+		pick.set_item_metadata(pick.item_count - 1, k)
+		if m[day] == k:
+			pick.select(pick.item_count - 1)
+	return pick
 
 
 static func session_picker(a: Athlete, month: int) -> OptionButton:
@@ -146,6 +189,7 @@ static func fill_summary(box: VBoxContainer, a: Athlete, plan: Variant, monday: 
 ## A week plan's days as text lines: "Mon: easy run, drills (Easy)" and, with `why`, the reasons under them.
 static func days_list(plan: Dictionary, why: Array = []) -> VBoxContainer:
 	var days := UIKit.vbox(6)
+	var mental := WeekPlan.mental(plan)
 	for d in 7:
 		var names := []
 		for id in plan.days[d]:
@@ -153,6 +197,8 @@ static func days_list(plan: Dictionary, why: Array = []) -> VBoxContainer:
 		var line := "%s: %s" % [Training.DAY_NAMES[d], ", ".join(names) if not names.is_empty() else "Rest day"]
 		if not names.is_empty() and plan.intensity[d] != WeekPlan.NORMAL:
 			line += " (%s)" % Training.intensity(plan.intensity[d]).name
+		if mental[d] != "":   # (session L3b1)
+			line += " + " + str(Data.mind.mental.kinds[mental[d]].short)
 		days.add_child(UIKit.wrapped(line, ""))
 		if d < why.size() and why[d] != "":
 			days.add_child(UIKit.wrapped(why[d], "CaptionLabel"))

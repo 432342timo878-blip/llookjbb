@@ -241,6 +241,8 @@ func week_for(monday: Dictionary, entries: Variant = null) -> Dictionary:
 
 	var plan := {"days": days, "intensity": level, "why": why, "phase": ph.id, "phase_week": k + 1,
 			"phase_weeks": int(ph.weeks), "kind": kind, "target": target}
+	if base.has("mental"):   # (session L3b1: the phase's mental sessions stay on their days through ramp, taper and races)
+		plan.mental = base.mental
 	# 6. Return block.
 	if not ret.is_empty():
 		_apply_return(monday, plan, ret, races, ents)
@@ -717,8 +719,10 @@ func _phase_week(year: int, phase_id: String) -> Dictionary:
 
 ## The coach's week of a phase in a season: the season's plan for the athlete's age group (GDD 4.2 "Talent
 ## balance": the plans grow with the athlete; data/periodization.json age_groups and each variant's by_age).
+## Session L3b1: with the head coach's mental sessions (WeekPlan.with_coach_mental, by his mental coaching; none for the lab's
+## coach of 10s, so the template is then the data's own).
 func template_for(year: int, phase_id: String) -> Dictionary:
-	return template(variant(year), phase_id, age_class(year))
+	return WeekPlan.with_coach_mental(template(variant(year), phase_id, age_class(year)))
 
 
 ## The age class of a season (its summer's year minus the birth year): 15 for a career's first season.
@@ -860,7 +864,7 @@ func copy() -> SeasonPlan:
 static func from_dict(d: Dictionary) -> SeasonPlan:
 	var s := SeasonPlan.new()
 	var week = d.get("repeat_week", {})
-	s.repeat_week = WeekPlan.make(week.get("days", []), week.get("intensity", [])) if week is Dictionary and not week.is_empty() \
+	s.repeat_week = WeekPlan.make(week.get("days", []), week.get("intensity", []), week.get("mental", [])) if week is Dictionary and not week.is_empty() \
 			else WeekPlan.coach()
 	var saved = d.get("seasons", {})
 	if saved is Dictionary:
@@ -892,7 +896,7 @@ static func _clean_record(saved: Dictionary) -> Dictionary:
 		var from: Dictionary = saved.phases[id]
 		var state := {}
 		if from.has("week"):
-			state.week = WeekPlan.make(from.week.get("days", []), from.week.get("intensity", []))
+			state.week = WeekPlan.make(from.week.get("days", []), from.week.get("intensity", []), from.week.get("mental", []))
 		if from.has("lighter"):
 			state.lighter = bool(from.lighter)
 		if from.has("ramp_weeks"):

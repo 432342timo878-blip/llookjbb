@@ -73,8 +73,9 @@ func _row(plan: String, policy: String, n: int, weeks: int, first: int, quiet: b
 		else:
 			game.start_career(a, "phases", plan)
 		var ms = game.get_system("mind")
-		if policy in ["sensible", "racer"]:
-			ms.set_plan(["imagery", "relaxation", "self_talk"])
+		if policy in ["sensible", "racer"]:   # (session L3b1: the three mental sessions on the plan's lightest days)
+			ms.legacy_plan = ["imagery", "relaxation", "self_talk"]
+			ms.convert_legacy()
 		var cs = game.get_system("coach")
 		var c: Dictionary = cs.head()
 		if not quiet:

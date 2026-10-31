@@ -63,6 +63,10 @@ func _show_button() -> void:
 func press() -> void:
 	var change: Dictionary = _make.call()
 	last = CoachVerdict.judge(change)
+	if change.has("next_plan"):   # (session L3b1: the Season page says which week he judged)
+		var np: Dictionary = change.next_plan
+		last.week = str(texts().next_normal if str(np.get("kind", "")) == "normal" and str(change.compare).begins_with("phase") \
+				else texts().next_other).format({"week": SeasonUI.week_text(np)})
 	var cp := Game.get_system("proposals") as CoachProposals
 	if cp != null:
 		cp.note_asked(change)   # (session F1: no proposal of his on a day you just asked him about)
@@ -79,6 +83,8 @@ static func card(j: Dictionary, on_hide: Callable) -> Control:
 	var name := str(head.get("name", ""))
 	var col := UIKit.vbox(8)
 	col.add_child(UIKit.label(str(texts().head).format(_fill()).to_upper(), "CaptionLabel"))
+	if str(j.get("week", "")) != "":
+		col.add_child(UIKit.wrapped(str(j.week), ""))
 	if str(j.get("compare", "")) != "":
 		col.add_child(UIKit.wrapped(str(j.compare), "MutedLabel"))
 	var word := UIKit.label(str(j.word), "SubheadingLabel")

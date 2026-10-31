@@ -4666,6 +4666,89 @@ Built in one session (no split was needed).
     cottage-week morning, the camp's packing and camp messages, the second application result, four rival follow-ups, the best
     friend's beat) need rarer situations, as in P1.
 
+#### L3b's questions (user, 2026-10-31; each the recommended option)
+
+What the code showed first: "Ask the coach" seeded his noise with the date, the question's kind (the Season page's `week_plan` /
+`week_changed` against the phase page's `phase_plan` / `phase_changed`) and the plan, so the same plan got two different draws on two
+buttons and a new draw every day; the mental plan was a weekly on / off per kind, grown on Sunday night; a training day holds at most
+two sessions.
+
+1. **L3b is split** (like L3a / L3b): **L3b1** = the coach's same answer, mental training as sessions, the School tab and its stops,
+   save version 6, help; **L3b2** = the goals menu with real stakes and the two reviews (its own conversation).
+2. **A mental session is a short extra on any day** (rest days too): it does not take one of the day's two training places, at most
+   one a day, and each kind counts once a week (a second one of a kind that week adds nothing, and the editor says so).
+3. **Self-talk stays as a third kind** ("what you say to yourself when it hurts"; its confidence pull and composure as before): of
+   the three it has the best evidence in sport (Hatzigeorgiadis et al. 2011, a moderate effect).
+4. **An older save's mental plan is converted**: each kind on becomes that session on the easiest day of the plan (every phase still
+   to come, or the repeating week), with one message saying where they went (those phases then count as changed by you).
+5. **The coach's plans include them by his mental coaching** (`real`): below 12 none, 12–14 relaxation, 15–17 + imagery, 18+ +
+   self-talk. The lab's coach of 10s gets none, so the fingerprints stay.
+6. **The School page is its own tab on PC and phone** (PC: This week / Season / Calendar / People / School / Career / Rankings; the
+   phone's bar six icons), hidden when there is no school; the teachers' messages stay in People.
+7. **The report card is a planner card, never a stop:** the grades in the week report and on the School tab, the next term's choice
+   (one more / one fewer study evening) as a card on that Sunday's planner; left open = keep my evenings (the card says so).
+8. **The meet-and-tests decision is a planner card only:** left open = "race and risk the grades" (the card says so), no Monday
+   stop; **a matriculation exam clash** (the real "exam vs meet") keeps its Monday stop when left open.
+
+#### Built (step L3b1, 2026-10-31): same plan, same answer; mental training as sessions; the School tab; save version 6
+
+1. **"Ask the coach": same plan, same answer** (the user's notes of 2026-10-25). His dice for a weekly plan come from the plan and
+   what it is compared with (`CoachVerdict.week_change` sig "plan|<cand>|<base>", `steady`: no date, no button kind). When next
+   week is the phase's own week, the Season tab asks the phase page's very question (`for_week` → `for_phase`); otherwise (a
+   lighter week, a taper, easing back in) it judges next week as it is. Either way the card says which week ("Next week: General
+   base · week 3 of 10. The phase's normal week, so the phase's page gets the same answer." / "... {He} judges it as it is").
+   His word still moves when the truth moves (the body, the plan), and a weak coach is still wrong, the same way each time. The
+   button now says "next week's plan" (it always judged next week). Proven (`verdict_check` part 7, a 40-week season): in all 28
+   weeks where next week was the phase's own week both buttons gave the same word and the same view (the probe of 2026-10-25:
+   20 of 40 different); the Season tab named the week in 40 of 40; the same plan asked week after week changed his word once in
+   5 plans (a truth crossing a line); a question asked again 9 days later gets the same answer.
+2. **Mental training is sessions on the days** (decisions 2–5). A week plan has an optional `mental` (7 × imagery / relaxation /
+   self_talk / ""; the key only when the week has one, so every plan without one saves, compares and plays exactly as before). A
+   mental session takes neither of the day's two training places, adds no load, strain or tiredness, and each kind counts once a
+   week (a second says "adds nothing"). Its effects are M1's sizes, now read from the week on Sunday night: composure (imagery ×2
+   with a target the coming week; × the coach's mental coaching), relaxation's stress pull (−6) and the halved big-meet nerves
+   the week after ("halved by last week's relaxation session"), self-talk's confidence pull (+2), and on a school day 0.15 life
+   load. Where it shows: the planner (a brain icon; "Relax" in the narrow PC column), the day editor (MENTAL SESSION: a picker,
+   what it does, the "adds nothing" note), the repeating week's and the phase editor's rows, the Season tab's week list, a played
+   day. **Causes:** the composure part of each kind ("Imagery (Sun) +0.004" in the attribute's tap), the pulls in the mood taps,
+   a MENTAL TRAINING row in "Last week in full" with what each did, the life-load line "A mental session on a school day". The
+   weekly mental-plan setting (`MentalPlanUI`) is gone. **The coach's plans** (`SeasonPlan.template_for`, `WeekPlan.coach`) carry
+   relaxation from mental coaching 12, + imagery from 15, + self-talk from 18, each on the lightest free day (a rest day first);
+   the lab's coach of 10s none. **An older save's plan** becomes the same sessions on the plan's lightest days in every phase not
+   over yet (or the repeating week), and the coach says where they went in his thread.
+3. **The School tab** (decision 6): PC This week / Season / Calendar / People / School / Career / Rankings, the phone's bar six
+   icons, hidden when the stage is "School is over". People keeps the teachers' messages as the School thread. One line on what
+   grades are for, by stage (the application's average of the academic subjects and PE; in lukio a course needs a 5).
+4. **The report card is a planner card** (decision 7): its day posts a line (title, the average); the next term's choice (keep /
+   one more / one fewer study evening) waits on the planner until the Sunday after the card, with "If you leave it, your evenings
+   stay as they are" and See every grade (the School tab); the grades are a row of the week report with every subject in its tap.
+   It does not make Play week ask (Claude's call, as for invitations: leaving it changes nothing). The final certificate is a
+   line. An older save's open card stop still opens as before.
+5. **The meet-and-tests clash is a planner card only** (decision 8): the card says "If you leave it: you race, and this week's
+   tests come out about half a grade lower"; left open, the first morning takes that default with a line ("You left it open: ...").
+   A matriculation exam clash still asks as a stop that morning ("If you leave it: it asks you the next morning, before the exam").
+6. **Save version 6.** The user's five save copies (three version 4 with self-talk on, two version 5 of 2026-10-25) load in the
+   real game, show self-talk as a session on their days, build the planner, the Season tab and the week report, play 7 days and
+   race with a card (`saves_check -- <copies> 7 real`).
+7. **Help:** `week` v6, `training_season` v13, `training_repeat` v11, `phase_editor` v3, `day_editor` v8, `people` v10, `school`
+   v9, topics `mental_training` v3, `ask_coach` v2. `help_check` 981 checks in the PC layout (windowed) and passes in the phone
+   layout.
+8. **Proven and measured:** fingerprints identical: `training_balance -- 0` coach row 206.798298350 / 14.102831594 /
+   1226.006524079 and every part "identical to part 1: YES", races 73182f4e…, school 42fd3635… / 01dd20d7… / 55076d77… (its
+   decisions run now has 3 stops instead of 7: the report cards no longer stop; the grades are the same). `season_playtest`, the
+   whole 2026-27 season through the real hub, against the commit before on the same seeds: phone 390×844, seed 2, careful:
+   **mid-week stops 0.29 a week (0.33), 38 of 52 weeks straight through (36), clicks a week 2.27 average / median 2 (2.25 / 2)**;
+   PC 1280×720, seed 1, player: 0.35 (0.44), 36 of 52 (33), 3.94 clicks a week / median 3 (5.19 / 5). The one kind of stop that
+   went is the report card (2 a season); the rest (diagnoses, the season and goals offers) are the same, the sore warnings differ
+   with the health dice (1 against 4). The autosave 459 / 470 KB (461 / ~470). `layout_check` at the five sizes (189 views
+   each, 187 at 844×390): no OVERFLOW / SQUEEZED / WRONG (found and fixed: "Relaxation" broke mid-word in the PC day column, now
+   "Relax"); the tour (205 shots, PC and phone) looked at: the planner's mental sessions, the day editor's MENTAL SESSION, the
+   School tab, the report card on the planner. The full `run_all_checks` 28 / 28 PASS. (Two windowed runs stalled idle while the
+   PC sat unattended, the display asleep; with the machine kept awake every size ran through in about 2 minutes.)
+9. **Seen and left for later:** a converted or coach-placed session can land on a day already played this week (it then counts
+   from next week); the day's "The day" blocks don't list the mental session (its line is in the life load and its own panel); a
+   long meet name still breaks mid-word in the PC day column (as before L3b1).
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

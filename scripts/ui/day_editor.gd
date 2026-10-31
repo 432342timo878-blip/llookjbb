@@ -135,6 +135,7 @@ func _build_editable(w: WeekSim, info: Dictionary) -> void:
 	if buttons.get_child_count() > 0:
 		sessions.add_child(buttons)
 	add_child(UIKit.panel(sessions, 14))
+	add_child(UIKit.panel(_mental_box(w), 14))   # (session L3b1)
 	var why := _coach_says(CoachTalk.day_why(ids, str(info.intensity)))   # his reason for the day (GDD 4.9.2)
 	if why != null:
 		add_child(why)
@@ -272,6 +273,39 @@ func _picker(month: int, with_placeholder: bool) -> OptionButton:
 	return pick
 
 
+## The day's mental session (session L3b1): a picker (none or a kind), what it does, and a note when the same kind is already
+## on another day this week (a second adds nothing).
+func _mental_box(w: WeekSim) -> Control:
+	var ui: Dictionary = Data.mind.mental.ui
+	var box := UIKit.vbox(8)
+	box.add_child(UIKit.label(str(ui.head), "CaptionLabel"))
+	var pick := OptionButton.new()
+	pick.custom_minimum_size = Vector2(0, 44)
+	pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pick.fit_to_longest_item = false
+	pick.clip_text = true
+	pick.add_item(str(ui.none))
+	pick.set_item_metadata(0, "")
+	var now := w.mental(day)
+	for k in Data.mind.mental.kinds:
+		pick.add_item(str(Data.mind.mental.kinds[k].name))
+		pick.set_item_metadata(pick.item_count - 1, k)
+		if k == now:
+			pick.select(pick.item_count - 1)
+	pick.item_selected.connect(func(i: int):
+		if Game.current_week().set_mental(day, str(pick.get_item_metadata(i))):
+			_after_change())
+	box.add_child(pick)
+	if now != "":
+		box.add_child(UIKit.wrapped(str(Data.mind.mental.kinds[now].text)))
+		var first := int(w.mental_week().get(now, day))
+		if first != day:
+			box.add_child(UIKit.wrapped(str(ui.again).format({"day": Training.DAY_NAMES[first],
+					"name": str(Data.mind.mental.kinds[now].short)}), ""))
+	box.add_child(UIKit.wrapped(str(ui.editor_hint), "MutedLabel"))
+	return box
+
+
 func _intensity_box(info: Dictionary) -> Control:
 	var box := UIKit.vbox(8)
 	box.add_child(UIKit.label("INTENSITY", "CaptionLabel"))
@@ -322,6 +356,9 @@ func _build_played(info: Dictionary) -> void:
 	else:
 		for session_name in DayInfo.session_names(info.sessions):
 			box.add_child(UIKit.wrapped(session_name, "SubheadingLabel"))
+	for r in Game.current_week().played:   # (session L3b1: the day's mental session)
+		if int(r.day) == day and str(r.get("mental", "")) != "":
+			box.add_child(UIKit.wrapped(str(Data.mind.mental.kinds[str(r.mental)].name), "SubheadingLabel"))
 	if info.race.is_empty():
 		var level_label := UIKit.label(DayInfo.intensity_name(info.intensity))
 		level_label.add_theme_color_override("font_color", DayInfo.intensity_color(info.intensity))

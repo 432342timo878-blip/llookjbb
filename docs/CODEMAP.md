@@ -190,6 +190,35 @@ Read the paragraphs below with these in mind; they win where they disagree.
   - **Tools:** `storylet_check` (1b never contradict; part 6 his topics are feed; 7f the feed rate, beats ≤ 1 a week, no
     old-style planner moment), `f1_check` 3 / 4, `mind_check`, `goals_check`, `habits_check`, `people_answer_check`,
     `causes_check`, `layout_check` / the tour (beats: `_cast_views`, 40e–40g, 54–54b).
+- **Session L3b1 ("Ask the coach" same plan, same answer; mental training as sessions; the School tab and its stops; save version
+  6; GDD 4.10 "L3b's questions" and "Built (step L3b1)"; these win over the paragraphs below about the mental plan, MentalPlanUI,
+  the School page in People, the report card stop and the meet-and-tests Monday stop):**
+  - **CoachVerdict:** `week_change` sig = "plan|<cand>|<base>" (no button kind, no date) + `steady`; `seed_for` drops the date for a
+    steady change. `for_week` hands next week to `for_phase` when it is the phase's own week (the same change) and adds `next_plan`
+    (the week judged); `CoachAsk.press` turns it into `last.week` (texts `coach_talk.json verdict.ask next_normal / next_other`).
+    `verdict_check` part 7 proves it.
+  - **Mental sessions:** `WeekPlan` has an optional `mental` (7 × kind or "", the key only when the week has one: plans without
+    mental sessions save and compare as before): `make(days, intensity, mental)`, `mental(plan)`, `set_mental`, `is_mental`,
+    `lightest_free_day`, `add_mental(plan, kinds)`, `coach_mental_kinds()` (data `mind.json mental.coach`, by his mental coaching),
+    `with_coach_mental(plan)` (used by `WeekPlan.coach()` and `SeasonPlan.template_for`). `WeekSim.plan_mental`, `mental(d)`,
+    `set_mental(d, kind, by)` (a day change part "mental"), `mental_week()` {kind: first day}; a played record has `mental` (and the
+    day log entry) only when there was one. `MindSystem`: `plan` / `set_plan` / `toggle_kind` gone; `legacy_plan` (an older save's,
+    saved as "plan" only until converted) + `convert_legacy()` (Game.from_dict); `mental_kinds(week)`, `_mental_growth(monday, kinds)`
+    (parts "mental:<kind>"), the pulls and the big-meet nerves read the week's kinds. `SchoolSystem.load_parts(d, ids, mental)` adds
+    the part "mental" on school days (`_mental_on(d)` when the caller doesn't know it). UI: `PlanUI.mental_picker` (repeat week and
+    phase editor rows), `DayEditor._mental_box`, the planner's day items (brain icon), the Season view's week list, `DayInfo.mental`.
+    `WeekCauses.mental_rows` (kind "mental", group 6) + `_mental_days`; `ReportView` section MENTAL TRAINING; `causes.json mental`.
+    `MentalPlanUI` deleted.
+  - **School:** the hub's tab `school` (VIEWS / PHONE_VIEWS; hidden by `SchoolUI.has_page()` when the stage's kind is "none") shows
+    `SchoolView` (+ the "what grades are for" callout, `school_life.json ui.grades_for / grades_for_lukio`); `PeopleView` lost the
+    School row / page (the "school" thread is a normal thread). `SchoolSystem`: `card_wait` {index, until} (saved only when set) +
+    `report_card_card()` / `answer_report_card()` / `verdict_text()`; `_post_card` posts a line, no stop; `meet_test_card` carries
+    `matric` and `left`; `_ask_meet_test` settles a non-exam clash with the default (`settle_week(..., left = true)`, `left_note`) and
+    stops only for a matriculation exam. `WeekPlanner._report_card_card` (signal `school_pressed` → the School tab); `_clash_card`
+    shows `left`. `WeekCauses.test_rows` adds a report card row. `SchoolEventPanel` stays for older saves' open card stops.
+  - **SaveGame version 6.** Tools: `verdict_check` part 7, `mind_check` 7 / 10, `school_check` 13 (+ the exam clash in the lukio
+    part), `habits_check` (version ≥ 5), `saves_check` (the converted plan), `layout_check` / the tour (`hub._show("school")`, the
+    mental sessions on the planner and in the day editor, the report card on the planner), `mind_season` (sessions).
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

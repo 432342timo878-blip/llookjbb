@@ -1395,6 +1395,11 @@ func _resolve_custom(m: Dictionary, reply_id: String) -> void:
 
 ## A message of the coach in his thread that asks nothing (a change he made, what he would have changed, his reply to a veto).
 ## `read` = the player has just seen it (it answers something they did in the day editor).
+## There is a coach to write in his thread (session L3b1).
+func has_coach() -> bool:
+	return not _coach_person().is_empty()
+
+
 func coach_says(text: String, read := false) -> void:
 	var p := _coach_person()
 	if p.is_empty() or text == "":

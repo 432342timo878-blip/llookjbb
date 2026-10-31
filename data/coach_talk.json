@@ -457,8 +457,11 @@
 		"ask": {
 			"day": "Ask {coach_first} about this day",
 			"race": "Ask {coach_first}: race or scratch?",
-			"week": "Ask {coach_first} about this week's plan",
-			"phase": "Ask {coach_first} about this week",
+			"week": "Ask {coach_first} about next week's plan",
+			"phase": "Ask {coach_first} about this phase's week",
+			"_note_l3b1": "Session L3b1 (the user's 'same plan, same answer'): his dice for a weekly plan come from the plan, not from the button or the date. The card says which week was judged: next_normal when next week is the phase's own week (then the phase's page gives the same answer), next_other when it is a lighter week, a taper or easing back in (judged as it is).",
+			"next_normal": "Next week: {week}. The phase's normal week, so the phase's page gets the same answer.",
+			"next_other": "Next week: {week}. {He} {v:judges|judge} it as it is, not the phase's normal week.",
 			"hide": "Hide",
 			"head": "{coach_first} on this",
 			"note": "A coach's view is only as good as the coach: a weak one can be wrong both ways."

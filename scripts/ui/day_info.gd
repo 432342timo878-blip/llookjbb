@@ -21,7 +21,7 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 		"day": d, "date": date, "played": played, "today": Calendar.date_key(date) == Calendar.date_key(Game.date),
 		"editable": w.can_change(d), "race": {}, "sessions": [], "intensity": WeekSim.NORMAL, "load": 0.0,
 		"fatigue": -1.0, "changed": w.changes.has(d), "by": w.changed_by(d), "events": [],
-		"sore": 0, "sore_areas": [], "health": [], "limited": false, "tier": "",
+		"sore": 0, "sore_areas": [], "health": [], "limited": false, "tier": "", "mental": "",
 	}
 	info.limited = info.by.values().has("injury")
 	info.coach = info.by.values().has("coach")
@@ -37,6 +37,7 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 			rec = entry
 		if not rec.is_empty():
 			info.sessions = rec.sessions
+			info.mental = str(rec.get("mental", ""))   # (session L3b1)
 			info.intensity = rec.intensity
 			info.load = float(rec.load)
 			info.fatigue = float(rec.fatigue)
@@ -45,7 +46,9 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 		info.events = events_of(entry)
 	elif w.is_race_day(d):
 		info.race = w.races[d]
+		info.mental = w.mental(d)
 	else:
+		info.mental = w.mental(d)
 		info.sessions = w.session_ids(d)
 		info.intensity = w.intensity(d)
 		info.load = planned_load(info.sessions, info.intensity, month_of(w))

@@ -13,7 +13,10 @@ extends SceneTree
 ##    veto from the third within four weeks costs trust, the Sunday talk's request leads to a proposal or a "no";
 ## 5. "Never" changes nothing (the same career with the proposals off and on "Never": identical days and attributes), and
 ##    "Ask me first" with every proposal vetoed changes nothing either;
-## 6. save / load: a career with proposals saved mid-week and loaded goes on exactly as without saving.
+## 6. save / load: a career with proposals saved mid-week and loaded goes on exactly as without saving;
+## 7. (session L3b1, the user's "same plan, same answer") "Ask the coach" on the Season tab and on the phase's page give the same
+##    word for the same week in every week of a season where next week is the phase's own week; the Season tab's answer names the
+##    week it judged; the same question asked on another date gets the same answer (his dice have no date).
 ## Run: godot --headless --path . -s res://tools/verdict_check.gd [-- <weeks for parts 3-4, default 16>]
 ## NOTE: read stderr too: a SCRIPT ERROR does not change the "ALL CHECKS PASSED" line.
 
@@ -66,6 +69,7 @@ func _run() -> void:
 	_scratch_advice()
 	_neutral()
 	_save_load()
+	_same_answer()
 	P.enabled = false
 	MS.talks_enabled = false
 	print("\n(%.0f s)" % ((Time.get_ticks_msec() - t0) / 1000.0))
@@ -702,6 +706,67 @@ func _save_load() -> void:
 
 
 ## Plays `n` days by the date (a stop before the day uses a press without playing it).
+# --- 7. Same plan, same answer (session L3b1) ----------------------------------------------------------------
+
+func _same_answer() -> void:
+	print("-- 7. Ask the coach: same plan, same answer (session L3b1)")
+	P.enabled = false
+	MS.talks_enabled = false
+	_career(5, "phases", "balanced")
+	var same := 0
+	var other := 0
+	var bad := 0
+	var named := 0
+	var words := {}       # plan sig -> [words over the weeks]
+	for w in 40:
+		var season = game.season
+		var next: Dictionary = game.add_days(game.current_week().monday, 7)
+		var plan: Dictionary = season.week_for(next)
+		var year: int = season.plan_year(next)
+		var ph := str(plan.get("phase", ""))
+		var c_week: Dictionary = V.for_week()
+		var j_week: Dictionary = V.judge(c_week)
+		if c_week.has("next_plan"):
+			named += 1
+		var own: Dictionary = season.edit_phase(year, ph) if season.is_edited(year, ph) else season.template_for(year, ph)
+		if ph != "" and WP.equals(WP.make(plan.days, plan.intensity, plan.get("mental", [])), WP.copy_of(own)):
+			same += 1
+			var j_phase: Dictionary = V.judge(V.for_phase(year, ph))
+			if str(j_week.verdict) != str(j_phase.verdict) or not is_equal_approx(float(j_week.seen.total), float(j_phase.seen.total)):
+				bad += 1
+				print("    week %d (%s): Season tab %s %.3f, phase page %s %.3f" % [w, Cal.format_day(next), j_week.verdict,
+						float(j_week.seen.total), j_phase.verdict, float(j_phase.seen.total)])
+			var sig := str(c_week.sig)
+			if not words.has(sig):
+				words[sig] = []
+			words[sig].append(str(j_week.verdict))
+		else:
+			other += 1
+		for i in 7:
+			_play(_answer_any)
+	print("    40 weeks: %d with next week = the phase's own week, %d other weeks (lighter, taper, ramp, easing back in)" % [same, other])
+	_ok("both buttons on the same week give the same word and the same view in all %d of them" % same, same > 10 and bad == 0)
+	_ok("the Season tab's answer always says which week it judged (%d of 40)" % named, named == 40)
+	var changes := 0
+	var runs := 0
+	for sig in words:
+		var list: Array = words[sig]
+		runs += 1
+		for i in range(1, list.size()):
+			if list[i] != list[i - 1]:
+				changes += 1
+	print("    the same plan asked week after week: %d plan(s), his word changed %d time(s) (only where the truth moved past a line)" % [runs, changes])
+	# The same question on another date: no date in his dice, so the same view (the truth was made when the question was).
+	var c: Dictionary = V.for_week()
+	var a: Dictionary = V.judge(c)
+	var keep: Dictionary = game.date.duplicate()
+	game.date = game.add_days(game.date, 9)
+	var b: Dictionary = V.judge(c)
+	game.date = keep
+	_ok("the same question on another date gets the same answer (%s %.3f / %s %.3f)" % [a.verdict, float(a.seen.total), b.verdict, float(b.seen.total)],
+			str(a.verdict) == str(b.verdict) and is_equal_approx(float(a.seen.total), float(b.seen.total)))
+
+
 func _play_days(n: int, answer: Callable) -> void:
 	var target: int = Cal.date_key(game.add_days(game.date, n))
 	var guard := 0

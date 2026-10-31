@@ -5,12 +5,14 @@ class_name SaveGame
 ## the plain `training_plan` with the `season` plan; version 4 (M2 part 2, session C1) adds the coach records (the
 ## "coach" system state) and Athlete.coach_id / temperament. Older saves still load (see Game.from_dict: they get their
 ## club coach on load). Version 5 (session L1b) adds the free-time slots and the standing habits (the "habits" system state);
-## an older save's two school settings (study effort, free time) become the nearest habits on load.
+## an older save's two school settings (study effort, free time) become the nearest habits on load. Version 6 (session L3b1)
+## has mental training as sessions on the days (a week plan's `mental`) instead of the mind's weekly mental plan; an older
+## save's plan becomes the same sessions on the plan's lightest days on load (MindSystem.convert_legacy).
 
 ## Where saves go. Dev tools point this elsewhere so they never touch the player's saves.
 static var DIR := "user://saves/"
 const AUTOSAVE := "autosave"
-const VERSION := 5
+const VERSION := 6
 
 
 static func save(slot: String) -> void:

@@ -12,9 +12,10 @@ extends GameSystem
 ## session's training effect x 0.92 at Flat 0 ... x1.05 at Fired up 100, exactly 1.0 across the middle word; WeekSim.quality,
 ## set by Game.current_week()); confidence = a race-day term at its ends (race_term(meet): up to +-0.3 % of race time, by meet
 ## level; RaceDay._player_entrant); stress pulls motivation down. Nothing here ever changes WHAT is done (the player decides).
-## Mental attributes that grow: consistency from every race, composure from big meets and from the weekly mental plan
-## (`plan` of up to 3 kinds; session L3a cut the cue word: it did nothing the player could see). Ambition (hidden) scales how
-## goals move motivation.
+## Mental attributes that grow: consistency from every race, composure from big meets and from the week's mental sessions
+## (session L3b1: imagery / relaxation / self-talk are sessions on the days, WeekPlan `mental`, each kind counted once a week,
+## read from the week on Sunday night; they replaced M1's weekly mental plan, and an older save's plan is converted by
+## `convert_legacy`). Ambition (hidden) scales how goals move motivation.
 ## Off switches for the tools: `model_enabled` (off = no moods, no effects, no growth) and `neutral` (the moods stay at their
 ## start values in the middle, so every effect is exactly neutral; the attribute growth still works).
 ## No dice: same days = same moods; a loaded game goes on exactly as without saving.
@@ -31,7 +32,7 @@ var causes := {}          # mood -> [{date, delta, text}], newest last (data kee
 var same_weeks := 0       # weeks in a row on the same training template (monotony)
 var template_key := ""    # that template ("" = none seen yet)
 var last_race := {}       # {level, indoor} of the last race (consistency grows more from a different one)
-var plan := []            # the weekly mental plan: up to max_sessions kind ids
+var legacy_plan := []     # (session L3b1) an older save's weekly mental plan, until convert_legacy turns it into sessions
 var started := false      # false until the first played day (state saved from then on)
 var _ahead := {}          # the Monday of the coming week while Sunday night's drift runs (school's pulls, S1; not saved)
 ## Session L2b (recording only): last Sunday's drift, {date, <mood>: {from, to, target, pulls: [{text, delta}]}} ({} before the
@@ -343,7 +344,8 @@ func on_week_end(ctx: Dictionary) -> void:
 	var monday: Dictionary = ctx.week.monday if ctx.get("week") != null else Game.week_monday()
 	_track_template(monday)
 	_report_parts = ctx.get("report", {}).get("parts", null)
-	_plan_growth(monday)
+	var kinds := mental_kinds(ctx.get("week"))
+	_mental_growth(monday, kinds)
 	_report_parts = null
 	_ahead = Game.add_days(monday, 7)   # school's pulls look at the coming week (S1)
 	if not neutral:
@@ -359,7 +361,7 @@ func on_week_end(ctx: Dictionary) -> void:
 			var was := value(m)
 			values[m] = clampf(value(m) + (t - value(m)) * clampf(rate, 0.0, 1.0), 0.0, 100.0)
 			drift[m] = {"from": was, "to": value(m), "target": t, "pulls": ps.map(func(p): return {"text": str(p.text), "delta": float(p.delta)})}
-	_big_meet_nerves(Game.add_days(monday, 7))
+	_big_meet_nerves(Game.add_days(monday, 7), kinds)
 	_school_news(Game.add_days(monday, 7))
 	_ahead = {}
 	if not drift.is_empty():   # (session L2b: the week from its start to Sunday night, the news after the drift included)
@@ -394,24 +396,30 @@ static func template_of(monday: Dictionary) -> String:
 	return "repeat:" + JSON.stringify(s.repeat_week)
 
 
-## The mental plan's week: composure from each session (imagery doubled with a target in the coming week).
-func _plan_growth(monday: Dictionary) -> void:
+## The mental session kinds of `week` (Sunday night: the week just played; the UI: the week in progress, played and still
+## planned): {kind: its first day}. Each kind counts once a week (session L3b1).
+func mental_kinds(week = null) -> Dictionary:
+	var w = week if week != null else Game._week
+	return w.mental_week() if w != null else {}
+
+
+## The week's mental sessions: composure from each kind (imagery doubled with a target in the coming week), recorded per kind
+## as the part "mental:<kind>" (session L3b1; WeekCauses names the session and its day).
+func _mental_growth(monday: Dictionary, kinds: Dictionary) -> void:
 	var a := Game.athlete
-	if a == null or plan.is_empty():
+	if a == null or kinds.is_empty():
 		return
-	var kinds: Dictionary = cfg().mental_plan.kinds
+	var defs: Dictionary = cfg().mental.kinds
 	var target_soon := _target_in_week(Game.add_days(monday, 7))
-	var total := 0.0
-	for k in plan:
+	for k in defs:   # (in the data's order)
 		if not kinds.has(k):
 			continue
-		var amount := float(kinds[k].composure)
+		var amount := float(defs[k].composure)
 		if k == "imagery" and target_soon:
-			amount *= float(kinds[k].target_week)
-		total += amount
-	var grown := _grow(a, "composure", total * _mental_coaching())
-	if _report_parts != null:   # (session L2b: recording only)
-		WeekSim.add_part(_report_parts, "composure", "mental_plan", grown)
+			amount *= float(defs[k].target_week)
+		var grown := _grow(a, "composure", amount * _mental_coaching())
+		if _report_parts != null:   # (session L2b: recording only)
+			WeekSim.add_part(_report_parts, "composure", "mental:" + str(k), grown)
 
 
 func _target_in_week(monday: Dictionary) -> bool:
@@ -458,8 +466,8 @@ func pulls(mood: String, week = null) -> Array:
 		"confidence":
 			if injured:
 				out.append({"text": str(pt.injured), "delta": float(d.injured)})
-			if "self_talk" in plan:
-				out.append({"text": str(pt.self_talk), "delta": float(cfg().mental_plan.kinds.self_talk.confidence)})
+			if mental_kinds(week).has("self_talk"):
+				out.append({"text": str(pt.self_talk), "delta": float(cfg().mental.kinds.self_talk.confidence)})
 		"motivation":
 			if cs != null and CoachSystem.model_enabled and not cs.head().is_empty():
 				var fit := cs.fit()
@@ -506,7 +514,7 @@ func pulls(mood: String, week = null) -> Array:
 				var pct := health.load_vs_normal(week)
 				if pct > int(d.load.from):
 					out.append({"text": str(pt.load), "delta": minf((pct - float(d.load.from)) * float(d.load.per_point), float(d.load.max))})
-			if "relaxation" in plan:
+			if mental_kinds(week).has("relaxation"):
 				out.append({"text": str(pt.relaxation), "delta": float(d.relaxation)})
 			# School's life load (S1): the coming week on Sunday night, else the week in progress; one line per cause.
 			var school := SchoolSystem.sys()
@@ -539,36 +547,64 @@ func _big_meet_in(monday: Dictionary) -> Dictionary:
 	return {}
 
 
-## Sunday night before a week with a big meet: nerves (stress news), less with composure, halved with relaxation training.
-func _big_meet_nerves(next_monday: Dictionary) -> void:
+## Sunday night before a week with a big meet: nerves (stress news), less with composure, halved by a relaxation session in the
+## week just played (`kinds`, session L3b1).
+func _big_meet_nerves(next_monday: Dictionary, kinds := {}) -> void:
 	var meet := _big_meet_in(next_monday)
 	if meet.is_empty() or Game.athlete == null:
 		return
 	var b: Dictionary = cfg().news.big_meet
 	var amount := float(b.stress) * maxf(0.0, 1.0 - (Game.athlete.get_attr("composure") - 10.0) * float(b.composure_per_point))
-	if "relaxation" in plan:
+	var text := str(cfg().causes.big_meet).format({"meet": str(meet.get("name", ""))})
+	if kinds.has("relaxation"):
 		amount *= float(b.relaxation_share)
-	add("stress", amount, str(cfg().causes.big_meet).format({"meet": str(meet.get("name", ""))}))
+		text = str(cfg().causes.big_meet_relaxed).format({"meet": str(meet.get("name", ""))})
+	add("stress", amount, text)
 
 
-# --- The weekly mental plan ------------------------------------------------------------------------------------------
+# --- An older save's weekly mental plan (session L3b1) ------------------------------------------------------------------
 
-## Sets the plan: the kinds done this week, each at most once (unknown ids dropped; kept in the data's order).
-func set_plan(kinds: Array) -> void:
-	plan = []
-	for k in cfg().mental_plan.kinds:
-		if k in kinds and plan.size() < int(cfg().mental_plan.max_sessions):
-			plan.append(str(k))
-
-
-## Switches one kind on or off.
-func toggle_kind(kind: String, on: bool) -> void:
-	var kinds := plan.duplicate()
-	if on and not kind in kinds:
-		kinds.append(kind)
-	elif not on:
-		kinds.erase(kind)
-	set_plan(kinds)
+## An older save's weekly mental plan becomes the same sessions on the lightest days of the plan: every phase not over yet (this
+## season and any later one already planned), or the repeating week; the coach (or, with none, the day's events) says where they
+## went. Returns {kind: day} of where each went first ({} = nothing to convert).
+func convert_legacy() -> Dictionary:
+	var kinds := legacy_plan.duplicate()
+	legacy_plan = []
+	var s: SeasonPlan = Game.season
+	if kinds.is_empty() or s == null:
+		return {}
+	var where := {}
+	if s.mode == SeasonPlan.PHASES:
+		var today := Game.week_monday()
+		var first := s.plan_year(today)
+		var years := [first]
+		for y in s.seasons:
+			if int(y) > first:
+				years.append(int(y))
+		for y in years:
+			for p in s.phase_dates(y):
+				if Calendar.date_key(p.last) < Calendar.date_key(today):
+					continue
+				var added := WeekPlan.add_mental(s.edit_phase(y, str(p.id)), kinds)
+				for k in added:
+					if not where.has(k):
+						where[k] = added[k]
+	else:
+		where = WeekPlan.add_mental(s.repeat_week, kinds)
+	if where.is_empty():
+		return where
+	var ui: Dictionary = cfg().mental.ui
+	var list := []
+	for k in cfg().mental.kinds:
+		if where.has(k):
+			list.append(str(ui.converted_day).format({"name": str(cfg().mental.kinds[k].short), "day": Training.DAY_NAMES[int(where[k])]}))
+	var text := str(ui.converted).format({"list": ", ".join(list)})
+	var ms := Game.get_system("moments") as StoryletSystem
+	if ms != null and StoryletSystem.enabled and ms.has_coach():
+		ms.coach_says(text)
+	else:
+		Game.post_event(id, str(ui.converted_title), text)
+	return where
 
 
 # --- The coach's words -----------------------------------------------------------------------------------------------
@@ -626,10 +662,12 @@ func is_low(mood: String) -> bool:
 # --- Save / load ------------------------------------------------------------------------------------------------------
 
 func to_dict() -> Dictionary:
-	if not started and plan.is_empty():
+	if not started and legacy_plan.is_empty():
 		return {}
 	var out := {"values": values, "snap": snap, "before": before, "causes": causes, "same_weeks": same_weeks,
-			"template_key": template_key, "last_race": last_race, "plan": plan, "started": started}
+			"template_key": template_key, "last_race": last_race, "started": started}
+	if not legacy_plan.is_empty():   # (session L3b1: only until it is converted)
+		out.plan = legacy_plan
 	if not drift.is_empty():
 		out.drift = drift   # (session L2b)
 	if not week_start.is_empty():
@@ -653,9 +691,10 @@ func from_dict(d: Dictionary) -> void:
 	same_weeks = int(d.get("same_weeks", 0))
 	template_key = str(d.get("template_key", ""))
 	last_race = d.get("last_race", {})
-	plan = []
+	legacy_plan = []   # (session L3b1: an older save's weekly mental plan; Game.from_dict converts it into sessions)
 	for k in d.get("plan", []):
-		plan.append(str(k))
+		if Data.mind.mental.kinds.has(str(k)):
+			legacy_plan.append(str(k))
 	started = bool(d.get("started", false))   # (an older save's "cue" (the cut cue word) is ignored)
 	drift = d.get("drift", {})   # (session L2b; older saves: none)
 	if drift.has("date"):

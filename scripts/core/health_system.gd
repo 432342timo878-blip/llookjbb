@@ -122,7 +122,7 @@ func on_health(ctx: Dictionary) -> void:
 	# The day's life load (school, session S1): a heavier school day makes colds and injuries a little more likely, a holiday
 	# colds a little less. Exactly 1.0 at a load of 0 (a normal school day at Normal / Normal), so nothing changes then.
 	var school := SchoolSystem.sys()
-	var life := school.life_load(date, rec.get("sessions", [])) if school else 0.0
+	var life := school.life_load(date, rec.get("sessions", []), str(rec.get("mental", ""))) if school else 0.0
 	_ill_mult = SchoolSystem.illness_mult(life)
 	_inj_mult = SchoolSystem.injury_mult(life)
 	_progress(a, sessions, is_race, date, news)

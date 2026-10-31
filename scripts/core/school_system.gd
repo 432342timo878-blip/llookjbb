@@ -36,6 +36,7 @@ var term_tests := {}            # subject id -> [scores] written this term (the 
 var tests_log: Array = []       # the latest tests, oldest first: [{date, subject, score}]
 var reports: Array = []         # report cards, oldest first: [{date, kind, stage, year, grades {id: int}, average, academic_average}]
 var week_choices := {}          # the Monday's date key (as text) -> the id of the answer to that week's meet-and-tests decision (S2)
+var card_wait := {}             # (session L3b1) the report card whose next-term choice waits on the planner: {index, until (date key)}
 var paths: Array = []           # the schools after grade 9 (S3a): [{kind (urheilulukio / lukio / vocational / grade_10), school (id or ""), town, start_year, years}]
 var applications := {}          # the application year (as text) -> {wishes [ids], locked, test {...}, results [...], decided} (S3a)
 ## Lukio (session S3b; {} until a lukio starts): {start_year, school, sports, maths (long / short), b3 (none / german / french /
@@ -259,9 +260,10 @@ static func _break_from(y: Dictionary, break_id: String) -> Dictionary:
 
 ## The day's life load in points (0 = a normal school day at Normal / Normal = today's game). `session_ids` = the day's
 ## sessions (two separate practices on a school day = a double day). Always 0 with the model off or neutral.
-func life_load(d: Dictionary, session_ids: Array) -> float:
+## `mental` = the day's mental session when the caller knows it (a WeekSim playing the day; null = look it up).
+func life_load(d: Dictionary, session_ids: Array, mental = null) -> float:
 	var total := 0.0
-	for p in load_parts(d, session_ids):
+	for p in load_parts(d, session_ids, mental):
 		total += float(p.value)
 	return total
 
@@ -269,7 +271,7 @@ func life_load(d: Dictionary, session_ids: Array) -> float:
 ## The parts of the day's life load: [{id, value, n?}] (ids: late_night, holiday, the slots' slot_study / slot_friends /
 ## slot_rest (session L1b, HabitSystem.load_parts), double_day, decision_<answer>, busy_test (n = the week's tests), exam, the
 ## lukio's parts). Empty when there is nothing (always with the model off or neutral).
-func load_parts(d: Dictionary, session_ids: Array) -> Array:
+func load_parts(d: Dictionary, session_ids: Array, mental = null) -> Array:
 	var out := []
 	if not model_enabled or neutral or Game.athlete == null:
 		return out
@@ -290,6 +292,8 @@ func load_parts(d: Dictionary, session_ids: Array) -> Array:
 	var hs := HabitSystem.sys()   # (session L1b: the free-time slots, where the two old settings were)
 	if hs != null:
 		out.append_array(hs.load_parts(d, scale, true))
+	if str(_mental_on(d) if mental == null else mental) != "":   # (session L3b1: a mental session is a little more on a school day)
+		out.append({"id": "mental", "value": float(Data.mind.mental.life_load) * scale})
 	if is_double_on(d, session_ids):
 		out.append({"id": "double_day", "value": float(ll.double_day) * scale})
 	var chosen := choice_of(Calendar.monday_of(d))   # the week's meet-and-tests answer (S2): "bus" = studying late all week
@@ -400,6 +404,22 @@ func week_news(monday: Dictionary) -> Array:
 			out.append({"delta": float(Data.lukio.matric.stress_news), "text": str(Data.lukio.ui.news_matric_week)})
 			break
 	return out
+
+
+## The mental session on date `d` (session L3b1): the week in progress with its changes, a played day from its record, else the
+## plan of that week.
+func _mental_on(d: Dictionary) -> String:
+	if Game.season == null:
+		return ""
+	var monday := Calendar.monday_of(d)
+	var i := Calendar.days_between(monday, d)
+	var w = Game._week
+	if w != null and Calendar.date_key(w.monday) == Calendar.date_key(monday):
+		for r in w.played:
+			if int(r.day) == i:
+				return str(r.get("mental", ""))
+		return w.mental(i)
+	return str(WeekPlan.mental(Game.season.week_for(monday))[i])
 
 
 func _sessions_of_day(monday: Dictionary, i: int) -> Array:
@@ -694,6 +714,8 @@ func on_day_start(ctx: Dictionary) -> void:
 	if not model_enabled:
 		return
 	_ensure_started()
+	if not card_wait.is_empty() and Calendar.date_key(ctx.date) > int(card_wait.until):
+		card_wait = {}   # (session L3b1: the report card's choice was left open: the evenings stay as they are)
 	_application_day(ctx.date)
 	_lukio_day_start(ctx.date)   # S3b: lukio starts, the period's courses, the matriculation exams (nothing before a lukio)
 	if decisions_enabled and not neutral:
@@ -751,7 +773,7 @@ func on_day_end(ctx: Dictionary) -> void:
 		var extra: Dictionary = ctx.get("log_extra", {})
 		extra["school"] = info.kind if info["break"] == "" or info.kind == "weekend" else str(info["break"])
 		var rec: Dictionary = ctx.get("record", {})
-		var parts := load_parts(d, rec.get("sessions", []))
+		var parts := load_parts(d, rec.get("sessions", []), str(rec.get("mental", "")))
 		var life := 0.0
 		var by_id := {}   # (session L2b: the parts, for the week report's causes; recording only)
 		for p in parts:
@@ -817,7 +839,7 @@ func meet_test_clash(today: Dictionary) -> Dictionary:
 				left += 1
 				list.append("%s on %s" % [Matriculation.exam_name(str(ex), lukio), Training.DAY_NAMES[i]])
 		if on_day or before or busy or matric:
-			return {"meet": races[rd], "day": int(rd), "left": left, "list": list}
+			return {"meet": races[rd], "day": int(rd), "left": left, "list": list, "matric": matric}
 	return {}
 
 
@@ -829,6 +851,11 @@ func _ask_meet_test(today: Dictionary) -> void:
 			return
 	var card := meet_test_card(today)
 	if card.is_empty():
+		return
+	# (session L3b1, the user's pick: the planner's card is the decision; left open it takes the default the card names, with no
+	# stop. Only a matriculation exam clash, the real "exam vs meet", still asks as a stop the morning it is seen.)
+	if not bool(card.matric):
+		settle_week(int(card.monday), str(card.meet), "", true)
 		return
 	var e := Game.post_event(id, str(card.title), str(card.text), card.choices, true)
 	e.kind = "school_week"
@@ -855,34 +882,66 @@ func meet_test_card(today: Dictionary) -> Dictionary:
 	for o in c.options:
 		choices.append({"id": str(o.id), "label": str(o.label), "detail": str(o.detail)})
 	return {"title": str(c.title), "text": text, "choices": choices, "monday": Calendar.date_key(Calendar.monday_of(today)),
-			"meet": str(meet.key), "day": int(clash.day)}
+			"meet": str(meet.key), "day": int(clash.day), "matric": bool(clash.matric),
+			"left": str(c.left_open_matric if bool(clash.matric) else c.left_open)}
 
 
-## The report card day: a stop with the card, then the choice for the next term (the final certificate: just Continue).
+## The report card day (session L3b1, the user's pick: never a stop): a line in the day's events, and the next term's choice
+## (one more / one fewer study evening; data/habits.json card) waits as a card on the planner until the Sunday after the card
+## (`card_wait`); left open, the evenings stay as they are. The final certificate has no choice. Only with the school's decisions on.
 func _post_card(index: int) -> void:
 	var r: Dictionary = reports[index]
 	var c: Dictionary = cfg().card
 	var kind := str(r.kind)
-	var ch: Dictionary = c.choices
+	Game.post_event(id, str(c.title[kind]), "%s %s" % [str(c.intro[kind]), str(c.average_line).format({"avg": "%.2f" % float(r.average),
+			"acad": "%.2f" % float(r.academic_average)})])
+	if kind != "final" and HabitSystem.sys() != null:
+		var until := Game.add_days(r.date, (6 - Calendar.weekday(r.date)) % 7)   # the Sunday on or after the card
+		card_wait = {"index": index, "until": Calendar.date_key(until)}
+
+
+## The report card's choice for the next term as the planner shows it: {title, text, index, choices [{id, label, detail}], left}
+## or {} when none waits (session L3b1). "keep" stays first (session L1b: the choice edits the habits by one slot).
+func report_card_card() -> Dictionary:
+	if card_wait.is_empty() or int(card_wait.index) >= reports.size():
+		return {}
+	var r: Dictionary = reports[int(card_wait.index)]
+	var c: Dictionary = cfg().card
+	var hc: Dictionary = Data.habits.card
+	var hs := HabitSystem.sys()
+	if hs == null:
+		return {}
 	var choices := []
-	if kind == "final":
-		choices.append({"id": "done", "label": str(ch.done.label), "detail": str(ch.done.detail)})
-	else:   # (session L1b: the choice edits the habits by one slot, data/habits.json card; "keep" stays first)
-		var hc: Dictionary = Data.habits.card
-		var hs := HabitSystem.sys()
-		var study := int(HabitSystem.counts(hs.habits).study) if hs != null else 4
-		choices.append({"id": "keep", "label": str(hc.keep.label), "detail": str(hc.keep.detail).format({"study": study})})
-		var more := hs.more_study() if hs != null else {}
-		if not more.is_empty():
-			choices.append({"id": "harder", "label": str(hc.harder.label), "detail": str(hc.harder.detail).format({
-					"slot": HabitSystem.slot_name(int(more.i)), "from": HabitSystem.activity_name(str(more.from)).to_lower()})})
-		var less := hs.less_study() if hs != null else {}
-		if not less.is_empty():
-			choices.append({"id": "ease", "label": str(hc.ease.label), "detail": str(hc.ease.detail).format({
-					"slot": HabitSystem.slot_name(int(less.i))})})
-	var e := Game.post_event(id, str(c.title[kind]), str(c.intro[kind]), choices, true)
-	e.kind = "school_card"
-	e.index = index
+	choices.append({"id": "keep", "label": str(hc.keep.label), "detail": str(hc.keep.detail).format({"study": int(HabitSystem.counts(hs.habits).study)})})
+	var more := hs.more_study()
+	if not more.is_empty():
+		choices.append({"id": "harder", "label": str(hc.harder.label), "detail": str(hc.harder.detail).format({
+				"slot": HabitSystem.slot_name(int(more.i)), "from": HabitSystem.activity_name(str(more.from)).to_lower()})})
+	var less := hs.less_study()
+	if not less.is_empty():
+		choices.append({"id": "ease", "label": str(hc.ease.label), "detail": str(hc.ease.detail).format({
+				"slot": HabitSystem.slot_name(int(less.i))})})
+	var prev: Dictionary = reports[int(card_wait.index) - 1] if int(card_wait.index) > 0 else {}
+	var text := str(c.average_line).format({"avg": "%.2f" % float(r.average), "acad": "%.2f" % float(r.academic_average)})
+	text += " " + (str(c.first) if prev.is_empty() else verdict_text(float(r.average) - float(prev.average)))
+	text += " " + str(c.choose)
+	return {"title": str(c.title[str(r.kind)]), "text": text, "index": int(card_wait.index), "choices": choices, "left": str(c.left_open)}
+
+
+## The planner's answer to the report card's choice.
+func answer_report_card(choice: String) -> void:
+	if card_wait.is_empty():
+		return
+	card_wait = {}
+	_answer_card(choice)
+
+
+## "A little better than last time." for a change of the average (data card.verdict).
+static func verdict_text(delta: float) -> String:
+	for v in cfg().card.verdict:
+		if delta >= float(v.delta):
+			return str(v.text)
+	return ""
 
 
 func on_answer(event: Dictionary, choice: String) -> void:
@@ -942,8 +1001,9 @@ func _answer_week(e: Dictionary, choice: String) -> void:
 
 
 ## The meet-and-tests decision for the week whose Monday has date key `monday_key` (the stop's answer, or session L1a: settled on
-## the Sunday planner before the week, so no stop comes on Monday). An unknown choice = the default (race and risk it).
-func settle_week(monday_key: int, meet_key: String, choice: String) -> void:
+## the Sunday planner before the week, so no stop comes on Monday). An unknown choice = the default (race and risk it). `left` =
+## the card was left open (session L3b1): the default, with the line that says so.
+func settle_week(monday_key: int, meet_key: String, choice: String, left := false) -> void:
 	var c: Dictionary = cfg().decisions.meet_test
 	var o := option_of(choice)
 	if o.is_empty():   # (a tool's "ok", or an old answer: the default = race and risk it)
@@ -960,7 +1020,7 @@ func settle_week(monday_key: int, meet_key: String, choice: String) -> void:
 	var ms := MindSystem.sys()
 	if ms != null and c.news.has(str(o.id)):
 		ms.add("stress", float(o.stress), str(c.news[str(o.id)]))
-	Game.post_event(id, str(c.title), str(o.note).format({"meet": meet_name}))   # (the line that shows in the day's events)
+	Game.post_event(id, str(c.title), str(c.left_note if left else o.note).format({"meet": meet_name}))   # (the line that shows in the day's events)
 
 
 ## The report card's choice (session L1b): one more study slot (the first of habits.json card.more_from that is not study) or one
@@ -1457,6 +1517,8 @@ func to_dict() -> Dictionary:
 		out["lukio"] = lukio
 	if courses_mode != "ask":   # (fix session 2026-10-18: likewise)
 		out["courses_mode"] = courses_mode
+	if not card_wait.is_empty():   # (session L3b1: likewise)
+		out["card_wait"] = card_wait
 	return out
 
 
@@ -1473,6 +1535,7 @@ func from_dict(d: Dictionary) -> void:
 	applications = {}
 	lukio = {}
 	courses_mode = "ask"
+	card_wait = {}
 	_schedules = {}
 	_exam_days = {}
 	_stage_cache = {}
@@ -1480,6 +1543,8 @@ func from_dict(d: Dictionary) -> void:
 	Lukio.clear_cache()
 	if d.is_empty():
 		return
+	if d.has("card_wait"):
+		card_wait = {"index": int(d.card_wait.index), "until": int(d.card_wait.until)}
 	if d.has("lukio"):
 		lukio = _lukio_from(d.lukio)
 	for k in d.get("choices", {}):

@@ -24,6 +24,7 @@ signal report_pressed                # "Last week in full"
 signal card_pressed(id: String)      # a race strap: open its "what this race did" card (session L2a)
 signal moment_answered(e: Dictionary)   # a waiting moment was answered: the hub shows what it changed (MomentEventPanel.result)
 signal messages_pressed         # session L3a: the quiet line "3 new messages · Mum, Eino" opens the People tab
+signal school_pressed           # session L3b1: the report card's "See every grade" opens the School tab
 
 const PC_LEFT := 268.0
 const PC_RIGHT := 290.0
@@ -659,6 +660,9 @@ static func _day_items(info: Dictionary, rows: bool) -> Array:
 	else:
 		for sid in info.sessions:
 			out.append(_icon_line(Icons.session(str(sid)), Palette.intensity(str(info.intensity)), Icons.session_short(str(sid))))
+	if str(info.get("mental", "")) != "":   # (session L3b1: a mental session, a short extra on the day)
+		var mk: Dictionary = Data.mind.mental.kinds[str(info.mental)]
+		out.append(_icon_line("brain", Palette.COACH, str(mk.get("chip", mk.short))))   # (a narrow PC day column: "Relax")
 	for t in _test_chips(info):
 		out.append(t)
 	var who := _changed_text(info)
@@ -744,6 +748,9 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 	var clash := _clash()
 	if not clash.is_empty():
 		grid.add_child(_clash_card(clash))
+	var report := _report_card()
+	if not report.is_empty():
+		grid.add_child(_report_card_card(report))
 	var ms := PeopleUI.system()
 	if ms != null:
 		if not skip_notes:   # (session L1b: the invitations of the week, waiting or planned; the phone shows them under their day)
@@ -866,6 +873,40 @@ func _clash_card(c: Dictionary) -> CalloutCard:
 		box.add_child(b)
 		if str(o.get("detail", "")) != "":
 			box.add_child(UIKit.wrapped(str(o.detail), "WhyLabel"))
+	if str(c.get("left", "")) != "":   # (session L3b1: what leaving it open does)
+		box.add_child(UIKit.wrapped(str(c.left), "WhyLabel"))
+	card.add_row(box)
+	return card
+
+
+## The report card's choice for the next term (session L3b1: never a stop; SchoolSystem.report_card_card): {} when none waits.
+static func _report_card() -> Dictionary:
+	var ss := SchoolSystem.sys()
+	if ss == null or not SchoolSystem.decisions_enabled or SchoolSystem.neutral:
+		return {}
+	return ss.report_card_card()
+
+
+## The report card on the planner: the average and how it moved, the next term's choice, what leaving it does, See every grade.
+func _report_card_card(c: Dictionary) -> CalloutCard:
+	var card := CalloutCard.new(Palette.ACCENT, "graduation-cap", str(c.title), str(c.text), [])
+	var box := UIKit.vbox(6)
+	for o in c.choices:
+		var b := UIKit.button(str(o.label), false, 0.0)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(func():
+			SchoolSystem.sys().answer_report_card(str(o.id))
+			HabitSystem.touch()
+			changed.emit())
+		box.add_child(b)
+		if str(o.get("detail", "")) != "":
+			box.add_child(UIKit.wrapped(str(o.detail), "WhyLabel"))
+	box.add_child(UIKit.wrapped(str(c.left), "WhyLabel"))
+	var grades := UIKit.button(str(Data.school_life.card.see_grades), false, 0.0)
+	grades.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	grades.pressed.connect(func(): school_pressed.emit())
+	box.add_child(grades)
 	card.add_row(box)
 	return card
 
@@ -1235,6 +1276,8 @@ func _day_row(w: WeekSim, d: int, note: bool) -> Control:
 	else:
 		main = " + ".join(info.sessions.map(func(s): return Icons.session_short(str(s))))
 		sub = DayInfo.intensity_name(str(info.intensity))
+	if str(info.get("mental", "")) != "":   # (session L3b1)
+		main += " + " + str(Data.mind.mental.kinds[str(info.mental)].short)
 	var who := _changed_text(info)
 	if who != "":
 		sub = who if sub == "" else sub + " · " + who

@@ -9,8 +9,8 @@ extends Control
 ## come only for real things (a niggle, injury or illness, a race day, a clash left open, a story beat).
 
 ## The tabs (texts and icons in data/planner.json ui.tabs). The phone's bottom bar has all but Rankings.
-const VIEWS := ["week", "season", "calendar", "people", "career", "rankings"]
-const PHONE_VIEWS := ["week", "season", "calendar", "people", "career"]
+const VIEWS := ["week", "season", "calendar", "people", "school", "career", "rankings"]
+const PHONE_VIEWS := ["week", "season", "calendar", "people", "school", "career"]   # (session L3b1: School its own tab, hidden without school)
 ## Old view ids (tools, older code) -> their place now; pages that belong to a tab -> that tab.
 const ALIASES := {"overview": "week", "training": "season"}
 const TAB_OF := {"report": "week", "progress": "career", "rankings": "rankings", "race_card": "week"}
@@ -185,6 +185,8 @@ func _build_tabs() -> Control:
 	var texts: Dictionary = Data.planner.ui.tabs
 	var bar := UIKit.hbox(0 if Layout.compact else 2)
 	for v in (PHONE_VIEWS if Layout.compact else VIEWS):
+		if v == "school" and not SchoolUI.has_page():
+			continue
 		var t: Dictionary = texts[v]
 		var b := Button.new()
 		b.toggle_mode = true
@@ -767,6 +769,7 @@ func _show(view: String) -> void:
 					_content.add_child(UIKit.wrapped(str(c.get("sub", "")), "WhyLabel"))
 					_content.add_child(RaceRecapView.new(c, true))
 		"people": _build_people()
+		"school": _content.add_child(SchoolView.new())   # (session L3b1: its own tab, apart from the messages)
 		"career": _build_profile(Game.athlete)
 		"progress":
 			var page := ProgressView.new()
@@ -793,6 +796,7 @@ func _build_week() -> void:
 		_rebuild_view())
 	_planner.report_pressed.connect(func(): _show("report"))
 	_planner.messages_pressed.connect(func(): _show("people"))   # (session L3a: the quiet feed's line)
+	_planner.school_pressed.connect(func(): _show("school"))   # (session L3b1: the report card's "See every grade")
 	_planner.card_pressed.connect(func(id: String):
 		_card_id = id
 		_show("race_card"))
@@ -821,8 +825,6 @@ func _help_entry() -> String:
 		return "phase_editor" if _phase_open != "" else "training_season"
 	if _view == "people" and (_people_page == "market" or _people_page == "profile:market" or _people_page.begins_with("coach:")):
 		return "market"   # Find a coach and a coach's page (session C6)
-	if _view == "people" and _people_page == "school":
-		return "school"   # the School page (session S2)
 	if _view == "race_card":
 		return "race_result"   # a kept race card (session L2a): the same help as after the race
 	return _view
@@ -980,17 +982,15 @@ func _open_people(thread_id: String) -> void:
 
 
 ## The Season tab (it was the Training tab; GDD 4.10 decision 1 "One week view": the season plan): the page of the plan, then
-## (not on the phase editor) the standing habits (session L1b: the free-time slots, where the school's two settings were), the
-## mental plan (until L3 cuts it) and the standing orders (the coach's notes, the lukio courses, the rules saved from answers).
+## (not on the phase editor) the standing habits (session L1b: the free-time slots, where the school's two settings were) and
+## the standing orders (the coach's notes, the lukio courses, the rules saved from answers). Session L3b1 cut the weekly mental
+## plan: mental training is sessions on the days (the plan's day rows, the day editor).
 func _build_training() -> void:
 	_build_training_page()
 	if _phase_open == "":
 		var habits := HabitsUI.section(func(): HealthUI.refresh())   # YOUR HABITS (session L1b)
 		if habits != null:
 			_content.add_child(habits)
-		var mental := MentalPlanUI.build()   # the weekly mental plan and the cue word (session M1)
-		if mental != null:
-			_content.add_child(mental)
 		_content.add_child(StandingOrders.build())
 
 

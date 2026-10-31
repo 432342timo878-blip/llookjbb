@@ -104,7 +104,11 @@
     {"id": "study", "label": "Study and scratch the race", "detail": "You withdraw from the race. The tests go as usual and the week is calmer.", "test_penalty": 0.0, "load": 0.0, "stress": -4.0, "scratch": true, "note": "You withdrew from {meet} to study."},
     {"id": "bus", "label": "Race and study on the bus", "detail": "Tests only a little lower, but the school days weigh more and you get stressed: more tiredness, more colds.", "test_penalty": 0.15, "load": 1.0, "stress": 4.0, "scratch": false, "note": "You race and study on the bus: a heavy week."}
    ],
-   "news": {"study": "Skipped a race to study", "bus": "Studying on the bus"}
+   "news": {"study": "Skipped a race to study", "bus": "Studying on the bus"},
+   "_note_l3b1": "Session L3b1 (the user's pick): the planner's card is the decision. Left open, the first morning it is seen takes the default (`left_note`); only a matriculation exam clash (the real exam vs meet) still asks as a stop that morning. `left_open` / `left_open_matric` = the card's line saying so.",
+   "left_open": "If you leave it: you race, and this week's tests come out about half a grade lower.",
+   "left_open_matric": "If you leave it: it asks you the next morning, before the exam.",
+   "left_note": "You left it open: you race at {meet}, and this week's tests will cost you a little."
   }
  },
  "card": {
@@ -127,6 +131,10 @@
    {"min": 0.0, "text": "Weak: you need to study more."}
   ],
   "choose": "How will you handle the next term?",
+  "_note_l3b1": "Session L3b1 (the user's pick): the report card is never a stop. Its day posts a line (title + intro + average_line); the next term's choice is a card on the planner until the Sunday after the card (SchoolSystem.report_card_card); left open = keep my evenings (left_open). The grades are on the School tab and in the week report.",
+  "average_line": "Average {avg} (academic subjects {acad}).",
+  "left_open": "If you leave it, your evenings stay as they are.",
+  "see_grades": "See every grade",
   "choose_final": "This stage is done. Your grades are kept for the next step.",
   "choices": {
    "done": {"label": "Continue", "detail": ""}
@@ -140,6 +148,9 @@
   "page_head": "School",
   "stage_line": "{stage} · {town}",
   "page_note": "School changes how heavy your days are and how your grades go. It never changes what you train.",
+  "_note_l3b1": "Session L3b1: the School page is its own tab (the teachers' messages stay in People as the School thread); grades_for / grades_for_lukio = the one line on what grades are for (data/application.json: the joint application counts the average of the academic subjects + PE of the final certificate).",
+  "grades_for": "What grades are for: the joint application after grade 9 counts the average of your academic subjects and PE on the final certificate. A lukio takes it against its cut-off; a sports lukio gives it up to 10 of its 20 points.",
+  "grades_for_lukio": "What grades are for in lukio: each course needs a 5 or better to pass, and the matriculation exams come at the end.",
   "week_head": "THIS WEEK",
   "week_days": "{n} school days this week.",
   "week_off": "No school this week: {break}.",
@@ -231,6 +242,7 @@
    "slot_study": "Extra study ({n} study slots this week)",
    "slot_friends": "Out with friends last night",
    "slot_rest": "Early to bed last night",
+   "mental": "A mental session on a school day",
    "double_day": "Double days on school days",
    "busy_test": "A busy test week ({n} tests)",
    "exam": "Exam week",

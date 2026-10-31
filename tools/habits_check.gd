@@ -281,7 +281,7 @@ func _played_history() -> void:
 
 func _save_load() -> void:
 	print("-- 6. save version 5, save / load, a version-4 save")
-	_ok("save version 5", int(saves.VERSION) == 5)
+	_ok("save version 5 or later (6 since session L3b1: mental sessions)", int(saves.VERSION) >= 5)
 	var hs = _fresh()
 	hs.set_habits(["study", "rest", "study", "study", "friends", "family", "family"])
 	hs.set_slot(3, "friends")

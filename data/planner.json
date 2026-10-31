@@ -95,6 +95,7 @@
       "season": {"name": "Season", "short": "Season", "icon": "align-left"},
       "calendar": {"name": "Calendar", "short": "Calendar", "icon": "calendar"},
       "people": {"name": "People", "short": "People", "icon": "users"},
+      "school": {"name": "School", "short": "School", "icon": "graduation-cap"},
       "career": {"name": "Career", "short": "Career", "icon": "trophy"},
       "rankings": {"name": "Rankings", "short": "Rankings", "icon": "list-ordered"}
     },

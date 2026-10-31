@@ -13,6 +13,7 @@ const NORMAL := "normal"
 var a: Athlete
 var plan: Array                 # the weekly template's days: Mon..Sun, each an Array of session ids
 var plan_intensity: Array       # the weekly template's intensity per day: 7 × "easy" / "normal" / "hard"
+var plan_mental: Array          # (session L3b1) the weekly template's mental session per day: 7 × kind or ""
 var monday: Dictionary
 var races: Dictionary           # day index -> meet
 var day := 0                    # the next day to play (0 = Monday; 7 = the whole week is played)
@@ -58,6 +59,7 @@ func _init(athlete: Athlete, week_plan: Variant, week_monday: Dictionary, week_r
 	var p := WeekPlan.of(week_plan)
 	plan = p.days
 	plan_intensity = p.intensity
+	plan_mental = WeekPlan.mental(p)
 	monday = week_monday
 	races = week_races
 	_month = Game.add_days(monday, 3).month   # the month most of the week is in
@@ -91,12 +93,15 @@ func set_plan(week_plan: Variant) -> void:
 	var p := WeekPlan.of(week_plan)
 	plan = p.days
 	plan_intensity = p.intensity
+	plan_mental = WeekPlan.mental(p)
 	for d in range(day, 7):
 		var c: Dictionary = changes.get(d, {})
 		if c.has("sessions") and c.sessions.value == plan[d]:
 			c.erase("sessions")
 		if c.has("intensity") and c.intensity.value == plan_intensity[d]:
 			c.erase("intensity")
+		if c.has("mental") and str(c.mental.value) == str(plan_mental[d]):
+			c.erase("mental")
 		if c.is_empty():
 			changes.erase(d)
 
@@ -213,7 +218,38 @@ func intensity(d: int) -> String:
 	return c.intensity.value if c.has("intensity") else plan_intensity[d]
 
 
-## Who changed what on day `d`: {"sessions": who, "intensity": who}, only for the parts that were changed.
+## Day `d`'s mental session (session L3b1): the day change if there is one, otherwise the weekly plan's ("" = none).
+func mental(d: int) -> String:
+	var c: Dictionary = changes.get(d, {})
+	if c.has("mental"):
+		return str(c.mental.value)
+	return str(plan_mental[d]) if d < plan_mental.size() else ""
+
+
+## The mental session kinds of the week so far and still planned, each with its first day: {kind: day} (played days from
+## their records, the rest from the plan with this week's changes).
+func mental_week() -> Dictionary:
+	var out := {}
+	for r in played:
+		var k := str(r.get("mental", ""))
+		if k != "" and not out.has(k):
+			out[k] = int(r.day)
+	for d in range(day, 7):
+		var k := mental(d)
+		if k != "" and not out.has(k):
+			out[k] = d
+	return out
+
+
+## Sets day `d`'s mental session ("" = none; a kind from data/mind.json mental). Not on a played or race day.
+func set_mental(d: int, kind: String, by := "player") -> bool:
+	if not can_change(d) or not by in CHANGED_BY or (kind != "" and not WeekPlan.is_mental(kind)):
+		return false
+	_set_change(d, "mental", kind, by, kind == str(plan_mental[d]))
+	return true
+
+
+## Who changed what on day `d`: {"sessions": who, "intensity": who, "mental": who}, only for the parts that were changed.
 func changed_by(d: int) -> Dictionary:
 	var who := {}
 	for part in changes.get(d, {}):
@@ -419,7 +455,7 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 	if not trained:
 		keep -= Training.REST_DAY_EXTRA
 	if school != null:
-		var life: float = school.life_load(Game.add_days(monday, day), done)
+		var life: float = school.life_load(Game.add_days(monday, day), done, mental(day))
 		if life != 0.0:
 			keep += SchoolSystem.keep_shift(life)
 	_load += day_load
@@ -428,6 +464,9 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 	_fatigue_sum += a.fatigue
 	var record := {"day": day, "sessions": done, "intensity": level, "race": meet.get("key", "") if is_race else "",
 			"load": day_load, "fatigue": a.fatigue}
+	var m := mental(day)   # (session L3b1: a mental session takes no training place and adds no load; MindSystem reads it on Sunday)
+	if m != "":
+		record.mental = m
 	played.append(record)
 	day += 1
 	day_started = false

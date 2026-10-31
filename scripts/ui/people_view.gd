@@ -1,7 +1,7 @@
 class_name PeopleView
 extends VBoxContainer
 ## The People tab (GDD 4.9.7, session C3): the threads (coach, training group, family, friends, school), the open thread and
-## the coach's profile. PC: the list on the left and the open thread (or the profile) beside it, in the tab itself (user
+## the coach's profile (session L3b1: the School page is its own tab; the teachers' messages are the School thread here). PC: the list on the left and the open thread (or the profile) beside it, in the tab itself (user
 ## 2026-10-11), the coach's thread open at first. Phone: the list first, then the thread as a page of its own with a back
 ## button. Newest exchange first, and what waits for an answer on top, so nothing needs scrolling down to be found.
 ## A thread is marked read when it is opened (the dot goes). Answers go through StoryletSystem.answer, which also answers
@@ -71,9 +71,6 @@ func _list(with_selection: bool) -> Control:
 			continue   # (the coach market is off: tools)
 		if t == "rivals" and _ms.thread("rivals").is_empty() and _ms.people_for("rival").is_empty():
 			continue   # (session P1: shown once a rival has become a person)
-		if t == "school" and SchoolUI.system() != null:   # the School page instead of the empty thread (session S2)
-			col.add_child(_school_row(with_selection and current == "school"))
-			continue
 		col.add_child(_thread_row(str(t), with_selection and (current == t or (current == "profile" and t == "coach"))))
 	if CoachMarket.enabled:   # Find a coach (session C6)
 		col.add_child(_find_row(with_selection and (current == "market" or current == "profile:market" or current.begins_with("coach:"))))
@@ -102,47 +99,6 @@ func _find_row(selected: bool) -> Control:
 	button.theme_type_variation = "CardOverlay"
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.pressed.connect(_go.bind("market"))
-	card.add_child(button)
-	return card
-
-
-## The row that opens the School page (session S2): the stage and the academic average.
-func _school_row(selected: bool) -> Control:
-	var ss := SchoolUI.system()
-	ss._ensure_started()
-	var u := SchoolUI.ui()
-	var stage := ss.stage_of(Game.date)
-	var sub := str(u.row_sub_none).format({"stage": str(stage.name)})
-	if bool(stage.get("subjects", false)):
-		sub = str(u.row_sub).format({"stage": str(stage.name), "avg": "%.2f" % ss.average(true)})
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", ThemeBuilder.card_box(selected))
-	card.custom_minimum_size.y = 64
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 10)
-	var col := UIKit.vbox(2)
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for l in [[str(u.row_title), "SubheadingLabel"], [sub, "MutedLabel"]]:
-		var lab := UIKit.wrapped(str(l[0]), str(l[1]))
-		lab.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		col.add_child(lab)
-	var row := UIKit.hbox(10)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(col)
-	var n := maxi(_waiting("school").size(), _ms.unread("school"))   # (session P1: a teacher wrote)
-	if n > 0:
-		var badge := UIKit.badge(str(n), Palette.ACCENT, 22.0)
-		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(badge)
-	margin.add_child(row)
-	card.add_child(margin)
-	var button := Button.new()
-	button.theme_type_variation = "CardOverlay"
-	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	button.pressed.connect(_go.bind("school"))
 	card.add_child(button)
 	return card
 
@@ -211,8 +167,6 @@ func _page(shown: String) -> Control:
 		return _profile("", true)
 	if shown == "market":
 		return _market()
-	if shown == "school" and SchoolUI.system() != null:
-		return _school()
 	if shown.begins_with("coach:"):
 		return _profile(shown.trim_prefix("coach:"))
 	return _thread(shown)
@@ -241,22 +195,6 @@ func _market() -> Control:
 		_go("profile:market" if cid == Game.athlete.coach_id else "coach:" + cid))
 	view.changed.connect(func(): changed.emit())
 	col.add_child(view)
-	return col
-
-
-## The School page (session S2).
-func _school() -> Control:
-	var col := UIKit.vbox(12)
-	if Layout.stacked():
-		col.add_child(_back_button())
-	# The teachers' messages on top (session P1, user: on the School page, not a thread of its own): what waits for an answer
-	# and the latest exchanges.
-	if StoryletSystem.people_enabled or not _ms.thread("school").is_empty():
-		var box := UIKit.vbox(10)
-		box.add_child(UIKit.label(str(Data.cast.ui.school_messages), "CaptionLabel"))
-		_messages_into(box, "school", str(Data.cast.ui.school_messages_none), 3)
-		col.add_child(box)
-	col.add_child(SchoolView.new())
 	return col
 
 

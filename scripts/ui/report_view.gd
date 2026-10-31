@@ -56,7 +56,9 @@ func _add_last_week(r: Dictionary) -> void:
 	attrs.sort_custom(func(x, y): return float(x.size) > float(y.size))
 	var body := WeekCauses.injury_rows(r) + WeekCauses.body_rows(r)
 	var left := [CausesUI.section(str(t().attributes), attrs, str(t().no_attrs)), CausesUI.section(str(t().body), body)]
-	var right := [CausesUI.section(str(t().moods), WeekCauses.mood_rows(r)), CausesUI.section(str(t().people), WeekCauses.people_rows(r)),
+	var right := [CausesUI.section(str(t().moods), WeekCauses.mood_rows(r)),
+			CausesUI.section(str(Data.causes.mental.title).to_upper(), WeekCauses.mental_rows(r)),   # (session L3b1)
+			CausesUI.section(str(t().people), WeekCauses.people_rows(r)),
 			CausesUI.section(str(t().school), WeekCauses.test_rows(r)), _free_time(r),
 			CausesUI.section(str(t().invites), WeekCauses.invite_rows(r)), _notes(r)]
 	left = left.filter(func(x): return x != null)

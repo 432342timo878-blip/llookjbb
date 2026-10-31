@@ -474,8 +474,8 @@ func _lukio_tour(main: Node, hub_in: Control) -> void:
 	var cands: Array = ss.add_candidates(2)
 	if not cands.is_empty():
 		ss.course_add(str(cands[0].id))
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	await _shot("53_lukio_page")
 	var shots := {"LUKIO CARD": "53a_lukio_card", "MATRICULATION EXAMS": "53b_matric_plan", "STUDY PLAN": "53c_study_plan"}
@@ -586,8 +586,8 @@ func _school_tour(main: Node, hub_in: Control) -> void:
 	hub._show_pending_event()
 	var ss = game.get_system("school")
 	print("school tour: %s, %d report card(s), %d tests written" % [game.date, ss.reports.size(), ss.tests_log.size()])
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	await _shot("51_school_page")
 	var cards = _find_label(hub, "REPORT CARDS")
@@ -610,12 +610,16 @@ func _school_tour(main: Node, hub_in: Control) -> void:
 	hub._refresh_week_ui()
 	await _frames(5)
 	await _shot("51d_school_strip")
-	if not ss.reports.is_empty():
+	if not ss.reports.is_empty():   # (session L3b1: the report card is a card on the planner, never a stop)
 		ss._post_card(ss.reports.size() - 1)
-		hub._show_pending_event()
+		hub._show("overview")
 		await _frames(6)
+		var see = _find_button_prefix(hub, str(main.get_node("/root/Data").school_life.card.see_grades))
+		if see != null:
+			hub._scroll.ensure_control_visible(see)
+		await _frames(4)
 		await _shot("51e_report_card")
-		hub._on_event_answer(game.pending_event().id, "keep")
+		ss.card_wait = {}
 	hub._show("overview")
 
 
@@ -747,8 +751,8 @@ func _application_tour(main: Node, hub_in: Control) -> void:
 	ss.applications = {}
 	ss._app(2028).wishes = ["sports:sammon_keskuslukio", "sports:lahden_lyseo", "general"]
 	SAV.open = {"sports:makelanrinteen_lukio": true}
-	hub._people_page = "school"
-	hub._show("people")
+	hub._people_page = ""
+	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(6)
 	await _shot("52_application")
 	var more = _find_label(hub, "Schools you can add")
@@ -876,14 +880,22 @@ func _mind_tour(main: Node, hub_in: Control) -> void:
 	await _frames(4)
 	await _shot("49a_mind_rows_open")
 	load("res://scripts/ui/mind_ui.gd").open = {}
-	ms.set_plan(["imagery", "relaxation", "self_talk"])
-	hub._show("training")
+	# Session L3b1: mental training is sessions on the days: the three on the plan's lightest days, the planner and the day editor.
+	ms.legacy_plan = ["imagery", "relaxation", "self_talk"]
+	ms.convert_legacy()
+	game.current_week()
+	hub._show("week")
 	await _frames(5)
-	var imagery = _find_button_prefix(hub, "✓ Imagery")
-	if imagery != null:
-		hub._scroll.ensure_control_visible(imagery)
-	await _frames(4)
-	await _shot("49b_mental_plan")
+	await _shot("49b_mental_planner")
+	var wk = game.current_week()
+	for d in range(wk.day, 7):
+		if wk.mental(d) != "" and wk.can_change(d):
+			hub._on_day_pressed(d)
+			await _frames(5)
+			await _shot("49b2_mental_day_editor")
+			hub._close_day()
+			await _frames(3)
+			break
 	# The Sunday talk with motivation Low: his line and the "how are you?" topic (the talks are on in the tour, main.gd).
 	var cal = load("res://scripts/core/calendar.gd")
 	var monday: int = cal.date_key(game.add_days(game.week_monday(), 7))

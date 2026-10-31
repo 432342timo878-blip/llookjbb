@@ -195,6 +195,9 @@ func from_dict(d: Dictionary) -> void:
 	# Saves from before version 4 (session C1) have no coach records: the athlete gets their club coach now (the same
 	# person and voice they had at races).
 	(get_system("coach") as CoachSystem).ensure_head(athlete, date)
+	# Saves from before version 6 (session L3b1) have the weekly mental plan: it becomes the same sessions on the plan's days.
+	if not (get_system("mind") as MindSystem).convert_legacy().is_empty() and _week != null:
+		_week.set_plan(season.week_for(_week.monday))
 
 
 ## JSON turns every number into a float; dates must be ints again.
@@ -415,6 +418,8 @@ func _end_day() -> String:
 	var rec: Dictionary = ctx.record
 	var entry := {"date": date.duplicate(), "day_type": ctx.day_type, "sessions": rec.sessions,
 			"intensity": rec.intensity, "race": rec.race, "load": rec.load, "fatigue": rec.fatigue, "events": []}
+	if rec.has("mental"):   # (session L3b1: only on a day with a mental session, so other days log as before)
+		entry.mental = rec.mental
 	# Systems can add their own fields to the day log (health: soreness and active injuries).
 	var extra: Dictionary = ctx.get("log_extra", {})
 	for key in extra:
