@@ -155,10 +155,12 @@ static func build(year: int, cs: CareerSystem, today: Dictionary) -> Dictionary:
 				school_avg = float(rep.get("average", 0.0))
 	# --- on to the next season
 	var next := {"year": year + 1, "label": SeasonSystem.season_label(year + 1), "targets": SeasonSystem.targets_text(year + 1)}
-	return {"year": year, "label": SeasonSystem.season_label(year), "date": today.duplicate(), "seen": false,
+	var snapshot := {"year": year, "label": SeasonSystem.season_label(year), "date": today.duplicate(), "seen": false,
 			"until": Calendar.date_key(Game.add_days(sp.to, 28)), "numbers": numbers, "attrs": attrs, "goals": goals, "met": met,
 			"rank": rank_rows, "best_race": best_race, "outcome": outcome, "verdict": verdict, "voice": voice, "life": life,
 			"school_avg": school_avg, "next": next, "age": a.age_on(sp.to)}
+	snapshot.merge(report(snapshot))
+	return snapshot
 
 
 ## The monthly record (ProgressLog) at or before a date, else the earliest one.
@@ -172,3 +174,77 @@ static func _record_at(date: Dictionary) -> Dictionary:
 	if pick.is_empty() and not Game.progress.is_empty():
 		pick = Game.progress[0]
 	return pick
+
+## What went well / what held you back / what to work on, each line from what the snapshot recorded (and, for the weakest main ability, the
+## athlete as they are now). {well, held, work}: lists of lines. Also used for a review saved before these lines existed.
+static func report(r: Dictionary) -> Dictionary:
+	var rp: Dictionary = cfg().report
+	var n: Dictionary = r.numbers
+	var steps: Array = Data.reputation.steps
+	var best := float(n.best)
+	var best_before := float(n.best_before)
+	var gain := best_before - best if best_before > 0.0 and best > 0.0 else 0.0
+	var well := []
+	var held := []
+	var work := []
+	var attrs: Array = r.attrs
+	var goals: Array = r.goals
+	var met := int(r.met)
+	if not attrs.is_empty() and float(attrs[0].change) >= float(rp.gain_min_attr):
+		well.append(str(rp.well.attr).format({"attr": attrs[0].name, "change": "%+.1f" % float(attrs[0].change)}))
+	if not goals.is_empty() and met > 0:
+		well.append(str(rp.well.goals).format({"met": met, "total": goals.size()}))
+	if gain > 0.0:
+		well.append(str(rp.well.best).format({"from": Calendar.format_time(best_before), "to": Calendar.format_time(best)}))
+	if int(n.wins) + int(n.medals) > 0:
+		well.append(str(rp.well.wins).format({"wins": int(n.wins), "medals": int(n.medals)}))
+	if int(n.scoring) > 0:
+		well.append(str(rp.well.scoring).format({"n": int(n.scoring)}))
+	if str(n.name0) != str(n.name1):
+		var i0 := 0
+		var i1 := 0
+		for i in steps.size():
+			if str(steps[i].name) == str(n.name0):
+				i0 = i
+			if str(steps[i].name) == str(n.name1):
+				i1 = i
+		if i1 > i0:
+			well.append(str(rp.well.name).format({"from": str(n.name0), "to": str(n.name1)}))
+	if well.is_empty():
+		well.append(str(rp.well.first) if best_before <= 0.0 else str(rp.well.races).format({"n": int(n.races)}))
+	for g in goals:
+		if str(g.status) == "missed":
+			held.append(str(rp.held.missed).format({"goal": str(g.text)}))
+			if not work.has(str(rp.next.missed)):
+				work.append(str(rp.next.missed))
+	if int(n.injured) > 0:
+		held.append(str(rp.held.injured).format({"n": int(n.injured)}))
+		work.append(str(rp.next.injured))
+	var sessions: Dictionary = n.sessions
+	if not sessions.is_empty() and int(sessions.planned) > 0 and float(sessions.done) / float(sessions.planned) < float(rp.sessions_low):
+		held.append(str(rp.held.sessions).format({"done": int(sessions.done), "planned": int(sessions.planned)}))
+		work.append(str(rp.next.sessions))
+	if int(n.races) < int(rp.few_races):
+		held.append(str(rp.held.few_races).format({"n": int(n.races)}))
+		work.append(str(rp.next.races).format({"n": int(rp.more_races)}))
+	if best_before > 0.0 and best > 0.0 and best >= best_before:
+		held.append(str(rp.held.no_gain))
+	var weak := ""
+	var weak_value := 99.0
+	var weights: Dictionary = Data.races.ability_weights
+	for id in weights:
+		if str(id).begins_with("_") or float(weights[id]) < float(rp.key_min_weight):
+			continue
+		var v := Game.athlete.get_attr(str(id))
+		if v < weak_value:
+			weak_value = v
+			weak = str(id)
+	if weak != "":
+		var weak_name := weak
+		for def in Data.attributes:
+			if str(def.id) == weak:
+				weak_name = str(def.name)
+		held.append(str(rp.held.weak).format({"attr": weak_name, "value": "%.1f" % weak_value}))
+		work.insert(0, str(rp.next.weak).format({"attr": weak_name, "share": roundi(float(weights[weak]) * 100.0)}))
+	work.append(str(rp.next.targets).format({"targets": str(r.next.targets)}))
+	return {"well": well, "held": held, "work": work}

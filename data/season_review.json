@@ -37,7 +37,44 @@
    "speed": "Slow year. We change it."
   }
  },
+ "report": {
+  "_note": "(K1b fix after playtest 3) What went well / what held you back / what to work on, each line from what the game recorded this season (SeasonReview.build). key_min_weight: the abilities that count at least this much towards 800 m ability (races.json ability_weights) are the 'main abilities'; the weakest of them is the one to work on. sessions_low: below this share of the planned sessions done is a thing that held you back. few_races: fewer races than this is little to measure; more_races: the number asked for next season.",
+  "key_min_weight": 0.10,
+  "sessions_low": 0.85,
+  "few_races": 5,
+  "more_races": 8,
+  "gain_min_attr": 0.3,
+  "well": {
+   "attr": "{attr} grew the most ({change}).",
+   "goals": "You met {met} of {total} goals.",
+   "best": "Your best time came down from {from} to {to}.",
+   "wins": "{wins} win(s) and {medals} medal place(s).",
+   "scoring": "{n} time(s) in the top 8 at a national meet.",
+   "name": "Your name grew from {from} to {to}.",
+   "first": "The first season counts: you got going, and you have times to measure against now.",
+   "races": "You raced {n} times."
+  },
+  "held": {
+   "missed": "Missed: {goal}.",
+   "injured": "{n} days out injured.",
+   "sessions": "You did {done} of {planned} planned sessions.",
+   "few_races": "Only {n} races: little to measure.",
+   "no_gain": "Your best time did not come down.",
+   "weak": "Your weakest main ability is {attr} ({value})."
+  },
+  "next": {
+   "weak": "Give {attr} more work: it counts {share} % towards 800 m ability.",
+   "missed": "Set the missed goal again, or one level easier.",
+   "injured": "Tell your coach early about niggles and keep the weeks steady.",
+   "sessions": "Keep to the plan: the sessions you skip are the ones that count.",
+   "races": "Race more: aim for at least {n} races.",
+   "targets": "Targets: {targets}."
+  }
+ },
  "ui": {
+  "well_head": "WHAT WENT WELL",
+  "held_head": "WHAT HELD YOU BACK",
+  "next_work_head": "WHAT TO WORK ON NEXT SEASON",
   "strap_title": "Season {season} is over",
   "strap_text": "Read the review: your season in numbers, your goals, your best race and what comes next.",
   "strap_button": "Read the review",

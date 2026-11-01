@@ -4961,6 +4961,14 @@ Built in one session (no split was needed).
    typical year at the age (`yearly_gain`), a line in each of the eight coach voices, pronouns filled.
 3. **The page** (`SeasonReviewView`) and **the strap** on the first planner (`WeekPlanner._review_strap`: until the review is opened or four
    weeks pass; never a choice waiting); **Career → Seasons** lists every review. The planner's end-of-season goals section (L3b2) stays.
+5. **After playtest 3 (the user's note: "the coach isn't telling what we did right or wrong or what we should do next season"):** three blocks under
+   the verdict, each line from the snapshot (`SeasonReview.report`, texts `season_review.json report`): WHAT WENT WELL (the attribute that grew
+   most, goals met, the best time down, wins and medals, a higher name step), WHAT HELD YOU BACK (each missed goal, days injured, sessions
+   skipped below 85 %, too few races, no gain, and always the weakest main ability: the lowest of the abilities that count ≥ 10 % towards 800 m),
+   WHAT TO WORK ON NEXT SEASON (that ability and its share, the missed goal again or one level easier, the injury and session advice, more races,
+   the next targets). A review saved before this gets the lines from its own record when it is opened. The same session fixed the planner's
+   review card disappearing when the page was only opened (it goes with "Done reading" or after four weeks). The other 24 answers of playtest 3
+   (clicks about right, no unwanted stops, Career pages liked, goals clear and felt, sizes "right" at week 6) need no change.
 4. **Help:** the screen `review`. **Checks:** part 8 of `reputation_check` (made once, the numbers counted from the results, due then read,
    saved and loaded), the layout check (the chapter and Seasons at five sizes), `career_shot -- <out> 52`.
 

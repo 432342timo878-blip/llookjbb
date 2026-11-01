@@ -47,6 +47,11 @@ func _build() -> void:
 	add_child(_numbers(r))
 	var verdict := _verdict(r)
 	add_child(verdict)
+	# What went well / held you back / to work on (a review saved before these lines existed gets them from its own record)
+	var rep: Dictionary = r if r.has("work") else SeasonReview.report(r)
+	add_child(_lines_card(str(u.well_head), rep.well))
+	add_child(_lines_card(str(u.held_head), rep.held))
+	add_child(_lines_card(str(u.next_work_head), rep.work))
 	var left := UIKit.vbox(12)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(_goals(r))
@@ -115,6 +120,16 @@ func _verdict(r: Dictionary) -> Control:
 	if name != "":
 		box.add_child(UIKit.label("— " + name, "WhyLabel"))
 	return CareerView.card(str(ui().verdict_head), box)
+
+
+## A card of short lines (a bullet each).
+func _lines_card(head: String, lines: Array) -> Control:
+	var box := UIKit.vbox(6)
+	for line in lines:
+		var l := UIKit.wrapped("· " + str(line), "BodyLabel")
+		l.custom_minimum_size.x = 120
+		box.add_child(l)
+	return CareerView.card(head, box)
 
 
 func _goals(r: Dictionary) -> Control:

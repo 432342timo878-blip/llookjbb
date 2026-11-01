@@ -201,6 +201,11 @@ func _review() -> void:
 	_ok("the best race is the one that earned the name the most", str(r.best_race.key) == "sm_hallit_14_15@2027" or str(r.best_race.key) == "joulukisat@2026" or str(r.best_race.key) != "")
 	_ok("the verdict is a text without a hole", str(r.verdict) != "" and str(r.verdict).find("{") < 0 and r.outcome in ["strong", "steady", "tough"])
 	_ok("the next season is named", str(r.next.label) == "2027–28")
+	_ok("what went well, what held you back and what to work on are lines without a hole", r.well.size() >= 1 and r.held.size() >= 1 and r.work.size() >= 2
+			and (r.well + r.held + r.work).all(func(l): return str(l) != "" and str(l).find("{") < 0))
+	_ok("the weakest main ability is named in both what held you back and what to work on", r.held.any(func(l): return str(l).begins_with("Your weakest main ability"))
+			and str(r.work[0]).begins_with("Give "))
+	_ok("a review saved without these lines gets them from its own record", load("res://scripts/core/season_review.gd").report(r).work.size() == r.work.size())
 	cs.on_day_end({"date": night.duplicate(), "day": Cal.weekday(night)})
 	_ok("a second look on the same night makes no second review", cs.reviews.size() == 1)
 	game.date = {"year": 2027, "month": 11, "day": 1}
