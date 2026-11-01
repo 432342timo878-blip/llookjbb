@@ -127,6 +127,12 @@ func _run() -> void:
 		hub._show("people")
 		await _frames(3)
 		await _press_help(hub, "hub a coach's page", "market", true)
+	# A person's page and the training group's card (session P2a): the header "?" opens their help.
+	for pair in [["person:fr.best", "person", "hub a person's page"], ["group", "group", "hub the training group's page"]]:
+		hub._people_page = str(pair[0])
+		hub._show("people")
+		await _frames(3)
+		await _press_help(hub, str(pair[2]), str(pair[1]), true)
 	# The School page (session S2): the header "?" opens the school's help.
 	hub._people_page = ""
 	hub._show("school")   # (session L3b1: its own tab)

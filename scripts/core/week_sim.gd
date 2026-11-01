@@ -62,6 +62,7 @@ func _init(athlete: Athlete, week_plan: Variant, week_monday: Dictionary, week_r
 	plan_mental = WeekPlan.mental(p)
 	monday = week_monday
 	races = week_races
+	_apply_group()
 	_month = Game.add_days(monday, 3).month   # the month most of the week is in
 	_fatigue_start = a.fatigue
 	_fatigue_peak = a.fatigue
@@ -94,6 +95,7 @@ func set_plan(week_plan: Variant) -> void:
 	plan = p.days
 	plan_intensity = p.intensity
 	plan_mental = WeekPlan.mental(p)
+	_apply_group()
 	for d in range(day, 7):
 		var c: Dictionary = changes.get(d, {})
 		if c.has("sessions") and c.sessions.value == plan[d]:
@@ -243,7 +245,7 @@ func mental_week() -> Dictionary:
 
 ## Sets day `d`'s mental session ("" = none; a kind from data/mind.json mental). Not on a played or race day.
 func set_mental(d: int, kind: String, by := "player") -> bool:
-	if not can_change(d) or not by in CHANGED_BY or (kind != "" and not WeekPlan.is_mental(kind)):
+	if not can_change(d, "mental") or not by in CHANGED_BY or (kind != "" and not WeekPlan.is_mental(kind)):
 		return false
 	_set_change(d, "mental", kind, by, kind == str(plan_mental[d]))
 	return true
@@ -270,14 +272,29 @@ func session_count(d: int, rec: Dictionary) -> Dictionary:
 	return {"planned": planned, "done": mini(trained, planned), "extra": maxi(0, trained - planned)}
 
 
-## Only days not yet played can be changed, and not race days (races are fixed).
-func can_change(d: int) -> bool:
-	return d >= day and d < 7 and not races.has(d)
+## Session P2a: the plan holds the group's fixed sessions on its days (copies the plan's arrays first when it changes any).
+func _apply_group() -> void:
+	var out := CircleSystem.overlay(plan, plan_intensity, races)
+	plan = out[0]
+	plan_intensity = out[1]
+
+
+## Session P2a: weekday `d` is one of the training group's fixed days (a race day is not: the race keeps it).
+func is_group_day(d: int) -> bool:
+	return not races.has(d) and CircleSystem.fixed_day(d)
+
+
+## Only days not yet played can be changed, and not race days (races are fixed). Session P2a: not the group's fixed days either,
+## except by an injury (`by` "injury") or for a mental session (`by` "mental"); the coach cannot move them either.
+func can_change(d: int, by := "") -> bool:
+	if d < day or d >= 7 or races.has(d):
+		return false
+	return by in ["injury", "mental"] or not is_group_day(d)
 
 
 ## Replaces the day's sessions (at most Training.MAX_SESSIONS_PER_DAY; [] = rest day). False if not allowed.
 func set_sessions(d: int, ids: Array, by := "player") -> bool:
-	if not can_change(d) or not by in CHANGED_BY or ids.size() > Training.MAX_SESSIONS_PER_DAY:
+	if not can_change(d, by) or not by in CHANGED_BY or ids.size() > Training.MAX_SESSIONS_PER_DAY:
 		return false
 	for id in ids:
 		if Data.get_session(id).is_empty():
@@ -317,7 +334,7 @@ func make_rest_day(d: int, by := "player") -> bool:
 
 ## Sets the day's intensity: an id from data/health.json ("easy" / "normal" / "hard").
 func set_intensity(d: int, level: String, by := "player") -> bool:
-	if not can_change(d) or not by in CHANGED_BY or not level in Data.health.intensity or level.begins_with("_"):
+	if not can_change(d, by) or not by in CHANGED_BY or not level in Data.health.intensity or level.begins_with("_"):
 		return false
 	_set_change(d, "intensity", level, by, level == plan_intensity[d])
 	return true
@@ -325,7 +342,7 @@ func set_intensity(d: int, level: String, by := "player") -> bool:
 
 ## Back to the weekly plan for that day (removes all its changes).
 func reset_day(d: int) -> bool:
-	if not can_change(d):
+	if not can_change(d, "injury"):
 		return false
 	changes.erase(d)
 	return true
@@ -385,6 +402,9 @@ static func from_dict(athlete: Athlete, week_plan: Variant, d: Dictionary) -> We
 	var mods: Dictionary = d.get("mods", {})
 	w._mods = {"tired": mods.get("tired", {}), "motivation": mods.get("motivation", {}),
 			"tired_days": mods.get("tired_days", []).map(func(x): return int(x))}
+	if mods.has("group"):
+		w._mods["group"] = mods.group
+		w._mods["group_pull"] = float(mods.get("group_pull", 0.0))
 	w._extra = d.get("extra", {})
 	w._attr_start = d.get("attr_start", {})
 	if not d.has("sources") and w.day > 0:
@@ -440,8 +460,17 @@ func _play_day(sessions: Array, meet: Dictionary, level: String) -> Dictionary:
 			fresh = lerpf(1.0, Training.FATIGUED_MIN_EFFECT,
 					(a.fatigue - Training.FATIGUE_LIMIT) / (100.0 - Training.FATIGUE_LIMIT))
 		var source := "race:" + str(meet.get("key", "")) if is_race else str(s.get("id", ""))
+		var group_mult := 1.0   # (session P2a: the training group's pull on a hard session of its fixed day; exactly 1.0 in lab)
+		if not is_race and "hard" in s.get("tags", []) and is_group_day(day):
+			group_mult = CircleSystem.pull_mult()
 		for attr in s.effects:
 			var added := float(s.effects[attr]) * eff * fresh * effect_mult * q
+			if group_mult != 1.0:
+				var group: Dictionary = _mods.get("group", {})
+				group[attr] = float(group.get(attr, 0.0)) + added * (group_mult - 1.0)
+				_mods["group"] = group
+				_mods["group_pull"] = group_mult - 1.0
+				added *= group_mult
 			_stimulus[attr] = _stimulus.get(attr, 0.0) + added
 			_record_source(str(attr), source, added, float(s.effects[attr]) * eff * effect_mult, fresh, q)
 		if fresh < 1.0 and not day in _mods.tired_days:

@@ -44,6 +44,7 @@ const OPTIONS := {
 	"market": ["res://scripts/core/coach_market.gd", "enabled"],
 	"season_offers": ["res://scripts/core/season_system.gd", "offers_enabled"],
 	"reputation": ["res://scripts/core/career_system.gd", "effects_enabled"],   # (K1a: what the player's name decides; the history is always recorded)
+	"circle": ["res://scripts/core/circle_system.gd", "enabled"],   # (P2a: shared time, new people, the training group's fixed days and pull)
 }
 
 const PRESETS := {
@@ -51,13 +52,13 @@ const PRESETS := {
 		"health": true, "coach_model": true, "coach_neutral": false, "mind": true, "mind_neutral": false,
 		"school": true, "school_neutral": false, "school_decisions": true, "form": true, "moments": true,
 		"test_moments": false, "talks": true, "people": true, "proposals": true, "suggests": true, "goals": true,
-		"market": true, "season_offers": true, "reputation": true,
+		"market": true, "season_offers": true, "reputation": true, "circle": true,
 	},
 	"lab": {
 		"health": false, "coach_model": true, "coach_neutral": true, "mind": true, "mind_neutral": true,
 		"school": true, "school_neutral": true, "school_decisions": false, "form": true, "moments": true,
 		"test_moments": false, "talks": false, "people": false, "proposals": false, "suggests": false, "goals": false,
-		"market": false, "season_offers": true, "reputation": false,
+		"market": false, "season_offers": true, "reputation": false, "circle": false,
 	},
 }
 

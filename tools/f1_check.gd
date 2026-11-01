@@ -457,7 +457,7 @@ func _one_done() -> void:
 	var w = WS.new(a, game.season.week_for(monday), monday, {})
 	var days := []
 	for d in 7:
-		if not w.plan[d].is_empty():
+		if not w.plan[d].is_empty() and not w.is_group_day(d):   # (P2a: a group day is fixed: nobody can make it a rest day)
 			days.append(d)
 	if days.size() < 3:
 		_ok("a week with 3+ training days", false)

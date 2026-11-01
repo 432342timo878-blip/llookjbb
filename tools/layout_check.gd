@@ -172,6 +172,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _market_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _circle_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		await _school_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _slot_views(main, game, tag)
@@ -1121,6 +1123,124 @@ func _market_views(main: Node, game, tag: String) -> void:
 	hub._people_page = ""
 	hub._show("overview")
 	M.enabled = was
+	await _frames(3)
+
+
+## People as state (session P2a): the people you know, a person's page (an acquaintance with a standing evening, a friend), the
+## training group's card (in the group, then alone, with its confirm open), a group day in the day editor, Find a coach with a
+## search, a sort and two coaches compared, and a talk with a candidate (one question answered). Nothing chosen here is kept.
+func _circle_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var GC = load("res://scripts/core/game_config.gd")
+	var ms = game.get_system("moments")
+	var hs = game.get_system("habits")
+	var mk = game.get_system("market")
+	var M = load("res://scripts/core/coach_market.gd")
+	MS.people_enabled = true
+	var circle_was: bool = GC.get_option("circle")
+	GC.set_option("circle", true)
+	ms.ensure_cast(game.athlete)
+	ms._sync_people()
+	var circle = game.get_system("circle")
+	circle.arrive_class("comp")
+	ms._sync_people()
+	var acq: Dictionary = ms.people_for("circle")[0]
+	var friend: Dictionary = ms.people_for("friend")[0]
+	hs.set_habit(4, "friends")
+	hs.set_companion(4, str(acq.id), true)
+	circle.last_week[str(acq.id)] = {"slots": 1.0, "gain": 3.2, "fade": 0.0}
+	circle.last_week[str(friend.id)] = {"slots": 0.0, "gain": 0.0, "fade": 1.0}
+	ms.add_relation(str(acq.id), 3.2, {"kind": "time", "slots": 1.0})
+	ms.add_relation(str(friend.id), -1.0, {"kind": "fade", "slots": 0.0})
+	hub._refresh_week_ui()
+	for page in ["circle", "person:" + str(acq.id), "person:" + str(friend.id), "group"]:
+		hub._people_page = page
+		hub._show("people")
+		await _frames(6)
+		await _shot("%s_circle_%s" % [tag, page.replace(":", "_").replace(".", "_")])
+		_check_overflow(hub, "%s circle %s" % [tag, page])
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s circle %s end" % [tag, page])
+	# Alone: the card says so; the confirm of leaving open first.
+	var leave = _find_meta(hub, "group_leave")
+	hub._people_page = "group"
+	hub._show("people")
+	await _frames(6)
+	leave = _find_meta(hub, "group_leave")
+	if leave != null:
+		leave.pressed.emit()
+		await _frames(4)
+		await _shot("%s_circle_group_leave" % tag)
+		_check_overflow(hub, "%s circle group leave" % tag)
+	circle.leave_group()
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_circle_group_alone" % tag)
+	_check_overflow(hub, "%s circle group alone" % tag)
+	circle.join_group()
+	# A group day in the day editor.
+	hub._people_page = ""
+	hub._show("week")
+	hub._open_day(3)   # (Thursday: a group day still to come; Tuesday is played by now)
+	await _frames(6)
+	await _shot("%s_circle_group_day" % tag)
+	_check_overflow(hub, "%s circle group day" % tag)
+	hub._close_day()
+	# Find a coach: search, sort, two coaches compared.
+	mk.ensure_pool()
+	hub._people_page = "market"
+	hub._show("people")
+	await _frames(6)
+	var view = _find_script(hub, load("res://scripts/ui/coach_market_view.gd"))
+	if view == null:
+		print("WRONG: no Find a coach view at %s" % tag)
+	else:
+		var others := []
+		for c in mk.coaches():
+			if str(c.id) != game.athlete.coach_id and str(c.kind) != "parent" and mk.visible(c):
+				others.append(str(c.id))
+		view._compare = others.slice(0, 2)
+		view._sort = "attr:technique"
+		view._only_budget = true
+		view._build()
+		await _frames(6)
+		await _shot("%s_circle_market_compare" % tag)
+		_check_overflow(hub, "%s circle market compare" % tag)
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s circle market compare end" % tag)
+		view._compare = []
+		view._sort = "section"
+		view._only_budget = false
+		view._query = "zzzz"
+		view._build()
+		await _frames(4)
+		await _shot("%s_circle_market_nomatch" % tag)
+		_check_overflow(hub, "%s circle market nomatch" % tag)
+	# A talk with a candidate: one question answered.
+	var cand := {}
+	for c in mk.coaches():
+		if str(c.id) != game.athlete.coach_id and str(c.kind) != "parent" and mk.visible(c):
+			cand = c
+			break
+	if not cand.is_empty():
+		mk.talk(cand, "week")
+		hub._people_page = "coach:" + str(cand.id)
+		hub._show("people")
+		await _frames(6)
+		await _shot("%s_circle_coach_talk" % tag)
+		_check_overflow(hub, "%s circle coach talk" % tag)
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s circle coach talk end" % tag)
+		mk.scout.erase(str(cand.id))
+	hub._people_page = ""
+	hub._show("overview")
+	GC.set_option("circle", circle_was)
+	MS.people_enabled = false
+	ms._sync_people()
 	await _frames(3)
 
 

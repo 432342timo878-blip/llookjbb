@@ -9,7 +9,7 @@ extends RefCounted
 ## strain_log, MindSystem's causes + drift, the people's relationship logs (StoryletSystem._note_relation), the coach's trust
 ## causes + last_drift, the day log (life_parts, loads), SchoolSystem.tests_log, the moments (invitations). Texts: data/causes.json.
 
-const GROUPS := {"injury": 0, "body": 1, "attr": 2, "goal": 3, "mood": 3, "person": 4, "trust": 4, "test": 5, "slot": 6, "mental": 6, "invite": 7, "tired": 8}
+const GROUPS := {"injury": 0, "body": 1, "attr": 2, "goal": 3, "mood": 3, "group": 3, "person": 4, "trust": 4, "test": 5, "slot": 6, "mental": 6, "invite": 7, "tired": 8}
 
 
 static func cfg() -> Dictionary:
@@ -25,6 +25,7 @@ static func rows(r: Dictionary) -> Array:
 	out.append_array(injury_rows(r))
 	out.append_array(body_rows(r))
 	out.append_array(attr_rows(r))
+	out.append_array(group_rows(r))
 	out.append_array(goal_rows(r))
 	out.append_array(mood_rows(r))
 	out.append_array(people_rows(r))
@@ -563,6 +564,12 @@ static func why_text(ms: StoryletSystem, p: Dictionary, x: Dictionary) -> String
 	var c: Dictionary = cfg().people
 	if str(x.get("kind", "")) == "farewell":
 		return str(c.why_farewell)
+	if str(x.get("kind", "")) in ["time", "fade"]:   # (session P2a: shared time and the lack of it)
+		var slots := float(x.get("slots", 0.0))
+		var n := ("%.1f" % slots).trim_suffix(".0")
+		if str(x.kind) == "fade":
+			return str(c.why_fade_none if slots <= 0.0 else c.why_fade).format({"n": n})
+		return str(c.why_time_group if int(x.get("group_days", 0)) > 0 and slots <= 0.5 else c.why_time).format({"n": n, "days": int(x.get("group_days", 0))})
 	var from := str(x.get("from", ""))
 	var reply := str(x.get("reply", ""))
 	var why := ""
@@ -746,6 +753,27 @@ static func test_rows(r: Dictionary) -> Array:
 				[str(Data.school_life.card.average_line).format({"avg": "%.2f" % avg, "acad": "%.2f" % float(rep.academic_average)}),
 				", ".join(grades)], true, 10.0 + avg))
 	return out
+
+
+## The training group's pull in the week (session P2a): what the group's hard sessions added to (or took from) each attribute,
+## as recorded in the report's mods.group (WeekSim). One row; the tap lists the attributes. Nothing when the group had no pull.
+static func group_rows(r: Dictionary) -> Array:
+	var rec: Dictionary = r.get("mods", {}).get("group", {})
+	if rec.is_empty():
+		return []
+	var c: Dictionary = cfg().group
+	var total := 0.0
+	var lines := []
+	var ids: Array = rec.keys()
+	ids.sort_custom(func(a, b): return absf(float(rec[a])) > absf(float(rec[b])))
+	for id in ids:
+		total += float(rec[id])
+		lines.append(str(c.item).format({"attr": UIKit.attr_name(str(id)), "n": num(float(rec[id]))}))
+	var up := total >= 0.0
+	var pct := "%.1f" % (absf(float(r.mods.get("group_pull", 0.0))) * 100.0)   # (the pull the week was played with)
+	var detail := [str(c.detail_up if up else c.detail_down).format({"pct": pct}), "; ".join(lines)]
+	return [_row("group", "pull", "users", str(c.title), num(total), "good" if up else "bad",
+			str(c.cause_up if up else c.cause_down), detail, true, absf(total))]
 
 
 ## The slots' effects in the week (recorded in the day log's life_parts and the report's `slots`): late nights, extra or fewer

@@ -559,7 +559,9 @@ static func head_view() -> Dictionary:
 ## The noise of a part as a coach with this attribute sees it (data verdict.noise).
 static func noise_sd(attr: float) -> float:
 	var n: Dictionary = cfg().noise
-	return float(n.floor) + float(n.per_point) * maxf(0.0, 20.0 - attr)
+	var sd := float(n.floor) + float(n.per_point) * maxf(0.0, 20.0 - attr)
+	var alone := CircleSystem.alone_factor()   # (session P2a: training alone, he sees less of you; exactly 1.0 in the group and in lab)
+	return sd * alone if alone != 1.0 else sd
 
 
 ## His dice for a change on a date.

@@ -19,7 +19,7 @@ static func of(w: WeekSim, d: int) -> Dictionary:
 	var played := d < w.day
 	var info := {
 		"day": d, "date": date, "played": played, "today": Calendar.date_key(date) == Calendar.date_key(Game.date),
-		"editable": w.can_change(d), "race": {}, "sessions": [], "intensity": WeekSim.NORMAL, "load": 0.0,
+		"editable": w.can_change(d), "group": w.is_group_day(d), "race": {}, "sessions": [], "intensity": WeekSim.NORMAL, "load": 0.0,
 		"fatigue": -1.0, "changed": w.changes.has(d), "by": w.changed_by(d), "events": [],
 		"sore": 0, "sore_areas": [], "health": [], "limited": false, "tier": "", "mental": "",
 	}

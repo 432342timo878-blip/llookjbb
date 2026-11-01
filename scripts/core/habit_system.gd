@@ -18,12 +18,18 @@ extends GameSystem
 ## No dice. Saved since save version 5; an older save's two settings become the nearest habits (`from_old`, Game.from_dict).
 
 const ACTIVITIES := ["study", "rest", "friends", "family"]
+const WITH_ACTIVITIES := ["friends", "family"]   # (session P2a: the activities that can be spent with someone in particular)
 const KEEP_HISTORY := 9
 
 var habits: Array = []        # 7 activity ids, Monday .. Sunday
 var week_key := 0             # the date key of the Monday whose one-week changes `week_slots` holds
 var week_slots := {}          # day index -> activity id: this week's changes (the planner, the day editor)
 var history := {}             # day number (as text) -> the activity the slot of that played day had ("last night" on Monday)
+# Session P2a: WHO a friends / family slot is spent with (CircleSystem turns it into closeness). Empty = nobody named (the slot is
+# shared among the friends / the family). Saved only when something is set, so a career without companions saves as before.
+var habit_with := {}          # day index -> person id: a standing companion
+var week_with := {}           # day index -> person id: this week only (cleared with `week_slots`)
+var with_history := {}        # day number (as text) -> the companion a played slot had
 
 ## A week's 7 activities by "monday key|today key|revision" (the life load asks for them many times a day: the day, the health
 ## model, the moods, the coach's simulations). Anything that can change a slot calls touch(); StoryletSystem does when an
@@ -94,6 +100,8 @@ func set_habit(i: int, act: String) -> bool:
 	habits[i] = act
 	if week_slots.get(i, "") == act:   # (a one-week change that the habit now matches is no change any more)
 		week_slots.erase(i)
+	if not act in WITH_ACTIVITIES:
+		habit_with.erase(i)
 	touch()
 	return true
 
@@ -128,12 +136,14 @@ func _sync_week() -> void:
 	if k != week_key:
 		week_key = k
 		week_slots = {}
+		week_with = {}
 		touch()
 
 
 func on_week_start(w: WeekSim) -> void:
 	week_key = Calendar.date_key(w.monday)
 	week_slots = {}
+	week_with = {}
 	touch()
 
 
@@ -162,6 +172,8 @@ func set_slot(i: int, act: String) -> bool:
 		week_slots.erase(i)
 	else:
 		week_slots[i] = act
+	if not act in WITH_ACTIVITIES:
+		week_with.erase(i)
 	touch()
 	return true
 
@@ -171,6 +183,58 @@ func reset_slot(i: int) -> bool:
 		return false
 	_sync_week()
 	week_slots.erase(i)
+	week_with.erase(i)
+	touch()
+	return true
+
+
+# --- Who a slot is spent with (session P2a) ----------------------------------------------------------------------------------------
+
+## The companion of slot `i` of this week: this week's, else the standing one ("" = nobody named).
+func companion(i: int) -> String:
+	_sync_week()
+	var pid := str(week_with.get(i, habit_with.get(i, "")))
+	if pid != "" and not week_slot(i) in WITH_ACTIVITIES:
+		return ""
+	return pid
+
+
+## The companion of the slot on `d`: a played day as it was, this week's or the standing one for a later day ("" when the slot is not
+## a friends / family one, or an invitation takes it).
+func companion_on(d: Dictionary) -> String:
+	if Game.athlete == null:
+		return ""
+	var n := StoryletSystem.day_no(d)
+	if n < StoryletSystem.day_no(Game.date):
+		return str(with_history.get(str(n), ""))
+	var wd := Calendar.weekday(d)
+	if Calendar.date_key(Calendar.monday_of(d)) == Calendar.date_key(Game.week_monday()):
+		return companion(wd) if activity_on(d) in WITH_ACTIVITIES else ""
+	var pid := str(habit_with.get(wd, ""))
+	return pid if pid != "" and habit(wd) in WITH_ACTIVITIES else ""
+
+
+## Name `pid` as the company of slot `i` (a friends / family slot of a day not played); `standing` = every week, else this week
+## only. "" clears. False when the slot is not one that can have company or cannot change.
+func set_companion(i: int, pid: String, standing := false) -> bool:
+	if i < 0 or i > 6 or (not standing and not can_change(i)):   # (a standing companion is for the weeks to come: a played day does not matter)
+		return false
+	if pid != "" and not (standing and habit(i) in WITH_ACTIVITIES) and not (not standing and week_slot(i) in WITH_ACTIVITIES):
+		return false
+	_sync_week()
+	if standing:
+		if pid == "":
+			habit_with.erase(i)
+		else:
+			habit_with[i] = pid
+		week_with.erase(i)
+	else:
+		if pid == "":
+			week_with[i] = ""   # (explicitly nobody this week, over a standing companion)
+			if not habit_with.has(i):
+				week_with.erase(i)
+		else:
+			week_with[i] = pid
 	touch()
 	return true
 
@@ -511,9 +575,15 @@ func _next_day(w: WeekSim, d: int) -> Dictionary:
 func on_day_end(ctx: Dictionary) -> void:
 	var n := StoryletSystem.day_no(ctx.date)
 	history[str(n)] = activity_on(ctx.date)
+	var with := companion_on(ctx.date)
+	if with != "":
+		with_history[str(n)] = with
 	for k in history.keys():
 		if int(k) < n - KEEP_HISTORY:
 			history.erase(k)
+	for k in with_history.keys():
+		if int(k) < n - KEEP_HISTORY:
+			with_history.erase(k)
 	touch()
 
 
@@ -521,7 +591,21 @@ func to_dict() -> Dictionary:
 	var slots := {}
 	for i in week_slots:
 		slots[str(i)] = week_slots[i]
-	return {"habits": habits.duplicate(), "week": week_key, "slots": slots, "history": history.duplicate()}
+	var d := {"habits": habits.duplicate(), "week": week_key, "slots": slots, "history": history.duplicate()}
+	if not habit_with.is_empty():   # (session P2a: only when someone is named, so older careers save as before)
+		d["with"] = _keyed(habit_with)
+	if not week_with.is_empty():
+		d["week_with"] = _keyed(week_with)
+	if not with_history.is_empty():
+		d["with_history"] = with_history.duplicate()
+	return d
+
+
+static func _keyed(d: Dictionary) -> Dictionary:
+	var out := {}
+	for i in d:
+		out[str(i)] = d[i]
+	return out
 
 
 ## An empty state = the default habit (a new career, or a save from before version 5: Game.from_dict then sets the habits from
@@ -531,10 +615,19 @@ func from_dict(d: Dictionary) -> void:
 	week_key = 0
 	week_slots = {}
 	history = {}
+	habit_with = {}
+	week_with = {}
+	with_history = {}
 	_week_cache = {}
 	touch()
 	if d.is_empty():
 		return
+	for k in d.get("with", {}):
+		habit_with[int(k)] = str(d["with"][k])
+	for k in d.get("week_with", {}):
+		week_with[int(k)] = str(d["week_with"][k])
+	for k in d.get("with_history", {}):
+		with_history[str(int(float(k)))] = str(d["with_history"][k])
 	set_habits(d.get("habits", []))
 	week_key = int(d.get("week", 0))
 	for k in d.get("slots", {}):

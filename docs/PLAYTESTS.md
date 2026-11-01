@@ -222,3 +222,17 @@ asks you to look at, but write anything:
 **In the game (K1c):** the questions above now come to you. While you play, a card with a few questions appears at the top of the page they are
 about (This week, the Career tab's pages, the season review). Answer and press Done. The menu (top right) -> "Playtest notes" has every
 question, a quick-note box and "Copy everything": paste that here or to Claude.
+
+### Playtest 3 result (the user, 2026-11-01; read from the in-game notes, 25 of 25 answered)
+
+Clicks about right; no unwanted stops; always clear why things changed; the coach's notes useful; the strap useful and enough; Now makes me plan
+ahead; Results easy; Timeline nice; the Career tab feels like "my career"; the goals card clear, the stakes felt, the reviews useful; the season
+review reads like the season and its card was clear; the sizes all "right" (answered at week 6: early); "Feels like a decent sim".
+- **The coach's verdict in the season review was too generic** ("isn't telling what we did right or wrong or what to do next season") -> **done
+  2026-11-01**: went well / held you back / what to work on, each line from the record (GDD 4.10 "Built (step K1b)" 5).
+- **The review's planner card vanished when the page was only opened** -> **fixed 2026-11-01**.
+- **"The gameplay inside the event itself is incredibly boring and needs a complete revamp"** (user, 2026-11-01, said after playtest 3, the
+  races themselves): the race screen, not the loop around it. **-> a design session of its own before R6 / R7** (what makes a race a game: the
+  decisions, the pace of the cards, the feedback, the stakes; R6 = presentation, R7 = controls; this note may change their scope and order).
+  **Designed 2026-11-01: GDD 4.11 "R-revamp"** (riding the effort with a slider, a viewpoint you are in chosen from prototypes, live alerts
+  instead of cards, a race plan with the coach; build plan R6a → R7a → R7b → R6b → R6c → R7c).

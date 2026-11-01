@@ -96,6 +96,10 @@
     "why_other": "your answer to {who}: “{reply}”",
     "why_other_none": "you didn't answer {who}",
     "why_farewell": "your goodbye",
+    "why_time": "{n} free slots together",
+    "why_time_group": "{days} group days together",
+    "why_fade": "only {n} free slots together: not enough to keep it",
+    "why_fade_none": "no time together this week",
     "why_about": "{why} · “{about}”",
     "about_chars": 34,
     "trust_title": "Trust in {name}",
@@ -130,6 +134,14 @@
     "cause": "report card now {grade}",
     "evenings": "Your study evenings this week: {n} · {grades}",
     "detail": "{subject}: recent tests {list} · the report card would give {grade} now. Grades count towards the application average after grade 9."
+  },
+  "group": {
+    "title": "The group's pull",
+    "cause_up": "your stronger training group lifted its hard sessions",
+    "cause_down": "your weaker training group held its hard sessions back",
+    "detail_up": "On the group's fixed days the hard session comes out about {pct}% better because the group is stronger than you. What it added:",
+    "detail_down": "On the group's fixed days the hard session comes out about {pct}% worse because the group is below your level. What it took away:",
+    "item": "{attr} {n}"
   },
   "slots": {
     "late_title": "Late nights",

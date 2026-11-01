@@ -41,9 +41,28 @@
    {"id": "fun", "text": "The most fun moment in these weeks:", "kind": "text", "where": "week", "min_weeks": 7},
    {"id": "quit", "text": "The moment that made you want to skip ahead or quit:", "kind": "text", "where": "week", "min_weeks": 7},
    {"id": "change", "text": "If you could change one thing before the next step, what is it?", "kind": "text", "where": "week", "min_weeks": 7}
+  ]},
+  {"id": "people", "title": "PEOPLE AND THE GROUP (P2a)", "questions": [
+   {"id": "p2_circle", "text": "People you know: do you understand how an acquaintance becomes a friend, and how a friend drifts away?", "kind": "pick", "where": "people:circle", "options": ["Clear", "Unclear", "I did not notice"], "note": "What was unclear?"},
+   {"id": "p2_person", "text": "A person's page (how close, what they give and cost):", "kind": "pick", "where": "people:person", "options": ["Useful", "Too much", "Too little", "Unclear"], "note": "What is missing or wrong?"},
+   {"id": "p2_meet", "text": "Meeting someone every week (the evening buttons on their page):", "kind": "pick", "where": "people:person", "options": ["Easy", "Fiddly", "I did not find it"], "note": "What would make it easier?"},
+   {"id": "p2_with", "text": "Choosing who a free evening is with (in the evening's picker on This week):", "kind": "pick", "where": "week", "min_weeks": 2, "options": ["Useful", "Too fiddly", "I did not notice it"], "note": "Anything unclear?"},
+   {"id": "p2_drift", "text": "Friends drifting away when you do not see them (slowly, over many weeks):", "kind": "pick", "where": "week", "min_weeks": 5, "options": ["Realistic", "Too fast", "Too slow", "I did not notice it"], "note": "What did you see?"},
+   {"id": "p2_group", "text": "The training group's card (level, pull, fixed days):", "kind": "pick", "where": "people:group", "options": ["Clear", "Confusing", "Too much"], "note": "What was confusing?"},
+   {"id": "p2_fixed", "text": "The group's two fixed days (Tuesday, Thursday):", "kind": "pick", "where": "week", "min_weeks": 2, "options": ["Fine", "Too restrictive", "I did not notice them"], "note": "How did it feel to have set days?"},
+   {"id": "p2_pull", "text": "The group's pull in the week's report:", "kind": "pick", "where": "week", "min_weeks": 3, "options": ["Clear and fair", "Too big", "Too small", "I did not see it"], "note": "Did you think about leaving or changing group?"},
+   {"id": "p2_leave", "text": "Would you leave the group, and what would make you?", "kind": "text", "where": "people:group"},
+   {"id": "p2_market", "text": "Find a coach: search, sort and filters:", "kind": "pick", "where": "people:market", "options": ["Useful", "Too much", "Something is missing"], "note": "What is missing?"},
+   {"id": "p2_compare", "text": "Comparing your coach with another (the Compare button):", "kind": "pick", "where": "people:market", "options": ["Clear", "Hard to read", "I did not find it"], "note": "What would make it clearer?"},
+   {"id": "p2_talk", "text": "Talking to a coach (three questions on their page):", "kind": "pick", "where": "people:coach", "options": ["Useful", "Pointless", "I did not find it"], "note": "Which question did you miss?"}
   ]}
  ],
  "pages": {
+  "people:circle": "People you know",
+  "people:person": "a person's page",
+  "people:group": "your training group",
+  "people:market": "Find a coach",
+  "people:coach": "a coach's page",
   "week": "This week",
   "career:now": "the Career tab, Now",
   "career:results": "the Career tab, Results",

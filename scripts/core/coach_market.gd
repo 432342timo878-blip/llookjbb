@@ -642,6 +642,86 @@ func ask_around(c: Dictionary) -> String:
 	return text
 
 
+## A talk with a candidate (session P2a, market.json talk): the questions asked of this coach so far.
+func talked(c: Dictionary) -> Array:
+	return scout.get(str(c.id), {}).get("talks", [])
+
+
+func talks_left(c: Dictionary) -> int:
+	return int(cfg().talk.max) - talked(c).size()
+
+
+## Ask coach `c` question `qid`: his answer in his own voice, made from his real record; the ranges the question is about narrow, a
+## character word may show. "" when the question is unknown, already asked, or the three questions are used. No stop, no trust change.
+func talk(c: Dictionary, qid: String) -> String:
+	var t: Dictionary = cfg().talk
+	var q: Dictionary = {}
+	for x in t.questions:
+		if str(x.id) == qid:
+			q = x
+	var cid := str(c.id)
+	if q.is_empty() or qid in talked(c) or talks_left(c) <= 0:
+		return ""
+	if not scout.has(cid):
+		scout[cid] = {"width": {}, "revealed": []}
+	var rec: Dictionary = scout[cid]
+	var list: Array = rec.get("talks", [])
+	list.append(qid)
+	rec.talks = list
+	for at in Data.coaching.attributes:
+		var w := float(rec.width.get(at.id, start_width(c)))
+		rec.width[at.id] = maxf(0.0, w - float(q.attrs.get(at.id, q.other)))
+	for r in q.get("reveals", []):
+		if not r in rec.revealed:
+			rec.revealed.append(r)
+	# The tier of his answer: the mean of the attributes it is about.
+	var sum := 0.0
+	for a in q.basis:
+		sum += float(c.attributes.get(a, 10))
+	var mean := sum / maxf(1.0, q.basis.size())
+	var tier := "hi" if mean >= float(t.tier_hi) else ("mid" if mean >= float(t.tier_mid) else "lo")
+	var text := str(q[tier])
+	var ui: Dictionary = cfg().ui
+	var fill := {"size": c.get("group", []).size(), "days": "", "group_word": "", "group_text": "", "cost_text": ""}
+	if text.contains("{group_text}"):
+		var members: Array = c.get("group", [])
+		if members.is_empty():
+			fill.group_text = str(t.group_none)
+		else:
+			var sum_l := 0.0
+			for m in members:
+				sum_l += float(m.level)
+			var gap := sum_l / members.size() - CoachSystem.athlete_level(Game.athlete)
+			var key := "much_stronger" if gap >= 2.0 else ("stronger" if gap >= 0.7 else ("level" if gap > -0.7 else ("weaker" if gap > -2.0 else "much_weaker")))
+			var days := []
+			for g in Data.circle.group.days:
+				days.append(str(Training.DAY_NAMES[int(g.day)]))
+			fill.group_text = str(t.group_text).format({"size": members.size(), "group_word": str(t.group_words[key]), "days": " and ".join(days)})
+	if text.contains("{cost_text}"):
+		var co := cost_of(c)
+		fill.cost_text = str(ui.cost[str(co.kind)]).format({"cost": co.cost}) + "."
+	text = text.format(fill)
+	var opener := str(t.openers.get(str(c.get("voice", "calm")), ""))
+	if bool(c.get("real", false)):
+		opener = str(t.openers.get("real", ""))
+	var answer := CoachSystem.words(("%s %s" % [opener, text]).strip_edges(), c)
+	var kept: Dictionary = rec.get("answers", {})
+	kept[qid] = answer   # (kept with the scouting, so his page shows what he said)
+	rec.answers = kept
+	return answer
+
+
+## What he said so far: [{id, label, answer}] in the order asked.
+func talk_log(c: Dictionary) -> Array:
+	var out := []
+	var kept: Dictionary = scout.get(str(c.id), {}).get("answers", {})
+	for qid in talked(c):
+		for x in cfg().talk.questions:
+			if str(x.id) == str(qid):
+				out.append({"id": str(qid), "label": str(x.label), "answer": str(kept.get(str(qid), ""))})
+	return out
+
+
 ## The days a visit can be planned on: the next `visit.days` days from tomorrow (today too before it is played), without
 ## race days. [{date, label}]
 func visit_days() -> Array:

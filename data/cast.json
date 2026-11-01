@@ -57,7 +57,7 @@
 		"age": [28, 60]
 	},
 	"rivals": {"max": 3, "met_min": 2, "note_chance": 0.6, "word": "Rival", "pb_word": "PB {pb}"},
-	"relation_start": {"mum": 70, "dad": 70, "sibling": 60, "best_friend": 70, "friend": 55, "partner": 50, "class_teacher": 50, "pe_teacher": 55, "counsellor": 50, "rival": 40},
+	"relation_start": {"mum": 70, "dad": 70, "sibling": 60, "best_friend": 70, "friend": 55, "partner": 50, "acquaintance": 30, "class_teacher": 50, "pe_teacher": 55, "counsellor": 50, "rival": 40},
 	"relation_words": [[20, "Strained"], [40, "Cool"], [60, "Fine"], [80, "Good"], [101, "Close"]],
 	"sport_words": {"football": "football", "ice_hockey": "hockey", "floorball": "floorball", "pesapallo": "pesäpallo", "basketball": "basketball", "skiing": "skiing", "orienteering": "orienteering", "swimming": "swimming", "gymnastics": "gymnastics", "dance": "dance", "martial_arts": "judo"},
 	"mood_scale": 0.4,

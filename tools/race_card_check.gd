@@ -46,7 +46,7 @@ func _run() -> void:
 	var SG = load("res://scripts/core/save_game.gd")
 	SG.DIR = "user://tool_saves/"
 	load("res://scripts/core/game_config.gd").fixed_seed = 11
-	load("res://scripts/core/game_config.gd").use("real", {"health": true})
+	load("res://scripts/core/game_config.gd").use("real", {"health": true, "circle": false})   # (P2a: this check is about the race card; the group's pull would only move its dice)
 	await _frames(10)
 	main = current_scene
 	router = main.get_node("/root/Router")

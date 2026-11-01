@@ -857,6 +857,10 @@ func _help_entry() -> String:
 		return "phase_editor" if _phase_open != "" else "training_season"
 	if _view == "people" and (_people_page == "market" or _people_page == "profile:market" or _people_page.begins_with("coach:")):
 		return "market"   # Find a coach and a coach's page (session C6)
+	if _view == "people" and _people_page.begins_with("person:"):
+		return "person"   # a person's page (session P2a)
+	if _view == "people" and _people_page == "group":
+		return "group"    # the training group's card (session P2a)
 	if _view == "race_card":
 		return "race_result"   # a kept race card (session L2a): the same help as after the race
 	return _view

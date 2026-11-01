@@ -71,6 +71,8 @@ func _list(with_selection: bool) -> Control:
 			continue   # (the coach market is off: tools)
 		if t == "rivals" and _ms.thread("rivals").is_empty() and _ms.people_for("rival").is_empty():
 			continue   # (session P1: shown once a rival has become a person)
+		if t == "circle" and (not CircleSystem.active() or (_ms.people_for("circle").is_empty() and _ms.thread("circle").is_empty())):
+			continue   # (session P2a: shown once a class has arrived)
 		col.add_child(_thread_row(str(t), with_selection and (current == t or (current == "profile" and t == "coach"))))
 	if CoachMarket.enabled:   # Find a coach (session C6)
 		col.add_child(_find_row(with_selection and (current == "market" or current == "profile:market" or current.begins_with("coach:"))))
@@ -161,6 +163,27 @@ func _waiting(thread_id: String) -> Array:
 # --- A thread or the profile --------------------------------------------------------------------------------
 
 func _page(shown: String) -> Control:
+	var inner := _page_inner(shown)
+	var key := ""   # (session P2a: the playtest's questions about the new pages, while the playtest is on)
+	if shown.begins_with("person:"):
+		key = "people:person"
+	elif shown in ["circle", "group"]:
+		key = "people:" + shown
+	elif shown in ["market", "profile:market"]:
+		key = "people:market"
+	elif shown.begins_with("coach:"):
+		key = "people:coach"
+	var card := PlaytestCard.build(key) if key != "" else null
+	if card == null:
+		return inner
+	var box := UIKit.vbox(12)
+	box.add_child(card)
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(inner)
+	return box
+
+
+func _page_inner(shown: String) -> Control:
 	if shown == "profile":
 		return _profile("")
 	if shown == "profile:market":   # (your own coach opened from Find a coach: the way back to the list too)
@@ -169,7 +192,19 @@ func _page(shown: String) -> Control:
 		return _market()
 	if shown.begins_with("coach:"):
 		return _profile(shown.trim_prefix("coach:"))
+	if shown.begins_with("person:"):   # (session P2a: a person's page; back goes to the thread they are in)
+		return _person(shown.trim_prefix("person:"))
 	return _thread(shown)
+
+
+## A person's page (session P2a): back to the thread they belong to.
+func _person(pid: String) -> Control:
+	var p: Dictionary = _ms.people.get(pid, {})
+	var thread := str(p.get("thread", ""))
+	var page_view := PersonPage.new(pid, str(Data.circle.ui.back_thread).format({"thread": StoryletSystem.thread_name(thread)}) if thread != "" else "")
+	page_view.back_requested.connect(_go.bind(thread))
+	page_view.changed.connect(func(): changed.emit())
+	return page_view
 
 
 ## A coach's page: the head coach's (`coach_id` "") or another coach's from Find a coach (session C6).
@@ -219,9 +254,14 @@ func _thread(thread_id: String) -> Control:
 	col.add_child(head)
 
 	if thread_id == "group":
+		var card := GroupCard.build(func():
+			_build()
+			changed.emit(), _go.bind("market"))   # (session P2a: the group's level, pull, fixed days; leaving it)
+		if card != null:
+			col.add_child(card)
 		col.add_child(_members())
-	elif thread_id in ["family", "friends", "rivals"] and not _ms.people_for(thread_id if thread_id != "rivals" else "rival").is_empty():
-		col.add_child(PeopleUI.roster(_ms, thread_id))   # (session P1: who they are, the relationship)
+	elif thread_id in ["family", "friends", "rivals", "circle"] and not _ms.people_for(thread_id if thread_id != "rivals" else "rival").is_empty():
+		col.add_child(PeopleUI.roster(_ms, thread_id, func(pid: String): _go("person:" + pid)))   # (session P1: who they are, the relationship; P2a: open a person's page)
 	_messages_into(col, thread_id)
 	return col
 
@@ -269,9 +309,24 @@ func _members() -> Control:
 			name += "  ·  " + str(Data.cast.ui.partner_mark)
 		line.add_child(UIKit.wrapped(name, ""))
 		var event_name := str(Data.get_event(str(t.event)).get("name", t.event))
-		line.add_child(UIKit.wrapped(str(Data.coach_talk.profile.group_line).format({"age": int(Game.date.year) - int(t.birth_year),
-				"event": event_name, "role": str(roles.get(str(t.role), {}).get("word", ""))}), "MutedLabel"))
-		box.add_child(line)
+		var sub := str(Data.coach_talk.profile.group_line).format({"age": int(Game.date.year) - int(t.birth_year),
+				"event": event_name, "role": str(roles.get(str(t.role), {}).get("word", ""))})
+		if not person.is_empty() and CircleSystem.active():
+			sub += " · " + Cast.relation_word(_ms.relation_of(person))
+		line.add_child(UIKit.wrapped(sub, "MutedLabel"))
+		if not person.is_empty() and CircleSystem.active():   # (session P2a: the teammate's page)
+			var row := UIKit.hbox(8)
+			line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(line)
+			var pid := str(person.id)
+			var open := UIKit.button(str(Data.circle.ui.open_page), false, 80)
+			open.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			open.set_meta("open_person", pid)
+			open.pressed.connect(func(): _go("person:" + pid))
+			row.add_child(open)
+			box.add_child(row)
+		else:
+			box.add_child(line)
 	return UIKit.panel(box, 14)
 
 

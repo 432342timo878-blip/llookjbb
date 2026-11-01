@@ -1,0 +1,142 @@
+{
+ "_note": "People as state plus shared time (GDD 4.10 decision 6, session P2a; scripts/core/circle_system.gd). A person's closeness is the `relation` 0-100 of StoryletSystem.people (the same number the words Strained .. Close show). It GROWS with shared time (a free-time slot spent with them, the group's days for a teammate) and FADES without it. Sizes are Claude's first guesses (estimated), tuned in B1 after the user's playtest; the research below only fixes the order of magnitude. Everyone is fictional (minors); the dice come from the career's name and birth date.",
+ "version": 1,
+ "research": {
+  "_note": "Read 2026-11-01 for session P2a. A web search found secondary sources only (municipal minutes, news, club pages): none of these figures is checked against THL's own tables, so every one is `verified: false` and is used only to set an order of magnitude. To check before release: THL Kouluterveyskysely 2023 results tables (sleep, 'seurustelu'), SUL / club youth group pages.",
+  "facts": [
+   {"id": "sleep_short", "fact": "About 40 % of teenagers say they sleep under 8 hours a night (the recommendation is 8-10); on weekdays 36.3 % of the surveyed 2023 pupils nationally per a municipal minute.", "use": "Late nights are common: an invitation's late night is a normal part of a teenage week (data/cast.json sleep, habits.json late_friends).", "sources": [
+     {"url": "https://www.mtvuutiset.fi/artikkeli/rehtori-kertoo-millaiset-oppilaat-nukkuvat-vahiten-kotiin-vasta-kello-10-jalkeen-illalla/8413026", "read": "2026-11-01"},
+     {"url": "https://pudasjarvi.oncloudos.com/kokous/2024504-2.PDF", "read": "2026-11-01"}], "verified": false},
+   {"id": "dating_age", "fact": "From the school health survey: about 17 % of 8th-9th graders, 26 % of lukio students and 35 % of vocational students have a boyfriend or girlfriend (survey year not stated in the article).", "use": "A relationship is a minority experience at 14-15 and common by 17-18: it is for P2b (from about 15, chosen by the player), not P2a.", "sources": [
+     {"url": "https://www.verkkouutiset.fi/a/digitaalinen-vakivalta-on-yleista-nuorten-parisuhteissa/", "read": "2026-11-01"}], "verified": false},
+   {"id": "group_sessions", "fact": "A Tampere club (Pyrintö) lists coaches for 14-17-year-olds as 3-6 sessions a week; the number of training days varies by group, 2-7 a week across all ages.", "use": "Group.days: a club group trains together on two fixed days (Tuesday, Thursday), the rest of the week is the athlete's own.", "sources": [
+     {"url": "https://duunitori.fi/tyopaikat/tyo/yleisurheiluvalmentaja-sdsuu-20451126", "read": "2026-11-01"}], "verified": false},
+   {"id": "group_size", "fact": "Group sizes were not found in any source read; the game's existing club group is 4-9 teammates (data/coaching.json club.group.size, an estimate). Espoon Tapiot groups 14-16-year-olds by event (sprint/jump, throws, endurance).", "use": "The group card shows the size as it is in the coach record.", "sources": [
+     {"url": "https://espoontapiot.fi/?p=6533", "read": "2026-11-01"}], "verified": false},
+   {"id": "weekly_hours", "fact": "A 2025 Jyväskylä master's thesis: 15-year-old athletes (many sports) trained about 10 hours a week in both the training and the competition season.", "use": "Two group days are about a quarter to a third of a week's training.", "sources": [
+     {"url": "https://jyx.jyu.fi/handle/123456789/103828", "read": "2026-11-01"}], "verified": false}
+  ]
+ },
+ "time": {
+  "_note": "Each Sunday night every person you know gets their shared slots of the week (a slot spent WITH them: a friends/family slot whose companion is them, an invitation of theirs you went to; a friends slot with nobody named is shared among your friends (`crowd`), a family slot among the family). gain = slots x gain_per_slot x (1 - closeness/100) (it gets slower the closer you are); fade = fade_per_week x (1 - slots/need) when slots < need. need = the slots a week this kind of person wants. Family does not fade (need 0).",
+  "gain_per_slot": 5.0,
+  "family_gain_per_slot": 2.0,
+  "group_gain_per_day": 0.8,
+  "fade_per_week": 1.0,
+  "need": {"best_friend": 0.7, "friend": 1.0, "acquaintance": 1.0, "teammate": 0.5, "former": 1.0},
+  "fade_factor": {"best_friend": 0.5, "friend": 1.0, "acquaintance": 0.5, "teammate": 1.0, "former": 1.0},
+  "crowd_cap": 4
+ },
+ "status": {
+  "_note": "An acquaintance (thread circle) becomes a friend at `friend_at` closeness and at least `min_slots` slots spent with them; a friend whose closeness is below `drift_below` for `drift_weeks` weeks in a row drifts back to an acquaintance (the best friend never does: its closeness stays at least `best_floor`); an acquaintance below `gone_below` is not around any more (inactive).",
+  "friend_at": 50.0,
+  "min_slots": 3,
+  "drift_below": 32.0,
+  "drift_weeks": 3,
+  "best_floor": 25.0,
+  "gone_below": 12.0,
+  "acquaintance_start": 30.0
+ },
+ "places": {
+  "_note": "Where new people come from. classmates: when a school stage starts with a class of its own (the first one when the career starts, the path's school after grade 9) `count` faces you notice join (the rest of the class is the background). The training group and the rivals already make people (CoachSystem groups, StoryletSystem rivals); camps and the summer job come with G3 / M4.",
+  "classmates": {"count": [4, 6], "met": "In your class", "traits": {"gamer": 2, "musician": 1, "artist": 1, "joker": 2, "scout": 1, "partygoer": 2}, "arrival": "A new class: {names}. You see them every day, but you do not know them yet. Spend a free evening with someone and you will."},
+  "class_secondary": "A new school and a new class: {names}. Everyone is new to everyone; spend a free evening with someone and you will get to know them."
+ },
+ "invites": {
+  "_note": "The third skip in a row (an invitation you stayed home from or did not answer) and that person stops asking for `quiet_days` days; going again clears the count.",
+  "skips": 3,
+  "quiet_days": 35,
+  "message": "{name} has stopped asking you out. You have said no a few times; if you want to see {them} again, ask {them} yourself (set a free evening with {them})."
+ },
+ "group": {
+  "_note": "The training group's effect (GDD 4.10 decision 6; the user's pick 2026-11-01: a modest pull). Its days are FIXED: on a group day the plan holds the group's session and only an injury or the coach can change it (leave the group to move the day). The pull multiplies the training effect of the group day's HARD sessions: (group level - your level) x per_point, kept between -max_down and +max_up, times the size factor (a group of size_ref counts fully; fewer count less, more a little more, to size_max). The group's level drifts up by growth_per_week (teens improve). Leaving = train alone: the days are free, no pull, the teammates fade and the coach sees less of you (his judgements get noisier by noise_mult). Real coaches' groups are not known (empty): no group card.",
+  "days": [
+   {"day": 1, "session": "club_session", "intensity": "normal"},
+   {"day": 3, "session": "tempo_run", "intensity": "normal"}
+  ],
+  "pull": {"per_point": 0.012, "max_up": 0.04, "max_down": 0.03, "size_ref": 6, "size_min": 0.5, "size_max": 1.2},
+  "growth_per_week": 0.015,
+  "alone": {"noise_mult": 1.35},
+  "words": {"much_stronger": "A lot stronger than you", "stronger": "A bit stronger than you", "level": "About your level", "weaker": "A bit weaker than you", "much_weaker": "A lot weaker than you"}
+ },
+ "gives": {
+  "_note": "What a person gives and costs, in words, only things the game really does (checked in circle_check): the friends' time lifts motivation (habits.json motivation_per_friend), family time eases stress (stress_per_family), a teammate is part of the group's pull, a partygoer's invitations are late nights.",
+  "best_friend": ["Time with your friends lifts your motivation."],
+  "friend": ["Time with your friends lifts your motivation."],
+  "acquaintance": ["Not a friend yet: spend free evenings with {name} and {they} will be."],
+  "mum": ["Family time eases your stress."],
+  "dad": ["Family time eases your stress."],
+  "sibling": ["Family time eases your stress."],
+  "teammate": ["Trains with you on the group's days: the group's pull on your hard sessions."],
+  "costs": {
+   "time": "Wants about {need}, or you drift apart.",
+   "need_1": "a free evening a week",
+   "need_half": "a free evening every other week",
+   "need_most": "a free evening most weeks",
+   "time_family": "Family does not drift apart, but time together keeps it warm.",
+   "partygoer": "Knows every party: {their} invitations are late nights.",
+   "none_acq": "Costs nothing until you spend time with {them}."
+  }
+ },
+ "ui": {
+  "_note": "Every text the circle's screens show (person page, circle list, group card, the slot picker's companion row).",
+  "circle_head": "PEOPLE YOU KNOW",
+  "circle_empty": "Nobody new yet. New classmates and teammates show up here; spend a free evening with them to get to know them.",
+  "circle_note": "Closeness grows with free evenings spent together and fades a little every week without them. Pick who you meet in the slot picker on the planner, or here.",
+  "page_close": "How close",
+  "page_gives": "WHAT {name} GIVES YOU",
+  "page_costs": "WHAT {name} COSTS YOU",
+  "page_time": "THIS MONTH",
+  "page_history": "RECENTLY",
+  "page_history_none": "Nothing has changed it yet.",
+  "page_week": "Last week: {slots} free evenings together, {change}",
+  "page_week_one": "Last week: one free evening together, {change}",
+  "page_week_none": "Last week: no time together, {change}",
+  "group_chip": "Group · fixed",
+  "open_page": "Open",
+  "back_thread": "◀ {thread}",
+  "page_quiet": "{name} has stopped asking you out for now: you said no three times in a row.",
+  "page_to_friend": "{n} more free evenings together and {name} is a friend.",
+  "page_close_acq": "Not a friend yet: a friend at closeness {at}, after at least {min} free evenings together.",
+  "page_slot_with": "{slot} · with {name}",
+  "page_slot_plain": "{slot} · {activity}",
+  "page_closer": "closer by {n}",
+  "page_further": "further by {n}",
+  "page_same": "no change",
+  "page_meet": "MEET {name}",
+  "page_meet_hint": "A free slot with {name}: closeness grows, a slot a week keeps a friendship.",
+  "page_meet_this": "This week",
+  "page_meet_every": "Every week",
+  "page_meet_none": "No free slot left to give.",
+  "page_meet_set": "{day}: {name}",
+  "page_meet_clear": "Not {day}",
+  "back_circle": "Back to People you know",
+  "become_friend": "{name} is a friend now.",
+  "drift_note": "{name} has drifted away. You did not see each other for weeks.",
+  "gone_note": "You do not see {name} any more.",
+  "with_label": "WITH",
+  "with_crowd": "My friends",
+  "with_family": "The family",
+  "with_none": "Nobody in particular",
+  "group_head": "YOUR TRAINING GROUP",
+  "group_level": "Group level {group} · yours {mine} · {word}",
+  "group_pull_up": "Pull: your group's hard sessions come out about {pct}% better.",
+  "group_pull_down": "Pull: your group's hard sessions come out about {pct}% worse; this group is below your level.",
+  "group_pull_none": "Pull: none to speak of; the group is at your level.",
+  "group_days": "Fixed days: {days}. {sessions}",
+  "group_size": "{n} teammates · {coach}",
+  "group_leave": "Leave the group",
+  "group_leave_note": "You train alone: the group's days are yours to plan, there is no pull, your teammates drift away over the weeks and {coach} sees less of you.",
+  "group_leave_confirm": "Leave the group",
+  "group_join": "Rejoin the group",
+  "group_join_note": "{coach}'s group trains on {days} again. The days are fixed.",
+  "group_alone": "You train alone: your days are free, no pull, {coach} sees less of you.",
+  "group_find": "Another group: Find a coach.",
+  "group_members": "TEAMMATES",
+  "group_none": "{coach} has no group you know about.",
+  "week_row": "Group sessions: {pct}% on the hard ones",
+  "week_row_none": "Group sessions: the group was at your level",
+  "fixed_day": "Group day, fixed: {session} with {coach}'s group. To move it, leave the group (People → Training group).",
+  "fixed_day_alone": "Your group's day: free while you train alone."
+ }
+}

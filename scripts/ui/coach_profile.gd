@@ -328,6 +328,7 @@ func _actions(mk: CoachMarket, c: Dictionary, fill: Dictionary) -> Control:
 			changed.emit())
 		more.add_child(b)
 		more.add_child(UIKit.wrapped(str(mui.asked_hint), "CaptionLabel"))
+	more.add_child(_talk_box(mk, c))   # (session P2a: a short interview)
 	if mk.done(c, "visited"):
 		more.add_child(UIKit.wrapped(str(mui.visit_done), "CaptionLabel"))
 	elif not mk.visit.is_empty() and str(mk.visit.coach) == str(c.id):
@@ -365,6 +366,37 @@ func _actions(mk: CoachMarket, c: Dictionary, fill: Dictionary) -> Control:
 			more.add_child(days)
 	col.add_child(more)
 	return UIKit.panel(col, 14)
+
+
+## A talk with the candidate (session P2a): what was said so far, then the questions left (up to the market's `talk.max`), each a
+## 44 px button. An answer shows at once and narrows the ranges above; nothing else changes (no stop, no trust).
+func _talk_box(mk: CoachMarket, c: Dictionary) -> Control:
+	var tk: Dictionary = Data.market.talk
+	var box := UIKit.vbox(6)
+	var first := str(c.name).split(" ")[0]
+	box.add_child(UIKit.label(CoachSystem.words(str(tk.head).format({"name": first.to_upper()}), c), "CaptionLabel"))
+	for x in mk.talk_log(c):
+		box.add_child(UIKit.wrapped(str(x.label), "WhyLabel"))
+		var said := UIKit.wrapped(str(x.answer), "BodyLabel")
+		said.set_meta("talk_answer", str(x.id))
+		box.add_child(said)
+	var left := mk.talks_left(c)
+	if left <= 0:
+		box.add_child(UIKit.wrapped(str(tk.none_left), "CaptionLabel"))
+		return box
+	box.add_child(UIKit.wrapped(CoachSystem.words(str(tk.ask_hint).format({"max": int(tk.max)}), c) + " " + str(tk.left).format({"n": left, "max": int(tk.max)}), "CaptionLabel"))
+	for q in tk.questions:
+		if str(q.id) in mk.talked(c):
+			continue
+		var b := PeopleUI.reply_button(str(q.label))
+		b.set_meta("talk_question", str(q.id))
+		var qid := str(q.id)
+		b.pressed.connect(func():
+			mk.talk(c, qid)
+			_build()
+			changed.emit())
+		box.add_child(b)
+	return box
 
 
 func _value(text: String, color := Palette.TEXT) -> Label:

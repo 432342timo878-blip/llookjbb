@@ -10,12 +10,14 @@ class_name SaveGame
 ## save's plan becomes the same sessions on the plan's lightest days on load (MindSystem.convert_legacy). Version 7 (session
 ## L3b2) has the season goals as a planner card with a menu, the two reviews, the season's end section and the goals' news; an
 ## older save's waiting goals offer (a stop) becomes the card on load, its open goals play on with the new stakes
-## (SeasonGoals.after_load).
+## (SeasonGoals.after_load). Version 9 (session P2a) adds the "circle" system state (shared time with the people you know, the
+## classmates who arrived, the training group you are in or left) and who a free-time slot is spent with (the habits' `with`);
+## an older save has none and starts with its group (the fixed group days) and no acquaintances until their class arrives.
 
 ## Where saves go. Dev tools point this elsewhere so they never touch the player's saves.
 static var DIR := "user://saves/"
 const AUTOSAVE := "autosave"
-const VERSION := 8
+const VERSION := 9
 
 
 static func save(slot: String) -> void:

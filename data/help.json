@@ -144,8 +144,9 @@
   },
   "people": {
    "title": "People",
-   "version": 10,
+   "version": 11,
    "sections": [
+    {"heading": "People you know", "text": "New classmates and others you are getting to know are in their own thread. Spend free evenings with someone and they become a friend; a friend you stop seeing drifts away slowly. Open anyone to see how close you are and what that gives and costs.", "see": ["habits"]},
     {"heading": "The people around you", "text": "Your coach, your training group, your family, your friends from school and, once you have raced someone a few times, your rivals. A number or a dot means something new. Tap a row to open the conversation."},
     {"heading": "Who they are", "text": "At the top of a thread: who the people are and how you get on with each (Close, Good, Fine, Cool, Strained). Your family's attitude comes from your story: some are proud, some think grades come first. Your choices and your results slowly change both."},
     {"heading": "How close", "text": "Tap a person for how close you are (out of 100) and the answers that changed it. Where it changes something today, it says so: a best friend you drift from may tell you they feel left out.", "see": ["causes"]},
@@ -180,10 +181,31 @@
     {"heading": "Moving", "text": "A school in another town means moving there on 1 August. You keep racing for your club, but your old coach is far away and you may want a coach near the new school. The coaches there appear in Find a coach."}
    ]
   },
+  "person": {
+   "title": "A person's page",
+   "version": 1,
+   "sections": [
+    {"heading": "How close", "text": "The bar and the word show how close you are, out of 100. Tap it for the numbers and what changed it: free evenings together, a week without, or an answer you gave.", "see": ["causes"]},
+    {"heading": "What they give and cost", "text": "Friends' time lifts your motivation, family time eases stress, a teammate is part of your group's pull. Most people also want a free evening about every week, or you slowly drift apart. Family does not drift, but time keeps it warm."},
+    {"heading": "Meet them", "text": "Choose the evenings you spend with them every week. A slot with nobody named is shared among all your friends. On This week you can pick who a slot is with for one week only. An acquaintance becomes a friend after a few evenings together.", "see": ["habits"]},
+    {"heading": "Asking you out", "text": "Say no to someone's invitations three times in a row and they stop asking for a while. Going again, or asking them yourself by meeting them, brings it back."}
+   ]
+  },
+  "group": {
+   "title": "Your training group",
+   "version": 1,
+   "sections": [
+    {"heading": "Fixed days", "text": "Your coach's group trains together on two set days. On those days the plan holds the group's session and you cannot move it; an injury can still change it. The days are marked in the week and in the day editor."},
+    {"heading": "The pull", "text": "A group stronger than you lifts your hard sessions on its days by a few per cent; a weaker one holds them back. The week's report shows exactly what it added or took. Your coach and teammates are in the group; real coaches' groups are not known."},
+    {"heading": "Leaving the group", "text": "Train alone and the days are yours to plan, but there is no pull, your teammates drift away over the weeks and your coach sees less of you, so {his} advice gets less reliable. Rejoin any time; a new coach comes with a new group."}
+   ]
+  },
   "market": {
    "title": "Find a coach",
-   "version": 3,
+   "version": 4,
    "sections": [
+    {"heading": "Search, sort and compare", "text": "Search by name, club or town. Sort by where the coach is, name, overall level, cost, group size or any one skill, and filter by kind, group, budget or who could take you. Tick Compare on two coaches to put them next to your own: skills, group, cost, and what would be better or weaker."},
+    {"heading": "Talk to a coach", "text": "On a coach's page you can ask up to three questions, such as how the week would look or what the group is like. The answers come from what the coach is really like and make the ranges narrower. Talking costs nothing and decides nothing."},
     {"heading": "Who you can get", "text": "At 14 and 15: your club's coaches and a parent who competed in athletics. From 16, or once you reach the TF-juniorit standard: other clubs in your town, coaches in your region, national coaches and remote coaches. An athletics-centre town has more."},
     {"heading": "Coaches choose too", "text": "A coach may want a time from you first, or have no place this season. Club fees always fit; a personal coach must fit your family's monthly budget."},
     {"heading": "Offers", "text": "Coaches also write to you themselves, when they see a reason: a talent they think is wasted, a slump, fast progress, a best that reaches their group. An offer is only as good as the coach: a poor judge can misread you or promise too much. Nothing changes unless you start with the coach. Switch offers off on this page."},
@@ -217,8 +239,9 @@
   },
   "day_editor": {
    "title": "Changing a day",
-   "version": 8,
+   "version": 9,
    "sections": [
+    {"heading": "Group days", "text": "On your training group's days (Tuesday and Thursday) the session is the group's and cannot be moved or changed; only an injury changes it. Free time and a mental session are still yours. To move the days, leave the group in People → Training group."},
     {"heading": "Mental session", "text": "Under the sessions: none, or imagery, relaxation or self-talk, about 15 minutes on top of the day. No strain, no tiredness. Each kind counts once a week: a second one says so.", "see": ["mental_training"]},
     {"heading": "The day at school", "text": "At the top: your day in four blocks (morning, school, training, evening) and how heavy the day is for you at school. Holidays are lighter. Tests in a busy week, late nights and two practices on a school day are heavier."},
     {"heading": "Free time", "text": "Under the day: what you do that evening (on Saturday and Sunday, after training). Pick study, rest, friends or family for this week only, or go back to your habit. An invitation for that evening shows here too, with Go and Stay home.", "see": ["habits"]},

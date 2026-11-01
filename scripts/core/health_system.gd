@@ -776,7 +776,7 @@ func _restricted_ids(ids: Array, rule: Dictionary, month: int) -> Array:
 func _apply_restrictions(week: WeekSim) -> void:
 	var month: int = Game.add_days(week.monday, 3).month
 	for d in range(week.day, 7):
-		if not week.can_change(d):
+		if not week.can_change(d, "injury"):
 			continue
 		var rule := rule_at(d - week.day + 1)
 		var key := Calendar.date_key(Game.add_days(week.monday, d))
@@ -892,7 +892,7 @@ func day_locked(d: int) -> bool:
 ## The player may train through the limits on day `d` (after a clear warning in the UI).
 func can_override(d: int) -> bool:
 	var week := Game.current_week()
-	if not week.can_change(d):
+	if not week.can_change(d, "injury"):
 		return false
 	var rule := rule_at(d - week.day + 1)
 	return rule.active and not rule.locked
@@ -918,7 +918,7 @@ func override_day(d: int) -> bool:
 func cancel_override(d: int) -> bool:
 	var week := Game.current_week()
 	var key := Calendar.date_key(Game.add_days(week.monday, d))
-	if not week.can_change(d) or not key in overrides:
+	if not week.can_change(d, "injury") or not key in overrides:
 		return false
 	overrides.erase(key)
 	_apply_restrictions(week)

@@ -49,6 +49,8 @@ func refresh() -> void:
 		_build_played(info)
 	elif not info.race.is_empty():
 		_build_race(info)
+	elif bool(info.group):
+		_build_group(w, info)
 	else:
 		_build_editable(w, info)
 	rebuilt.emit()
@@ -86,6 +88,30 @@ func _header(info: Dictionary) -> Control:
 	close.pressed.connect(func(): close_requested.emit())
 	row.add_child(close)
 	return row
+
+
+# --- A group day (session P2a) -------------------------------------------------------------------------
+
+## The training group's fixed day: the free time and the mental session can still be set, the sessions cannot (leave the group to move
+## the day; an injury changes it by itself).
+func _build_group(w: WeekSim, info: Dictionary) -> void:
+	var u: Dictionary = Data.circle.ui
+	var health := _health_box(info)
+	if health != null:
+		add_child(health)
+	var school_day := SchoolUI.day_panel(info)
+	if school_day != null:
+		add_child(school_day)
+	_add_free_time(w)
+	var box := UIKit.vbox(8)
+	box.add_child(UIKit.label("SESSIONS", "CaptionLabel"))
+	var coach := str((Game.get_system("coach") as CoachSystem).head().get("name", "")).split(" ")[0]
+	var names: Array = DayInfo.session_names(info.sessions)
+	box.add_child(UIKit.wrapped(str(u.fixed_day).format({"session": ", ".join(names), "coach": coach}), "BodyLabel"))
+	if info.changed:
+		box.add_child(UIKit.wrapped(DayInfo.changed_text(info), "WhyLabel"))
+	add_child(UIKit.panel(box, 14))
+	add_child(UIKit.panel(_mental_box(w), 14))
 
 
 # --- A day that can be changed -----------------------------------------------------------------------

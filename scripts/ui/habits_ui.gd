@@ -134,6 +134,9 @@ static func picker(w: WeekSim, d: int, on_change: Callable, on_close: Callable) 
 		card.add_row(UIKit.wrapped(str(u.picker_away).format({"title": str(away.title)}), "BodyLabel"))
 	elif info.invite.is_empty() or not HabitSystem.going(info.invite):   # (going out: the evening is the invitation's)
 		card.add_row(_activity_buttons(hs, d, info, on_change))
+		var with_row := _with_row(hs, d, info, on_change)   # (session P2a: who the slot is spent with)
+		if with_row != null:
+			card.add_row(with_row)
 	var close := UIKit.button(str(u.picker_close), false, 0.0)
 	close.size_flags_horizontal = Control.SIZE_SHRINK_END if not Layout.compact else Control.SIZE_EXPAND_FILL
 	close.pressed.connect(func(): on_close.call())
@@ -182,6 +185,46 @@ static func _activity_buttons(hs: HabitSystem, d: int, info: Dictionary, on_chan
 			hs.reset_slot(d)
 			on_change.call())
 		col.add_child(back)
+	return col
+
+
+## WITH: who this friends / family slot is spent with this week (session P2a): "My friends" / "The family" (nobody in particular:
+## the time is shared) and the people you can meet, one 44 px toggle each. Null when the slot is not a friends / family one, is over,
+## or the circle is off. A choice here is for this week only; the person's page sets a standing one.
+static func _with_row(hs: HabitSystem, d: int, info: Dictionary, on_change: Callable) -> Control:
+	if not CircleSystem.active() or bool(info.played):
+		return null
+	var act := hs.week_slot(d)
+	if not act in HabitSystem.WITH_ACTIVITIES:
+		return null
+	var u: Dictionary = Data.circle.ui
+	var ms := moments()
+	var people := []
+	if act == "friends":
+		people = CircleSystem.sys().meetable().filter(func(p): return CircleSystem.sys().kind_of(p) in ["best_friend", "friend", "acquaintance"])
+	elif ms != null:
+		people = ms.people_for("family")
+	var col := UIKit.vbox(6)
+	col.add_child(UIKit.label(str(u.with_label), "CaptionLabel"))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	var current := hs.companion(d)
+	var group := ButtonGroup.new()
+	var options := [["", str(u.with_crowd if act == "friends" else u.with_family)]]
+	for p in people.slice(0, 8):
+		options.append([str(p.id), StoryletSystem.short_name(p)])
+	for o in options:
+		var b := UIKit.toggle(str(o[1]), group)
+		b.custom_minimum_size = Vector2(96, 44)
+		b.button_pressed = current == str(o[0])
+		b.set_meta("with", str(o[0]))
+		var pid := str(o[0])
+		b.pressed.connect(func():
+			hs.set_companion(d, pid, false)
+			on_change.call())
+		flow.add_child(b)
+	col.add_child(flow)
 	return col
 
 
@@ -433,6 +476,9 @@ static func editor_box(w: WeekSim, d: int, on_change: Callable) -> Control:
 		box.add_child(UIKit.wrapped(str(u.picker_played), "MutedLabel"))
 	elif info.invite.is_empty() or not HabitSystem.going(info.invite):   # (going out: the evening is the invitation's)
 		box.add_child(_activity_buttons(hs, d, info, on_change))
+		var with_row := _with_row(hs, d, info, on_change)   # (session P2a)
+		if with_row != null:
+			box.add_child(with_row)
 	return UIKit.panel(box, 14)
 
 

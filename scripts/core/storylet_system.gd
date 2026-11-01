@@ -327,6 +327,8 @@ func _senders(s: Dictionary, ctx: Dictionary, today: int) -> Array:
 	for p in people_for(str(s.get("from", "coach"))):
 		if last_from.has(p.id) and today - int(last_from[p.id]) < gap:
 			continue
+		if s.has("invite") and CircleSystem.is_quiet(str(p.id)):   # (session P2a: the third skip in a row and they stop asking for a while)
+			continue
 		if not _sender_ok(s.get("when", {}), ctx, p):
 			continue
 		if (not is_feed(s) and _valid_replies(s, ctx, p).size() < 2) or _valid_variants(s, ctx, p).is_empty():
@@ -362,6 +364,8 @@ func people_for(selector: String) -> Array:
 				ok = p.role == parts[0]
 			"friends":
 				ok = p.thread == "friends"
+			"circle":   # (session P2a: the people you are getting to know)
+				ok = p.thread == "circle"
 			"school":
 				ok = p.thread == "school" and (sub == "" or p.role == sub)
 			"rival":
@@ -811,6 +815,9 @@ func _resolve(m: Dictionary, reply_id: String) -> void:
 	var today := day_no(Game.date)
 	if m.has("invite"):
 		HabitSystem.touch()   # (session L1b: an invitation settled; HabitSystem's cache)
+		var circle := CircleSystem.sys()   # (session P2a: going or skipping, for "the third skip in a row")
+		if circle != null:
+			circle.on_invite_settled(m, reply_id != NONE and reply_id in m.invite.get("go", []))
 	m.answer = reply_id
 	m.answered_day = today
 	if reply_id != NONE:   # (the player read it, in the stop panel or in the thread: nothing "new" about it any more)
@@ -1934,6 +1941,8 @@ func _sync_people() -> void:
 	ensure_cast(Game.athlete)
 	for p in people.values():
 		if str(p.thread) in ["family", "friends"]:
+			p.active = true
+		elif str(p.thread) == "circle" and not bool(p.get("gone", false)):   # (session P2a: the people you are getting to know)
 			p.active = true
 	if not head.is_empty():   # the close training partners
 		var close := Cast.pick_partners(str(head.id), head.get("group", []))

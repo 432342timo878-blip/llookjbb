@@ -113,6 +113,7 @@ func _make_systems() -> Array:
 	# (The habits (L1b, the free-time slots) beside the school: no dice; each evening they remember the slot for the next day.)
 	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), SchoolSystem.new(), HabitSystem.new(),
 			MindSystem.new(), StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new(),
+			CircleSystem.new(),   # (P2a: shared time, new people and the training group, after the moments and the market)
 			CareerSystem.new()]   # (K1a: the career's history last: it only reads what the others did the same day)
 	if OS.is_debug_build():
 		list.append(DevEvents.new())

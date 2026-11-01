@@ -228,7 +228,7 @@ static func changes_panel(lines: Array, m := {}) -> Control:
 
 ## Who is in a thread (session P1): the family's attitude on top, then each person with their role (a friend's trait, a rival's
 ## club and races) and the relationship in a word (data/cast.json relation_words). Read only; nothing to hover.
-static func roster(ms: StoryletSystem, thread_id: String) -> Control:
+static func roster(ms: StoryletSystem, thread_id: String, on_open := Callable()) -> Control:
 	var u: Dictionary = Data.cast.ui
 	var box := UIKit.vbox(8)
 	box.add_child(UIKit.label(str(u.people_head), "CaptionLabel"))
@@ -264,6 +264,13 @@ static func roster(ms: StoryletSystem, thread_id: String) -> Control:
 		row.add_child(col)
 		row.custom_minimum_size.y = 44
 		row.set_meta("cause_row", "person:" + str(p.get("id", "")))
+		if on_open.is_valid() and CircleSystem.active():   # (session P2a: the person's page)
+			var pid := str(p.get("id", ""))
+			var open := UIKit.button(str(Data.circle.ui.open_page), false, 80)
+			open.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			open.set_meta("open_person", pid)
+			open.pressed.connect(func(): on_open.call(pid))
+			row.add_child(open)
 		box.add_child(CausesUI.tappable(row, "\n".join(WeekCauses.person_lines(ms, p, p.get("log", [])))))
 	return UIKit.panel(box, 14)
 

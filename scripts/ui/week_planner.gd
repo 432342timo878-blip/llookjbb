@@ -728,6 +728,8 @@ static func _day_items(info: Dictionary, rows: bool) -> Array:
 	else:
 		for sid in info.sessions:
 			out.append(_icon_line(Icons.session(str(sid)), Palette.intensity(str(info.intensity)), Icons.session_short(str(sid))))
+	if bool(info.get("group", false)) and not bool(info.get("played", false)) and info.race.is_empty():   # (session P2a: the group's fixed day)
+		out.append(_icon_line("users", Palette.PEOPLE, str(Data.circle.ui.group_chip)))
 	if str(info.get("mental", "")) != "":   # (session L3b1: a mental session, a short extra on the day)
 		var mk: Dictionary = Data.mind.mental.kinds[str(info.mental)]
 		out.append(_icon_line("brain", Palette.COACH, str(mk.get("chip", mk.short))))   # (a narrow PC day column: "Relax")

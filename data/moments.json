@@ -29,7 +29,8 @@
 		"friends": {"name": "Friends", "empty": "Your friends from school write here: parties, plans and the rest of life."},
 		"group": {"name": "Training group", "empty": "Your training partners will write here as you get to know them."},
 		"school": {"name": "School", "empty": "Your teachers and the study counsellor write here."},
-		"rivals": {"name": "Rivals", "empty": "Runners you race again and again write to you here."}
+		"rivals": {"name": "Rivals", "empty": "Runners you race again and again write to you here."},
+		"circle": {"name": "People you know", "empty": "New classmates and teammates show up here. Spend a free evening with someone to get to know them."}
 	},
 	"ui": {
 		"tab": "People",
