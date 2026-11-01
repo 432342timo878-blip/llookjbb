@@ -81,7 +81,7 @@
   "next_head": "ON TO {season}",
   "next_targets": "Targets: {targets}.",
   "next_goals": "Your coach's goals card and {his} plan are waiting on This week.",
-  "next_button": "Go to This week",
+  "next_button": "Done reading: go to This week",
   "seasons_head": "EVERY SEASON",
   "seasons_none": "The first review comes at the end of October.",
   "season_line": "{races} races · best {best} · {met} of {total} goals met",

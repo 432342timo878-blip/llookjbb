@@ -784,11 +784,12 @@ func _show(view: String) -> void:
 				_card_id = id
 				_card_back = "review"
 				_show("race_card"))
-			rv.week_pressed.connect(func(): _show("week"))
+			rv.week_pressed.connect(func():   # (finished reading: the planner's card goes; opening or leaving the page does not remove it)
+				var career := CareerSystem.sys()
+				if career != null:
+					career.mark_seen(_review_year)
+				_show("week"))
 			_content.add_child(rv)
-			var career := CareerSystem.sys()
-			if career != null:
-				career.mark_seen(_review_year)
 		"playtest":   # (session K1c: the playtest notes, opened from the menu)
 			var pt := PlaytestView.new(_playtest_back)
 			pt.back_pressed.connect(func(): _show(_playtest_back))
