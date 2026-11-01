@@ -7,12 +7,15 @@ class_name SaveGame
 ## club coach on load). Version 5 (session L1b) adds the free-time slots and the standing habits (the "habits" system state);
 ## an older save's two school settings (study effort, free time) become the nearest habits on load. Version 6 (session L3b1)
 ## has mental training as sessions on the days (a week plan's `mental`) instead of the mind's weekly mental plan; an older
-## save's plan becomes the same sessions on the plan's lightest days on load (MindSystem.convert_legacy).
+## save's plan becomes the same sessions on the plan's lightest days on load (MindSystem.convert_legacy). Version 7 (session
+## L3b2) has the season goals as a planner card with a menu, the two reviews, the season's end section and the goals' news; an
+## older save's waiting goals offer (a stop) becomes the card on load, its open goals play on with the new stakes
+## (SeasonGoals.after_load).
 
 ## Where saves go. Dev tools point this elsewhere so they never touch the player's saves.
 static var DIR := "user://saves/"
 const AUTOSAVE := "autosave"
-const VERSION := 6
+const VERSION := 7
 
 
 static func save(slot: String) -> void:

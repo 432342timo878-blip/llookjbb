@@ -242,6 +242,23 @@ func _answer_planner() -> int:
 		var ss = _game.get_system("school")
 		ss.settle_week(int(clash.monday), str(clash.meet), str(clash.choices[_answer_rng.randi_range(0, clash.choices.size() - 1)].id))
 		n += 1
+	# Session L3b2: the season goals' card (his picks: Set these goals), a review (On track for each goal), the season's end (a reply).
+	var gs = _game.get_system("goals")
+	if gs != null and load("res://scripts/core/season_goals.gd").enabled:
+		var pack: Dictionary = gs.card()
+		if not pack.is_empty():
+			gs.apply(int(pack.year), {})
+			n += 1
+		var rc: Dictionary = gs.review_card()
+		if not rc.is_empty():
+			for gid in rc.review.goals:
+				if not rc.review.answers.has(str(gid)) and str(gs.goal(int(rc.year), str(gid)).get("status", "")) == "open":
+					gs.answer_review(int(rc.year), str(rc.review.id), str(gid), "track")
+					n += 1
+		var ec: Dictionary = gs.end_card()
+		if not ec.is_empty():
+			gs.answer_end(int(ec.year), str(gs.end_replies(ec.end)[0].id))
+			n += 1
 	return n
 
 

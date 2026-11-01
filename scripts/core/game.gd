@@ -198,6 +198,8 @@ func from_dict(d: Dictionary) -> void:
 	# Saves from before version 6 (session L3b1) have the weekly mental plan: it becomes the same sessions on the plan's days.
 	if not (get_system("mind") as MindSystem).convert_legacy().is_empty() and _week != null:
 		_week.set_plan(season.week_for(_week.monday))
+	# Saves before version 7 (session L3b2): a goals offer waiting as a stop becomes the planner card with the new menu.
+	(get_system("goals") as SeasonGoals).after_load()
 
 
 ## JSON turns every number into a float; dates must be ints again.

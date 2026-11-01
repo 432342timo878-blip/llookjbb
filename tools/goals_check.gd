@@ -14,6 +14,12 @@ extends SceneTree
 ##    "No thanks", never entered by themselves, Calendar marks;
 ## 8. save / load: a career with goals and suggestions saved mid-season goes on exactly as without saving;
 ## 9. with everything off the career is the same as before C5 (the fingerprints of training_balance part 2 are checked by that tool).
+## Session L3b2 (the card on the planner, the menu, the stakes, the reviews): part 3 is the card (no stop; the menu's families from
+## easy to hard; his picks; a selection the menu does not allow; left open = his picks on its date); part 4 the reviews and the
+## season's end as planner sections; 10. the menu's kinds (no final anywhere a youth athlete races; the place meets; what a place
+## needs; three races; a place goal enters its meet); 11. the stakes (what met opens, recorded; the bigger meet; a miss costs
+## confidence, never trust; the week report's row); 12. a review (on track / adjust / drop); 13. older saves (the old offer stop
+## becomes the card; an old goal gets its family and stakes).
 ## Run: godot --headless --path . -s res://tools/goals_check.gd [-- parts e.g. 1,2,3 [athletes for part 6, default 6]]
 ## NOTE: read stderr too: a SCRIPT ERROR does not change the "ALL CHECKS PASSED" line.
 
@@ -32,7 +38,7 @@ var Cal
 var RP
 var saves
 var _fails := 0
-var parts := [1, 2, 3, 4, 5, 7, 8, 9]   # (6 = the realism run: a long one, ask for it: -- 6 [athletes [first]])
+var parts := [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13]   # (6 = the realism run: a long one, ask for it: -- 6 [athletes [first]])
 var n_real := 6
 var first_real := 0
 
@@ -86,6 +92,14 @@ func _run() -> void:
 		_save_load()
 	if 9 in parts:
 		_advice()
+	if 10 in parts:
+		_kinds()
+	if 11 in parts:
+		_stakes()
+	if 12 in parts:
+		_reviews()
+	if 13 in parts:
+		_older()
 	G.enabled = false
 	CS.enabled = false
 	CP.enabled = false
@@ -168,6 +182,12 @@ func _answer_all(e: Dictionary) -> String:
 	return "ok"
 
 
+## The goals card of the first week, set as it is (his picks; session L3b2: a planner card, no stop).
+func _set_goals() -> void:
+	game.current_week()
+	game.get_system("goals").apply(2026, {})
+
+
 func _until(date_key: int, answer: Callable, limit := 500) -> void:
 	var guard := 0
 	while Cal.date_key(game.date) < date_key and guard < limit:
@@ -211,7 +231,16 @@ func _data() -> void:
 	_ok("race advice: every personality has a lean per plan and a kick lean",
 			voices.all(func(v): return a.race.lean.has(v) and a.race.kick.lean_m.has(v) and a.race.shouts.lean.has(v) and a.race.shouts.flip.has(v)))
 	_ok("suggestions: every voice has an intro and an answer, every reason a text",
-			voices.all(func(v): return str(a.suggest.intro.get(v, "")) != "" and a.suggest.answered.has(v)) and ["gap", "tune", "standard", "target"].all(func(r): return str(a.suggest.reason.get(r, "")) != ""))
+			voices.all(func(v): return str(a.suggest.intro.get(v, "")) != "" and a.suggest.answered.has(v)) and ["gap", "tune", "standard", "target", "earned"].all(func(r): return str(a.suggest.reason.get(r, "")) != ""))
+	# Session L3b2: the menu, the stakes, the card, the reviews, the season's end, the news
+	_ok("the menu: a time + 2 extras, at most 1 habit, at most 2 milestones", int(g.menu.extras) == 2 and int(g.menu.max_process) == 1 and int(g.menu.max_milestone) == 2)
+	_ok("every family, label and stakes text is there", ["time", "standard", "place", "three", "limits", "races"].all(func(k): return str(g.families.get(k, "")) != "")
+			and ["place_win", "three"].all(func(k): return str(g.labels.get(k, "")) != "")
+			and ["trust", "moods", "lean", "meet", "missed", "general", "enters"].all(func(k): return str(g.stakes.get(k, "")) != ""))
+	_ok("the two reviews have a rule, a title and a 'when'; every voice has a review intro",
+			g.reviews.list.size() == 2 and g.reviews.list.all(func(r): return g.reviews.title.has(str(r.id)) and g.reviews.when.has(str(r.id)))
+			and voices.all(func(v): return str(g.reviews.intro.get(v, "")) != ""))
+	_ok("every goal news kind has its words", ["set", "defaulted", "met", "missed", "adjusted", "dropped"].all(func(k): return str(g.log.get(k, "")) != ""))
 
 
 # --- 2. Standards ----------------------------------------------------------------------------------------------------------------
@@ -237,61 +266,79 @@ func _standards() -> void:
 # --- 3. The offer ----------------------------------------------------------------------------------------------------------------
 
 func _offer() -> void:
-	print("== 3. The offer (a balanced plan, a coach of 10s)")
+	print("== 3. The card (a balanced plan, a coach of 10s; session L3b2: a planner card, never a stop)")
 	_career(2, "balanced", 10, "balanced")
-	var r: String = game.advance_day()
-	var e: Dictionary = game.pending_event()
-	_ok("the goals offer stops the first day (kind goals, source goals)", r == game.STOP and str(e.get("kind", "")) == "goals" and str(e.source) == "goals")
+	game.current_week()   # (the planner opens on the first week: the card is made then)
 	var gs = game.get_system("goals")
+	_ok("the goals card waits on the planner (no stop event)", gs.offers.has(2026) and game.pending_event().is_empty())
 	var pack: Dictionary = gs.offers.get(2026, {})
-	_ok("three goals offered: a time, a milestone, a habit", pack.get("goals", []).map(func(x): return x.kind) == ["time", "milestone", "process"])
-	var t: Dictionary = pack.goals[0]
+	var t: Dictionary = pack.time
 	var times: Array = t.options.map(func(o): return float(o.time))
 	_ok("the four times fall level by level (at least 0.5 s apart): %s" % [times.map(func(x): return Cal.format_time(x))],
 			t.options.size() == 4 and times[0] > times[1] and times[1] > times[2] and times[2] > times[3] and times[0] - times[1] >= 0.5)
 	_ok("a balanced coach's pick is the second level", int(t.pick) == 1)
-	var ms: Dictionary = pack.goals[1]
-	print("    milestone options: %s (pick %d)" % [ms.options.map(func(o): return "%s [%s]" % [o.label, o.level_name]), int(ms.pick)])
-	var mtimes: Array = ms.options.map(func(o): return float(o.ratio))
+	for fam in pack.menu:
+		print("    %-28s %s (★ %d)" % [fam.key, fam.options.map(func(o): return "%s [%s]" % [o.label, o.level_name]), int(fam.pick)])
 	var easy_first := true
-	for i in range(1, mtimes.size()):
-		easy_first = easy_first and mtimes[i] <= mtimes[i - 1]
-	_ok("the milestone options run from easy to hard", not ms.options.is_empty() and easy_first)
-	var p: Dictionary = pack.goals[2]
-	_ok("the habit goal has levels, easy to hard: %s" % [p.options.map(func(o): return o.label)], p.options.size() == 4)
-	game.answer_event(e.id, "set")
-	_ok("answering 'set' makes his picks the goals, saved on the season", gs.has_goals(2026) and gs.goals_of(2026).size() == 3 and gs.offers.is_empty())
-	_ok("the goals are open and carry their level and his pick", gs.goals_of(2026).all(func(g): return str(g.status) == "open" and g.has("index") and g.has("pick")))
+	for fam in pack.menu:
+		for i in range(1, fam.options.size()):
+			easy_first = easy_first and float(fam.options[i].ratio) <= float(fam.options[i - 1].ratio)
+	_ok("every family of the menu runs from easy to hard", not pack.menu.is_empty() and easy_first)
+	var kinds: Array = pack.menu.map(func(f): return str(f.kind))
+	_ok("the menu has milestones and habits (%d families)" % pack.menu.size(), kinds.has("milestone") and kinds.has("process"))
+	var chosen: Dictionary = pack.pick.chosen
+	var ch_kinds: Array = chosen.keys().map(func(k): return str(G.family_in(pack, str(k)).kind))
+	_ok("his two extras are a milestone and a habit (%s)" % [chosen.keys()], chosen.size() == 2 and ch_kinds.has("milestone") and ch_kinds.has("process"))
+	_ok("the card counts as a choice waiting in its last week (its date: %d)" % int(pack.until), G.card_due(pack) and int(pack.until) == 20261108)
+	gs.apply(2026, {})
+	_ok("set as it is = his picks: a time + his two, saved on the season", gs.has_goals(2026) and gs.goals_of(2026).size() == 3 and gs.offers.is_empty())
+	_ok("the goals are open and carry their family, level and his pick", gs.goals_of(2026).all(func(g): return str(g.status) == "open" and g.has("family") and g.has("index") and g.has("pick")))
 	var ms_sys = game.get_system("moments")
 	_ok("the coach says the goals in his thread", ms_sys.thread("coach").size() >= 1 and str(ms_sys.thread("coach")[-1].text).contains("2026"))
-	# Choosing levels: the second answer form
+	_ok("'Goals set' is in the goals' news (for the week report)", gs.news.any(func(x): return str(x.what) == "set"))
+	# Choosing: the easiest of each / the hardest of each / a selection the menu does not allow
 	_career(2, "balanced", 10, "ambitious")
-	game.advance_day()
-	e = game.pending_event()
+	game.current_week()
 	var pack2: Dictionary = game.get_system("goals").offers[2026]
-	_ok("an ambitious coach's pick is the third level", int(pack2.goals[0].pick) == 2)
-	game.answer_event(e.id, "set:0,0,0")
+	_ok("an ambitious coach's time pick is the third level", int(pack2.time.pick) == 2)
+	var easy := {}
+	for k in pack2.pick.chosen:
+		easy[k] = 0
+	game.get_system("goals").apply(2026, {"time": 0, "chosen": easy})
 	var gl: Array = game.get_system("goals").goals_of(2026)
-	_ok("'set:0,0,0' = the easiest level of each (not higher than his pick)", gl.all(func(g): return int(g.index) == 0 and not bool(g.higher)))
+	_ok("the easiest level of each is not higher than his pick", gl.all(func(g): return int(g.index) == 0 and not bool(g.higher)))
 	_career(2, "balanced", 10, "balanced")
-	game.advance_day()
-	e = game.pending_event()
-	game.answer_event(e.id, "set:3,3,3")
-	_ok("'set:3,3,3' is above his pick, so 'higher'", game.get_system("goals").goals_of(2026).all(func(g): return bool(g.higher) or int(g.index) == int(g.pick)))
+	game.current_week()
+	var pk3: Dictionary = game.get_system("goals").offers[2026]
+	var hard := {}
+	for k in pk3.pick.chosen:
+		hard[k] = G.family_in(pk3, str(k)).options.size() - 1
+	game.get_system("goals").apply(2026, {"time": 3, "chosen": hard})
+	_ok("the hardest of each is above his pick where his pick was lower ('higher')", game.get_system("goals").goals_of(2026).all(func(g): return bool(g.higher) or int(g.index) == int(g.pick)))
 	_career(2, "balanced", 10, "balanced")
-	game.advance_day()
-	e = game.pending_event()
-	game.answer_event(e.id, "ok")
-	_ok("an unknown answer ('ok') = later: no goals, the offer is done (nothing is stuck)", not game.get_system("goals").has_goals(2026) and game.get_system("goals").offers.is_empty()
-			and game.pending_event().is_empty())
-	var r2: String = game.advance_day()
-	_ok("and it is not offered again the next day", r2 != game.STOP or str(game.pending_event().get("kind", "")) != "goals")
+	game.current_week()
+	var pk4: Dictionary = game.get_system("goals").offers[2026]
+	var too_many := {}
+	var habits := {}
+	for fam in pk4.menu:
+		too_many[fam.key] = 0
+		if str(fam.kind) == "process":
+			habits[fam.key] = 0
+	_ok("three extras are not allowed; two habits are not allowed", not G.allowed(pk4, too_many) and (habits.size() < 2 or not G.allowed(pk4, habits)))
+	game.get_system("goals").apply(2026, {"time": 0, "chosen": too_many})
+	_ok("a selection the menu does not allow falls back to his picks", game.get_system("goals").goals_of(2026).size() == 3)
+	# Left open: his picks on the date the card names (the Sunday of the first week)
+	_career(2, "balanced", 10, "balanced")
+	_until(20261109, Callable(self, "_answer_all"), 20)
+	var gs5 = game.get_system("goals")
+	_ok("left open, his picks are set on Sunday 8 Nov ('defaulted' in the news, a line in his thread)", gs5.has_goals(2026) and gs5.goals_of(2026).size() == 3
+			and gs5.news.any(func(x): return str(x.what) == "defaulted"))
 	# lean
 	_career(2, "balanced", 10, "balanced")
 	game.get_system("goals").lean = 1
-	game.advance_day()
+	game.current_week()
 	var pk: Dictionary = game.get_system("goals").offers[2026]
-	_ok("lean +1 moves his pick one level up (the third) and is used up", int(pk.goals[0].pick) == 2 and game.get_system("goals").lean == 0)
+	_ok("lean +1 moves his pick one level up (the third) and is used up", int(pk.time.pick) == 2 and game.get_system("goals").lean == 0)
 	# judging ability: a poor judge's estimates scatter more
 	var seen := {}
 	for j in [3, 10, 19]:
@@ -332,9 +379,9 @@ func _goal_answer(e: Dictionary) -> String:
 func _met_missed() -> void:
 	print("== 4. Goals met and missed (one career through the 2026-27 season; counters in part 5)")
 	_career(3, "balanced", 10, "balanced")
-	game.advance_day()
-	game.answer_event(game.pending_event().id, "set")
+	game.current_week()
 	var gs = game.get_system("goals")
+	gs.apply(2026, {})
 	var ms = game.get_system("moments")
 	var cs = game.get_system("coach")
 	gs.seasons[2026].goals = [
@@ -363,12 +410,23 @@ func _met_missed() -> void:
 			_ok("the place goal is missed at its meet and a talk is waiting in the thread (not a stop): '%s'" % str(g2.detail), talks.size() == 1 and not bool(talks[0].stop))
 	var goals: Array = gs.goals_of(2026)
 	_ok("goal 1 is met, goal 2 missed, goal 3 missed at the end of the season", str(goals[0].status) == "met" and str(goals[1].status) == "missed" and str(goals[2].status) == "missed")
-	_ok("one review stop at the end of the season (the place goal's talk came earlier, outside it)",
-			ms.moments.filter(func(m): return str(m.get("kind", "")) == "goal" and str(m.ref) == "review:2026" and bool(m.stop)).size() == 1)
-	var review: Dictionary = ms.moments.filter(func(m): return str(m.get("kind", "")) == "goal" and str(m.ref) == "review:2026" and bool(m.stop))[0]
-	_ok("the review lists all three goals with their marks (✓ and ✗)", str(review.text).count("✓") == 1 and str(review.text).count("✗") == 2)
-	_ok("it was answered 'too hard' and the next goals start a step lower (lean -1)", str(review.answer) == "toohard" and gs.lean == -1)
-	_ok("the result card says so: %s" % [review.get("changes", [])], review.get("changes", []).any(func(l): return str(l).contains("▼")))
+	# Session L3b2: the two reviews came as planner sections (left open = on track), the season's end is a section too, never a stop.
+	var reviews: Dictionary = gs.seasons[2026].get("reviews", {})
+	_ok("both reviews came (the week after the indoor target: Mon %s; juhannus week: Mon %s), each with the goals then open" % [
+			Cal.format_day(reviews.get("indoor", {}).get("monday", {"year": 2000, "month": 1, "day": 1})),
+			Cal.format_day(reviews.get("midsummer", {}).get("monday", {"year": 2000, "month": 1, "day": 1}))],
+			reviews.has("indoor") and reviews.has("midsummer") and Cal.date_key(reviews.indoor.monday) == 20270215
+			and Cal.date_key(reviews.midsummer.monday) == 20270621 and reviews.indoor.goals.size() >= 1)
+	_ok("left open, a review changes nothing (no answers, the goals kept)", reviews.values().all(func(rv): return rv.answers.is_empty()))
+	_ok("no review stop at the end of the season (L3b2: a planner section)",
+			ms.moments.filter(func(m): return str(m.get("kind", "")) == "goal" and str(m.ref) == "review:2026" and bool(m.stop)).is_empty())
+	var ec: Dictionary = gs.end_card()
+	_ok("the season's end waits on the next season's first planner (2 missed): %s" % [ec.get("end", {})],
+			int(ec.get("year", 0)) == 2026 and int(ec.end.missed) == 2 and gs.end_replies(ec.end).size() == 4)
+	gs.answer_end(2026, "toohard")
+	_ok("answered 'too hard': the next goals start a step lower (lean -1, or used up by a card that waits: it was made again)",
+			gs.lean == -1 or (gs.offers.has(2027) and gs.lean == 0))
+	_ok("the season's end is answered and leaves the planner", gs.end_card().is_empty())
 	for c in cs.relation().causes:
 		if str(c.cause).begins_with("goal"):
 			caused += 1
@@ -411,10 +469,10 @@ func _realism() -> void:
 	for k in n_real:
 		var i := first_real + k
 		_career(i, "balanced", 10, "balanced")
-		game.advance_day()
+		game.current_week()
 		var gs = game.get_system("goals")
 		var est: Dictionary = gs.offers[2026].est
-		game.answer_event(game.pending_event().id, "set")
+		gs.apply(2026, {})
 		for m in Cal.meets_between(game.date, {"year": 2027, "month": 10, "day": 31}):
 			if Cal.can_enter(game.athlete, m, game.date).ok and bool(m.get("coach", false)):   # (the meets the coach recommends, as a player who follows him)
 				game.enter(m.key)
@@ -486,8 +544,7 @@ func _suggests() -> void:
 	var ms = game.get_system("moments")
 	var counter := {"n": 0}
 	var ans := _suggest_answers(counter)
-	game.advance_day()
-	game.answer_event(game.pending_event().id, "set")
+	_set_goals()
 	var entries0: int = game.entries.size()
 	var guard := 0
 	while Cal.date_key(game.date) < 20270309 and guard < 200:
@@ -498,13 +555,15 @@ func _suggests() -> void:
 	_ok("he suggested something within the 18 weeks (one needs a reason: a gap, a tune-up, a limit)", sg.list.size() >= 1)
 	var months := {}
 	var once := true
-	for s in sg.list:
+	# (session L3b2: a met milestone's "earned" suggestion is a stake, outside his monthly count and his verdict: part 11)
+	var judged: Array = sg.list.filter(func(s): return not s.reasons.has("earned"))
+	for s in judged:
 		var key: String = "%d-%d" % [int(s.date.year), int(s.date.month)]
 		once = once and not months.has(key)
 		months[key] = true
 	_ok("at most one suggestion a calendar month", once)
 	_ok("every suggestion has a reason, a Good idea in his eyes and a meet in the calendar",
-			sg.list.all(func(s): return not s.reasons.is_empty() and str(s.verdict) == "good" and not Cal.get_meet(str(s.meet)).is_empty()))
+			judged.all(func(s): return not s.reasons.is_empty() and str(s.verdict) == "good" and not Cal.get_meet(str(s.meet)).is_empty()))
 	var first: Dictionary = sg.list[0] if not sg.list.is_empty() else {}
 	if not first.is_empty():
 		var fm: Dictionary = counter.get("first_moment", {})
@@ -528,8 +587,7 @@ func _suggests() -> void:
 		_career(5, "balanced", 10, "balanced")
 		game.get_system("proposals").set_setting(mode)
 		sg = game.get_system("suggests")
-		game.advance_day()
-		game.answer_event(game.pending_event().id, "set")
+		_set_goals()
 		var entered0: int = game.entries.size()
 		guard = 0
 		while Cal.date_key(game.date) < 20270209 and guard < 200:
@@ -549,8 +607,7 @@ func _suggests() -> void:
 			_ok("'No thanks' in the Calendar answers it (declined, remembered)", str(last.status) == "declined" and str(last.meet) in sg.declined)
 	# The judging uses the verdict model: a meet and a target of the real calendar are judged
 	_career(4, "balanced", 10, "balanced")
-	game.advance_day()
-	game.answer_event(game.pending_event().id, "set")
+	_set_goals()
 	var v: Dictionary = V.judge(V.meet_change(Cal.get_meet("piirin_hallihuipentuma@2027")), V.head_view())
 	print("    judged: racing piirin_hallihuipentuma: %s, parts train %.2f risk %.2f form %.2f race %.2f total %.2f" % [v.verdict, float(v.truth.train_w), float(v.truth.risk_w),
 			float(v.truth.form_w), float(v.truth.race_w), float(v.truth.total)])
@@ -707,8 +764,7 @@ func _save_load() -> void:
 	_career(6, "balanced", 10, "balanced")
 	var counter := {"n": 0}
 	var ans := _suggest_answers(counter)
-	game.advance_day()
-	game.answer_event(game.pending_event().id, "set")
+	_set_goals()
 	var guard := 0
 	var sg = game.get_system("suggests")
 	while (sg.list.size() < 1 or Cal.date_key(game.date) < 20270112) and Cal.date_key(game.date) < 20270309 and guard < 200:
@@ -723,10 +779,219 @@ func _save_load() -> void:
 	gs = game.get_system("goals")
 	sg = game.get_system("suggests")
 	_ok("the goals and suggestions come back as they were", JSON.stringify([gs.to_dict(), sg.to_dict()]) == before and gs.lean == 1 and gs.has_goals(2026))
-	_ok("a loaded career goes on exactly as without saving (5 weeks)", _play_on(35, ans) == after_play)
+	var after_load := _play_on(35, ans)
+	if after_load != after_play:
+		print("    without saving: %s\n    after the load: %s" % [after_play, after_load])
+	_ok("a loaded career goes on exactly as without saving (5 weeks)", after_load == after_play)
 	MI.neutral = false
 	saves.delete("goals_check")
 	CS.enabled = false
+
+
+# --- 10. The menu's new kinds (session L3b2) --------------------------------------------------------------------------------------
+
+func _kinds() -> void:
+	print("== 10. The menu's kinds: what is real for a 14-15-year-old (session L3b2)")
+	# No final anywhere a youth athlete can race: every meet with heats is watch-only (SUL runs the 800 m in timed sections).
+	var heats_open := []
+	for m in data.competitions.competitions:
+		if str(m.get("format", "")) == "heats" and not bool(m.get("watch", false)):
+			heats_open.append(str(m.id))
+	_ok("no meet you can enter has heats and a final (a 'final' = the top 8 across the sections)", heats_open.is_empty())
+	_ok("the district championships are marked (champs: district)", data.competitions.competitions.filter(func(m): return str(m.get("champs", "")) == "district").size() == 2)
+	_career(10, "balanced", 10, "balanced")
+	game.current_week()
+	var gs = game.get_system("goals")
+	var meets: Array = gs._place_meets(2026)
+	_ok("place meets of a 14-year-old: the two targets and the two district championships: %s" % [meets],
+			meets.has("sm_hallit_14_15@2027") and meets.has("sm_14_15@2027") and meets.has("piirin_hallihuipentuma@2027") and meets.has("piirihuipentuma@2027"))
+	_ok("a national meet not entered and not a target has no place goal (Lajikarnevaalit)", not meets.has("lajikarnevaalit@2027"))
+	game.enter("youth_athletics_games@2027")
+	_ok("an international meet you entered gets one (Youth Athletics Games)", gs._place_meets(2026).has("youth_athletics_games@2027"))
+	var pool: Array = []
+	for r in game.rivals:
+		pool.append(float(r.ability))
+	pool.sort()
+	pool.reverse()
+	var dist: Dictionary = Cal.get_meet("piirihuipentuma@2027")
+	var sm: Dictionary = Cal.get_meet("sm_14_15@2027")
+	var d1: float = G.place_need(dist, 1, pool)
+	var d3: float = G.place_need(dist, 3, pool)
+	var s3: float = G.place_need(sm, 3, pool)
+	var s8: float = G.place_need(sm, 8, pool)
+	_ok("a place needs more the higher it is (district win %.2f > top 3 %.2f; SM medal %.2f > top 8 %.2f)" % [d1, d3, s3, s8], d1 > d3 and s3 > s8)
+	_ok("winning the district title needs less than an SM medal (%.2f < %.2f): the district field is drawn from a part of the pool" % [d1, s3], d1 < s3)
+	gs.offers.erase(2026)
+	gs.seasons[2026].offered = false
+	game.get_system("goals").lean = 0
+	var pack: Dictionary = gs.offer(2026)
+	var three: Dictionary = G.family_in(pack, "three")
+	if not three.is_empty():
+		_ok("three races under a time: easier than once at the same level (%s against %s)" % [Cal.format_time(float(three.options[0].time)), Cal.format_time(float(pack.time.options[0].time))],
+				float(three.options[0].time) >= float(pack.time.options[0].time) and int(three.options[0].n) == 3)
+	var dfam: Dictionary = G.family_in(pack, "place:piirihuipentuma@2027")
+	print("    district family: %s" % [dfam.get("options", []).map(func(o): return "%s [%s]" % [o.label, o.level_name])])
+	# A place goal at a meet you are not in enters you in it (the card says so first).
+	var placefam := {}
+	for fam in pack.menu:
+		if str(fam.sub) == "place" and not str(fam.options[0].meet) in game.entries:
+			placefam = fam
+	if not placefam.is_empty():
+		var key := str(placefam.options[0].meet)
+		gs.apply(2026, {"time": 0, "chosen": {str(placefam.key): 0}})
+		_ok("setting a place goal at %s enters you in it" % key, key in game.entries and gs.goals_of(2026).size() == 2)
+	else:
+		print("    (no place family at a meet you are not in for this athlete)")
+
+
+# --- 11. The stakes (session L3b2) -----------------------------------------------------------------------------------------------
+
+func _stakes() -> void:
+	print("== 11. The stakes: met opens only what the game has; a miss costs a little confidence, never trust (session L3b2)")
+	var MI = load("res://scripts/core/mind_system.gd")
+	MI.neutral = false
+	CS.enabled = true
+	CP.enabled = true
+	_career(11, "balanced", 10, "balanced")
+	_set_goals()
+	var gs = game.get_system("goals")
+	var cs = game.get_system("coach")
+	var forbidden := ["camp", "tf-juniorit", "letter", "reputation", "wild card", "selected", "selection"]
+	var texts := [G.stakes_general()]
+	for g in gs.goals_of(2026):
+		texts.append(G.stakes_text(g))
+	var clean := texts.all(func(t): return forbidden.all(func(w): return not str(t).to_lower().contains(w) or str(t).to_lower().contains("until selections")))
+	_ok("the stakes name only what the game has (no camp, letter, selection or reputation): %s" % [texts[1]], clean)
+	gs.seasons[2026].goals = [
+		_goal("g1", "milestone", "standard", {"time": 540.0, "label": "Reach the test limit (9:00.00)", "level": 2, "index": 2, "pick": 1, "higher": true, "family": "standard"}),
+		_goal("g2", "milestone", "place", {"meet": "piirin_hallihuipentuma@2027", "place": 0, "time": 1.0, "label": "Win nothing", "level": 0, "family": "place:piirin_hallihuipentuma@2027"})]
+	_ok("an open Stretch milestone says: trust +5, moods up, next goals higher, a bigger meet: '%s'" % G.stakes_text(gs.goals_of(2026)[0]),
+			G.stakes_text(gs.goals_of(2026)[0]).contains("+5") and G.stakes_text(gs.goals_of(2026)[0]).contains("bigger meet"))
+	var trust0: float = cs.trust()
+	var guard := 0
+	while str(gs.goals_of(2026)[0].status) == "open" and guard < 120:
+		guard += 1
+		_play(Callable(self, "_answer_all"))
+	var g1: Dictionary = gs.goals_of(2026)[0]
+	var kinds: Array = g1.get("opened", []).map(func(e): return str(e.kind))
+	print("    met on %s: %s" % [Cal.format_day(g1.met_on), G.opened_text(g1)])
+	_ok("met: trust, confidence and motivation moved and are recorded", kinds.has("trust") and kinds.has("confidence") and kinds.has("motivation")
+			and g1.opened.filter(func(e): return str(e.kind) in ["trust", "confidence", "motivation"]).all(func(e): return float(e.delta) > 0.0))
+	_ok("a Stretch goal met moves his next goals up (lean +1)", kinds.has("lean") and gs.lean == 1)
+	var sg = game.get_system("suggests")
+	var earned: Array = sg.list.filter(func(s): return s.reasons.has("earned"))
+	_ok("a milestone met: he puts you up for a bigger meet (%s), a card on the planner, nothing entered by himself" % [earned.map(func(s): return s.meet_name)],
+			earned.size() == 1 and kinds.has("meet") and str(earned[0].status) == "asked" and not str(earned[0].meet) in game.entries
+			and ["national", "international"].has(str(Cal.get_meet(str(earned[0].meet)).level)))
+	var m: Dictionary = game.get_system("moments").moment(str(earned[0].moment)) if not earned.is_empty() else {}
+	_ok("its card waits until the end of next week and says the meet is open to all", not m.is_empty() and bool(m.get("planner", false))
+			and str(m.text).contains(str(data.advice.suggest.earned_note)))
+	var WC = load("res://scripts/ui/week_causes.gd")
+	var rows: Array = WC.goal_rows({"monday": Cal.monday_of(g1.met_on)})
+	_ok("the week report has a 'Goal met' row with what it did in its tap: %s" % [rows.map(func(r): return "%s %s · %s" % [r.title, r.value, r.cause])],
+			rows.any(func(r): return str(r.kind) == "goal" and str(r.detail).contains("Trust +")))
+	# The place goal at the district finale: missed (nobody is top 0) -> confidence down, no trust change from it
+	var conf_before := 0.0
+	guard = 0
+	while str(gs.goals_of(2026)[1].status) == "open" and guard < 120:
+		guard += 1
+		conf_before = game.get_system("mind").value("confidence")
+		_play(Callable(self, "_answer_all"))
+	var g2: Dictionary = gs.goals_of(2026)[1]
+	var miss: Array = gs.news.filter(func(x): return str(x.what) == "missed" and str(x.gid) == "g2")
+	_ok("missed: confidence a little down, recorded (%s)" % [miss.map(func(x): return x.effects)], str(g2.status) == "missed" and miss.size() == 1
+			and miss[0].effects.any(func(e): return str(e.kind) == "confidence" and float(e.delta) < 0.0))
+	var goal_trust: Array = cs.relation().causes.filter(func(c): return str(c.cause).begins_with("goal"))
+	_ok("the only trust change from goals is the met one", goal_trust.size() == 1 and float(goal_trust[0].delta) > 0.0)
+	MI.neutral = true
+	CS.enabled = false
+	CP.enabled = false
+
+
+# --- 12. The reviews (session L3b2) --------------------------------------------------------------------------------------------------
+
+func _reviews() -> void:
+	print("== 12. The reviews: the week after the indoor target, on track / adjust / drop (session L3b2)")
+	_career(12, "balanced", 10, "balanced")
+	_set_goals()
+	var gs = game.get_system("goals")
+	var weeks: Array = G.review_weeks(2026)
+	_ok("two reviews: Mon 15 Feb 2027 (after SM-hallit 14-15) and Mon 21 Jun 2027 (the juhannus week)",
+			weeks.size() == 2 and Cal.date_key(weeks[0].monday) == 20270215 and Cal.date_key(weeks[1].monday) == 20270621)
+	_until(20270215, Callable(self, "_answer_all"), 200)
+	game.current_week()
+	var rc: Dictionary = gs.review_card()
+	_ok("the review section is on this week's planner, with the goals still open", not rc.is_empty() and rc.review.goals.size() >= 1)
+	if rc.is_empty():
+		return
+	var rv: Dictionary = rc.review
+	var open: Array = gs.open_goals(2026)
+	for g in open:
+		print("    %s · now: %s · %s" % [G.goal_text(g, 2026), gs.view_now(rv, g).get("level_name", "?"), G.stakes_text(g)])
+	var tg: Dictionary = {}
+	for g in open:
+		if str(g.sub) == "time":
+			tg = g
+	if not tg.is_empty():
+		var fams: Array = gs.adjust_families(2026, rv, tg)
+		var tf: Dictionary = fams[0] if not fams.is_empty() else {}
+		var to: int = 0 if tf.is_empty() else (tf.options.size() - 1)
+		var was: String = G.goal_text(tg, 2026)
+		gs.answer_review(2026, str(rv.id), str(tg.id), "adjust", "time", to)
+		var ng: Dictionary = gs.goal(2026, str(tg.id))
+		_ok("adjust: the time goal moves along its list (%s -> %s), same id, history kept, 'higher' follows the new level" % [was, G.goal_text(ng, 2026)],
+				str(ng.status) == "open" and ng.history.size() == 1 and str(ng.history[0].was) == was and bool(ng.higher) == (to > int(tf.pick))
+				and gs.news.any(func(x): return str(x.what) == "adjusted"))
+	var hg: Dictionary = {}
+	for g in gs.open_goals(2026):
+		if str(g.kind) == "process":
+			hg = g
+	if not hg.is_empty():
+		var trust0: float = game.get_system("coach").trust()
+		var conf0: float = game.get_system("mind").value("confidence")
+		gs.answer_review(2026, str(rv.id), str(hg.id), "drop")
+		_ok("drop: the habit goal can no longer be met, no trust or mood cost ('%s')" % str(hg.detail), str(hg.status) == "dropped"
+				and is_equal_approx(game.get_system("coach").trust(), trust0) and is_equal_approx(game.get_system("mind").value("confidence"), conf0))
+		gs.answer_review(2026, str(rv.id), str(hg.id), "track")
+		_ok("a dropped goal takes no more answers", str(gs.goal(2026, str(hg.id)).status) == "dropped")
+	var mg: Dictionary = {}
+	for g in gs.open_goals(2026):
+		if str(g.kind) == "milestone":
+			mg = g
+	if not mg.is_empty():
+		gs.answer_review(2026, str(rv.id), str(mg.id), "track")
+		_ok("on track: nothing changes", str(rv.answers.get(str(mg.id), "")) == "track" and str(gs.goal(2026, str(mg.id)).status) == "open")
+	_until(20270222, Callable(self, "_answer_all"), 20)
+	game.current_week()
+	_ok("the next week the review section is gone", gs.review_card().is_empty())
+
+
+# --- 13. Older saves (session L3b2: save version 7) ------------------------------------------------------------------------------------
+
+func _older() -> void:
+	print("== 13. Older saves: a waiting goals offer (a stop before version 7) becomes the card; old goals get the stakes")
+	_career(13, "balanced", 10, "balanced")
+	game.current_week()
+	var gs = game.get_system("goals")
+	var pack: Dictionary = gs.offers[2026]
+	# what a version-6 save had: the offer as {year, est, goals: [...]} and a stop event waiting for it
+	var old := {"year": 2026, "est": pack.est, "goals": [{"kind": "time", "pick": 1, "options": pack.time.options}]}
+	gs.offers = {2026: old}
+	var e: Dictionary = game.post_event("goals", "Goals for 2026-27", "old offer", [{"id": "set", "label": "Set", "detail": ""}], true)
+	e.kind = "goals"
+	e.year = 2026
+	saves.save("goals_check_old")
+	_ok("loads", saves.load_slot("goals_check_old"))
+	gs = game.get_system("goals")
+	_ok("the old stop is closed and the new card with the menu waits on the planner", game.pending_event().is_empty() and gs.offers.has(2026)
+			and gs.offers[2026].has("menu") and gs.offers[2026].has("until"))
+	gs.apply(2026, {})
+	var g: Dictionary = gs.goals_of(2026)[0]
+	g.erase("family")
+	g.erase("level")
+	_ok("a goal set before L3b2 (no family, no level) still has its family and its stakes: %s · %s" % [G.family_of(g), G.stakes_text(g)],
+			G.family_of(g) == "time" and G.stakes_text(g).contains("trust +"))
+	saves.delete("goals_check_old")
 
 
 func _play_on(n: int, ans: Callable) -> String:
@@ -740,5 +1005,12 @@ func _play_on(n: int, ans: Callable) -> String:
 		total += game.athlete.get_attr(id)
 	var gs = game.get_system("goals")
 	var sg = game.get_system("suggests")
-	return "%.9f %.9f %s %s %d" % [total, game.athlete.fatigue, JSON.stringify(gs.to_dict()).md5_text(), JSON.stringify(sg.list).md5_text(),
+	# (session L3b2: a review's place estimates read the rivals, whose own training draws from the global dice, so after a load they
+	# differ a little (known since L2b); they are left out of the hash, everything else of the goals is in it)
+	var gd: Dictionary = JSON.parse_string(JSON.stringify(gs.to_dict())) if not gs.to_dict().is_empty() else {}
+	for y in gd.get("seasons", {}):
+		for rid in gd.seasons[y].get("reviews", {}):
+			var rv: Dictionary = gd.seasons[y].reviews[rid]
+			rv.menu = rv.menu.filter(func(f): return str(f.sub) != "place")
+	return "%.9f %.9f %s %s %d" % [total, game.athlete.fatigue, JSON.stringify(gd).md5_text(), JSON.stringify(sg.list).md5_text(),
 			game.get_system("moments").thread("coach").size()]

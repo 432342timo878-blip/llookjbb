@@ -635,8 +635,6 @@ func _show_pending_event() -> void:
 	var widest := 480.0
 	if SeasonEventPanel.handles(e):
 		widest = SeasonEventPanel.max_width(e)
-	elif GoalsEventPanel.handles(e):
-		widest = GoalsEventPanel.max_width(e)
 	elif LukioEventPanel.handles(e):
 		widest = LukioEventPanel.MAX_WIDTH
 	var width := minf(widest, Layout.logical_width - 32.0 - 36.0 - 12.0)
@@ -659,9 +657,6 @@ func _show_pending_event() -> void:
 		box = SchoolEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice))
 	elif LukioEventPanel.handles(e):   # a lukio period's courses / results, the matriculation plan (session S3b)
 		box = LukioEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice))
-	elif GoalsEventPanel.handles(e):   # the coach's offer of the season's goals (session C5)
-		box = GoalsEventPanel.new(e, width, func(choice: String): _on_event_answer(e.id, choice),
-				func(): HelpOverlay.open(self, str(Data.goals.ui.help_entry)))
 	elif MomentEventPanel.handles(e):   # a moment (the coach's Sunday talk ...) as a message
 		box = MomentEventPanel.build(e, width, func(choice: String): _on_event_answer(e.id, choice),
 				func(): HelpOverlay.open(self, MomentEventPanel.HELP))
@@ -689,7 +684,7 @@ func _show_pending_event() -> void:
 	_event_overlay.visible = true
 	_raise_overlays()
 	_fit_event_card(scroll, box)
-	if box is SeasonEventPanel or box is GoalsEventPanel or box is LukioEventPanel:   # its content changes (a plan card chosen, a level stepped, a course moved): fit the card again
+	if box is SeasonEventPanel or box is LukioEventPanel:   # its content changes (a plan card chosen, a level stepped, a course moved): fit the card again
 		box.rebuilt.connect(func(): _fit_event_card(scroll, box))
 
 
@@ -897,9 +892,9 @@ func _build_profile(a: Athlete) -> void:
 		rankings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rankings.pressed.connect(func(): _show("rankings"))
 		_content.add_child(rankings)
-	var goals_panel := GoalsUI.overview_panel(func():   # the season goals (session C5); with none set, a button asks the coach
+	var goals_panel := GoalsUI.overview_panel(func():   # the season goals (C5); with none set, a button asks the coach: his card (L3b2)
 		_refresh_week_ui()
-		_show_pending_event())
+		_show("week"))
 	if goals_panel != null:
 		_content.add_child(goals_panel)
 

@@ -1,6 +1,8 @@
 {
 	"_note": "The coach's season goals (GDD 4.9.2 'Season goals with times', session C5; SeasonGoals). With the autumn plan offer (and for a season that started without one) the coach offers three goals for the season: a TIME, a MILESTONE (a real standard from data/standards.json, or a place at one of your target meets) and a HABIT (a process goal). For each the player picks one of up to four levels (user 2026-10-16: a free choice from a short list); the coach has marked his own pick. HOW HE PICKS: he estimates the time you will be able to run in the season's peak (the 800 m ability at the date of your last target, projected through the season plan on a copy of the career, with the race-day form of that race and the best-of-a-few-races gain `best_of`), as seen through his judging ability (his estimate is off by a share of the time with sd = noise.floor + noise.per_point x (20 - judging ability): a poor judge sets goals that are too easy or too hard). The levels are offsets from that estimate (levels[].offset: + = slower = easier); his pick follows his demands (pick: steady = the first level, balanced = the second, ambitious = the third) moved by `lean` (what you told him after a missed goal, -2..2). A milestone's levels are real things sorted by the time they need (standards of your age class, a top-8 or medal place at a target meet from the rival pool) and each is called by its `from` ratio to his estimate. MET / MISSED: a goal is met the moment it is reached (a message, trust + trust.met, + trust.higher when you chose a level above his pick); open goals are settled together on the evening before the next season in ONE review talk with replies; a missed goal costs nothing (trust.missed 0): the replies only tell him how to set the next goals (lean). The estimate and the goals are saved with the career. All numbers and every text of the goals live here.",
-	"version": 1,
+	"_note_l3b2": "Session L3b2 (GDD 4.10 decision 3, 'L3b2's questions'): the goals are agreed on a planner card from a bigger MENU: the time goal always, then any `menu.extras` more (at most menu.max_process habits). The menu is made of FAMILIES, each a short list of levels from easy to hard with his ★: the standards of your age class; a place at each meet that has one (your targets, any national / international meet you entered, the district championships: competitions.json champs 'district'); three races under a time (`three`); the two habits. Every option is estimated without dice (a place: the rival the place needs, from the field the game draws there: a championship's best entrants, else the meet level's pool range and size, Rivals.pick_field). STAKES (`stakes`): met = trust (trust.met, + trust.higher above his ★) and confidence + motivation (mind.json news.goal); a met Stretch / Dream / far-away goal moves next season's ★ up a step (`lean` + stakes.lean_met); a met milestone makes him put you up for one bigger meet (CoachSuggests.put_up). Missed = confidence a little down, never trust. Left open, the card sets his picks on the date it names. REVIEWS (`reviews`): the planner of the week after the indoor anchor and of the juhannus week: on track / adjust / drop. The season's end: a planner section (`end`), never a stop. Every effect is logged (`log`) for the week report's causes.",
+	"version": 2,
+	"menu": {"extras": 2, "max_process": 1, "max_milestone": 2, "families_max": 9},
 	"estimate": {
 		"peak": {"month": 8, "day": 1},
 		"best_of": 0.009,
@@ -22,14 +24,21 @@
 	"milestone": {
 		"reach": {"ahead": 0.04, "behind": 0.08},
 		"place": {"field": 12, "final": 8, "medal": 3, "min_pool": 12},
+		"district": {"top3": 3, "win": 1},
+		"place_levels": ["national", "international"],
 		"min_gap_s": 0.4
+	},
+	"three": {
+		"_note": "Session L3b2: 'run under a time in three races' (counted from your results in the season). Its levels are the time levels set against his estimate of your TYPICAL race at the peak (the estimate without the best-of-a-few-races gain) plus `slack` (three races near the peak, not one): a first guess, not measured yet (its chance words are the time levels'; B1 or a later realism run can measure it like goals_check part 6).",
+		"n": 3,
+		"slack": 0.004
 	},
 	"process": {
 		"_note_l3a": "Session L3a (GDD 4.10 decision 3): the habit goal 'do N % of the sessions in your plan' is cut (a day the coach or an injury changed counted as done, so it was always met: 352 of 352 in season playtest 2). Process goals stay only when counted honestly: days trained through a warning (HealthSystem's overrides) and races run. The voices that picked sessions now pick `fallback` (limits) or races; an older save's open sessions goal is retired (ui.retired), an open offer's sessions levels become the fallback's.",
 		"fallback": "limits",
 		"by_voice": {"calm": "limits", "drill": "races", "warm": "limits", "tactician": "races", "analyst": "limits", "mentor": "limits", "motivator": "races", "speed": "limits"},
 		"kinds": {
-			"limits": {"levels": [6, 3, 1, 0], "unit": "days", "label": "train through a warning on {n} days at most", "label_zero": "never train through a warning", "count_note": "{done} days trained through a warning"},
+			"limits": {"levels": [6, 3, 1, 0], "unit": "days", "label": "train through a warning on {n} days at most", "label_zero": "never train through a warning", "label_one": "train through a warning on 1 day at most", "count_note": "{done} days trained through a warning"},
 			"races": {"levels": [3, 5, 7, 9], "unit": "races", "label": "race at least {n} times", "max_age": 19, "count_note": "{done} races run"}
 		}
 	},
@@ -51,9 +60,10 @@
 		"overview_ask_hint": "{He} {v:suggests|suggest} a time, a milestone and a habit; you pick the level of each.",
 		"progress_head": "SEASON GOALS",
 		"past_line": "{season}: {met} of {total} met",
-		"status": {"open": "Open", "met": "Met", "missed": "Missed", "void": "Not decided"},
+		"status": {"open": "Open", "met": "Met", "missed": "Missed", "void": "Not decided", "dropped": "Dropped"},
 		"retired": "Retired: the game no longer counts sessions as a goal.",
-		"marks": {"open": "○", "met": "✓", "missed": "✗", "void": "–"},
+		"marks": {"open": "○", "met": "✓", "missed": "✗", "void": "–", "dropped": "–"},
+		"three_progress": "{done} of {n} races at {time} or faster",
 		"met_on": "Met on {date}",
 		"level_line": "{level} level",
 		"coach_pick_line": "{His} pick was {level}.",
@@ -62,9 +72,89 @@
 		"place_progress": "{meet} on {date}",
 		"place_done": "{meet}: {result}",
 		"higher_note": "You aimed higher than {he} did.",
-		"lean_up": "Next season's goals ▲ a step higher",
-		"lean_down": "Next season's goals ▼ a step lower",
-		"help_entry": "season_goals"
+		"lean_up": "{His} next goals ▲ a step higher",
+		"lean_down": "{His} next goals ▼ a step lower",
+		"help_entry": "season_goals",
+		"status_dropped": "Dropped",
+		"mark_dropped": "–",
+		"dropped_on": "Dropped on {date}",
+		"opened": "Opened: {list}",
+		"opened_none": "Opened: nothing more this time",
+		"put_up_none": "no bigger meet left this season",
+		"put_up_meet": "{meet} suggested",
+		"adjusted_from": "Was: {goal}",
+		"ask_card": "{His} goals card waits on This week: pick your goals there.",
+		"open_card": "See the goals card"
+	},
+	"card": {
+		"title": "Goals for {season}",
+		"time_head": "A TIME · ALWAYS ONE",
+		"more_head": "PICK {n} MORE · {chosen} OF {n}",
+		"more_hint": "Any two: two milestones, or a milestone and a habit (one habit at most).",
+		"full": "Two chosen: take one off first.",
+		"habit_full": "One habit at most.",
+		"pick_mark": "★",
+		"his": "{His} picks are marked ★.",
+		"stakes_head": "WHAT MET AND MISSED MEAN",
+		"set": "Set these goals",
+		"left": "If you leave it, {his} picks are set on {date}.",
+		"defaulted": "You left the goals open, so {his} picks are set:",
+		"none_more": "Nothing else is within reach this season; the time goal is enough."
+	},
+	"reviews": {
+		"_note": "The two reviews (GDD 4.10 decision 3, L3b2): a section of the planner of the week after the indoor anchor (SeasonPlan.anchor_monday) and of the juhannus week (Cast.occurrence juhannus = Midsummer Eve). On track / adjust / drop per open goal; left open = on track.",
+		"list": [{"id": "indoor", "rule": "after_indoor"}, {"id": "midsummer", "rule": "juhannus"}],
+		"title": {"indoor": "Goals check · the indoor season is over", "midsummer": "Goals check · midsummer"},
+		"head": "ON TRACK, ADJUST OR DROP",
+		"when": {"indoor": "INDOOR SEASON OVER", "midsummer": "MIDSUMMER"},
+		"intro": {
+			"calm": "Halfway points are for looking honestly. Here is how I see each goal now.",
+			"drill": "Check-in. Where we stand, no excuses.",
+			"warm": "Let's look at our goals together. Nothing is set in stone.",
+			"tactician": "Mid-season read against the targets.",
+			"analyst": "I've re-run the projection with the season so far.",
+			"mentor": "A moment to look at the road.",
+			"motivator": "Check-in time! Let's see where we are!",
+			"speed": "Quick check on the goals."
+		},
+		"now": "{His} view now: {level} · {chance}",
+		"now_star": "{His} ★ now: {goal}",
+		"track": "On track",
+		"adjust": "Adjust",
+		"drop": "Drop",
+		"swap_head": "OR SWAP FOR",
+		"confirm": "Change it",
+		"cancel": "Cancel",
+		"left": "If you leave it, every goal stays as it is.",
+		"answered_track": "On track: it stays as it is.",
+		"answered_adjust": "Changed to: {goal}",
+		"answered_drop": "Dropped: it can no longer be met. No trust or mood cost.",
+		"nothing": "Nothing to change on the menu now.",
+		"stakes_follow": "The stakes follow the new level."
+	},
+	"end": {
+		"title": "Goals of {season}",
+		"head": "HOW THEY WENT",
+		"left": "If you leave it: we try again ({his} next goals as they would be).",
+		"left_met": "If you leave it, nothing changes."
+	},
+	"log": {
+		"section": "SEASON GOALS",
+		"set": "Goals set",
+		"defaulted": "Goals set ({his} picks)",
+		"met": "Goal met",
+		"missed": "Goal missed",
+		"adjusted": "Goal changed",
+		"dropped": "Goal dropped",
+		"cause_set": "{n} goals for {season}",
+		"trust": "Trust {delta}",
+		"confidence": "Confidence {delta}",
+		"motivation": "Motivation {delta}",
+		"lean": "{His} next goals' ★ a step higher",
+		"meet": "{He} put you up for {meet}",
+		"meet_none": "No bigger meet left this season to put you up for",
+		"stakes_now": "Now: {level} · met: {met}",
+		"nothing": "No trust or mood change"
 	},
 	"place_missed": {
 		"text": {
@@ -82,7 +172,30 @@
 		"time": "Run {time} or faster",
 		"standard": "Reach the {short} ({time})",
 		"place": "Finish in the top {n} at {meet}",
-		"place_medal": "Win a medal at {meet}"
+		"place_medal": "Win a medal at {meet}",
+		"place_win": "Win the {meet}",
+		"three": "Run {time} or faster in {n} races"
+	},
+	"families": {
+		"time": "Your time",
+		"standard": "A standard",
+		"place": "{meet}",
+		"three": "Three races",
+		"limits": "Habit: warnings",
+		"races": "Habit: races"
+	},
+	"stakes": {
+		"_note": "What a goal opens when met and what a miss costs: only what the game really does (GDD 4.10 'L3b2's questions' 3). Camps, the TF-juniorit letter, selections and reputation wait for G3 / K1, so no line names them.",
+		"lean_met": 1,
+		"met_head": "Met:",
+		"missed_head": "Missed:",
+		"trust": "trust +{n}",
+		"moods": "confidence and motivation up",
+		"lean": "{his} next goals aim a step higher",
+		"meet": "{he} {v:puts|put} you up for a bigger meet",
+		"missed": "confidence a little down; never trust",
+		"general": "Met: trust +{met} (+{higher} more above {his} ★), confidence and motivation up. A Stretch or Dream goal met: {his} next goals aim a step higher. A milestone met: {he} {v:puts|put} you up for a bigger meet (a suggestion; every meet is open to all until selections come). Missed: confidence a little down, never trust.",
+		"enters": "Setting it enters you in {meet}."
 	},
 	"offer": {
 		"intro": {
@@ -140,7 +253,7 @@
 		},
 		"replies": [
 			{"id": "thanks", "label": "Thanks, coach", "hint": "", "lean": 0},
-			{"id": "next", "label": "What's next? I want more", "hint": "Next season's goals start a step higher", "lean": 1},
+			{"id": "next", "label": "What's next? I want more", "hint": "{His} next goals start a step higher", "lean": 1},
 			{"id": "luck", "label": "A good day, mostly", "hint": "", "lean": 0}
 		],
 		"answers": {
@@ -173,6 +286,7 @@
 			"time_none": "no race with a time",
 			"place": "{result}",
 			"place_none": "you didn't start",
+			"three": "{done} of {n} races",
 			"process_limits": "{done} days trained through a warning",
 			"process_races": "{done} races"
 		},
@@ -187,9 +301,9 @@
 			"speed": "We'll fix what was slow."
 		},
 		"replies": [
-			{"id": "again", "label": "We try again next season", "hint": "Next season's goals stay as they are", "lean": 0},
-			{"id": "bigger", "label": "Next time I want a bigger goal", "hint": "Next season's goals start a step higher", "lean": 1},
-			{"id": "toohard", "label": "That was too hard for me", "hint": "Next season's goals start a step lower", "lean": -1},
+			{"id": "again", "label": "We try again next season", "hint": "{His} next goals as they would be", "lean": 0},
+			{"id": "bigger", "label": "Next time I want a bigger goal", "hint": "{His} next goals start a step higher", "lean": 1},
+			{"id": "toohard", "label": "That was too hard for me", "hint": "{His} next goals start a step lower", "lean": -1},
 			{"id": "quiet", "label": "I'd rather not talk about it", "hint": "", "lean": 0}
 		],
 		"answers": {

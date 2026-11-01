@@ -517,7 +517,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           recording only; mid-week stops 0.35 a week (0.33), a careful week still 2 clicks; fingerprints identical)*: attribute changes with their sessions (and the race's share), the moods' / body areas' / people's
           words + what they do with the numbers and recent causes on a tap, the week report (5 + "+N more") and "Last week in full"
           restyled to V1, help. *(Opus, high)*
-  - [ ] **L3. The cuts + goals + school page** (decisions 3–5 and the cut list; split by the user 2026-10-25, GDD 4.10 "L3's questions"):
+  - [x] **L3. The cuts + goals + school page** *(done 2026-11-01 in L3a + L3b1 + L3b2)* (decisions 3–5 and the cut list; split by the user 2026-10-25, GDD 4.10 "L3's questions"):
     - [x] **L3a. The sort + never contradict + the feed + the cuts** *(done 2026-10-25: GDD 4.10 "Built (step L3a)", the sort in
           `docs/L3_SORT.md`)*: every storylet sorted into delete / feed / invitation / story beat, "never contradict" as `touches` +
           guards + a scan in `storylet_check`, the quiet feed (People + one planner line), story beats on the Sunday planner, up to 2
@@ -527,12 +527,12 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           names the week it judged), mental training as sessions on the days (the weekly setting gone, older saves' plans converted,
           the coach's plans by his mental coaching), the School tab apart from the messages (the report card and the meet-and-tests
           clash = planner cards with a named default; only an exam clash stops), save version 6, help. *(Opus, high)*
-    - [ ] **L3b2. The goals menu + the two reviews** (its own conversation): the goals agreed at the season start from a bigger menu
+    - [x] **L3b2. The goals menu + the two reviews** *(done 2026-11-01: GDD 4.10 "L3b2's questions" and "Built (step L3b2)")* (its own conversation): the goals agreed at the season start from a bigger menu
           (times, milestones: standards, selections, a final, a place; process goals only if counted honestly), met goals open only
           what the game really has (trust, the moods, next season's level, the coach putting you up for a bigger meet through
           CoachSuggests; the camps / the TF-juniorit wild card / bigger meets / reputation wait for G3 / K1), the reviews at the end
           of the indoor season and at midsummer as a section of that Sunday's planner (on track / adjust / drop). *(Opus, high)*
-    - [ ] **L3b (the original item, now L3b1 + L3b2). Mental sessions + goals + reviews + the School page**: mental training as sessions in the week (the weekly
+    - [x] **L3b (the original item, now L3b1 + L3b2). Mental sessions + goals + reviews + the School page**: mental training as sessions in the week (the weekly
           mental-plan setting goes; an older save's plan: asked at the start), the goals menu with real stakes (today: trust, the
           moods, next season's level, the coach putting you up for a bigger meet; camps / the wild card / bigger meets wait for G3 /
           K1), the two reviews as a section of that Sunday's planner, the School page apart from the messages with only the agreed
@@ -540,7 +540,9 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           the user's notes (docs/PLAYTESTS.md 2026-10-25): "Ask the coach" = same plan, same answer** (his error tied to the plan,
           not to the button; the Season page says which week it judges). *(Opus, high)*
         Done: the cut list done; `storylet_check` finds no contradicting or promising lines; stops a week measured.
-  - [ ] **K1. Career tab + the next big thing + reputation + the season review** (decision 10). *(Sonnet, high)*
+  - [ ] **K1. Career tab + the next big thing + reputation + the season review** (decision 10). *(Sonnet, high)* (L3b2: the
+        season's goals end is already a planner section, `SeasonGoals.end_card` with what each goal opened in `g.opened` and the
+        `news`; the chapter wraps it. The stakes that wait for K1 / G3: reputation, selections, the TF-juniorit letter, camps.)
         Done: every result in one list, the milestones timeline, the Overview's countdown and long path, a season ends as a chapter.
   - [ ] **Season playtest 3 by the user** (6–8 weeks of the new loop is enough): does a week feel like plan → play → see? Notes into
         `docs/PLAYTESTS.md`; the sizes of things are tuned after it (memory: feel it before tuning).

@@ -103,8 +103,11 @@
 			"gap": "You haven't raced for {weeks} weeks, and {meet} ({date}) is a race to sharpen on.",
 			"tune": "{meet} ({date}) is a good tune-up before {target}: a race in your legs a few weeks early.",
 			"standard": "{meet} ({date}) is your chance to run the {limit} before {target}.",
-			"target": "I'd make {meet} ({date}) a target. We build the season round it: easier days before it, a taper, the form to match."
+			"target": "I'd make {meet} ({date}) a target. We build the season round it: easier days before it, a taper, the form to match.",
+			"earned": "You met a goal ({goal}), so I'm putting you up for something bigger: {meet} ({date})."
 		},
+		"_note_earned": "Session L3b2: a met milestone goal's stake (CoachSuggests.put_up): he suggests the nearest national / international meet of the season you are not in (international first; as a target when the season has room), outside his monthly count and without his verdict: it is the reward, the player still decides. Every meet in the game is open to all until selections come (G3 / K1), and the card says so (`earned_note`).",
+		"earned_note": "Every meet is open to anyone for now; selections come later.",
 		"ask_end": {"meet": "Shall I put it in your calendar?", "target": "Shall we make it a target?"},
 		"always_end": {"meet": "It's marked in your calendar. Say the word.", "target": "It's marked in your calendar. Say the word."},
 		"noticed_end": {"meet": "You've asked me not to decide for you, so it's your call. It's marked in your calendar.", "target": "You've asked me not to decide for you, so it's your call. It's marked in your calendar."},

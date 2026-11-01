@@ -579,6 +579,11 @@ func _anchor_week(year: int, kind: String) -> Dictionary:
 	return {"week": week_no(year, Calendar.monday_of(d)), "real": false, "key": ""}
 
 
+## The Monday of the week of the season's indoor / outdoor anchor (session L3b2: the goals' review the week after the indoor one).
+func anchor_monday(year: int, kind: String) -> Dictionary:
+	return Game.add_days(season_start(year), 7 * int(_anchor_week(year, kind).week))
+
+
 ## Moves the start of a phase by whole weeks (±shift_limit, the first phase can't move) as far as every phase
 ## keeps its minimum length. Returns the shift that was applied.
 func set_shift(year: int, phase_id: String, weeks: int) -> int:

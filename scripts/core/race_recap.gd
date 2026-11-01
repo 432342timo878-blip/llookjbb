@@ -367,8 +367,10 @@ static func _goal(b: Dictionary) -> Dictionary:
 	for g in goals:
 		var was := str(b.goal_status.get(str(g.id), ""))
 		if was == "open" and str(g.status) in ["met", "missed"]:
+			# (session L3b2: what the goal opened, or what the miss cost, as recorded)
+			var opened := SeasonGoals.opened_text(g) if str(g.status) == "met" else CoachSystem.words(str(Data.goals.stakes.missed_head) + " " + str(Data.goals.stakes.missed) + ".")
 			return {"text": str(c.goal_line).format({"goal": SeasonGoals.goal_text(g, year)}), "status": str(g.status),
-					"note": str(c.goal_met if str(g.status) == "met" else c.goal_missed), "fill": 1.0 if str(g.status) == "met" else 0.0}
+					"note": "%s · %s" % [str(c.goal_met if str(g.status) == "met" else c.goal_missed), opened], "fill": 1.0 if str(g.status) == "met" else 0.0}
 	for g in goals:
 		if str(g.get("kind", "")) != "time" or str(g.status) != "open" or not g.has("time"):
 			continue

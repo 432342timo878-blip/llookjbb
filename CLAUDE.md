@@ -31,8 +31,10 @@ story beats on the Sunday planner, 42 deleted; "never contradict" as `touches` +
 and the habit goal cut; "Built (step L3a)"). **L3b is split** (user, 2026-10-31, GDD 4.10 "L3b's questions"): **L3b1 done** ("Ask
 the coach" = same plan, same answer; mental training as sessions on the days (WeekPlan `mental`, the weekly setting gone); the
 School tab with only the agreed stops (report card and meet-and-tests = planner cards; an exam clash still stops); save v6; "Built
-(step L3b1)"). Next, in `docs/ROADMAP.md` order: L3b2 (the goals menu with real stakes + the two reviews) → K1 (Career tab) → the
-user's playtest 3 → P2 →
+(step L3b1)"). **L3b2 done** (2026-11-01, GDD 4.10 "L3b2's questions" / "Built (step L3b2)"): the goals card on the planner (a time +
+any two from a menu: standards, places incl. the district titles, three races, a habit), only real stakes shown on every goal (trust,
+moods, his next goals' ★, a bigger meet he puts you up for), the two reviews and the season's end as planner sections, save v7.
+**L3 is done.** Next, in `docs/ROADMAP.md` order: K1 (Career tab) → the user's playtest 3 → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -135,7 +137,8 @@ them with a tap for the numbers (meta `cause_row`). Never state a cause the game
   `answer_event`; `Game.systems` order: Health, Season, Form, Coach, School, Mind, Moments (StoryletSystem), Goals, Suggests, Proposals,
   Market (see `_make_systems`).
 - `HealthSystem` (soreness, injuries, illness, adaptation; `data/health.json`, `data/injuries.json`), UI in `HealthUI` / `HealthEventPanel`.
-- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 6** (L3b1: mental sessions; v5 L1b: the
+- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 7** (L3b2: the goals card, reviews and
+  news; an older save's waiting goals stop becomes the card, `SeasonGoals.after_load`; v6 L3b1: mental sessions; v5 L1b: the
   habits); older saves load (each system's state is `{}` until it first runs; a v4 save's study effort / free time become habits; an
   older save's weekly mental plan becomes sessions on the plan's days, `MindSystem.convert_legacy`).
 
@@ -159,7 +162,10 @@ the cards kept in `Game.race_cards` (the planner's race strap opens one), the sc
   `data/cast.json`), `CoachTalk`, `CoachVerdict` (the coach's judgement of a change: truth + his noise; L3b1: a weekly plan's noise
   comes from the plan alone, so the same plan gets the same answer on any button and any date), `CoachProposals` (his NOTES on
   the planner days, written on Sunday, ≤ 2 a week, Make it easy / Keep mine = the Veto; mid-week only the "scratch?" stop), `CoachAsk`,
-  `SeasonGoals` (time / milestone / habit with real standards; L3a cut the "N % of the sessions" habit), `RaceAdvice`,
+  `SeasonGoals` (L3b2: a planner card `GoalsCard`, never a stop: a time + any two from a menu of families (standards, places at
+  targets / entered big meets / the district championships, three races, a habit), stakes shown on every goal and recorded when met
+  (`news` → `WeekCauses.goal_rows`), two reviews + the season's end as planner sections; L3a cut the "N % of the sessions" habit;
+  no meet a youth athlete enters has a final: the top 8 across the sections), `RaceAdvice`,
   `CoachSuggests` (a planner card on Sunday).
 - `MindSystem` (confidence / motivation / stress, effects on training and races; `data/mind.json`; L3a cut the cue word; L3b1: the
   weekly mental plan became mental sessions on the days (imagery / relaxation / self-talk, each kind once a week, read from the week

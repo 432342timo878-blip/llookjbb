@@ -1677,32 +1677,56 @@ func _goals_tour(main: Node, hub_in: Control) -> void:
 	hub._show("overview")
 	await _frames(6)
 	await _shot("48_overview_no_goals")
-	# His offer, the first level stepped up, the buttons, the help; then "Set these goals".
+	# Session L3b2: his card on This week (never a stop): the time, the menu, what met and missed mean; a family stepped; Set.
+	var GC = load("res://scripts/ui/goals_card.gd")
 	gs.offer(year)
+	hub._show("week")
 	hub._refresh_week_ui()
-	hub._show_pending_event()
 	await _frames(6)
-	await _shot("48a_goals_offer")
-	var step := _find_button(hub._event_overlay, "▶")
-	if step:
-		step.pressed.emit()
-		await _frames(6)
-		await _shot("48b_goals_offer_stepped")
-	await _scroll_event_to_end(hub)
-	await _shot("48c_goals_offer_buttons")
-	var help_btn = _find_script(hub._event_overlay, load("res://scripts/ui/help_button.gd"))
-	if help_btn:
-		help_btn.pressed.emit()
-		await _frames(6)
-		await _shot("48d_help_goals")
-		_close_help_overlays(hub)
-	hub._on_event_answer(game.pending_event().id, "set")
+	var card = _find_script(hub, GC)
+	if card:
+		hub._scroll.ensure_control_visible(card)
+		await _frames(4)
+		await _shot("48a_goals_card")
+		var step := _find_button(card, "▶")
+		if step:
+			step.pressed.emit()
+			await _frames(6)
+			await _shot("48b_goals_card_stepped")
+		var set_b := _find_button(card, str(data.goals.card.set))
+		if set_b:
+			hub._scroll.ensure_control_visible(set_b)
+			await _frames(4)
+			await _shot("48c_goals_card_set")
+			set_b.pressed.emit()
+			await _frames(6)
+	if not gs.has_goals(year):
+		gs.apply(year, {})
+	hub._show("career")
 	await _frames(5)
-	await _shot("48e_overview_goals")
+	await _shot("48e_career_goals")
 	hub._show("progress")
 	await _frames(5)
 	await _shot("48f_progress_goals")
-	# A goal met (his message waits in the thread) and one missed: the season review.
+	# A review on This week: his view now, On track / Adjust / Drop; Adjust opens the goal's list.
+	var pack: Dictionary = gs.build(year, false)
+	gs.seasons[year].reviews = {"indoor": {"id": "indoor", "monday": game.week_monday(), "est": pack.est, "time": pack.time, "menu": pack.menu,
+			"goals": gs.open_goals(year).map(func(g): return str(g.id)), "answers": {}}}
+	hub._show("week")
+	hub._refresh_week_ui()
+	await _frames(6)
+	card = _find_script(hub, GC)
+	if card:
+		hub._scroll.ensure_control_visible(card)
+		await _frames(4)
+		await _shot("48g1_goals_review")
+		var adj := _find_button(card, str(data.goals.reviews.adjust))
+		if adj:
+			adj.pressed.emit()
+			await _frames(6)
+			await _shot("48g2_goals_review_adjust")
+	gs.seasons[year].reviews = {}
+	# A goal met (his message waits in the thread, what it opened on Career) and one missed: the season's end on This week.
 	var goals: Array = gs.goals_of(year)
 	if goals.size() >= 2:
 		gs._met(year, goals[0], game.date)
@@ -1712,20 +1736,23 @@ func _goals_tour(main: Node, hub_in: Control) -> void:
 		hub._show("people")
 		await _frames(6)
 		await _shot("48g_goal_met_thread")
-		gs._review(year)
+		gs.seasons[year].end = {"until": cal.date_key(game.add_days(game.date, 6)), "answer": "", "missed": 1}
+		hub._show("week")
 		hub._refresh_week_ui()
-		hub._show_pending_event()
 		await _frames(6)
-		await _shot("48h_goal_review")
-		await _scroll_event_to_end(hub)
-		await _shot("48h2_goal_review_replies")
-		hub._on_event_answer(game.pending_event().id, "toohard")
-		await _frames(6)
-		await _shot("48i_goal_review_result")
-		hub._end_result_card()
-		hub._show("overview")
+		card = _find_script(hub, GC)
+		if card:
+			hub._scroll.ensure_control_visible(card)
+			await _frames(4)
+			await _shot("48h_goals_end")
+			var b := _find_button_prefix(card, "That was")
+			if b:
+				b.pressed.emit()
+				await _frames(6)
+		gs.seasons[year].end = {}
+		hub._show("career")
 		await _frames(5)
-		await _shot("48j_overview_goals_done")
+		await _shot("48j_career_goals_done")
 	# A meet he suggests.
 	var meet := {}
 	for m in cal.meets_between(game.add_days(game.date, 10), game.add_days(game.date, 120)):

@@ -4749,6 +4749,123 @@ two sessions.
    from next week); the day's "The day" blocks don't list the mental session (its line is in the life load and its own panel); a
    long meet name still breaks mid-word in the PC day column (as before L3b1).
 
+#### L3b2's questions (user, 2026-11-01; each the recommended option)
+
+What the data showed first: **no meet a player can enter has a final.** Every youth championship and youth meet (SM-hallit 14-15,
+Nuorten SM 14-15 / 16-17 / 19-22, TJIG, Youth Athletics Games, Lajikarnevaalit, the district finales) runs as seeded timed sections
+(`races.json rounds.default_format`, SUL's Mestaruuskilpailusäännöt 2026): one straight final, places by time across the sections;
+heats and finals exist only at the senior meets you watch. So "a final" is honestly **the top 8 across the sections** (the scoring
+places). **Selections are only times:** the TF-juniorit criterion is a real number, but nothing in the game happens when you reach it
+(no letter, no camp: G3 / K1), and Kalevan kisat is watch-only. **Every meet is open:** no meet needs a selection (the SM limit only
+saves your one free event), so "the coach puts you up for a bigger meet" is his suggestion card for a bigger meet, nothing more, until
+selections exist. Place goals were offered only at the two targets, which are "far away" for an average 14-year-old.
+
+1. **The menu: a time + any two more.** The time goal is always one (the planner's tile and the race card show it); then any two from
+   the milestones and habits, two milestones allowed, at most one habit. Each goal keeps its levels with the coach's ★ and his words
+   on the chance; his default two are C5's milestone and habit.
+2. **New kinds:** places at the **district championships** (win / top 3, estimated from the district field the game really draws:
+   `Rivals.pick_field`'s pool range and size, no dice); places at **any national or international meet you have entered**, not only
+   at the targets; **consistency: run under a time in three races** (counted from your results). The habit stays "days trained
+   through a warning" / "races run".
+3. **Stakes, real ones, shown on each goal:** met = trust +3 (+2 above his ★) and confidence + motivation up (C5 / M1 sizes); a met
+   Stretch, Dream or far-away goal moves next season's ★ a step up (`lean` +1); a met milestone makes him **put you up for one bigger
+   meet** (a national / international meet of the season you are not in: his suggestion card, which says the meet is open to everyone
+   until selections come in G3 / K1). Missed = confidence a little down (−2), never trust. Every goal says this where it is shown.
+4. **The goals offer is a planner card**, never a stop: the first week of a career (after the plan is chosen) and from the autumn plan
+   choice until the season starts. Left open, his picks are set on the date the card names (the evening before the season, or the end
+   of the week for a season already started); only in that last week does it count as a choice waiting (Play week asks once).
+5. **The two reviews** come on the planner of the week after your **indoor target** (2026-27: Sun 14 Feb, after SM-hallit 14-15) and
+   of the **juhannus week** (Sun 20 Jun 2027), each a section of that Sunday's planner: **on track** (nothing changes; also when left
+   open) / **adjust** (along the goal's own list, easier or harder; a milestone can be swapped for another on the menu; the ★ shows
+   his view now, with the season so far; what is already reached is not offered) / **drop** (it can no longer be met, no trust or mood
+   cost). Goals already met are not reviewed. **The stakes follow the new level** (below his ★ there is no "above his pick" bonus).
+6. **C5's end-of-season review stop becomes a planner section** (the first planner of the new season): each goal ✓ / ✗ with what it
+   opened, his comment, C5's replies (we try again / bigger / too hard); left open = "we try again". No stop. K1's season review chapter
+   later shows the same record.
+7. **Save version 7, one rule for every goal:** an older save's open goals play on as set and get the new stakes and lines; a goals
+   offer still waiting (a stop in versions 4-6) becomes the planner card with the new menu; goals met or missed stay as they are.
+
+#### Built (step L3b2, 2026-11-01): the goals menu with real stakes, the two reviews, the season's end on the planner, save version 7
+
+Built in one session (no split was needed).
+1. **The card** (`GoalsCard`, `scripts/ui/goals_card.gd`; texts `data/goals.json card`): the season goals are a card on the Sunday
+   planner, full width above the other cards, never a stop (the C5 stop and `GoalsEventPanel` are gone). It comes when the planner
+   opens on a week in a season that has started or whose plan you chose (it waits for the plan offer's answer,
+   `SeasonGoals._plan_offer_waiting`; `SeasonSystem.choose` tells it). A TIME (◀ ▶ through four levels),
+   then PICK 2 MORE: every family of the menu as a row with a 44 px + / ✓ and, when chosen, ◀ ▶; his ★ on each; a refused third
+   extra or second habit says why. WHAT MET AND MISSED MEAN (one line), "Setting it enters you in …" for a place at a meet you are not
+   in, Set these goals, and "If you leave it, his picks are set on Sun 8 Nov." (the evening before the season, or for a season already
+   started the Sunday at least six days ahead). **Claude's call:** the card counts as a choice waiting (Play week asks once) only in
+   the week its date falls in, so the autumn card (three weeks) costs no extra clicks in its first two weeks.
+2. **The menu** (decisions 1–2): families, each from easy to hard with his ★ (the option nearest the level he wants): the time; the
+   standards of your age class (C5's reach rules); a place at each meet that has one: your targets and any national / international
+   meet you entered (top 12 / top 8 / a medal) and the district championships (`competitions.json champs: "district"`: top 3 / the
+   win). A place is estimated without dice from the field the game really draws: a championship's best entrants (C5), any other
+   meet the order statistic of `Rivals.pick_field`'s pool range and size (`SeasonGoals.place_need`). Three races under a time (the
+   time levels set against his estimate of your typical race, plus a slack of 0.4 %: a first guess, not measured yet; its chance
+   words are the time levels', so they may be off until B1 or a realism run like `goals_check` part 6 measures it). The two honest habits. A family
+   with nothing within reach is left out; what is already reached is never offered. **Claude's calls:** his two extras are C5's
+   (a real milestone, then his habit by voice): three races sit exactly on his levels and would always win his "nearest", so his
+   milestone is a standard or a place at a meet you are already in, then three races, a place elsewhere only when nothing else is
+   on the menu, and when the nearest real milestone is more than one level from the one he wants (the SM limit at Dream when he
+   wants Realistic: seen in the layout check's career) he takes three races at his level; **his pick never enters you in a meet by
+   itself** (a card left open takes his pick).
+3. **The stakes** (decision 3), on every goal where it is shown (the card's line, each goal on the Career tab, the review, the goal
+   tile's tap): met = trust +3 (+2 above his ★), confidence +6 and motivation +4 (M1); a met Stretch, Dream or far-away goal: his next
+   goals aim a step higher (`lean` +1; a card already waiting is made again with it at once); a met milestone: **he puts you up for a
+   bigger meet** (`CoachSuggests.put_up`: the nearest national / international meet of the season you are not in, an international
+   one first, as a target when the season has room; not judged by his verdict and outside his month: it is the reward; a planner
+   card with Yes / No thanks that waits to the end of next week, and the Calendar's mark; its text says every meet is open to all
+   until selections come). Missed = confidence −2, never trust. Nothing names camps, selections, the TF-juniorit letter or
+   reputation (G3 / K1; `goals_check` part 11 scans the texts). **Wording:** the replies' hints say "his next goals", not "next
+   season's goals": when next season's goals are already set, the reply moves the ones after them.
+4. **The two reviews** (decision 5): the planner of the week after the indoor anchor (2026-27: Mon 15 Feb) and of the juhannus week
+   (Mon 21 Jun 2027): GOALS CHECK with his line, each open goal with its progress, his view now (the menu made again with the season
+   so far) and its stakes, **On track / Adjust / Drop**. Adjust opens the goal's own list (and for a milestone the other milestone
+   families: OR SWAP FOR), each option a 44 px button with its level and ★, then Change it / Cancel; the stakes follow the new level;
+   the goal keeps its id and a `history` ("Was: …" on the Career tab). Drop: "it can no longer be met", no trust or mood cost. Left
+   open = on track; the section goes when its week is over; it never makes Play week ask (leaving it changes nothing).
+5. **The season's end** (decision 6): `_close_if_over` settles what is open as before (no stop) and the first planner of the new
+   season shows the goals ✓ / ✗ / – with what each opened ("Opened: Trust +5, Confidence +6, Motivation +4, He put you up for TJIG"),
+   his comment when one was missed and the replies (C5's review replies, or the met ones when none was missed); left open = "we try
+   again" when its week ends. K1's chapter can show the same record (`seasons[y].end`, `g.opened`, `news`).
+6. **Causes** (deliverable 3): every effect is recorded when it happens (`SeasonGoals.news`: set / defaulted / met / missed /
+   adjusted / dropped, with the actual trust and mood deltas, the ★ move, the meet he put you up for) and shown as a week-report row
+   (`WeekCauses.goal_rows`, kind "goal"; the planner's left column and a SEASON GOALS section in Last week in full) with the numbers
+   in its tap; the race card's goal box adds what a goal met that day opened (or what a miss costs).
+7. **Save version 7.** An older save's waiting goals offer (a stop in versions 4-6) closes on load and the new card with the new menu
+   takes its place (`SeasonGoals.after_load`); open goals play on with the new stakes (`family_of` gives them their family);
+   goals met or missed stay as they are.
+8. **Help:** `season_goals` v4 (rewritten: the card, choosing, what can be a goal and why the top 8 is the final, his estimate, what
+   met means, what missed costs, the two checks, the season's end, where you see them; opened by the card's "?"), new topic `goals`,
+   `week` v7 (Season goals; the goal tile's tap), `career` v2, `report` v6.
+9. **Checks:** `goals_check` parts 3 (the card) and 4 (the reviews and the season's end in a whole season) rewritten, new parts 10
+   (what is real for a 14-15-year-old: no final anywhere a youth athlete races, the place meets, what a place needs, three races, a
+   place goal enters its meet), 11 (the stakes), 12 (a review: adjust / drop / on track), 13 (older saves); `layout_check`
+   `_goals_views` and the tour `_goals_tour` (48a… the card, stepped, Set; Career; the review and Adjust; the season's end);
+   `help_check` (the card's "?"); `season_playtest` (the player answers the card, the reviews, the season's end).
+10. **Proven and measured:** fingerprints identical: `training_balance -- 0` coach row 206.798298350 / 14.102831594 /
+    1226.006524079 and all 8 parts "identical to part 1: YES" (part 2f has the goals and suggestions on: the card, its default,
+    the reviews and the stakes change no training), races 73182f4e…, school 42fd3635… / 01dd20d7… / 55076d77…. `goals_check`
+    (all 12 default parts) passes; part 8 (save mid-season, play 5 weeks, load, play again) now leaves a review's PLACE estimates out
+    of its hash: they read the rivals, whose own training draws from the global dice, so after a load they differ a little (the
+    known caveat of L2b); the training and everything else of the goals match. `season_playtest`, the whole 2026-27 season through
+    the real hub, the same seeds as L3b1: phone 390×844, seed 2, careful: **mid-week stops 0.25 a week (0.29), 39 of 52 weeks
+    straight through (38), clicks a week 2.17 average / median 2 (2.27 / 2)**: the goals offer is no longer a stop (the stops left:
+    3 diagnoses, the 2 plan offers). PC 1280×720, seed 1, player: 0.42 mid-week stops a week (0.35), 31 of 52 weeks straight through
+    (36), 5.27 clicks a week / median 5 (3.94 / 3): the stops are diagnoses (6), sore warnings (5) and the plan offers (2), none from
+    the goals (the health dice differ between runs, as since L1b); the clicks rise because this policy answers every new card (the
+    goals card, each goal at both reviews, the season's end, his "bigger meet" cards) and with the injuries' Next day presses. The
+    autosave 493 / 481 KB (459 / 470). `layout_check` at the five sizes (191 views each, 189 at 844×390; 13 new goals views): no
+    OVERFLOW / SQUEEZED / WRONG; `help_check` 1000 checks in the PC layout (windowed) and passes in the phone layout; the tour (PC
+    1600×900 and phone) looked at: the card, stepped, Set, the Career tab with the stakes, the review and Adjust, the season's end.
+    The user's five save copies (three version 4, two version 5 of 2026-10-25) load in the real game, build the planner, the Season
+    tab and the week report, play 7 days and race with a card (`saves_check -- <copies> 7 real`). The full `run_all_checks`
+    28 / 28 PASS (`storylet_check` part 1b included), no SCRIPT ERROR in any output.
+11. **Seen and left for later:** the three-races levels are not measured (above); the menu can be long for a runner with many
+    entered big meets (at most 9 families); the stakes' sizes are C5 / M1's and wait for playtest 3 / B1 (memory: feel it before
+    tuning); a place estimate at a non-championship meet is the field's average draw, so a weak or strong draw on the day moves it.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

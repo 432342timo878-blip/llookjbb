@@ -1813,36 +1813,56 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 	_check_overflow(hub, "%s goals_none" % tag)
 	if _find_button_prefix(hub, "Ask ") == null:
 		print("WRONG: no button to ask the coach for goals at ", tag)
-	# His offer.
+	# His card on the planner (session L3b2: never a stop): the time, the menu (+ / ✓, ◀ ▶), what met and missed mean, Set.
+	var GC = load("res://scripts/ui/goals_card.gd")
 	gs.offer(year)
+	hub._show("week")
 	hub._refresh_week_ui()
-	hub._show_pending_event()
 	await _frames(6)
-	await _shot("%s_goals_offer" % tag)
-	_check_overflow(hub, "%s goals_offer" % tag)
-	var step := _find_button(hub._event_overlay, "▶")
-	if step:
-		step.pressed.emit()
-		await _frames(6)
-		await _shot("%s_goals_offer_stepped" % tag)
-		_check_overflow(hub, "%s goals_offer_stepped" % tag)
+	if not game.pending_event().is_empty():
+		print("WRONG: the goals card made a stop event at ", tag)
+	var card = _find_script(hub, GC)
+	if card == null:
+		print("WRONG: no goals card on the planner at ", tag)
 	else:
-		print("WRONG: no stepper in the goals offer at ", tag)
-	var scroll = _find_class(hub._event_overlay, "ScrollContainer")
-	if scroll:
-		scroll.scroll_vertical = 100000
+		hub._scroll.ensure_control_visible(card)
 		await _frames(4)
-		await _shot("%s_goals_offer_buttons" % tag)
-		_check_overflow(hub, "%s goals_offer_buttons" % tag)
-	var help_btn = _find_script(hub._event_overlay, load("res://scripts/ui/help_button.gd"))
-	if help_btn:
-		help_btn.pressed.emit()
-		await _frames(6)
-		await _shot("%s_help_goals" % tag)
-		_check_overflow(hub, "%s help_goals" % tag)
-		_close_help_overlays(hub)
-	hub._on_event_answer(game.pending_event().id, "set")
-	await _frames(5)
+		await _shot("%s_goals_card" % tag)
+		_check_overflow(hub, "%s goals_card" % tag)
+		var plus := _find_button(card, "+")
+		if plus:
+			plus.pressed.emit()   # (a third extra: the card says why it can't)
+			await _frames(5)
+			await _shot("%s_goals_card_full" % tag)
+			_check_overflow(hub, "%s goals_card_full" % tag)
+		var tick := _find_button(card, "✓")
+		if tick:
+			tick.pressed.emit()   # (one off)
+			await _frames(5)
+		plus = _find_button(card, "+")
+		if plus:
+			plus.pressed.emit()   # (another on)
+			await _frames(5)
+		var step := _find_button(card, "▶")
+		if step:
+			step.pressed.emit()
+			await _frames(5)
+			await _shot("%s_goals_card_stepped" % tag)
+			_check_overflow(hub, "%s goals_card_stepped" % tag)
+		else:
+			print("WRONG: no stepper on the goals card at ", tag)
+		var set_b := _find_button(card, str(data.goals.card.set))
+		if set_b:
+			hub._scroll.ensure_control_visible(set_b)
+			await _frames(4)
+			await _shot("%s_goals_card_set" % tag)
+			_check_overflow(hub, "%s goals_card_set" % tag)
+			set_b.pressed.emit()
+			await _frames(6)
+		else:
+			print("WRONG: no Set these goals on the card at ", tag)
+	if not gs.has_goals(year):
+		gs.apply(year, {})
 	hub._show("career")
 	await _frames(5)
 	await _shot("%s_goals_overview" % tag)
@@ -1851,7 +1871,39 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 	await _frames(5)
 	await _shot("%s_goals_progress" % tag)
 	_check_overflow(hub, "%s goals_progress" % tag)
-	# A goal met: his message waits in the coach thread; one missed: the season review stops the week.
+	# A review on this week's planner: the goals with his view now, On track / Adjust / Drop; Adjust opens the goal's list.
+	var pack: Dictionary = gs.build(year, false)
+	gs.seasons[year].reviews = {"indoor": {"id": "indoor", "monday": game.week_monday(), "est": pack.est, "time": pack.time, "menu": pack.menu,
+			"goals": gs.open_goals(year).map(func(g): return str(g.id)), "answers": {}}}
+	hub._show("week")
+	hub._refresh_week_ui()
+	await _frames(6)
+	card = _find_script(hub, GC)
+	if card == null:
+		print("WRONG: no review section on the planner at ", tag)
+	else:
+		hub._scroll.ensure_control_visible(card)
+		await _frames(4)
+		await _shot("%s_goals_review" % tag)
+		_check_overflow(hub, "%s goals_review" % tag)
+		var adj := _find_button(card, str(data.goals.reviews.adjust))
+		if adj:
+			adj.pressed.emit()
+			await _frames(5)
+			await _shot("%s_goals_review_adjust" % tag)
+			_check_overflow(hub, "%s goals_review_adjust" % tag)
+		var drop := _find_button(card, str(data.goals.reviews.drop))
+		if drop:
+			drop.pressed.emit()
+			await _frames(6)
+			card = _find_script(hub, GC)
+			if card:
+				hub._scroll.ensure_control_visible(card)
+				await _frames(4)
+			await _shot("%s_goals_review_answered" % tag)
+			_check_overflow(hub, "%s goals_review_answered" % tag)
+	gs.seasons[year].reviews = {}
+	# A goal met: his message waits in the coach thread; the season's end on the planner (no stop).
 	var goals: Array = gs.goals_of(year)
 	if goals.size() >= 2:
 		gs._met(year, goals[0], game.date)
@@ -1862,25 +1914,29 @@ func _goals_views(main: Node, game, data, tag: String) -> void:
 		await _frames(6)
 		await _shot("%s_goal_met_thread" % tag)
 		_check_overflow(hub, "%s goal_met_thread" % tag)
-		gs._review(year)
+		gs.seasons[year].end = {"until": cal.date_key(game.add_days(game.date, 6)), "answer": "", "missed": 1}
+		hub._show("week")
 		hub._refresh_week_ui()
-		hub._show_pending_event()
 		await _frames(6)
-		await _shot("%s_goal_review" % tag)
-		_check_overflow(hub, "%s goal_review" % tag)
-		var e: Dictionary = game.pending_event()
-		if e.is_empty():
-			print("WRONG: no review stop at ", tag)
+		if not game.pending_event().is_empty():
+			print("WRONG: the season's end made a stop event at ", tag)
+		card = _find_script(hub, GC)
+		if card == null:
+			print("WRONG: no season's end on the planner at ", tag)
 		else:
-			hub._on_event_answer(e.id, "toohard")
-			await _frames(6)
-			await _shot("%s_goal_review_result" % tag)
-			_check_overflow(hub, "%s goal_review_result" % tag)
-			hub._end_result_card()
+			hub._scroll.ensure_control_visible(card)
+			await _frames(4)
+			await _shot("%s_goals_end" % tag)
+			_check_overflow(hub, "%s goals_end" % tag)
+			var b := _find_button_prefix(card, "That was")
+			if b:
+				b.pressed.emit()
+				await _frames(6)
 		hub._show("career")
 		await _frames(5)
 		await _shot("%s_goals_overview_done" % tag)
 		_check_overflow(hub, "%s goals_overview_done" % tag)
+		gs.seasons[year].end = {}
 	# A meet he suggests: the mark in the Calendar, then the stop.
 	var meet := {}
 	for m in cal.meets_between(game.add_days(game.date, 10), game.add_days(game.date, 120)):

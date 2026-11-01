@@ -53,6 +53,7 @@ func on_answer(event: Dictionary, choice: String) -> void:
 		"offer":
 			if is_plan(choice):
 				choose(int(event.year), choice)
+			_goals_may_come(int(event.year))   # (session L3b2: the goals card waits for the plan offer's answer)
 		"return":
 			if choice == "accept":
 				Game.season.start_return(Game.int_date(event.start), int(event.days_out))
@@ -111,6 +112,14 @@ func choose(year: int, variant_id: String) -> void:
 	var h := Game.get_system("health") as HealthSystem
 	if h:
 		h.refresh()
+	_goals_may_come(year)
+
+
+## Session L3b2: the season goals' card comes once the season's plan is chosen (SeasonGoals.plan_chosen).
+static func _goals_may_come(year: int) -> void:
+	var gs := Game.get_system("goals") as SeasonGoals
+	if gs != null:
+		gs.plan_chosen(year)
 
 
 ## A new season starts tomorrow: without the player's choice it runs on the coach's ★ of today; its targets are

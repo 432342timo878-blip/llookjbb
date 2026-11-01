@@ -73,15 +73,21 @@ func _run() -> void:
 	_close_overlays(hub)
 	game.answer_event(game.pending_event().id, "later")
 	hub._show_pending_event()
-	# The first day: the coach's offer of the season's goals (session C5), a panel with its own "?".
-	_check(game.advance_day() == game.STOP and game.pending_event().get("kind", "") == "goals", "the first day starts with the coach's offer of the season goals")
-	hub._show_pending_event()
+	# Session L3b2: the season goals are a card on This week (never a stop); its help is This week's "?" ("Season goals" -> season_goals).
+	hub._refresh_week_ui()
+	var goals_card_ok: bool = game.get_system("goals").offers.has(game.get_system("goals").current_year()) and game.pending_event().is_empty()
+	_check(goals_card_ok, "the season goals wait as a card on This week, no stop")
+	_check(data.help.screens.week.sections.any(func(s): return s.get("see", []).has("goals")), "This week's help points to the season goals' topic")
+	hub._show("week")
 	await _frames(4)
-	await _press_help(hub._event_overlay, "goals panel", "season_goals", false)
-	_check(_overlay_on_top(hub), "the goals' help sheet is above the stop-event layer")
-	_close_overlays(hub)
-	game.answer_event(game.pending_event().id, "set")
-	hub._show_pending_event()
+	var card = _find_card(hub)
+	_check(card != null, "the goals card is on This week")
+	if card != null:
+		hub._scroll.ensure_control_visible(card)
+		await _frames(2)
+		await _press_help(card, "goals card", "season_goals", false)
+		_close_overlays(hub)
+	game.get_system("goals").apply(game.get_system("goals").current_year(), {})
 	game.advance_day()
 	hub._refresh_week_ui()
 
@@ -364,6 +370,17 @@ func _press_help(node: Node, where: String, expected: String, in_hub_side: bool,
 	if node.has_method("_close_help"):
 		node._close_help()
 		await _frames(2)
+
+
+## The season goals' card on the planner (GoalsCard, session L3b2), or null.
+func _find_card(node: Node):
+	if node.get_script() == load("res://scripts/ui/goals_card.gd"):
+		return node
+	for c in node.get_children():
+		var f = _find_card(c)
+		if f != null:
+			return f
+	return null
 
 
 func _find_help_button(node: Node):

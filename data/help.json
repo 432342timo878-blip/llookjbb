@@ -3,7 +3,7 @@
  "screens": {
   "week": {
    "title": "This week",
-   "version": 6,
+   "version": 7,
    "sections": [
     {"heading": "Plan, then play", "text": "Every Sunday evening the week stops here. Look at the days, change any you like, answer what waits for you, then press Play week. A normal week is two taps. Next day plays one day at a time."},
     {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Tap the race to see what it did again; a race you scratched says why. Last week in full shows every change and every day."},
@@ -15,19 +15,20 @@
     {"heading": "Your coach's notes", "text": "When your coach would change a day, the day gets a ! and a note says why and what it costs. Make it easy (or Do it) puts the change in. Keep mine keeps your plan: a reason costs nothing. A note you leave costs nothing either.", "see": ["coach_changes"]},
     {"heading": "Waiting for you", "text": "A rare real choice waits here, like a week at the cottage or a friend who feels left out: each answer with its price, the evenings it takes and the friendship. Left open, it takes the answer it names when the week starts. A meet your coach suggests waits here too."},
     {"heading": "School cards", "text": "A race in a week of tests: race and risk the grades, study and scratch, or race and study on the bus. Left open, you race and the tests cost a little. A report card: keep your evenings, or one study evening more or fewer. Left open, nothing changes.", "see": ["habits"]},
+    {"heading": "Season goals", "text": "Your coach's goals card, the two goals checks of the season and the season's end come here, above the other cards. Each says what met and missed mean and what leaving it does. The card asks Play week only in the week its date falls in.", "see": ["goals"]},
     {"heading": "Messages", "text": "Most messages ask nothing: your people's news and how they see your races. They are in People. A quiet line under your coach's line says how many are new and from whom; tap it to read them. They never stop the week."},
     {"heading": "Body", "text": "Tiredness and your most strained body areas as bars. The white tick is the warning line: green is fine, yellow near the line, red at or over it. At the line for a body area it starts to feel sore. Tap a bar for what raised it, day by day, and what helps.", "see": ["fatigue", "soreness"]},
     {"heading": "Form and mind", "text": "Race form says how you would race today, with how sharp and how fresh you are. Your confidence, motivation and stress are words with what they do now. Tap one for its number, the news that moved it and where last Sunday pulled it.", "see": ["form", "moods"]},
-    {"heading": "The four facts", "text": "Load: this week against your normal week. Plan risk: how risky the week is for your body now. The next race you entered, and your season goal with how far you are from it.", "see": ["load_vs_normal", "plan_risk"]},
+    {"heading": "The four facts", "text": "Load: this week against your normal week. Plan risk: how risky the week is for your body now. The next race you entered, and your season goal with how far you are from it: tap it for what met and missed mean.", "see": ["load_vs_normal", "plan_risk"]},
     {"heading": "Play week", "text": "It plays to Sunday night and stops early only for real things: a race, a sore warning, an injury or illness, a matriculation exam on a race week left open. With choices still waiting it asks once: Show me, or Play anyway."},
     {"heading": "Saving", "text": "The game saves itself after every day. The menu (top right) has Save, an extra copy you can load later, and Main menu. On a computer, Ctrl+S saves too."}
    ]
   },
   "career": {
    "title": "Career",
-   "version": 1,
+   "version": 2,
    "sections": [
-    {"heading": "Season goals", "text": "At the top: the three goals you and your coach set for the season, with how you stand. ✓ means met, ✗ missed. With none yet, you can ask your coach for goals.", "see": ["standards"]},
+    {"heading": "Season goals", "text": "At the top: the goals you and your coach set for the season, with how you stand and what met or missed means. ✓ met (with what it opened), ✗ missed, – dropped. With none yet, ask your coach: {his} card comes on This week.", "see": ["goals", "standards"]},
     {"heading": "You", "text": "Your height, weight, how early or late you develop, your personal best and your last races. On a phone the Rankings button is at the top of this tab."},
     {"heading": "Attributes", "text": "Your abilities on a scale of 1 to 20. Training changes them on Sunday nights; growing up helps for a few years around your growth spurt. Yearly gains shrink from about 16 (girls 15) as you near your limit. Arrows show recent rises and falls; tap one to see what it does."},
     {"heading": "Progress by month", "text": "Opens a record of your attributes and best time at the end of every month, so you can see how fast you are really improving."}
@@ -108,10 +109,10 @@
   },
   "report": {
    "title": "Last week in full",
-   "version": 5,
+   "version": 6,
    "sections": [
     {"heading": "Where it is", "text": "This page opens from Last week in full on This week; Back takes you there again. This week's left column is the short version: only what moved enough to matter."},
-    {"heading": "Every change", "text": "Last week's sessions, races, plan, load and tiredness, then every change with its cause: attributes (even +0.01), the body, your moods, the people, tests, your evenings and invitations. Tap a row for the exact numbers. Tap a race to open its card.", "see": ["causes"]},
+    {"heading": "Every change", "text": "Last week's sessions, races, plan, load and tiredness, then every change with its cause: attributes (even +0.01), the body, season goals set, met, missed, changed or dropped, your moods, the people, tests, your evenings and invitations. Tap a row for the exact numbers. Tap a race to open its card.", "see": ["causes"]},
     {"heading": "Attributes", "text": "Training adds up over the week and counts on Sunday night. Each session gets its share of what the week trained, the race too. Growing up adds a little; an attribute you don't train fades. Moving to the next whole number is marked.", "see": ["causes"]},
     {"heading": "The days", "text": "Day by day opens every day: what you did, how tired you were and the load, sore areas, injuries, school tests and anything that happened. This week so far is at the bottom."}
    ]
@@ -295,15 +296,17 @@
   },
   "season_goals": {
    "title": "Season goals",
-   "version": 3,
+   "version": 4,
    "sections": [
-    {"heading": "Three goals", "text": "With {his} plan for a season your coach offers three goals: a time you run, a milestone (a real limit or a place at a meet) and a habit counted honestly (warnings you respect, or races you run). You pick the level of each."},
-    {"heading": "Choosing a level", "text": "The arrows step through the levels, from Safe to Dream. The star marks the level {he} would pick; it follows how demanding the coach is. The words say how likely it is, in {his} eyes."},
+    {"heading": "Agreed on This week", "text": "Your coach's goals card comes on This week: when a career starts and when you choose next season's plan. Pick a time and any two more: two milestones, or a milestone and a habit. Left open, {his} picks are set on the date it names. It never stops the week."},
+    {"heading": "Choosing", "text": "+ adds a goal, ✓ takes it off. The arrows step through its levels, from Safe to Dream. The star marks the level {he} would pick; the words say how likely it is, in {his} eyes."},
+    {"heading": "What can be a goal", "text": "A time; a real limit (the SM limit, the Team Finland criteria, Kalevan kisat); a place at your targets, at a national meet you entered or at the district championships; three races under a time; a habit counted honestly. Youth races run in timed sections: the top 8 is the final.", "see": ["standards"]},
     {"heading": "{His} estimate", "text": "{He} {v:plays|play} your plan forward and {v:guesses|guess} what you can run at the season's peak. A coach who judges you well sets goals that fit. A poor judge may set goals that are too easy or too hard, and you won't see it until the season shows.", "see": ["ask_coach"]},
-    {"heading": "Real limits", "text": "A milestone can be a real limit of the Finnish Athletics Federation: the SM limit, the Team Finland criteria or the Kalevan kisat limit.", "see": ["standards"]},
-    {"heading": "When a goal is met", "text": "It counts as soon as you reach it: {he} {v:writes|write} to you and your trust in {him} grows, a little more if you chose a level above {his}. What is still open is settled when the season ends."},
-    {"heading": "When it is missed", "text": "A missed goal never costs you trust. {He} {v:looks|look} back with you after the meet or at the season's end. What you answer tells {him} how to set next season's goals: the same, higher or lower."},
-    {"heading": "Where you see them", "text": "On the Career tab and the Progress page, with how you stand; This week shows the time goal. If you decided later, ask your coach for goals on the Career tab."}
+    {"heading": "What met means", "text": "A goal counts as soon as you reach it: trust in {him} grows (more above {his} star), confidence and motivation rise. A Stretch or Dream goal met makes {his} next goals aim higher. A milestone met: {he} {v:puts|put} you up for a bigger meet, yours to accept."},
+    {"heading": "What missed costs", "text": "Confidence dips a little; never trust. Selections, camps and reputation come later in the game, so no goal promises them yet."},
+    {"heading": "Two checks", "text": "The week after your indoor target and the juhannus week, a goals check sits on This week: On track, Adjust (easier, harder or another milestone; the stakes follow the new level) or Drop (no cost). Left open, nothing changes."},
+    {"heading": "The season's end", "text": "On the new season's first This week: each goal ✓ or ✗ with what it opened, and how you want {his} next goals: the same, higher or lower. Left open, the same."},
+    {"heading": "Where you see them", "text": "On This week (tap the goal tile for what it means), on the Career tab with what each opened, and as Season goals rows in the week report."}
    ]
   },
   "dev_menu": {
@@ -483,6 +486,15 @@
     {"heading": "Targets ◆", "text": "The meets your season builds up to, at most three. Your coach picks the main indoor and outdoor championships for you. The first indoor and first outdoor target decide when the phases fall; a third one only gets a taper."},
     {"heading": "Changing them", "text": "Add or remove targets in the Season tab, or with Make target in the Calendar. Making a meet a target enters it when you can; withdrawing from it takes it off the list."},
     {"heading": "The taper", "text": "The ten days before a target: fewer sessions and no long runs so you arrive fresh, one sharp session three days out to keep your speed, then a rest day and an easy day."}
+   ]
+  },
+  "goals": {
+   "title": "Season goals",
+   "version": 1,
+   "sections": [
+    {"heading": "Agreed with your coach", "text": "A time and any two more: two milestones, or a milestone and a habit. Your coach's card comes on This week; left open, {his} picks are set on the date it names. Two checks in the season let you keep, change or drop a goal."},
+    {"heading": "What met means", "text": "Trust in your coach grows (more above {his} star), confidence and motivation rise. A Stretch or Dream goal met makes {his} next goals aim higher; a milestone met makes {him} put you up for a bigger meet, yours to accept."},
+    {"heading": "What missed costs", "text": "Confidence dips a little; never trust. Dropping a goal costs nothing. Selections, camps and reputation come later in the game, so no goal promises them yet."}
    ]
   },
   "standards": {

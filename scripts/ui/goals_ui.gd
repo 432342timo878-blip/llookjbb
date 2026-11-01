@@ -1,9 +1,10 @@
 class_name GoalsUI
 extends RefCounted
-## The season goals where the player looks at them (GDD 4.9.2 "Season goals with times", session C5): a panel on the Overview (the
+## The season goals where the player looks at them (GDD 4.9.2 "Season goals with times", session C5): a panel on the Career tab (the
 ## goals of this season: a mark, what each asks, how it stands; or, with none set, a button to ask the coach for them) and a section
-## on the Progress page (this season's goals and a line for each earlier season). Reading only, but for the button, which asks
-## SeasonGoals to post the offer. Texts: data/goals.json ui.
+## on the Progress page (this season's goals and a line for each earlier season). Session L3b2: every goal also says what met and
+## missed mean (open) or what it opened (met), and a review's change; the button makes the coach's card on This week (GoalsCard).
+## Reading only, but for the button. Texts: data/goals.json ui.
 
 
 ## Is there a goals system to show (the app shell switched it on)?
@@ -26,6 +27,11 @@ static func overview_panel(on_ask: Callable) -> Control:
 	if gs.has_goals(year):
 		for g in gs.goals_of(year):
 			box.add_child(goal_row(gs, g, year))
+	elif gs.offers.has(year):   # (session L3b2: the card waits on the planner)
+		box.add_child(UIKit.wrapped(str(ui.ask_card)))
+		var open := UIKit.button(str(ui.open_card), false, 220)
+		open.pressed.connect(func(): on_ask.call())
+		box.add_child(open)
 	else:
 		box.add_child(UIKit.wrapped(str(ui.overview_none)))
 		var cs := Game.get_system("coach") as CoachSystem
@@ -44,7 +50,7 @@ static func overview_panel(on_ask: Callable) -> Control:
 static func goal_row(gs: SeasonGoals, g: Dictionary, year: int) -> Control:
 	var ui: Dictionary = Data.goals.ui
 	var row := UIKit.hbox(10)
-	var mark := UIKit.label(str(ui.marks[str(g.status)]), "SubheadingLabel")
+	var mark := UIKit.label(str(ui.marks.get(str(g.status), "–")), "SubheadingLabel")
 	mark.custom_minimum_size.x = 24
 	mark.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	match str(g.status):
@@ -63,8 +69,26 @@ static func goal_row(gs: SeasonGoals, g: Dictionary, year: int) -> Control:
 	var note := UIKit.wrapped(gs.progress_text(g, year), "MutedLabel")
 	note.custom_minimum_size.x = 120
 	col.add_child(note)
+	# (session L3b2: what met / missed means where the goal is shown; a met one says what it opened; a review's change)
+	var stakes := ""
+	match str(g.status):
+		"open":
+			stakes = SeasonGoals.stakes_text(g)
+		"met":
+			stakes = SeasonGoals.opened_text(g) if g.has("opened") else ""
+	for h in g.get("history", []):
+		if str(h.what) == "adjusted" and str(h.was) != "":
+			col.add_child(_muted(str(ui.adjusted_from).format({"goal": str(h.was)})))
+	if stakes != "":
+		col.add_child(_muted(stakes))
 	row.add_child(col)
 	return row
+
+
+static func _muted(text: String) -> Label:
+	var l := UIKit.wrapped(CoachSystem.words(text), "WhyLabel")
+	l.custom_minimum_size.x = 120
+	return l
 
 
 ## The Progress page's section: this season's goals in full, an earlier season as one line (and its goals under it).

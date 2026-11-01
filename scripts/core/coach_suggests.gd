@@ -214,6 +214,55 @@ func _suggest(best: Dictionary, ctx: Dictionary, mode: String, cp: CoachProposal
 				ms.coach_says(text)
 
 
+## Session L3b2: a met milestone goal's stake: he puts you up for one bigger meet, the nearest national / international meet of the
+## season you are not in (an international one first), as a target when the season has room. Not judged by his verdict and outside
+## his monthly count: it is the reward, and the player still decides (a planner card with Yes / No thanks, waiting until the end of
+## next week, and the Calendar's mark). The text says every meet is open to all until selections come (G3 / K1). {} with none.
+func put_up(goal_text: String) -> Dictionary:
+	var a := Game.athlete
+	var c := cfg()
+	var best := {}
+	var to := Game.add_days(SeasonPlan.season_start(SeasonPlan.year_of(Game.date) + 1), -1)
+	for m in Calendar.meets_between(Game.add_days(Game.date, int(c.min_ahead_days)), to):
+		if str(m.level) not in c.target.levels or str(m.key) in Game.entries or str(m.key) in declined \
+				or not Calendar.can_enter(a, m, Game.date).ok or not _open_for(str(m.key), "").is_empty():
+			continue
+		if best.is_empty() or (str(m.level) == "international" and str(best.level) != "international"):
+			best = m
+	if best.is_empty():
+		return {}
+	var year := SeasonPlan.year_of(best.date)
+	var room: bool = Game.season.mode == SeasonPlan.PHASES and Game.season.targets(year).size() < int(Data.periodization.season.max_targets)
+	var cp := Game.get_system("proposals") as CoachProposals
+	var mode := cp.setting() if cp != null else "ask"
+	var s := {"id": "s%d" % _next, "day": StoryletSystem.day_no(Game.date), "date": Game.date.duplicate(), "kind": "target" if room else "meet",
+			"meet": str(best.key), "meet_name": str(best.name), "meet_date": best.date.duplicate(), "reasons": ["earned"],
+			"verdict": "earned", "said": "", "status": "", "moment": "", "mode": mode, "goal": goal_text}
+	_next += 1
+	list.append(s)
+	while list.size() > int(c.keep):
+		list.pop_front()
+	fired.append(s)
+	var voice := Coaches.id_of(a)
+	var fill := _fill(best, s.reasons)
+	fill.goal = goal_text
+	var text := " ".join([str(c.intro.get(voice, c.intro.calm)), str(c.reason.earned).format(fill), str(c.earned_note),
+			str(c.get("ask_end" if mode == "ask" else "noticed_end")[s.kind])])
+	var ms := Game.get_system("moments") as StoryletSystem
+	if mode == "ask":
+		s.status = "asked"
+		if ms != null:
+			var m := ms.post_custom("suggest", s.id, text, _replies(s), false, {"planner": true})
+			s.moment = str(m.get("id", ""))
+			if not m.is_empty():   # (a goal is met on a race evening: the card waits on next week's planner too)
+				m.expires = StoryletSystem.day_no(Game.date) - Calendar.weekday(Game.date) + 13
+	else:
+		s.status = "noticed"
+		if ms != null:
+			ms.coach_says(text)
+	return s
+
+
 ## His reason (his verdict's) without the opening word.
 static func _clean(j: Dictionary) -> String:
 	return CoachProposals._reason(j)
@@ -324,7 +373,11 @@ func calendar_text(s: Dictionary) -> String:
 	if s.is_empty():
 		return ""
 	var m := Calendar.get_meet(str(s.meet))
-	return str(cfg().reason[str(s.reasons[0])]).format(_fill(m, s.reasons)) if not m.is_empty() else ""
+	if m.is_empty():
+		return ""
+	var fill := _fill(m, s.reasons)
+	fill.goal = str(s.get("goal", ""))   # (session L3b2: a met goal's "earned" suggestion names the goal)
+	return str(cfg().reason[str(s.reasons[0])]).format(fill)
 
 
 # --- Save / load ------------------------------------------------------------------------------------------------------------------

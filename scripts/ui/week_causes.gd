@@ -9,7 +9,7 @@ extends RefCounted
 ## strain_log, MindSystem's causes + drift, the people's relationship logs (StoryletSystem._note_relation), the coach's trust
 ## causes + last_drift, the day log (life_parts, loads), SchoolSystem.tests_log, the moments (invitations). Texts: data/causes.json.
 
-const GROUPS := {"injury": 0, "body": 1, "attr": 2, "mood": 3, "person": 4, "trust": 4, "test": 5, "slot": 6, "mental": 6, "invite": 7, "tired": 8}
+const GROUPS := {"injury": 0, "body": 1, "attr": 2, "goal": 3, "mood": 3, "person": 4, "trust": 4, "test": 5, "slot": 6, "mental": 6, "invite": 7, "tired": 8}
 
 
 static func cfg() -> Dictionary:
@@ -25,6 +25,7 @@ static func rows(r: Dictionary) -> Array:
 	out.append_array(injury_rows(r))
 	out.append_array(body_rows(r))
 	out.append_array(attr_rows(r))
+	out.append_array(goal_rows(r))
 	out.append_array(mood_rows(r))
 	out.append_array(people_rows(r))
 	out.append_array(test_rows(r))
@@ -668,6 +669,43 @@ static func trust_row(r: Dictionary) -> Dictionary:
 	var w := cs.trust_word()
 	return _row("trust", "trust", "message-circle", str(c.trust_title).format({"name": first}),
 			"%s %s" % [w, _arrow(total)] if absf(total) >= 0.5 else w, "good" if total > 0.0 else "bad", cause, lines, false, absf(total))
+
+
+# --- Season goals (session L3b2) --------------------------------------------------------------------------------------------------
+
+## What the season goals did in the week (SeasonGoals.news): set, met, missed, changed, dropped; the tap = what each did, with the
+## numbers recorded when it happened (trust, confidence, motivation, next season's ★, the bigger meet he put you up for).
+static func goal_rows(r: Dictionary) -> Array:
+	var out := []
+	var gs := SeasonGoals.sys()
+	if gs == null or not SeasonGoals.enabled:
+		return out
+	var lg: Dictionary = Data.goals.log
+	var marks := {"met": "✓", "missed": "✗", "dropped": "–", "adjusted": "↺"}
+	for i in gs.news.size():
+		var e: Dictionary = gs.news[i]
+		if not _in_week(r, e.date):
+			continue
+		var what := str(e.what)
+		var lines := []
+		var cause := str(e.get("label", ""))
+		if what in ["set", "defaulted"]:
+			var goals: Array = gs.goals_of(int(e.year))
+			cause = str(lg.cause_set).format({"n": goals.size(), "season": SeasonGoals.season_label(int(e.year))})
+			for g in goals:
+				lines.append("· " + SeasonGoals.goal_text(g, int(e.year)))
+		elif str(e.goal) != "":
+			lines.append(str(e.goal))
+		for x in e.effects:
+			var t := SeasonGoals.effect_text(x) if str(x.kind) != "was" else str(Data.goals.ui.adjusted_from).format({"goal": str(x.goal)})
+			if t != "":
+				lines.append(t)
+		if what == "dropped":
+			lines.append(str(lg.nothing))
+		var tone := "good" if what == "met" else ("bad" if what == "missed" else "plain")
+		out.append(_row("goal", "goal%d" % i, "crosshair", CoachSystem.words(str(lg[what])),
+				str(marks.get(what, SeasonGoals.season_label(int(e.year)))), tone, cause, lines, true, 1.0 if what == "met" else 0.5))
+	return out
 
 
 # --- School, the slots, invitations ---------------------------------------------------------------------------------------------

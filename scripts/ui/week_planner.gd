@@ -115,7 +115,17 @@ static func open_choices() -> Array:
 	var clash := _clash()
 	if not clash.is_empty():
 		out.append({"kind": "clash", "card": clash})
+	var goals := _goals_offer()   # (session L3b2: the goals card counts only in the week its date falls in)
+	if SeasonGoals.card_due(goals):
+		out.append({"kind": "goals", "card": goals})
 	return out
+
+
+## The season goals' card waiting on the planner ({} without one or with the goals off).
+static func _goals_offer() -> Dictionary:
+	if not GoalsUI.available():
+		return {}
+	return SeasonGoals.sys().card()
 
 
 ## "1 choice waiting" / "3 choices waiting" / "".
@@ -766,7 +776,35 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 				grid.add_child(_moment_card(m))
 	for c in grid.get_children():
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	return grid
+	var goals := _goal_cards()   # (session L3b2: the goals card, a review, the season's end: full width above the others)
+	if goals.is_empty():
+		return grid
+	var outer := UIKit.vbox(12)
+	for g in goals:
+		g.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		g.changed.connect(func(): changed.emit())
+		outer.add_child(g)
+	if grid.get_child_count() > 0:
+		outer.add_child(grid)
+	return outer
+
+
+## The season goals' cards of this week: the offer, a review, the season's end (GoalsCard).
+static func _goal_cards() -> Array:
+	var out := []
+	if not GoalsUI.available():
+		return out
+	var gs := SeasonGoals.sys()
+	var end := gs.end_card()
+	if not end.is_empty():
+		out.append(GoalsCard.season_end(end))
+	var pack := gs.card()
+	if not pack.is_empty():
+		out.append(GoalsCard.offer(pack))
+	var rc := gs.review_card()
+	if not rc.is_empty():
+		out.append(GoalsCard.review(rc))
+	return out
 
 
 ## The coach's note on a day: title, his reason, Make it easy / Keep mine. Keep mine shows the veto reasons (a reason costs nothing,
@@ -974,8 +1012,10 @@ static func _goal_tile() -> Control:
 	for x in goals:
 		if str(x.get("kind", "")) == "time":
 			g = x
-	var value := Calendar.format_time(float(g.time)) if g.has("time") else str(Data.goals.ui.marks[str(g.status)])
-	return _tile(str(ui().goal), value, Palette.TEXT, gs.progress_text(g, year))
+	var value := Calendar.format_time(float(g.time)) if g.has("time") else str(Data.goals.ui.marks.get(str(g.status), "–"))
+	# (session L3b2: a tap says what met and missed mean, so the tile never shows a goal without its stakes)
+	var why := SeasonGoals.stakes_text(g) if str(g.status) == "open" else (SeasonGoals.opened_text(g) if str(g.status) == "met" else "")
+	return UIKit.tap_to_explain(_tile(str(ui().goal), value, Palette.TEXT, gs.progress_text(g, year)), why)
 
 
 # --- Body and mind ---------------------------------------------------------------------------------------------------------------
