@@ -199,3 +199,22 @@ there (the planner, causes visible, people as state, depth, races, the look, the
 | Clicking my own coach in Find a coach: no "back to the list" | Confirmed: the head coach's page had only Messages (PC) or back to People (phone). | **fixed now**: "Back to Find a coach" beside Messages |
 | Answering family / friends with 2-3 options feels stupid; I never go to People, even for the coach; they don't show on This week | Exactly what L3a changed (built after this playtest): 90 messages ask nothing, the coach's question topics are gone, the real choices (invitations, story beats) sit on This week with their price, and a line there says who wrote. | **L3a** (try it in playtest 3) |
 | Racing dynamics: check that everything works 100 % and is logical | | **R6–R7**: a race-logic audit as the race session's first part |
+
+## Season playtest 3 (the user's own, after K1 on 2026-11-01): notes go here
+
+Play 6-8 weeks of the new loop (it is enough) and write down what you feel, in your own words, under the heading below. Things the game
+asks you to look at, but write anything:
+
+- **A week:** does it feel like plan -> play -> see? How many clicks, how many stops that you did not want? (L3a, L3b1 and L3b2 cut a lot: do
+  the quiet feed, the goals card and the planner's notes feel right?)
+- **The Career tab (K1):** Now (the next big thing, the long path, your name, your goals), Results (every race; tap one that has a "›"),
+  Timeline (the milestones), Seasons. Is anything missing, wrong or boring? Is "your name" going up too fast or too slow? (The steps 1.5 / 4 /
+  9 / 20 / 45 are a first guess.)
+- **The strap** at the top of This week ("in 109 days - Nuorten SM - limit 2:35.00"): useful, or in the way?
+- **The goals** (L3b2): the card on the planner, what met and missed open, the two reviews.
+- **The season's end** (only if you play to 31 October, or use the Dev menu to jump there): the strap "Season ... is over", the review page,
+  the coach's verdict. Does it read like the story of your season?
+- **Sizes of things** (stakes of the goals, the name's effects, the coach's offers): note what feels too big or too small; they are tuned after this.
+
+### Notes (write here)
+

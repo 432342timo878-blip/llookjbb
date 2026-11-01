@@ -41,6 +41,7 @@ var habits: Dictionary = {}            # data/habits.json: the free-time slots, 
 var recap: Dictionary = {}             # data/race_recap.json: the "what this race did" card and the scratch card (session L2a)
 var reputation: Dictionary = {}        # data/reputation.json: the reputation scale, its points and what it moves (session K1a)
 var career: Dictionary = {}            # data/career.json: the Career tab's milestones, records, long path and texts (session K1a)
+var season_review: Dictionary = {}     # data/season_review.json: the season review chapter's texts and the coach's verdicts (session K1b)
 var causes: Dictionary = {}            # data/causes.json: the week report's causes and the taps on body, moods and people (session L2b)
 ## Every storylet of data/storylets/*.json (files sorted by name), each with "file" and "test" (the file's test flag) added.
 var storylets: Array = []
@@ -92,6 +93,7 @@ func _ready() -> void:
 	recap = _load("res://data/race_recap.json")
 	reputation = _load("res://data/reputation.json")
 	career = _load("res://data/career.json")
+	season_review = _load("res://data/season_review.json")
 	causes = _load("res://data/causes.json")
 	storylets = []
 	var files := Array(DirAccess.get_files_at("res://data/storylets"))

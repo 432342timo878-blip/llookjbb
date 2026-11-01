@@ -26,6 +26,7 @@ signal moment_answered(e: Dictionary)   # a waiting moment was answered: the hub
 signal messages_pressed         # session L3a: the quiet line "3 new messages · Mum, Eino" opens the People tab
 signal school_pressed           # session L3b1: the report card's "See every grade" opens the School tab
 signal career_pressed           # session K1a: the next-big-thing strap opens the Career tab
+signal review_pressed(year: int)   # session K1b: the season review's strap opens the chapter
 
 const PC_LEFT := 268.0
 const PC_RIGHT := 290.0
@@ -89,6 +90,9 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	var review := _review_strap()
+	if review != null:
+		add_child(review)
 	var strap := _next_big_strap()
 	if strap != null:
 		add_child(strap)
@@ -96,6 +100,29 @@ func _ready() -> void:
 		_build_phone()
 	else:
 		_build_pc()
+
+
+## Session K1b: the season that has just ended, as a card on the first planner of the new season: a line and one button to the review
+## chapter (never a stop and never a choice waiting; it goes when the review is opened or after four weeks). null without one.
+func _review_strap() -> Control:
+	var cs := CareerSystem.sys()
+	if cs == null:
+		return null
+	var r := cs.due_review()
+	if r.is_empty():
+		return null
+	var u: Dictionary = Data.season_review.ui
+	var box := UIKit.vbox(6)
+	box.add_child(UIKit.label(str(u.strap_title).format({"season": str(r.label)}), "CardHeading"))
+	var text := UIKit.wrapped(str(u.strap_text), "BodyLabel")
+	text.custom_minimum_size.x = 120
+	box.add_child(text)
+	var go := UIKit.button(str(u.strap_button), true, 0.0)
+	go.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var year: int = int(r.year)
+	go.pressed.connect(func(): review_pressed.emit(year))
+	box.add_child(go)
+	return UIKit.alert_panel(box, Palette.ACCENT, 14)
 
 
 ## Session K1a: "the next big thing" as a slim strap above the planner (one line: the meet, the countdown, what you need); a tap opens the

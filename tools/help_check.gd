@@ -132,6 +132,15 @@ func _run() -> void:
 	hub._show("school")   # (session L3b1: its own tab)
 	await _frames(3)
 	await _press_help(hub, "hub school page", "school", true)
+	# The season review chapter (session K1b): the header "?" opens its help (a review made from this career's days so far).
+	var career_sys = game.get_system("career")
+	career_sys.reviews[2026] = load("res://scripts/core/season_review.gd").build(2026, career_sys, game.date)
+	hub._review_year = 2026
+	hub._review_back = "career"
+	hub._show("review")
+	await _frames(3)
+	await _press_help(hub, "hub season review", "review", true)
+	career_sys.reviews.erase(2026)
 	hub._people_page = ""
 	hub._phase_open = "spring_base"
 	hub._show("training")

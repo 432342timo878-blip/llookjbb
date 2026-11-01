@@ -4866,6 +4866,104 @@ Built in one session (no split was needed).
     entered big meets (at most 9 families); the stakes' sizes are C5 / M1's and wait for playtest 3 / B1 (memory: feel it before
     tuning); a place estimate at a non-championship meet is the field's average draw, so a weak or strong draw on the day moves it.
 
+#### K1's questions (user, 2026-11-01; each the recommended option except where marked)
+
+1. **Reputation scale: six steps, from results, with a slow fade.** Unknown → Known at the club → One to watch → A local name → A
+   national name → An international name. Points from each race (the meet's level × your place in the field × your age, a quarter of
+   the meet's weight for a personal best; a real limit reached and a Finnish record add points once), summed over about two seasons
+   and fading linearly, so a runner who stops racing slowly loses the name. Shown with a tap for the numbers (every race's points and
+   parts). Steps, weights and the reasoning for each number: `data/reputation.json` (the numbers 1.5 / 4 / 9 / 20 / 45 are a first guess,
+   measured and tuned after playtest 3: memory "feel it before tuning").
+2. **What a name may decide (user: the three recommended, nothing more):** the coach market's offers and who sees you (a reason "he has
+   heard of you" and a larger weekly chance for the coaches who do not see you at the track), the commentators' words (read-only filler
+   lines; `race.gd` and the races hash untouched) and the coach's bigger-meet suggestions (his bar goes down per step). No camps, selections or
+   sponsors (G3). All behind `GameConfig` "reputation" (real on, lab off).
+3. **The timeline (user: all four groups, including records):** times and places (first race / win / medal place, first top 8 at a
+   national meet, the national championships, the first time under each round time), standards and rankings (each real limit met,
+   the first time in the top 10 / 5 / 3 / 1 of the season list, the goals met), life and coaches (coach changes, the school path, moving,
+   a long injury and the comeback, reputation steps) and **records** (user's pick over leaving them out): times only with a source and no
+   name below senior level. **Found while building: the official Finnish age-class tables could not be read** (the SUL site refused the
+   connection, tilastopaja's class tabs have no address the fetch could follow), so the data file holds the senior outdoor and indoor
+   800 m records (tilastopaja, read 2026-11-01) and the boys-14 record (an MTV Uutiset story of a SUL release), and every other class is
+   left for when its page is read; the milestone and the points use a class only when it has a row.
+4. **The next big thing: a slim strap on This week and the full block on Career.** A one-line strap at the top of the planner on PC and
+   phone ("in 109 days · Nuorten SM-kilpailut · limit 2:35.00"; a tap opens Career), the full block (the meet, the countdown, what you
+   need, your goal at that meet, your season best) and **the long path** at the top of the Career tab. The long path is built only from
+   what the game has: the application to upper secondary school (with the sport points and the next anchor), the real limits of your ages
+   for three seasons (the gap, and how soon at a typical yearly gain: "a rough pace, not a promise") and the school years.
+5. **The season review chapter: a strap on the planner and one reading page, kept.** On the first planner of the new season a card "Season
+   2026–27 is over" with one button opens the page (six blocks: the season in numbers, what grew, your goals with what they opened, the
+   season list, the best race with its card, the coach's verdict, what changed in your life; it ends on the next season's targets and a
+   button to This week where the goals card and the plan wait). The snapshot is made on 31 October and saved (`CareerSystem.reviews`):
+   **Career → Seasons** lists every season and reopens any. Never a stop and never a choice waiting. L3b2's end-of-season planner section
+   (the goals ✓ / ✗ and its replies) stays as it is, below the strap.
+6. **Older saves: rebuild what the game really knows.** The results (timeline, reputation, PB chart), the healed injuries and the goals met
+   rebuild the history; what the game never recorded (earlier coach changes, moves, earlier season lists) starts at the load date and
+   the timeline says "recorded from <date>". Save version 8.
+7. **K1 is split** (Claude's call, as agreed for oversized steps): **K1a** = reputation + history + the Career tab + the next big thing +
+   the long path + records; **K1b** = the season review chapter + Career → Seasons. Both built in one session.
+
+#### Built (step K1a, 2026-11-01): the history, the reputation, the Career tab, the next big thing, the long path
+
+1. **`CareerSystem`** (GameSystem `career`, last in `Game.systems`; reads and records, changes nothing): the new results of a day become
+   milestones and a reputation event (`rep_events`: the points with their parts: level ×, place ×, age ×, the PB's quarter; a real limit
+   and a record are their own events); the other systems are polled (head coach, school path, town, healed injuries, goals met); the
+   player's place on the season list is logged at each month's end (`rank_log`, the rankings history). `found` keeps a milestone from
+   being found twice; a first race of the career shows no "under 2:30" line. Texts and the list of kinds: `data/career.json`.
+2. **Reputation** (`data/reputation.json`, every number with its reasoning): `score(date)`, `step_of`, `reputation(date)` with the rows
+   that still count and their weight now. The effects read `CareerSystem.effect_step()` (0 unless the option is on): `CoachMarket` (a reason
+   `name`: 0 / 0 / 0.6 / 1.2 / 2.0 / 3.0 points by step, and ×(1 + 0.12 × step) on the weekly chance of the regional, academy, national, remote
+   and elite coaches), `CoachSuggests._bar` (−0.02 per step, floor 0.02, on the bigger-meet bar), `RaceCommentary` (`p_rep_text`, four filler
+   lines; only the words). With the option off nothing changes: `lab`, the fingerprints.
+3. **Records:** `data/career.json records` (see "K1's questions" 3).
+4. **`NextBig`** and **the Career tab** (`CareerView`: Now / Results / Timeline / Seasons / Profile): Now = the next big thing, the long path,
+   your name (the step, the bar to the next, a tap for every race's points and what a name does), the season goals (as L3b2 left them,
+   stakes and "Was: …"), the PB over time (`PbChart`) and the season list log; Results = every meet day newest first with filters (season,
+   level, meet name) and a tap that opens the card where one is kept (the last 40); Timeline = the milestones by season with the
+   "recorded from" line; Profile = the old page (attributes, body, recent races, Progress by month, Rankings on a phone). The hub's race card
+   page goes back to the tab it came from (`_card_back`).
+5. **Save version 8.** `systems.career` is new; a save without it is rebuilt in `after_load` (the results, the healed injuries, the goals
+   met; `since` = the load date). The user's saves (versions 4 and 5) load, rebuild and build every Career page (`saves_check`).
+6. **Help:** `career` v4 (five pages, the next big thing, the long path, your name, results, timeline, seasons), the new topic `reputation`.
+7. **Checks:** `tools/reputation_check.gd` (in `run_all_checks`: the data, the points and their fade, the milestones, save / load, an older
+   save rebuilt, the effects following the option and acting in the market, the season review); `saves_check` (the history and the pages of the
+   user's copies); `layout_check` (the pages at the five sizes); `career_shot` (screenshots); `f1_check`'s jump test now jumps again until a
+   stop was answered (a change in who writes to the athlete moved the dice so that 70 days had none: the check's own assumption, not a bug).
+8. **Proven and measured (K1a + K1b):** fingerprints identical: `training_balance -- 0` coach row 206.798298350 / 14.102831594 /
+   1226.006524079 and all 8 parts "identical to part 1: YES", races 73182f4e…, school 42fd3635… / 01dd20d7… / 55076d77… (the lab has the
+   reputation's effects off; the history is recorded in the lab too and changes nothing). The full `run_all_checks` 29 / 29 PASS (the new
+   `reputation_check` included; `help_check` needed the `review` screen opened by a "?", added), stderr read (no SCRIPT ERROR). `layout_check`
+   at the five sizes: no OVERFLOW / SQUEEZED / WRONG (199 views at 390×844 and 720×1280; the phone's five page toggles overflowed 480 px
+   until they got a 14 px word and 3 px padding). `saves_check -- <the user's autosave + save copies> 7 real` (versions 4 and 5): they load,
+   rebuild the history ("recorded from"), build every Career page, play 7 days and race with a card. Screenshots looked at (PC 1280×720
+   and phone 390×844: the strap, Now, the name's numbers, Results, Timeline, Seasons, the review). **Season playtest**, the whole
+   2026-27 season through the real hub, the same seeds as L3b2: phone 390×844, seed 2, careful: **0.25 mid-week stops a week (L3b2 0.25),
+   39 of 52 weeks straight through (39), 2.06 clicks a week / median 2 (2.17 / 2)**; PC 1280×720, seed 1, player: **0.35 stops a week
+   (0.42), 35 of 52 straight through (31), 4.29 clicks a week / median 4 (5.27 / 5)** (the health dice differ between runs, as since L1b;
+   nothing K1 added stops or asks: the straps are not choices). Autosave 494 / 502 KB (493 / 481). **Reputation, first measure:** a
+   15-year-old girl at 2:43 who raced 10 times in the season ends it as "One to watch" (score 4.1; Known at the club after her
+   first national championships): the first steps feel right; a strong runner's and the upper steps are NOT measured (wait for playtest 3).
+9. **Seen and left for later:** the reputation's numbers and the three effects' sizes (playtest 3 / B1); the Finnish age-class records
+   (M15, M17, M19, N14–N19: the official pages must be read, then rows with a source go into `data/career.json records`); the Results list
+   shows the races as meet days and the cards of the last 40 only (`data/race_recap.json keep`); the long path says "further than three
+   years at your pace" for a big gap (honest, a little repetitive on a phone); earlier coach changes and moves of an older save are not
+   known; `season_playtest` does not read the review (it is not a stop).
+
+#### Built (step K1b, 2026-11-01): the season review chapter
+
+1. **`SeasonReview.build(year, cs, today)`** on the last night of a training season (31 Oct, after `SeasonGoals` closed the goals): races
+   (meet days), personal bests, wins and medal places (a youth meet has no final: the last round of a meet day), top 8 at national meets,
+   the best time against the season before, the 800 m ability and the attributes that grew (the monthly record), the sessions done (the goal
+   counters), the days out injured, your name now and at the start, the goals with what they opened, the season list, the best race (the
+   one that earned the name the most points; its card opens), the verdict, what changed in your life (the milestone kinds school / coach /
+   moved / injury / comeback and the last report card average) and the next season's targets. All recorded or counted, nothing guessed.
+2. **The verdict** (`data/season_review.json`): strong / steady / tough by the share of goals met (≥ 67 %) or the best-time gain against a
+   typical year at the age (`yearly_gain`), a line in each of the eight coach voices, pronouns filled.
+3. **The page** (`SeasonReviewView`) and **the strap** on the first planner (`WeekPlanner._review_strap`: until the review is opened or four
+   weeks pass; never a choice waiting); **Career → Seasons** lists every review. The planner's end-of-season goals section (L3b2) stays.
+4. **Help:** the screen `review`. **Checks:** part 8 of `reputation_check` (made once, the numbers counted from the results, due then read,
+   saved and loaded), the layout check (the chapter and Seasons at five sizes), `career_shot -- <out> 52`.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

@@ -34,7 +34,12 @@ School tab with only the agreed stops (report card and meet-and-tests = planner 
 (step L3b1)"). **L3b2 done** (2026-11-01, GDD 4.10 "L3b2's questions" / "Built (step L3b2)"): the goals card on the planner (a time +
 any two from a menu: standards, places incl. the district titles, three races, a habit), only real stakes shown on every goal (trust,
 moods, his next goals' ★, a bigger meet he puts you up for), the two reviews and the season's end as planner sections, save v7.
-**L3 is done.** Next, in `docs/ROADMAP.md` order: K1 (Career tab) → the user's playtest 3 → P2 →
+**L3 is done.** **K1 done** (2026-11-01, two parts, GDD 4.10 "K1's questions" / "Built (step K1a)" / "Built (step K1b)"): K1a = `CareerSystem`
+(the timeline of milestones, the reputation with recorded causes and its effects behind `GameConfig` "reputation", the season-list log,
+older saves rebuilt from the results), the Career tab (Now / Results / Timeline / Seasons / Profile), "the next big thing" as a strap on This
+week + a block on Career, the long path, records (senior + boys 14 only: the official class tables could not be read, no names below
+senior), save v8; K1b = the season review chapter (a snapshot on 31 Oct, a strap on the first planner, one reading page, kept under Career →
+Seasons). Next, in `docs/ROADMAP.md` order: the user's playtest 3 (their turn: notes into `docs/PLAYTESTS.md`) → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 
@@ -110,7 +115,8 @@ sets `content_scale_size`, rebuilds the theme (`ThemeBuilder.build(compact)`) an
 FM-style `attr_row`, `ChoiceCard`), `Layout.page_margin()`, `Layout.stacked()`, **44 px minimum for anything tappable, no hover-only
 info** (use `attr_row(..., description)` / `UIKit.tap_to_explain`). Hub = a 56 px header bar with the tabs on PC (`TabButton`), a
 bottom bar with icons on a phone (`BottomTabButton`): This week (`WeekPlanner`, the one place the week is shown and changed) / Season /
-Calendar / People / School (L3b1; hidden without school) / Career / Rankings (old ids overview / training still work). Theme in code: `ui/palette.gd`, `ui/theme_builder.gd`;
+Calendar / People / School (L3b1; hidden without school) / Career (K1: `CareerView` pages Now / Results / Timeline / Seasons / Profile;
+`CareerSystem`, `NextBig`, `SeasonReview`) / Rankings (old ids overview / training still work). Theme in code: `ui/palette.gd`, `ui/theme_builder.gd`;
 the V1 kit for new screens: variations BigNumber / CardHeading / BodyLabel / ItemLabel / WhyLabel / SectionLabel …, `Icons` (Lucide,
 `assets/icons`), `StatBar`, `CauseChip`, `CalloutCard`; fonts Inter + Barlow Condensed (numbers). Backdrop (big moments only; the hub
 is plain BG): `scripts/ui/backdrop.gd` + a blurred photo in `assets/backgrounds/` (CC BY-SA, credits in its README; the `.import` files must keep `mipmaps/generate=true`; an
@@ -137,8 +143,9 @@ them with a tap for the numbers (meta `cause_row`). Never state a cause the game
   `answer_event`; `Game.systems` order: Health, Season, Form, Coach, School, Mind, Moments (StoryletSystem), Goals, Suggests, Proposals,
   Market (see `_make_systems`).
 - `HealthSystem` (soreness, injuries, illness, adaptation; `data/health.json`, `data/injuries.json`), UI in `HealthUI` / `HealthEventPanel`.
-- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 7** (L3b2: the goals card, reviews and
-  news; an older save's waiting goals stop becomes the card, `SeasonGoals.after_load`; v6 L3b1: mental sessions; v5 L1b: the
+- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 8** (K1: `systems.career`: the timeline, the
+  reputation events, the season-list log, the season reviews; a save without it is rebuilt from the results, `CareerSystem.after_load`;
+  v7 L3b2: the goals card, reviews and news; an older save's waiting goals stop becomes the card, `SeasonGoals.after_load`; v6 L3b1: mental sessions; v5 L1b: the
   habits); older saves load (each system's state is `{}` until it first runs; a v4 save's study effort / free time become habits; an
   older save's weekly mental plan becomes sessions on the plan's days, `MindSystem.convert_legacy`).
 

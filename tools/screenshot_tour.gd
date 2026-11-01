@@ -1753,6 +1753,14 @@ func _goals_tour(main: Node, hub_in: Control) -> void:
 		hub._show("career")
 		await _frames(5)
 		await _shot("48j_career_goals_done")
+		# (session K1: the Career tab's other pages)
+		var career_pages = load("res://scripts/ui/career_view.gd")
+		for pg in ["results", "timeline", "seasons"]:
+			career_pages.page = pg
+			hub._show("career")
+			await _frames(5)
+			await _shot("48k_career_" + pg)
+		career_pages.page = "now"
 	# A meet he suggests.
 	var meet := {}
 	for m in cal.meets_between(game.add_days(game.date, 10), game.add_days(game.date, 120)):

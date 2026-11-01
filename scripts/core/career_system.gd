@@ -20,6 +20,7 @@ var milestones: Array = []       # [{id, kind, date, title, text, icon, meet?, c
 var rep_events: Array = []       # [{day, date, kind ("race" / "standard" / "record"), meet, key, points, parts [{text, value}]}]
 var rank_log: Array = []         # [{year, month, rank, of, time}] the player's place on the season list at each month's end
 var found := {}                  # milestone key -> true (so it is found once)
+var reviews := {}                # (K1b) season year -> the season review's snapshot (SeasonReview.build), kept for Career -> Seasons
 var since: Dictionary = {}       # {} for a career recorded from the start; else the date this save was first looked at
 var last := {"coach": "", "path": "", "town": "", "step": -1}
 var _legacy := false             # (not saved) the state was empty when loaded: after_load() rebuilds it
@@ -59,6 +60,41 @@ func on_day_end(ctx: Dictionary) -> void:
 	_process_results()
 	_poll(date)
 	_month_end(date)
+	_close_season(date)
+
+
+## The last night of a training season (31 Oct): the season review's snapshot (the goals closed on the same night, before this system).
+func _close_season(date: Dictionary) -> void:
+	var year := SeasonPlan.year_of(date)
+	if SeasonPlan.year_of(Game.add_days(date, 1)) == year or reviews.has(year):
+		return
+	reviews[year] = SeasonReview.build(year, self, date)
+
+
+## The review waiting for the player: the latest not read yet and still within its weeks ({} = none). It is a strap on This week, never
+## a stop and never a choice waiting.
+func due_review() -> Dictionary:
+	var best := {}
+	for y in reviews:
+		var r: Dictionary = reviews[y]
+		if not bool(r.seen) and Calendar.date_key(Game.date) <= int(r["until"]) and Calendar.date_key(Game.date) > Calendar.date_key(r.date):
+			if best.is_empty() or int(y) > int(best.year):
+				best = r
+	return best
+
+
+func mark_seen(year: int) -> void:
+	if reviews.has(year):
+		reviews[year].seen = true
+
+
+## The reviews, newest season first.
+func review_list() -> Array:
+	var out := []
+	for y in reviews:
+		out.append(reviews[y])
+	out.sort_custom(func(x, y): return int(x.year) > int(y.year))
+	return out
 
 
 # --- Results -> milestones and reputation -------------------------------------------------------------------------------------
@@ -514,7 +550,8 @@ static func pb_series(a: Athlete) -> Array:
 # --- Save / load ------------------------------------------------------------------------------------------------------------------------
 
 func to_dict() -> Dictionary:
-	return {"v": 1, "seen": seen, "milestones": milestones, "rep_events": rep_events, "rank_log": rank_log, "found": found, "since": since, "last": last}
+	return {"v": 1, "seen": seen, "milestones": milestones, "rep_events": rep_events, "rank_log": rank_log, "found": found, "since": since, "last": last,
+			"reviews": reviews}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -539,3 +576,23 @@ func from_dict(d: Dictionary) -> void:
 	since = Game.int_date(d.since) if not d.get("since", {}).is_empty() else {}
 	last = d.get("last", last)
 	last.step = int(last.get("step", -1))
+	reviews = {}
+	var saved: Dictionary = d.get("reviews", {})
+	for y in saved:
+		var r: Dictionary = saved[y]
+		r.year = int(r.year)
+		r.date = Game.int_date(r.date)
+		r["until"] = int(r["until"])
+		r.met = int(r.met)
+		r.age = int(r.age)
+		for k in ["races", "pbs", "wins", "medals", "scoring", "injured"]:
+			r.numbers[k] = int(r.numbers[k])
+		for row in r.rank:
+			row.rank = int(row.rank)
+			row.of = int(row.of)
+		for row in r.life:
+			row.date = Game.int_date(row.date)
+		if not r.best_race.is_empty():
+			r.best_race.date = Game.int_date(r.best_race.date)
+		r.next.year = int(r.next.year)
+		reviews[int(y)] = r

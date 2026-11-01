@@ -24,11 +24,21 @@
     {"heading": "Saving", "text": "The game saves itself after every day. The menu (top right) has Save, an extra copy you can load later, and Main menu. On a computer, Ctrl+S saves too."}
    ]
   },
+  "review": {
+   "title": "Season review",
+   "version": 1,
+   "sections": [
+    {"heading": "What this is", "text": "The season that just ended, as a chapter: the numbers, what grew, your goals, your best race, what your coach says, what changed in your life and what comes next. It is written on the last night of October from what the game recorded. Nothing is made up."},
+    {"heading": "Your goals", "text": "Each goal met (✓) or missed (✗), with what a met one opened: trust, mood, a bigger meet your coach put you up for. A missed goal costs a little confidence, never trust."},
+    {"heading": "Your coach says", "text": "A line in your coach's voice. It is strong, steady or tough by how many goals you met and how much your best time improved against a typical year at your age."},
+    {"heading": "On to the next season", "text": "The next season's targets, and the goals card and plan, wait on This week. Every season's review stays under Career, Seasons."}
+   ]
+  },
   "career": {
    "title": "Career",
-   "version": 3,
+   "version": 4,
    "sections": [
-    {"heading": "Four pages", "text": "Now: the next big thing, the long path, your name, the season goals, your best over time and the season list. Results: every race. Timeline: the milestones. Profile: you, your attributes and your last races. On a phone the Rankings button is on Profile."},
+    {"heading": "Five pages", "text": "Now: the next big thing, the long path, your name, the season goals, your best over time and the season list. Results: every race. Timeline: the milestones. Seasons: the review of every season that ended. Profile: you, your attributes and last races. On a phone the Rankings button is on Profile."},
     {"heading": "The next big thing", "text": "The target race that comes next, how long to it and what you need for it: the entry time of its age class against your best. The same line sits at the top of This week; tap it to come here."},
     {"heading": "The long path", "text": "The application to upper secondary school and the real limits of your coming ages, with how soon your best could reach them at a typical pace. A rough pace, not a promise."},
     {"heading": "Your name", "text": "How well known you are, from Unknown to an international name. Every race adds points (the meet's level, your place in the field, your age, a personal best); they fade over two years. Tap for the numbers. A name makes coaches write to you, your coach suggest bigger meets and the commentators know you.", "see": ["reputation"]},

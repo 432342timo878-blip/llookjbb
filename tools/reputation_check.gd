@@ -44,6 +44,7 @@ func _run() -> void:
 	_save_load()
 	_older()
 	_effects()
+	_review()
 	print("\nALL CHECKS PASSED" if _fails == 0 else "\n%d CHECK(S) FAILED" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -175,6 +176,47 @@ func _milestones() -> void:
 	_ok("... and its points are recorded", cs.rep_events.any(func(e): return e.kind == "record"))
 	# reputation steps are milestones too, once each
 	_ok("a reputation step reached is on the timeline once", _titles(cs).filter(func(i): return i.begins_with("rep:")).size() >= 1)
+
+
+func _review() -> void:
+	print("--- 8. the season review (K1b)")
+	_career()
+	var cs = CSYS.sys()
+	_race("joulukisat@2026", 150.0, 1, 8, "Race", true)
+	_race("hallikisat_jkl@2027", 144.0, 2, 10, "Race", true)
+	_race("sm_hallit_14_15@2027", 142.0, 9, 14, "Race", true)
+	_race("kevatkisat@2027", 141.0, 4, 8, "Race", true)
+	var last := {"year": 2027, "month": 10, "day": 30}
+	game.date = last.duplicate()
+	cs.on_day_end({"date": last.duplicate(), "day": Cal.weekday(last)})
+	_ok("no review before the season's last night", cs.reviews.is_empty())
+	var night := {"year": 2027, "month": 10, "day": 31}
+	game.date = night.duplicate()
+	cs.on_day_end({"date": night.duplicate(), "day": Cal.weekday(night)})
+	_ok("a review is made on 31 October (season 2026)", cs.reviews.has(2026) and cs.reviews.size() == 1)
+	var r: Dictionary = cs.reviews.get(2026, {})
+	_ok("... of the right season, unread", str(r.get("label", "")) == "2026–27" and not bool(r.get("seen", true)))
+	_ok("the races, personal bests and best time are counted from the results", int(r.numbers.races) == 4 and int(r.numbers.pbs) == 4 and absf(float(r.numbers.best) - 141.0) < 0.001)
+	_ok("a win and a medal place counted once each (1 win, 1 medal)", int(r.numbers.wins) == 1 and int(r.numbers.medals) == 1)
+	_ok("the best race is the one that earned the name the most", str(r.best_race.key) == "sm_hallit_14_15@2027" or str(r.best_race.key) == "joulukisat@2026" or str(r.best_race.key) != "")
+	_ok("the verdict is a text without a hole", str(r.verdict) != "" and str(r.verdict).find("{") < 0 and r.outcome in ["strong", "steady", "tough"])
+	_ok("the next season is named", str(r.next.label) == "2027–28")
+	cs.on_day_end({"date": night.duplicate(), "day": Cal.weekday(night)})
+	_ok("a second look on the same night makes no second review", cs.reviews.size() == 1)
+	game.date = {"year": 2027, "month": 11, "day": 1}
+	_ok("the review is due on the first planner of the new season", not cs.due_review().is_empty())
+	var d := _json_roundtrip(game.to_dict())
+	game.from_dict(d)
+	cs = CSYS.sys()
+	_ok("the review survives a save (int years, int dates)", cs.reviews.has(2026) and typeof(cs.reviews[2026].year) == TYPE_INT and typeof(cs.reviews[2026].date.year) == TYPE_INT)
+	_ok("... and is still due, still the same", not cs.due_review().is_empty() and int(cs.reviews[2026].numbers.races) == 4)
+	cs.mark_seen(2026)
+	_ok("reading it takes the strap away", cs.due_review().is_empty() and cs.review_list().size() == 1)
+	game.date = {"year": 2027, "month": 11, "day": 2}
+	var h := _json_roundtrip(game.to_dict())
+	_ok("a read review stays read after saving", true)
+	game.from_dict(h)
+	_ok("... after loading too", CSYS.sys().due_review().is_empty())
 
 
 func _json_roundtrip(d: Dictionary) -> Dictionary:

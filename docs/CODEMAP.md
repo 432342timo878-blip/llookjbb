@@ -252,6 +252,42 @@ Read the paragraphs below with these in mind; they win where they disagree.
   - **SaveGame version 7.** Tools: `goals_check` parts 3, 4 rewritten, new 10–13; `layout_check` `_goals_views` and the tour
     `_goals_tour` (48a… the card, the review, the season's end); `help_check` (the card's "?"); `season_playtest` (the player
     answers the card, the reviews, the end).
+- **Session K1 (the Career tab, the next big thing, reputation, the season review; save version 8; GDD 4.10 "K1's questions" and "Built
+  (step K1a)" / "Built (step K1b)"):**
+  - **`CareerSystem`** (`scripts/core/career_system.gd`, GameSystem id `career`, last in `Game.systems`; it only READS and RECORDS):
+    `milestones` (the timeline: first race / win / medal, first top 8 at a national meet, the national championships, the first time
+    under each round time, a real standard (`Standards`), the Finnish record (`data/career.json records`), the season-list steps
+    (top 10 / 5 / 3 / 1), goals met, coach changes, the school path, moving, a long injury and the comeback, reputation steps),
+    `rep_events` (each race's points with the parts that made them), `rank_log` (the player's place on the season list at each month's
+    end), `found` (a milestone key is found once), `since` (an older save: the date the recording began), `reviews` (K1b). The new
+    results are looked at in `on_day_end` (`seen` counts them; a meet day = the results of its rounds, the last one is the result), the
+    other systems are polled (coach id, school path, town, healed injuries, goals met). **Reputation:** `score(date)` = the points of
+    the last `window_days` fading linearly; `step_of(score)`; `reputation(date)` = {score, step, name, next, rows (with the weight now),
+    faded}; `effect_step()` = the step the game's DECISIONS read, 0 unless `GameConfig` "reputation" (real on, lab off: the
+    fingerprints). All numbers and the reasoning: `data/reputation.json`. **Older saves** (`from_dict({})` → `after_load()`): rebuilt
+    by replaying `athlete.results`, the healed injuries and the goals met, `since` set; earlier coaches / moves are not known. Static
+    `pb_series(a)` for the PB chart.
+  - **Where reputation acts (all behind `effect_step()`):** `CoachMarket._name_points()` (the offer reason `name`, texts in
+    `market.json lines.pitch.open/see.name`, `parent_offer.reason.name`) + `_attention_boost(section)` (the coaches far from your town
+    see you more); `CoachSuggests._bar(base)` (the bigger-meet bar goes down per step); `RaceCommentary._build_facts` (`p_rep_text` +
+    the filler lines `rep_*` in `race_commentary.json`; read-only: the race and its hash are untouched).
+  - **`NextBig`** (`scripts/core/next_big.gd`): `target()` (the next target race or entered meet: meet, days, what you need = the
+    entry limit of your age class vs your best, your open goals at that meet, season best) and `path()` (the long path: the application
+    to upper secondary school with the sport points, the real limits of `Standards` for the next 3 calendar years with the gap and
+    `reach_word` at the typical yearly gain (`market.json offers.yearly_gain`), the school start). Texts `data/career.json path / ui`.
+  - **UI:** `CareerView` (`scripts/ui/career_view.gd`; pages `now / results / timeline / seasons / profile`, kept in static `page`,
+    `results_year`, `results_level`, `results_text`, `rep_open`; `card()` / `tappable()` helpers; the Profile page is the hub's
+    `_build_profile(a, target)`), `PbChart` (the PB step line), the planner's two straps (`WeekPlanner._review_strap`,
+    `_next_big_strap`; signals `review_pressed(year)`, `career_pressed`), hub `_build_career`, `_card_back` (the tab a race card goes
+    back to), `_review_year` / `_review_back` and the view `review`. Help: `career` v4, `review` (screen), `reputation` (topic).
+  - **K1b:** `SeasonReview.build(year, cs, today)` (`scripts/core/season_review.gd`) is the snapshot made on 31 Oct by
+    `CareerSystem._close_season` (after `SeasonGoals` closed the goals the same night): numbers counted from the results, the
+    monthly record's attribute changes, the goals with what they opened, the season list, the best race (the most reputation
+    points), the verdict (`data/season_review.json`, outcome strong / steady / tough by the goals met share and the PB gain against
+    a typical year), what changed in your life (milestone kinds) and the next season. `due_review()` / `mark_seen()` /
+    `review_list()`. `SeasonReviewView` is the page. Never a stop, never a choice waiting.
+  - **Tools:** `tools/reputation_check.gd` (in `run_all_checks`), `tools/career_shot.gd -- <out> [weeks 24; 52+ makes a review] [seed]`
+    (windowed screenshots of the Career pages, the strap, the review, Seasons); `layout_check` shows the career pages, the review and Seasons.
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

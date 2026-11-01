@@ -102,6 +102,21 @@ func _run() -> void:
 			await _frames(4)
 			await _shot("%s_career_%s" % [tag, pg])
 			_check_overflow(hub, "%s career_%s" % [tag, pg])
+		# (session K1b: a review made from the days-old career, the chapter and the Seasons page)
+		var career_sys = game.get_system("career")
+		career_sys.reviews[2026] = load("res://scripts/core/season_review.gd").build(2026, career_sys, game.date)
+		hub._review_year = 2026
+		hub._review_back = "career"
+		hub._show("review")
+		await _frames(4)
+		await _shot("%s_review" % tag)
+		_check_overflow(hub, "%s review" % tag)
+		career_view.page = "seasons"
+		hub._show("career")
+		await _frames(4)
+		await _shot("%s_career_seasons" % tag)
+		_check_overflow(hub, "%s career_seasons" % tag)
+		career_sys.reviews.erase(2026)
 		career_view.page = "now"
 		career_view.rep_open = false
 		# The day editor: an editable day with changes (Thu: Hard + a second session), the "add session" row,

@@ -44,6 +44,8 @@ var _people_page := ""          # People tab: "" = the list (PC: the coach threa
 var _people_dot: Control        # the mark on the People tab: something unread or waiting for an answer
 var _result_event := {}         # a moment just answered whose result card (what changed) is showing over the page
 var _card_id := ""              # the race card page (session L2a): the id of the kept card it shows (Game.card)
+var _review_year := 0           # (session K1b) the season review page: the season it shows (CareerSystem.reviews)
+var _review_back := "week"      # ... and the tab it goes back to: the planner's strap or Career -> Seasons
 var _card_back := "week"        # (session K1a) the tab the race card page goes back to: the planner's strap or the Career tab's list
 # Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
 # (Close goes back to the day); phone: a HelpOverlay sheet. `_help_stack` is what is open ([] = closed), kept across
@@ -723,6 +725,8 @@ func _show(view: String) -> void:
 	var tab := str(TAB_OF.get(view, view))
 	if view == "race_card":
 		tab = _card_back
+	if view == "review" or tab == "review":
+		tab = _review_back
 	if Layout.compact and tab == "rankings":
 		tab = "career"   # (Rankings is a page of Career on a phone)
 	if _tabs.has(tab):
@@ -767,6 +771,18 @@ func _show(view: String) -> void:
 					_content.add_child(RaceRecapView.head(str(c.meet_name)))
 					_content.add_child(UIKit.wrapped(str(c.get("sub", "")), "WhyLabel"))
 					_content.add_child(RaceRecapView.new(c, true))
+		"review":   # (session K1b: the season review chapter, a page of This week or of Career -> Seasons)
+			var rv := SeasonReviewView.new(_review_year)
+			rv.back_pressed.connect(func(): _show(_review_back))
+			rv.card_pressed.connect(func(id: String):
+				_card_id = id
+				_card_back = "review"
+				_show("race_card"))
+			rv.week_pressed.connect(func(): _show("week"))
+			_content.add_child(rv)
+			var career := CareerSystem.sys()
+			if career != null:
+				career.mark_seen(_review_year)
 		"people": _build_people()
 		"school": _content.add_child(SchoolView.new())   # (session L3b1: its own tab, apart from the messages)
 		"career": _build_career()
@@ -796,6 +812,10 @@ func _build_week() -> void:
 	_planner.report_pressed.connect(func(): _show("report"))
 	_planner.messages_pressed.connect(func(): _show("people"))   # (session L3a: the quiet feed's line)
 	_planner.career_pressed.connect(func(): _show("career"))   # (session K1a: the next-big-thing strap)
+	_planner.review_pressed.connect(func(year: int):   # (session K1b: the season review's strap)
+		_review_year = year
+		_review_back = "week"
+		_show("review"))
 	_planner.school_pressed.connect(func(): _show("school"))   # (session L3b1: the report card's "See every grade")
 	_planner.card_pressed.connect(func(id: String):
 		_card_id = id
@@ -901,6 +921,10 @@ func _build_career() -> void:
 		_card_id = id
 		_card_back = "career"
 		_show("race_card"))
+	view.review_pressed.connect(func(year: int):   # (K1b: Career -> Seasons)
+		_review_year = year
+		_review_back = "career"
+		_show("review"))
 	if not Layout.compact:
 		_overview_columns = _wanted_overview_columns()   # (the pages are built for this width; see _apply_editor_visibility)
 	_content.add_child(view)

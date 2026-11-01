@@ -104,6 +104,29 @@ func _run() -> void:
 	hub._show("career")
 	await _frames(8)
 	await _shot("6_profile")
+	# (session K1b: with 52 weeks or more the first season has ended: the strap on the planner, the chapter, the Seasons page)
+	if not cs.review_list().is_empty():
+		hub._show("week")
+		await _frames(6)
+		await _shot("7_planner_review_strap")
+		hub._review_year = int(cs.review_list()[0].year)
+		hub._review_back = "week"
+		hub._show("review")
+		await _frames(8)
+		await _shot("8_review")
+		hub._scroll.scroll_vertical = 700
+		await _frames(4)
+		await _shot("8b_review_mid")
+		hub._scroll.scroll_vertical = 1500
+		await _frames(4)
+		await _shot("8c_review_end")
+		hub._scroll.scroll_vertical = 0
+		CV.page = "seasons"
+		hub._show("career")
+		await _frames(8)
+		await _shot("9_seasons")
+		var r: Dictionary = cs.review_list()[0]
+		print("review: ", r.label, " outcome ", r.outcome, " races ", r.numbers.races, " goals met ", r.met, "/", r.goals.size(), " verdict: ", r.verdict)
 	CV.page = "now"
 	quit()
 

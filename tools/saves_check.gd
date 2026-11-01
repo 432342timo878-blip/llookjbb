@@ -47,6 +47,22 @@ func _run() -> void:
 		_ok("%s: the week planner builds (%d choices waiting)" % [slot, load("res://scripts/ui/week_planner.gd").open_choices().size()],
 				planner.get_child_count() >= 1)
 		planner.free()
+		# Session K1a (save version 8): the timeline and the reputation are rebuilt from the results; the Career tab builds on every page.
+		var career = game.get_system("career")
+		var ids: Array = career.milestones.map(func(m): return str(m.kind))
+		_ok("%s: the career history is rebuilt (%d milestones, %d races looked at of %d, the name %s, recorded from %s)" % [slot, career.milestones.size(),
+				career.seen, game.athlete.results.size(), career.reputation(game.date).name, str(career.since.get("day", "the start"))],
+				career.seen == game.athlete.results.size() and not career.since.is_empty() == (version < 8))
+		var career_view = load("res://scripts/ui/career_view.gd")
+		var built := true
+		for pg in ["now", "results", "timeline", "seasons"]:
+			career_view.page = pg
+			var cv = career_view.new(func(target): pass, func(): pass)
+			root.add_child(cv)
+			built = built and cv.get_child_count() >= 1
+			cv.free()
+		career_view.page = "now"
+		_ok("%s: the Career tab's pages build" % slot, built)
 		# Session L1b (save version 5): an older save's study effort / free time became the nearest habits; the Season tab shows them.
 		var parsed_save: Dictionary = JSON.parse_string(text)
 		var hs = game.get_system("habits")

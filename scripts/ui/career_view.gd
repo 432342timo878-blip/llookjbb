@@ -7,8 +7,9 @@ extends VBoxContainer
 ## entry is "career". V1 look (GDD 5): panels, CaptionLabel heads, BigNumber for the one number a block is about.
 
 signal card_pressed(id: String)
+signal review_pressed(year: int)   # (K1b) a season's review from the Seasons page
 
-const PAGES := ["now", "results", "timeline", "profile"]
+const PAGES := ["now", "results", "timeline", "seasons", "profile"]
 
 ## Kept while the hub rebuilds the page (a resize, a card answered).
 static var page := "now"
@@ -41,7 +42,8 @@ static func ui() -> Dictionary:
 func _build() -> void:
 	for c in get_children():
 		c.queue_free()
-	var bar := UIKit.hbox(6)
+	var bar := UIKit.hbox(4 if Layout.compact else 6)
+	add_child(bar)   # (in the tree first: the buttons' styles are looked up through the theme)
 	var group := ButtonGroup.new()
 	for p in PAGES:
 		var b := UIKit.toggle(str(ui().tabs[p]), group)
@@ -52,7 +54,16 @@ func _build() -> void:
 			page = id
 			_show_page())
 		bar.add_child(b)
-	add_child(bar)
+		if Layout.compact:   # five pages in a 480 px column: a smaller word and less padding, so no word is cut and the page stays narrow
+			b.add_theme_font_size_override("font_size", 14)
+			b.clip_text = true
+			for state in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+				var sb := b.get_theme_stylebox(state)
+				if sb is StyleBoxFlat:
+					var tight: StyleBoxFlat = sb.duplicate()
+					tight.content_margin_left = 3.0
+					tight.content_margin_right = 3.0
+					b.add_theme_stylebox_override(state, tight)
 	_body = UIKit.vbox(12)
 	add_child(_body)
 	_show_page()
@@ -64,6 +75,7 @@ func _show_page() -> void:
 	match page:
 		"results": _page_results()
 		"timeline": _page_timeline()
+		"seasons": _page_seasons()
 		"profile": _profile_builder.call(_body)
 		_: _page_now()
 
@@ -473,6 +485,37 @@ func _page_timeline() -> void:
 		if not divider_done:
 			box.add_child(UIKit.wrapped(str(u.recorded_from).format({"date": Calendar.format_day(cs.since)}), "WhyLabel"))
 		_body.add_child(UIKit.panel(box, 12))
+
+
+# --- SEASONS (K1b) ---------------------------------------------------------------------------------------------------------------------------
+
+## Every season that has ended, newest first; a tap opens its review chapter.
+func _page_seasons() -> void:
+	var u: Dictionary = Data.season_review.ui
+	var cs := _sys()
+	_body.add_child(UIKit.label(str(u.seasons_head), "CaptionLabel"))
+	var list: Array = cs.review_list() if cs != null else []
+	if list.is_empty():
+		_body.add_child(UIKit.wrapped(str(u.seasons_none)))
+		return
+	_body.add_child(UIKit.wrapped(str(u.seasons_help), "WhyLabel"))
+	for r in list:
+		var n: Dictionary = r.numbers
+		var row := UIKit.hbox(10)
+		row.custom_minimum_size.y = 44
+		var col := UIKit.vbox(2)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(UIKit.label(str(r.label), "CardHeading"))
+		var line := UIKit.wrapped(str(u.season_line).format({"races": int(n.races), "best": Calendar.format_time(float(n.best)) if float(n.best) > 0.0 else "–",
+				"met": int(r.met), "total": r.goals.size()}), "WhyLabel")
+		line.custom_minimum_size.x = 100
+		col.add_child(line)
+		row.add_child(col)
+		var arrow := UIKit.label("›", "ItemLabel")
+		arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(arrow)
+		var year: int = int(r.year)
+		_body.add_child(tappable(UIKit.panel(row, 12), func(): review_pressed.emit(year)))
 
 
 func _milestone_row(m: Dictionary) -> Control:

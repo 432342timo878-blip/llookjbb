@@ -1,0 +1,90 @@
+{
+ "_note": "Session K1b (GDD 4.10 'K1's questions', decision 4): the SEASON REVIEW chapter at the end of October. CareerSystem builds a snapshot of the season on its last night (everything in it is recorded or counted from what the game kept: results, the goals, the season list log, the monthly record, the milestones); the chapter page shows it and ends on the next season. The coach's verdict is a line by his voice and by how the season went (outcome rules below). {he} / {his} are filled with the head coach's pronouns when the snapshot is made.",
+ "outcome": {
+  "_note": "strong: at least strong_goals of the goals met, or the best time improved by at least one year's typical gain at the age (market.json offers.yearly_gain); tough: no goal met (with goals set) and the best time did not improve by half a year's gain, or no race at all; steady: the rest.",
+  "strong_goals": 0.67,
+  "tough_gain_share": 0.5
+ },
+ "verdict": {
+  "strong": {
+   "calm": "This was a good season. You got faster, and the work was right. Rest well, and we start again from here.",
+   "drill": "Good season. Results. Now we raise the bar.",
+   "warm": "I'm so proud of you this season! Look at what you did. Take a proper rest now, you deserve it.",
+   "tactician": "The season went to plan, and in places better than the plan. Next season we build on exactly this.",
+   "analyst": "The numbers are clearly up on last year. The curve is steeper than I predicted. We keep the method.",
+   "mentor": "A fine season. Not every year is like this one; remember what it felt like.",
+   "motivator": "WHAT A SEASON! You are flying! And it is only the beginning!",
+   "speed": "Fast season. Faster than last year. More next."
+  },
+  "steady": {
+   "calm": "A solid season. Not everything went as hoped, but you moved forward and that is what counts.",
+   "drill": "Decent. Not enough, but decent. We can do more next season.",
+   "warm": "It was a good season, even if it wasn't perfect. I saw how hard you worked.",
+   "tactician": "A season with a few good moves and a few lessons. The lessons are the useful part.",
+   "analyst": "The result is within what the numbers allowed. Some details to fix; I have the list.",
+   "mentor": "A season like most seasons: a little forward, a little to learn. That is the way.",
+   "motivator": "Good work this season! Not everything fell right, but the next one will!",
+   "speed": "Okay season. Not slow. Not fast enough."
+  },
+  "tough": {
+   "calm": "This was a hard season. It happens to every runner. We look at what we can change and go on.",
+   "drill": "Not good. I know it, you know it. We fix it.",
+   "warm": "It was a difficult season and I know it wasn't easy. We'll find the way back together.",
+   "tactician": "The season did not give what we planned. We go through what happened and make a better plan.",
+   "analyst": "The numbers did not move the way I expected. I want to understand why before the next plan.",
+   "mentor": "A hard year. I have had them too. They are not wasted if we learn from them.",
+   "motivator": "A tough one, yes! But we come back stronger, I promise!",
+   "speed": "Slow year. We change it."
+  }
+ },
+ "ui": {
+  "strap_title": "Season {season} is over",
+  "strap_text": "Read the review: your season in numbers, your goals, your best race and what comes next.",
+  "strap_button": "Read the review",
+  "page_title": "SEASON {season}",
+  "back": "◀ Back",
+  "numbers_head": "THE SEASON IN NUMBERS",
+  "numbers": {
+   "races": "Races",
+   "pbs": "Personal bests",
+   "wins": "Wins",
+   "medals": "Medal places",
+   "scoring": "Top 8 at national meets",
+   "best": "Best time",
+   "ability": "800 m ability",
+   "name": "Your name",
+   "sessions": "Sessions done",
+   "injury": "Days out injured"
+  },
+  "best_line": "{from} → {to}",
+  "best_none": "no time yet",
+  "attrs_head": "WHAT GREW",
+  "attrs_none": "The abilities hardly moved this season.",
+  "goals_head": "YOUR GOALS",
+  "goals_none": "No goals were set this season.",
+  "goal_met": "✓ {goal}",
+  "goal_missed": "✗ {goal}",
+  "goal_dropped": "– {goal}",
+  "goal_open": "○ {goal}",
+  "goals_count": "{met} of {total} goals met.",
+  "rank_head": "THE SEASON LIST",
+  "rank_none": "Your place on the season list was not recorded this season.",
+  "rank_line": "{label}: {rank} of {of} · {time}",
+  "best_race_head": "THE BEST RACE",
+  "best_race_none": "No race this season.",
+  "best_race_open": "Open its card",
+  "best_race_why": "It earned your name the most points this season ({points}).",
+  "verdict_head": "YOUR COACH SAYS",
+  "life_head": "WHAT CHANGED IN YOUR LIFE",
+  "life_none": "Nothing big changed this season.",
+  "life_school": "School: your last report card average was {avg}.",
+  "next_head": "ON TO {season}",
+  "next_targets": "Targets: {targets}.",
+  "next_goals": "Your coach's goals card and {his} plan are waiting on This week.",
+  "next_button": "Go to This week",
+  "seasons_head": "EVERY SEASON",
+  "seasons_none": "The first review comes at the end of October.",
+  "season_line": "{races} races · best {best} · {met} of {total} goals met",
+  "seasons_help": "Tap a season to read its review."
+ }
+}

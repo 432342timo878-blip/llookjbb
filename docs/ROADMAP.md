@@ -540,7 +540,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           the user's notes (docs/PLAYTESTS.md 2026-10-25): "Ask the coach" = same plan, same answer** (his error tied to the plan,
           not to the button; the Season page says which week it judges). *(Opus, high)*
         Done: the cut list done; `storylet_check` finds no contradicting or promising lines; stops a week measured.
-  - [ ] **K1. Career tab + the next big thing + reputation + the season review** (decision 10). *(Sonnet, high)* (L3b2: the
+  - [x] **K1. Career tab + the next big thing + reputation + the season review** (decision 10) *(done 2026-11-01 in two parts, K1a + K1b:
+        GDD 4.10 "K1's questions", "Built (step K1a)" and "Built (step K1b)")*. *(Sonnet, high)* (L3b2: the
         season's goals end is already a planner section, `SeasonGoals.end_card` with what each goal opened in `g.opened` and the
         `news`; the chapter wraps it. The stakes that wait for K1 / G3: reputation, selections, the TF-juniorit letter, camps.)
         Done: every result in one list, the milestones timeline, the Overview's countdown and long path, a season ends as a chapter.
