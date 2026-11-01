@@ -4964,6 +4964,25 @@ Built in one session (no split was needed).
 4. **Help:** the screen `review`. **Checks:** part 8 of `reputation_check` (made once, the numbers counted from the results, due then read,
    saved and loaded), the layout check (the chapter and Seasons at five sizes), `career_shot -- <out> 52`.
 
+#### Built (step K1c, 2026-11-01): the in-game playtest (a tester's tool, asked for by the user after K1)
+
+User: "organise / code me a structured playtest inside the game … like the questions pop up in the correct places". Built as a **playtest
+mode** (on by default, the menu's "Playtest notes" turns it off) that is a tester's tool and not part of the game's design: the rule of 4.10
+("no question popups") is kept in spirit: a card is **never a stop, never a choice waiting, never a click Play week asks for**; it sits at the
+top of the page its questions are about and goes with Done.
+1. **`data/playtest.json`** holds the questions of playtest 3 (about 30, sections: a normal week, the Career tab, the goals, the season
+   review, sizes of things, in your own words). Each has a `where` (the page: `week`, `career:now / results / timeline`, `review`), `min_weeks`
+   (weeks played before it is asked: an opinion needs the play) and `needs` (`goals_set`, `goal_news`). A new playtest copies the file with a
+   new `run`.
+2. **`PlaytestNotes`** (core): answers, quick notes, `due(page)` (not answered, not skipped, enough weeks, needs met, at most `card_max` 3),
+   `skip`, on / off; saved on every change in `user://playtest/<run>.json` (the tools use `user://tool_playtest/`: `dir()`), each stamped with
+   the game's date, the age, the name step and the page; `to_markdown()` / `save_text()` to hand the notes over.
+3. **`PlaytestCard`** (the card: up to three questions, Done) on This week, the Career tab's Now / Results / Timeline pages and the season
+   review; **`PlaytestView`** = the menu's Playtest notes page: every question, a quick-note box, the on / off switch, Copy everything / Save as a
+   text file / Open the folder. Help: the screen `playtest`.
+4. **Check:** `tools/playtest_check.gd` (in `run_all_checks`): the data, answering, the file, the text, the page, the cards (the right questions
+   on the right pages, answered / skipped / off).
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

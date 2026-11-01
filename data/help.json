@@ -24,6 +24,16 @@
     {"heading": "Saving", "text": "The game saves itself after every day. The menu (top right) has Save, an extra copy you can load later, and Main menu. On a computer, Ctrl+S saves too."}
    ]
   },
+  "playtest": {
+   "title": "Playtest notes",
+   "version": 1,
+   "sections": [
+    {"heading": "What this is", "text": "A short questionnaire inside the game, to say what you felt while playing. Tap an answer, add a few words if you like. It is saved the moment you change it and never touches your career."},
+    {"heading": "The cards", "text": "While the playtest is on, a card with up to three questions appears at the top of the page they are about, after you have played long enough to have an opinion. Answer what you can and press Done: what is left is not asked again. A card never stops the game. You can turn the playtest off here."},
+    {"heading": "A quick note", "text": "Jot something down while you play. Each note is stamped with the date in the game and the page you came from, so you do not have to remember where it happened."},
+    {"heading": "Handing it over", "text": "Copy everything puts all your answers and notes on the clipboard as text: paste it to Claude. Save as a text file writes the same text to a file; Open the folder shows where it is."}
+   ]
+  },
   "review": {
    "title": "Season review",
    "version": 1,

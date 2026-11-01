@@ -1,0 +1,82 @@
+{
+ "_note": "The in-game playtest (PlaytestNotes + PlaytestView + PlaytestCard). While the playtest is on, a card with the questions that fit the page you are on appears at the top of that page (never a stop, never a choice waiting, Play week is unaffected); the Playtest notes page of the menu holds every question and the quick notes. Each question: `id`, `text`, `kind` (pick = one of `options`, with an optional line for a few words whose hint is `note`; text = only the free note), `where` (the page whose card asks it: week / career:now / career:results / career:timeline / review), `min_weeks` (weeks played before it is asked) and `needs` (goals_set: a goals card has been set; goal_news: a goal was met, missed, adjusted or dropped). A card shows at most `card_max` questions at a time; Done skips what is left of them, Skip never asks them again. Answers are saved on every change in user://playtest/<run>.json and can be copied or written as text to paste into docs/PLAYTESTS.md. Written 2026-11-01 for season playtest 3; a new playtest copies this file with a new `run`.",
+ "run": "playtest3",
+ "title": "SEASON PLAYTEST 3",
+ "intro": "While the playtest is on, a card with a few questions appears on the page they are about: answer what you can, press Done. Everything is saved at once. Here you find every question, can jot quick notes and hand the notes over.",
+ "card_max": 3,
+ "sections": [
+  {"id": "week", "title": "A NORMAL WEEK (plan → play → see)", "questions": [
+   {"id": "strap_use", "text": "The next-big-thing strap at the top of This week:", "kind": "pick", "where": "week", "min_weeks": 1, "options": ["Useful", "In the way", "I did not notice it"]},
+   {"id": "strap_need", "text": "Does it tell you what you need?", "kind": "pick", "where": "week", "min_weeks": 1, "options": ["Enough", "Something is missing"], "note": "What is missing?"},
+   {"id": "clicks", "text": "How many clicks does an ordinary week take?", "kind": "pick", "where": "week", "min_weeks": 2, "options": ["Too many", "About right", "Too few"]},
+   {"id": "stops", "text": "Did anything stop you that you did not want to be stopped for?", "kind": "pick", "where": "week", "min_weeks": 2, "options": ["Nothing", "A few times", "Often"], "note": "What was it?"},
+   {"id": "why", "text": "After a week, can you tell why things changed (attributes, tiredness, mood)?", "kind": "pick", "where": "week", "min_weeks": 3, "options": ["Always clear", "Mostly", "Often unclear"], "note": "Which one you could not explain?"},
+   {"id": "notes", "text": "The coach's notes on the days:", "kind": "pick", "where": "week", "min_weeks": 3, "options": ["Useful", "Noise", "I ignored them"]}
+  ]},
+  {"id": "career", "title": "THE CAREER TAB", "questions": [
+   {"id": "now_path", "text": "Now: the next big thing and the long path.", "kind": "pick", "where": "career:now", "options": ["Makes me plan ahead", "Fine", "Too long or repetitive", "Wrong somewhere"], "note": "Where was it wrong?"},
+   {"id": "name", "text": "Your name (reputation) rising:", "kind": "pick", "where": "career:now", "min_weeks": 4, "options": ["Too fast", "About right", "Too slow", "I did not notice"], "note": "Did it change anything you saw (coach messages, meets, commentary)?"},
+   {"id": "results", "text": "Results: can you find the race you want?", "kind": "pick", "where": "career:results", "options": ["Easily", "Hard to find"]},
+   {"id": "timeline", "text": "Timeline:", "kind": "pick", "where": "career:timeline", "options": ["Nice to read", "Boring", "Something is missing"], "note": "Which milestone made you smile, or which is missing or silly?"},
+   {"id": "feel", "text": "Does the Career tab feel like \"my career\"?", "kind": "pick", "where": "career:timeline", "options": ["My career", "A spreadsheet", "In between"]}
+  ]},
+  {"id": "goals", "title": "THE GOALS", "questions": [
+   {"id": "goals_card", "text": "The goals card on the planner:", "kind": "pick", "where": "week", "min_weeks": 2, "needs": "goals_set", "options": ["Clear", "Confusing", "I left the coach's picks"]},
+   {"id": "goals_stakes", "text": "What met and missed open or cost:", "kind": "pick", "where": "week", "needs": "goal_news", "options": ["I felt it", "Invisible", "Too big", "Too small"]},
+   {"id": "goals_reviews", "text": "The two reviews (February and midsummer):", "kind": "pick", "where": "week", "min_weeks": 15, "options": ["Useful", "Skippable", "I did not see one"]}
+  ]},
+  {"id": "review", "title": "THE SEASON REVIEW (only if you reached 31 October, or jumped there with the Dev menu)", "questions": [
+   {"id": "review_story", "text": "Does the page read like the story of your season?", "kind": "pick", "where": "review", "options": ["Yes", "Dull"], "note": "Which block is best, which is dull?"},
+   {"id": "review_verdict", "text": "The coach's verdict:", "kind": "pick", "where": "review", "options": ["Fair", "Unfair", "Wrong voice"]},
+   {"id": "review_strap", "text": "The card on This week that opened it:", "kind": "pick", "where": "review", "options": ["Clear", "I nearly missed it"]}
+  ]},
+  {"id": "sizes", "title": "SIZES OF THINGS", "questions": [
+   {"id": "size_name", "text": "The steps of your name (reputation):", "kind": "pick", "where": "week", "min_weeks": 6, "options": ["Too small", "Right", "Too big"]},
+   {"id": "size_offers", "text": "How often coaches write to you:", "kind": "pick", "where": "week", "min_weeks": 6, "options": ["Too rare", "Right", "Too often"]},
+   {"id": "size_stakes", "text": "The stakes of the goals (trust, mood, a bigger meet):", "kind": "pick", "where": "week", "min_weeks": 6, "options": ["Too small", "Right", "Too big"]},
+   {"id": "size_injuries", "text": "Injuries and niggles:", "kind": "pick", "where": "week", "min_weeks": 6, "options": ["Too rare", "Right", "Too often"]},
+   {"id": "size_school", "text": "School's load on your week:", "kind": "pick", "where": "week", "min_weeks": 6, "options": ["Too light", "Right", "Too heavy"]}
+  ]},
+  {"id": "feel", "title": "IN YOUR OWN WORDS", "questions": [
+   {"id": "fun", "text": "The most fun moment in these weeks:", "kind": "text", "where": "week", "min_weeks": 7},
+   {"id": "quit", "text": "The moment that made you want to skip ahead or quit:", "kind": "text", "where": "week", "min_weeks": 7},
+   {"id": "change", "text": "If you could change one thing before the next step, what is it?", "kind": "text", "where": "week", "min_weeks": 7}
+  ]}
+ ],
+ "pages": {
+  "week": "This week",
+  "career:now": "the Career tab, Now",
+  "career:results": "the Career tab, Results",
+  "career:timeline": "the Career tab, Timeline",
+  "review": "the season review"
+ },
+ "ui": {
+  "menu": "Playtest notes",
+  "back": "◀ Back",
+  "card_head": "PLAYTEST · about {page}",
+  "card_done": "Done",
+  "card_skip": "Skip these",
+  "card_thanks": "Thanks: saved.",
+  "on": "The playtest is on: questions appear on the pages they are about.",
+  "off": "The playtest is off: no questions appear. The notes page stays.",
+  "turn_on": "Turn the playtest on",
+  "turn_off": "Turn the playtest off",
+  "quick_head": "A QUICK NOTE",
+  "quick_hint": "Jot something down while you play: it is stamped with the date in the game and the page you were on.",
+  "quick_placeholder": "What did you just notice?",
+  "quick_add": "Add note",
+  "notes_head": "YOUR NOTES",
+  "notes_none": "No quick notes yet.",
+  "progress": "{n} of {total} answered",
+  "copy": "Copy everything",
+  "copied": "Copied: paste it to Claude.",
+  "save": "Save as a text file",
+  "saved": "Saved: {path}",
+  "folder": "Open the folder",
+  "placeholder_note": "A few words, if you like",
+  "placeholder_text": "Write here",
+  "md_head": "Season playtest notes",
+  "md_context": "Game date {date}, age {age}, name: {name}, season {season}, written {at}",
+  "md_none": "(no answer)"
+ }
+}

@@ -141,6 +141,11 @@ func _run() -> void:
 	await _frames(3)
 	await _press_help(hub, "hub season review", "review", true)
 	career_sys.reviews.erase(2026)
+	load("res://scripts/core/playtest_notes.gd").DIR = "user://tool_playtest/"   # (session K1c: the playtest notes page; never the player's notes)
+	hub._playtest_back = "week"
+	hub._show("playtest")
+	await _frames(3)
+	await _press_help(hub, "hub playtest notes", "playtest", true)
 	hub._people_page = ""
 	hub._phase_open = "spring_base"
 	hub._show("training")

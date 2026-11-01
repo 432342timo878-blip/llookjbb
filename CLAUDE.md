@@ -39,7 +39,8 @@ moods, his next goals' ★, a bigger meet he puts you up for), the two reviews a
 older saves rebuilt from the results), the Career tab (Now / Results / Timeline / Seasons / Profile), "the next big thing" as a strap on This
 week + a block on Career, the long path, records (senior + boys 14 only: the official class tables could not be read, no names below
 senior), save v8; K1b = the season review chapter (a snapshot on 31 Oct, a strap on the first planner, one reading page, kept under Career →
-Seasons). Next, in `docs/ROADMAP.md` order: the user's playtest 3 (their turn: notes into `docs/PLAYTESTS.md`) → P2 →
+Seasons); **K1c** = an in-game playtest (a menu page + cards with the right questions on the right pages, `data/playtest.json`,
+`PlaytestNotes`; never a stop; the notes copy out as text). Next, in `docs/ROADMAP.md` order: the user's playtest 3 (their turn: notes into `docs/PLAYTESTS.md`) → P2 →
 R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
 only at senior level.
 

@@ -72,6 +72,9 @@ func _build() -> void:
 func _show_page() -> void:
 	for c in _body.get_children():
 		c.queue_free()
+	var playtest := PlaytestCard.build("career:" + page)   # (session K1c: the playtest's questions about this page, while it is on)
+	if playtest != null:
+		_body.add_child(playtest)
 	match page:
 		"results": _page_results()
 		"timeline": _page_timeline()

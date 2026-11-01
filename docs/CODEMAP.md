@@ -288,6 +288,12 @@ Read the paragraphs below with these in mind; they win where they disagree.
     `review_list()`. `SeasonReviewView` is the page. Never a stop, never a choice waiting.
   - **Tools:** `tools/reputation_check.gd` (in `run_all_checks`), `tools/career_shot.gd -- <out> [weeks 24; 52+ makes a review] [seed]`
     (windowed screenshots of the Career pages, the strap, the review, Seasons); `layout_check` shows the career pages, the review and Seasons.
+- **Session K1c (the in-game playtest; GDD 4.10 "Built (step K1c)"):** `PlaytestNotes` (`scripts/core/playtest_notes.gd`: answers, quick notes,
+  `due(page)`, `skip`, `set_on`, `to_markdown`, `save_text`; saved in `user://playtest/<run>.json`, `dir()` = the tools' own folder when
+  `SaveGame.DIR` is not the player's), `PlaytestCard.build(page)` (the card; called by `WeekPlanner._ready`, `CareerView._show_page`,
+  `SeasonReviewView`), `PlaytestView` (the menu's page; `question_box()` is shared with the card), questions in `data/playtest.json`
+  (`where` / `min_weeks` / `needs`), the hub view `playtest` (`_playtest_back`), `tools/playtest_check.gd`. A tester's tool: off with one
+  button, never a stop.
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

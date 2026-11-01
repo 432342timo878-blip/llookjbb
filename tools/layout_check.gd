@@ -117,6 +117,12 @@ func _run() -> void:
 		await _shot("%s_career_seasons" % tag)
 		_check_overflow(hub, "%s career_seasons" % tag)
 		career_sys.reviews.erase(2026)
+		load("res://scripts/core/playtest_notes.gd").DIR = "user://tool_playtest/"   # (session K1c: the playtest notes page)
+		hub._playtest_back = "week"
+		hub._show("playtest")
+		await _frames(4)
+		await _shot("%s_playtest" % tag)
+		_check_overflow(hub, "%s playtest" % tag)
 		career_view.page = "now"
 		career_view.rep_open = false
 		# The day editor: an editable day with changes (Thu: Hard + a second session), the "add session" row,

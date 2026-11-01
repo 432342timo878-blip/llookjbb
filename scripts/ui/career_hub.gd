@@ -44,7 +44,8 @@ var _people_page := ""          # People tab: "" = the list (PC: the coach threa
 var _people_dot: Control        # the mark on the People tab: something unread or waiting for an answer
 var _result_event := {}         # a moment just answered whose result card (what changed) is showing over the page
 var _card_id := ""              # the race card page (session L2a): the id of the kept card it shows (Game.card)
-var _review_year := 0           # (session K1b) the season review page: the season it shows (CareerSystem.reviews)
+var _playtest_back := "week"    # (session K1c) the page the Playtest notes page goes back to
+var _review_year := 0          # (session K1b) the season review page: the season it shows (CareerSystem.reviews)
 var _review_back := "week"      # ... and the tab it goes back to: the planner's strap or Career -> Seasons
 var _card_back := "week"        # (session K1a) the tab the race card page goes back to: the planner's strap or the Career tab's list
 # Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
@@ -293,9 +294,14 @@ func _open_menu(at: Control) -> void:
 	var u: Dictionary = Data.planner.ui
 	_menu.add_item(str(u.menu_save), 0)
 	_menu.add_item(str(u.menu_main), 1)
+	_menu.add_item(str(Data.playtest.ui.menu), 2)   # (session K1c: the in-game playtest notes)
 	_menu.id_pressed.connect(func(id: int):
 		if id == 0:
 			_save()
+		elif id == 2:
+			if _view != "playtest":
+				_playtest_back = _view
+			_show("playtest")
 		else:
 			Router.go("main_menu"))
 	add_child(_menu)
@@ -783,6 +789,10 @@ func _show(view: String) -> void:
 			var career := CareerSystem.sys()
 			if career != null:
 				career.mark_seen(_review_year)
+		"playtest":   # (session K1c: the playtest notes, opened from the menu)
+			var pt := PlaytestView.new(_playtest_back)
+			pt.back_pressed.connect(func(): _show(_playtest_back))
+			_content.add_child(pt)
 		"people": _build_people()
 		"school": _content.add_child(SchoolView.new())   # (session L3b1: its own tab, apart from the messages)
 		"career": _build_career()

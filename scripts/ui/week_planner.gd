@@ -96,6 +96,9 @@ func _ready() -> void:
 	var strap := _next_big_strap()
 	if strap != null:
 		add_child(strap)
+	var playtest := PlaytestCard.build("week")   # (session K1c: the playtest's questions about this page, while it is on)
+	if playtest != null:
+		add_child(playtest)
 	if Layout.compact:
 		_build_phone()
 	else:

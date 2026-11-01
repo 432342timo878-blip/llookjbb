@@ -218,3 +218,7 @@ asks you to look at, but write anything:
 
 ### Notes (write here)
 
+
+**In the game (K1c):** the questions above now come to you. While you play, a card with a few questions appears at the top of the page they are
+about (This week, the Career tab's pages, the season review). Answer and press Done. The menu (top right) -> "Playtest notes" has every
+question, a quick-note box and "Copy everything": paste that here or to Claude.

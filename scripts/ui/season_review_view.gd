@@ -41,6 +41,9 @@ func _build() -> void:
 	if r.is_empty():
 		add_child(UIKit.wrapped("No review for this season."))
 		return
+	var playtest := PlaytestCard.build("review")   # (session K1c: the playtest's questions about this page, while it is on)
+	if playtest != null:
+		add_child(playtest)
 	add_child(_numbers(r))
 	var verdict := _verdict(r)
 	add_child(verdict)
