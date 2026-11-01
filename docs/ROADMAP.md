@@ -553,16 +553,32 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         candidate (user's notes 2026-10-25)**, moments for ages 16–17 in the new form. Research first: Finnish
         teens' time use, sleep and dating age; training group sizes and schedules. *(Opus, high)*
         Done: a friend can be made and lost through slots; the group's pull shows in the week report; `storylet_check` covers the new kinds.
-  - [ ] **R6. Race presentation** (decision 8): **first a race-logic audit (user's notes 2026-10-25: "check that everything works
-        100 % and is logical": every card, move, box, kick and fall against its rules, odd cases listed and fixed or deferred to R7)**,
-        then research (athletics TV graphics, World Athletics track specs outdoor + indoor, Godot 2D /
-        2.5D techniques, CC0 runner art), then **two short prototypes** (TV-style 2D and a 2.5D broadcast angle) for the user to pick from,
-        then the build: the stadium from specs, figures, follow camera + zoom, TV graphics, the kick slow-motion setting (Off / Short /
-        Full), plain labels. Presentation only: the races hash stays. *(Opus, high)*
-        Done: the user picked a prototype; `race_check`, `layout_check`, the tour; races hash identical.
-  - [ ] **R7. Race controls + "Move in" + the race-day timeline + competitiveness** (the backlog's race-controls design, the warm-up /
-        cool-down timeline, the tree's race-craft nodes if T1 is done): a race session that changes the engine on purpose. *(Opus, high)*
-        Done: a new deliberate races hash recorded; `race_shape`, `race_rounds`, `race_check`.
+  - **The race revamp (user, 2026-11-01, after playtest 3: "the gameplay inside the event itself is incredibly boring"; designed in
+    GDD 4.11 "R-revamp"; replaces the old R6 / R7 below, which are now six sessions).** The race becomes "riding the effort": a
+    continuous effort slider in real time, live alerts instead of cards, a race plan with the coach, a viewpoint you are in (chosen by
+    seeing prototypes), sound, then the race-day timeline. Presentation sessions keep the races hash; engine sessions change it on
+    purpose. Order: R6a → (the user picks) → R7a → R7b → R6b → R6c → R7c → the user's playtest 4 (races only; may reorder the rest).
+    - [ ] **R6a. Viewpoint prototypes** (starts right after P2): three viewpoints (3D chase camera behind the runner, TV broadcast side
+          camera, the top-down view made rich) all replaying ONE recorded race (the engine's per-step positions recorded read-only),
+          switchable with a key, entered from the Dev menu; no game files change. Research first: athletics TV graphics, World
+          Athletics track specs outdoor + indoor, Godot 3D / 2.5D on the Compatibility renderer, CC0 runner models (downloads need the
+          user's OK). *(Opus, high)* Done: the user has played with all three and picked; races hash identical.
+    - [ ] **R7a. The effort engine** (a race session that changes the engine on purpose): **starts with the race-logic audit** (user's notes
+          2026-10-25: "check that everything works 100 % and is logical": every move, box, kick, fall and heat rule against its rules,
+          odd cases fixed or listed), then the effort slider on the existing race screen (so it is felt before the look is chosen), live
+          alerts in place of the cards, "Move in", competitiveness (4.9.4), the confirmed plan as the hands-off line, Quick result = the
+          plan, the commentary reads the slider. *(Opus, high)* Done: a new deliberate races hash recorded; `race_shape`, `race_rounds`,
+          `race_check`, `quick_fingerprint`; the other fingerprints identical.
+    - [ ] **R7b. The race plan and the stakes**: the pre-race plan screen (the coach proposes a pace curve, you edit it), the coach's
+          grade after (trust + race tactics through the "what this race did" card), rivals who matter (head-to-head, style), the carry-in
+          strip (moods, form, goals). *(Opus, high)* Done: races hash identical to R7a.
+    - [ ] **R6b. The look**: the chosen viewpoint built properly (the stadium from specs, figures, the camera, the meter / pace line /
+          cues / gaps as TV graphics, slow-motion setting Off / Short / Full, plain labels; phone layout). *(Opus, high)* Done:
+          `race_check`, `layout_check`, the tour, `help_check`; races hash identical.
+    - [ ] **R6c. Sound** (crowd, breathing and footsteps, the bell, the coach): a research session for free assets first, the user's OK
+          per download, credits in the Credits screen. *(Sonnet / Opus)*
+    - [ ] **R7c. The race-day timeline** (arrive, warm-up, call room, start; the cool-down and its effect on tomorrow's soreness; the
+          tree's race-craft nodes if T1 is done). *(Opus, high)*
   - [ ] **G1. Test days + Rep by rep** (one shared played-session screen, Auto, training PBs; research: youth test batteries and norms).
         *(Opus, high)*
   - [ ] **G3. Camp weeks** (the Pajulahti grade 7–9 camps, club, district and holiday camps, later TF camps; research: dates and costs;
