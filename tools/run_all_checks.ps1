@@ -65,6 +65,7 @@ $checks = @(
 	@{ name = "storylet_check"; args = "--headless -s res://tools/storylet_check.gd"; marker = "ALL CHECKS PASSED"; limit = 1200 },
 	@{ name = "verdict_check"; args = "--headless -s res://tools/verdict_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "goals_check"; args = "--headless -s res://tools/goals_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
+	@{ name = "reputation_check (the career's history, the reputation, the older saves)"; args = "--headless -s res://tools/reputation_check.gd"; marker = "ALL CHECKS PASSED"; limit = 300 },
 	@{ name = "mind_check"; args = "--headless -s res://tools/mind_check.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "market_check"; args = "--headless -s res://tools/market_check.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "school_check"; args = "--headless -s res://tools/school_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },

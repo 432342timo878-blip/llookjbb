@@ -43,6 +43,7 @@ const OPTIONS := {
 	"goals": ["res://scripts/core/season_goals.gd", "enabled"],
 	"market": ["res://scripts/core/coach_market.gd", "enabled"],
 	"season_offers": ["res://scripts/core/season_system.gd", "offers_enabled"],
+	"reputation": ["res://scripts/core/career_system.gd", "effects_enabled"],   # (K1a: what the player's name decides; the history is always recorded)
 }
 
 const PRESETS := {
@@ -50,13 +51,13 @@ const PRESETS := {
 		"health": true, "coach_model": true, "coach_neutral": false, "mind": true, "mind_neutral": false,
 		"school": true, "school_neutral": false, "school_decisions": true, "form": true, "moments": true,
 		"test_moments": false, "talks": true, "people": true, "proposals": true, "suggests": true, "goals": true,
-		"market": true, "season_offers": true,
+		"market": true, "season_offers": true, "reputation": true,
 	},
 	"lab": {
 		"health": false, "coach_model": true, "coach_neutral": true, "mind": true, "mind_neutral": true,
 		"school": true, "school_neutral": true, "school_decisions": false, "form": true, "moments": true,
 		"test_moments": false, "talks": false, "people": false, "proposals": false, "suggests": false, "goals": false,
-		"market": false, "season_offers": true,
+		"market": false, "season_offers": true, "reputation": false,
 	},
 }
 

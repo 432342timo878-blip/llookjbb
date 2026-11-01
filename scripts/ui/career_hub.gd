@@ -44,6 +44,7 @@ var _people_page := ""          # People tab: "" = the list (PC: the coach threa
 var _people_dot: Control        # the mark on the People tab: something unread or waiting for an answer
 var _result_event := {}         # a moment just answered whose result card (what changed) is showing over the page
 var _card_id := ""              # the race card page (session L2a): the id of the kept card it shows (Game.card)
+var _card_back := "week"        # (session K1a) the tab the race card page goes back to: the planner's strap or the Career tab's list
 # Help (GDD 5 "Help"): the header "?" opens the help of what the hub shows. PC: in the side slot, over the day editor
 # (Close goes back to the day); phone: a HelpOverlay sheet. `_help_stack` is what is open ([] = closed), kept across
 # layout switches.
@@ -720,6 +721,8 @@ func _show(view: String) -> void:
 	view = str(ALIASES.get(view, view))
 	_view = view
 	var tab := str(TAB_OF.get(view, view))
+	if view == "race_card":
+		tab = _card_back
 	if Layout.compact and tab == "rankings":
 		tab = "career"   # (Rankings is a page of Career on a phone)
 	if _tabs.has(tab):
@@ -747,17 +750,18 @@ func _show(view: String) -> void:
 			var rv := ReportView.new()
 			rv.card_pressed.connect(func(id: String):   # (session L2b: the report's race straps open their cards too)
 				_card_id = id
+				_card_back = "week"
 				_show("race_card"))
 			_content.add_child(rv)
 		"race_card":   # (session L2a: a kept card, opened from the planner's race strap)
-			_content.add_child(_back_button("week"))
+			_content.add_child(_back_button(_card_back))
 			var c := Game.card(_card_id)
 			if not c.is_empty():
 				if str(c.get("kind", "")) == "scratch":
 					var p := PanelContainer.new()
 					p.add_theme_stylebox_override("panel", ThemeBuilder.panel_box(16))
 					p.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if not Layout.compact else Control.SIZE_FILL
-					p.add_child(RaceRecapView.scratch_box(c, minf(480.0, Layout.logical_width - 56.0), func(): _show("week")))
+					p.add_child(RaceRecapView.scratch_box(c, minf(480.0, Layout.logical_width - 56.0), func(): _show(_card_back)))
 					_content.add_child(p)
 				else:
 					_content.add_child(RaceRecapView.head(str(c.meet_name)))
@@ -765,7 +769,7 @@ func _show(view: String) -> void:
 					_content.add_child(RaceRecapView.new(c, true))
 		"people": _build_people()
 		"school": _content.add_child(SchoolView.new())   # (session L3b1: its own tab, apart from the messages)
-		"career": _build_profile(Game.athlete)
+		"career": _build_career()
 		"progress":
 			var page := ProgressView.new()
 			page.back_pressed.connect(func(): _show("career"))
@@ -791,9 +795,11 @@ func _build_week() -> void:
 		_rebuild_view())
 	_planner.report_pressed.connect(func(): _show("report"))
 	_planner.messages_pressed.connect(func(): _show("people"))   # (session L3a: the quiet feed's line)
+	_planner.career_pressed.connect(func(): _show("career"))   # (session K1a: the next-big-thing strap)
 	_planner.school_pressed.connect(func(): _show("school"))   # (session L3b1: the report card's "See every grade")
 	_planner.card_pressed.connect(func(id: String):
 		_card_id = id
+		_card_back = "week"
 		_show("race_card"))
 	_planner.moment_answered.connect(func(e: Dictionary):
 		if MomentEventPanel.has_result(e):   # what the answer changed, as after a stop moment (GDD 4.9.5)
@@ -886,17 +892,27 @@ func _raise_overlays() -> void:
 
 # --- Career (the old Overview's athlete, goals and attributes; K1 fills the tab) --------------------------------
 
-func _build_profile(a: Athlete) -> void:
+## The Career tab (session K1a): CareerView with its pages; the Profile page is the old athlete page below.
+func _build_career() -> void:
+	var view := CareerView.new(func(target: Control): _build_profile(Game.athlete, target), func():   # (with no goals set, a button asks the coach: his card, L3b2)
+		_refresh_week_ui()
+		_show("week"))
+	view.card_pressed.connect(func(id: String):
+		_card_id = id
+		_card_back = "career"
+		_show("race_card"))
+	if not Layout.compact:
+		_overview_columns = _wanted_overview_columns()   # (the pages are built for this width; see _apply_editor_visibility)
+	_content.add_child(view)
+
+
+## The Profile page of the Career tab (the old Overview's athlete: attributes, body, recent races); `target` = where it goes.
+func _build_profile(a: Athlete, target: Control) -> void:
 	if Layout.compact:   # (Rankings is a page of Career on a phone)
 		var rankings := UIKit.button(str(Data.planner.ui.rankings_button), false, 0.0)
 		rankings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rankings.pressed.connect(func(): _show("rankings"))
-		_content.add_child(rankings)
-	var goals_panel := GoalsUI.overview_panel(func():   # the season goals (C5); with none set, a button asks the coach: his card (L3b2)
-		_refresh_week_ui()
-		_show("week"))
-	if goals_panel != null:
-		_content.add_child(goals_panel)
+		target.add_child(rankings)
 
 	var columns: Container   # wide: a grid of 4 (2 when the width is short, e.g. with the side panel open)
 	if Layout.compact:
@@ -951,7 +967,7 @@ func _build_profile(a: Athlete) -> void:
 	if Layout.compact:   # the body and results first, then the attributes
 		for p in attribute_panels:
 			columns.add_child(p)
-	_content.add_child(columns)
+	target.add_child(columns)
 
 
 # --- Training plan ----------------------------------------------------------------------

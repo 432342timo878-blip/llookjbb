@@ -1,0 +1,58 @@
+{
+ "_note": "Session K1a (GDD 4.10 'K1's questions'): the player's REPUTATION, how well known they are in Finnish athletics. Recorded, never invented: every race the player runs puts points in a list with the parts that made them (CareerSystem.rep_events); the score is the sum of the points of the last window_days, each fading linearly to nothing over the window, so a runner who stops racing slowly loses the name and a runner who keeps winning keeps it. The step is the highest one whose `min` the score has reached. Nothing here is a promise: it decides only the coach market (who writes to you, who sees you), the commentators' words and the coach's bigger-meet suggestions (effects, below); camps, selections and sponsors wait for G3. Not the same as a coach's `reputation` (market.json): that is the coach's.",
+ "_why": {
+  "window": "A name in a small sport is made over about two seasons: a youth champion is remembered the next year and half-forgotten after two. 730 days, linear, so each race counts fully on the day and nothing at the end.",
+  "level_weight": "A win in a club meet is known to the club; a placing at the national youth championships is known to every coach in the country. The weights are 1 / 2 / 4 / 5 / 6 because a national meet has about four times the audience of a local one (SUL's results are published for the national meets, the local ones mostly are not read by anyone outside the club).",
+  "place": "What counts is where you finish in the field of that meet, because a field is what people see: a win 1.0, a medal 0.7, the points places (top 8 of a Finnish youth meet) in the better half 0.4, the better half 0.2, the rest 0.05 (you were there; DNF / DQ 0). A youth meet has no final, so the places are across the timed sections (L3b2).",
+  "age": "To be good while young is what makes a 'one to watch': the points of a race are multiplied by 1.3 up to age 14, 1.25 at 15, 1.15 at 16, 1.1 at 17 and 1.0 from 18, because by the same time a 14-year-old's name travels faster than an 18-year-old's.",
+  "pb": "A personal best adds a quarter of the meet's weight: improving in public is news; the very first race of the career counts too.",
+  "standard": "The first time a real limit is met (data/standards.json) the coaches who read the lists see it once: SM limit 2, TF-juniorit 4, TF-nuoret 5, Kalevan kisat limit 8.",
+  "record": "A time within 3 % of the Finnish record of the class (data/career.json records) +3, under it +10; once per class and kind.",
+  "steps": "The first step above Unknown is a few good races in a small club; One to watch is about a season of good results; a Local name needs a winning season or national placings; a National name is a medallist at the national youth championships year after year; an International name needs elite results. The numbers (1.5 / 4 / 9 / 20 / 45) are a first guess, measured by tools/reputation_check.gd and the season playtest and tuned after the user's playtest 3 (memory: feel it before tuning)."
+ },
+ "window_days": 730,
+ "level_weight": {"local": 1.0, "district": 2.0, "national": 4.0, "international": 5.0, "elite": 6.0},
+ "place": {"win": 1.0, "medal": 0.7, "scoring": 0.4, "half": 0.2, "rest": 0.05},
+ "age": [[0, 1.3], [15, 1.25], [16, 1.15], [17, 1.1], [18, 1.0]],
+ "pb_share": 0.25,
+ "standard_points": {"sm": 2.0, "tf_juniorit": 4.0, "tf_nuoret": 5.0, "kalevan": 8.0},
+ "record_points": {"near": 3.0, "under": 10.0},
+ "record_near": 0.03,
+ "steps": [
+  {"id": "unknown", "name": "Unknown", "min": 0.0, "short": "Nobody outside your club has heard of you.", "next": "A few good races at club and district meets."},
+  {"id": "club", "name": "Known at the club", "min": 1.5, "short": "Your club and your coach know your name.", "next": "A season of good results, or one good result at a national meet."},
+  {"id": "watch", "name": "One to watch", "min": 4.0, "short": "Coaches and the other clubs have started to keep an eye on you.", "next": "A winning season, or placings at the national youth meets."},
+  {"id": "local", "name": "A local name", "min": 9.0, "short": "Your region knows you; the district's coaches follow your results.", "next": "Medals at the national youth meets."},
+  {"id": "national", "name": "A national name", "min": 20.0, "short": "Everyone who follows Finnish youth athletics knows your name.", "next": "Elite results, year after year."},
+  {"id": "international", "name": "An international name", "min": 45.0, "short": "Your results are read abroad.", "next": ""}
+ ],
+ "effects": {
+  "_note": "Only what the game really has (GameConfig 'reputation'; the lab preset switches them off). market.name: points added to a coach's offer score by the step index (0-5) - 'he has heard of you', a reason like the others in market.json offers.reasons; market.attention: the share added to the weekly chance of the coaches who do NOT see you at the track (the region's, the academy's, the national and remote ones, the elite ones) per step, a name travels; suggests.min_w: the coach's bar for suggesting a bigger meet (advice.json suggest.*.propose_min_w) goes down by this much per step, down to a floor of 0.02 (a name makes a higher-level meet worth suggesting earlier); commentary: the broadcast may mention your name from the step 'club' on (RaceCommentary, read-only: the race itself is untouched).",
+  "market": {"name": [0.0, 0.0, 0.6, 1.2, 2.0, 3.0]},
+  "attention_per_step": 0.12,
+  "attention_sections": ["region", "academy", "national", "remote", "elite"],
+  "suggests": {"min_w_per_step": 0.02, "floor": 0.02},
+  "commentary_from": 1
+ },
+ "texts": {
+  "title": "YOUR NAME",
+  "score": "Score {score} · next step at {next}",
+  "top": "The highest step.",
+  "fades": "Points fade over two years: {n} of them are from races more than a year ago.",
+  "tap": "Tap for the numbers.",
+  "parts": {"place": "Finished {place} of {field}", "level": "{level}", "age": "Age {age}", "pb": "Personal best", "standard": "Met the {name}", "record": "{kind} the Finnish record ({class})"},
+  "step_up": "Your name has grown: {name}.",
+  "step_down": "Your name has faded: {name}.",
+  "does_title": "WHAT A NAME DOES HERE",
+  "does": [
+   "Coaches write to you more often, and coaches outside your own town notice you.",
+   "Your coach finds it easier to suggest a bigger meet.",
+   "The commentators may know who you are."
+  ],
+  "does_not": "It does not give you camps, selections or sponsors: the game does not have those yet."
+ },
+ "commentary_lines": {
+  "_note": "The words RaceCommentary fills `{p_rep_text}` with (its filler lines rep_* are in race_commentary.json), said between the calls on lap 1 only when the step is 'club' or above and the effects are on. Words only; the race is the same.",
+  "step_text": {"club": "known at {pclub}", "watch": "one the coaches have started to talk about", "local": "a name in this region by now", "national": "a name every youth coach in the country knows", "international": "a name that reaches well beyond Finland"}
+ }
+}

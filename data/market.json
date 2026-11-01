@@ -230,7 +230,8 @@
     "crossed": {"calm": "{name}, I saw your new best.", "drill": "{name}. That best time. Now you're at my group's level.", "warm": "{name}, your new best! I was so happy to see it.", "tactician": "{name}, your new best puts you at my group's level.", "analyst": "{name}, your new best crosses my group's line.", "mentor": "{name}. A fine new best.", "motivator": "{name}! That new best! WOW!", "speed": "{name}. Saw the new best. Fast.", "real": "Hello {name}. Congratulations on your new best."},
     "seen": {"calm": "{name}, I saw your name on the TF-juniorit list.", "drill": "{name}. TF-juniorit level. Good.", "warm": "Congratulations on the TF-juniorit standard, {name}!", "tactician": "{name}, the TF-juniorit standard: noted.", "analyst": "{name}, you've reached the TF-juniorit standard.", "mentor": "{name}. The TF-juniorit list. Well done.", "motivator": "TF-JUNIORIT, {name}! Amazing!", "speed": "{name}. TF-juniorit. Nice.", "real": "Hello {name}. Congratulations on the TF-juniorit standard."},
     "strained": {"calm": "{name}, I hear it hasn't been easy with your coach lately.", "drill": "{name}. Word is things aren't working with your coach.", "warm": "Hi {name}, I've heard things have been hard with your coach. I'm sorry.", "tactician": "{name}, I understand your current set-up isn't working.", "analyst": "{name}, I'm told your current coaching isn't working out.", "mentor": "{name}. I hear it's not going well with your coach.", "motivator": "Hey {name}, I heard things are rough with your coach. That's tough!", "speed": "{name}. Heard it's not working with your coach."},
-    "better": {"calm": "{name}, I've been thinking about your training.", "drill": "{name}. You're training below what you could.", "warm": "Hi {name}! I've been thinking about you and your running.", "tactician": "{name}, I think your training could be organised better.", "analyst": "{name}, I think there is more efficiency in your training.", "mentor": "{name}. I've been thinking about your training.", "motivator": "Hey {name}! I think I could help you fly!", "speed": "{name}. I think you could be faster.", "real": "Hello {name}. I would like to offer my coaching."}
+    "better": {"calm": "{name}, I've been thinking about your training.", "drill": "{name}. You're training below what you could.", "warm": "Hi {name}! I've been thinking about you and your running.", "tactician": "{name}, I think your training could be organised better.", "analyst": "{name}, I think there is more efficiency in your training.", "mentor": "{name}. I've been thinking about your training.", "motivator": "Hey {name}! I think I could help you fly!", "speed": "{name}. I think you could be faster.", "real": "Hello {name}. I would like to offer my coaching."},
+    "name": {"calm": "{name}, your name has started to come up when coaches talk.", "drill": "{name}. People are talking about you. I listened.", "warm": "Hi {name}! Your name keeps coming up and I wanted to write to you.", "tactician": "{name}, your name has reached me from more than one direction.", "analyst": "{name}, your results have made your name known beyond your club.", "mentor": "{name}. I have heard your name more than once this season.", "motivator": "Hey {name}! Everybody is talking about you and I HAD to write!", "speed": "{name}. Heard your name. Twice.", "real": "Hello {name}. Your name has become known among coaches."}
    },
    "see": {
     "talent": "I think there is a lot more in you than your {pb} shows.",
@@ -239,7 +240,8 @@
     "crossed": "With {pb} you would fit right into my group.",
     "seen": "At that level, every detail of the training starts to matter.",
     "strained": "A runner needs a coach they trust. If that is missing, everything is harder.",
-    "better": "I believe I could get more out of your training."
+    "better": "I believe I could get more out of your training.",
+    "name": "A runner who is already known should have a coach who can carry that."
    },
    "plan_intro": {"calm": "With me, you would", "drill": "With me you'd", "warm": "With me, we would", "tactician": "With me, the plan would", "analyst": "With me, the training would", "mentor": "With me, you'd", "motivator": "With me, we'd", "speed": "With me you'd", "real": "In my group, the training would"},
    "plan": {
@@ -273,7 +275,8 @@
     "crossed": "{coach_first} noticed your latest best time.",
     "seen": "{coach_first} saw that you reached the TF standard.",
     "strained": "{coach_first} heard that things are not going well with your coach.",
-    "better": "{coach_first} thinks you could get more out of your training."
+    "better": "{coach_first} thinks you could get more out of your training.",
+    "name": "{coach_first} says your name is getting around among the coaches."
    },
    "outro": ["{coach_first} has a place for you. I said you would think about it and that it is your decision. Everything is on {his} page in Find a coach, and the place is kept until {date}.", "There is a place for you with {coach_first}. I told {coach_first} it is up to you. You can read the offer on {his} page in Find a coach (until {date})."]
   },

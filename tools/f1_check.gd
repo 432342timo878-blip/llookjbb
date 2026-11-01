@@ -134,8 +134,18 @@ func _rest(ms, SG) -> void:
 	var DT = load("res://scripts/core/dev_tools.gd")
 	var target: Dictionary = game.add_days(game.date, 70)
 	var res: Dictionary = DT.jump(target, true) if _argc(DT, "jump") >= 2 else DT.jump(target)
-	_ok("a jump of 70 days reaches its date (%d days, %d stops answered, %d races run)" % [res.days, res.get("stops", 0), res.get("races", 0)],
-			load("res://scripts/core/calendar.gd").date_key(game.date) == load("res://scripts/core/calendar.gd").date_key(target) and int(res.get("stops", 0)) > 0)
+	var reached: bool = load("res://scripts/core/calendar.gd").date_key(game.date) == load("res://scripts/core/calendar.gd").date_key(target)
+	# (Session K1a: whether a stop comes in 70 days is the dice's: a change in who writes to the athlete moves them. Jump on in 70-day
+	# steps, up to five times, until a stop was answered: what is checked is that every jump reaches its date and answers what stops it.)
+	var jumps := 1
+	while int(res.get("stops", 0)) == 0 and jumps < 5 and reached:
+		target = game.add_days(game.date, 70)
+		var more: Dictionary = DT.jump(target, true) if _argc(DT, "jump") >= 2 else DT.jump(target)
+		reached = load("res://scripts/core/calendar.gd").date_key(game.date) == load("res://scripts/core/calendar.gd").date_key(target)
+		res = {"days": int(res.days) + int(more.days), "stops": more.get("stops", 0), "races": int(res.get("races", 0)) + int(more.get("races", 0))}
+		jumps += 1
+	_ok("a jump of 70 days reaches its date (%d days in %d jump(s), %d stops answered, %d races run)" % [res.days, jumps, res.get("stops", 0), res.get("races", 0)],
+			reached and int(res.get("stops", 0)) > 0)
 	_ok("no stop event waits after it", game.pending_event().is_empty())
 	_answer_all()
 

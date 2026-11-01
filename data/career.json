@@ -1,0 +1,111 @@
+{
+ "_note": "Session K1a (GDD 4.10 'K1's questions'): the Career tab's data. `milestones` = what goes on the timeline (CareerSystem finds them from the results, the standards, the rankings and what the other systems record), `round_times` = the times a Finnish runner talks about (the first time under each), `records` = the Finnish records (times only, with a source and the date it was read; below senior level NO NAMES, GDD rule 'no real people below senior level'), `path` = the long path's wording. Every number is a fact of the game's own data or a fact with a source.",
+ "round_times": {
+  "_note": "The 800 m times a runner counts their career by: a round time is a time with a zero or a five at the end of the minute (2:30, 2:20, 2:10 ...). Men: from 2:30 (the SM limit of a 15-year-old is 2:21) to the elite; women: from 2:50 (the SM limit of a 15-year-old girl is 2:35).",
+  "male": [150.0, 140.0, 130.0, 125.0, 120.0, 115.0, 110.0, 108.0, 105.0],
+  "female": [170.0, 160.0, 150.0, 140.0, 135.0, 130.0, 125.0, 120.0]
+ },
+ "records": {
+  "_note": "Finnish 800 m records. Senior: tilastopaja.fi 'Suomen ennätykset' (the official list kept by SUL), read 2026-11-01; the outdoor marks also agree with the English Wikipedia list. Age classes: only the M14 outdoor record is a source the game could verify (an MTV Uutiset story of an athletics federation release: the 14-year-old boy's record 1:59.89; the older mark was 2:00.1 from 1979); the other age classes (M15, M17, M19, N14-N19) are NOT in the data because the official class tables of SUL / tilastopaja could not be read on 2026-11-01 (the SUL site refused the connection, tilastopaja's class tabs are not reachable by address). They are to be added with their source when read: the milestone and the reputation points for 'near the record' use a class only when it has a row here. No name below senior level is ever stored. The senior names are those of the official list.",
+  "rows": [
+   {"id": "senior_m_out", "class": "Senior men", "gender": "male", "min_age": 20, "indoor": false, "time": 104.10, "holder": "Ari Suhonen", "year": 1989, "source": "tilastopaja", "read": "2026-11-01"},
+   {"id": "senior_m_in", "class": "Senior men", "gender": "male", "min_age": 20, "indoor": true, "time": 107.36, "holder": "Markku Taskinen", "year": 1978, "source": "tilastopaja", "read": "2026-11-01"},
+   {"id": "senior_f_out", "class": "Senior women", "gender": "female", "min_age": 20, "indoor": false, "time": 119.41, "holder": "Sara Kuivisto", "year": 2021, "source": "tilastopaja", "read": "2026-11-01"},
+   {"id": "senior_f_in", "class": "Senior women", "gender": "female", "min_age": 20, "indoor": true, "time": 121.55, "holder": "Eveliina Määttänen", "year": 2025, "source": "tilastopaja", "read": "2026-11-01"},
+   {"id": "m14_out", "class": "Boys 14", "gender": "male", "min_age": 14, "max_age": 14, "indoor": false, "time": 119.89, "holder": "", "year": 0, "source": "mtv_m14", "read": "2026-11-01"}
+  ],
+  "sources": {
+   "tilastopaja": {"title": "Tilastopaja: Suomen ennätykset (virallinen)", "url": "https://www.tilastopaja.fi/ennatykset/suomi/miehet-naiset/"},
+   "mtv_m14": {"title": "MTV Uutiset: a 14-year-old boy breaks one of Finland's oldest age-class records in the 800 m (1:59.89), from a SUL release", "url": "https://www.mtvuutiset.fi/artikkeli/joonas-14-teki-suomalaista-juoksuhistoriaa-ennatyskisassa-leuat-loksauttava-yksityiskohta/7868222"}
+  }
+ },
+ "milestones": {
+  "_note": "Kinds on the timeline. `pt` = the icon (assets/icons). A milestone is found once and keeps the date it happened; the id is the key that stops it from being found twice.",
+  "kinds": {
+   "first_race": {"icon": "flag", "title": "Your first race", "text": "{meet}: {result}."},
+   "first_win": {"icon": "trophy", "title": "Your first win", "text": "{meet}: {result}."},
+   "first_medal": {"icon": "medal", "title": "Your first medal place", "text": "{meet}: {result}."},
+   "first_scoring": {"icon": "crosshair", "title": "First top 8 at a national meet", "text": "{meet}: {result}."},
+   "first_nationals": {"icon": "route", "title": "Your first national championships", "text": "{meet}: {result}."},
+   "round_time": {"icon": "timer", "title": "First under {round}", "text": "{time} at {meet}."},
+   "standard": {"icon": "gauge", "title": "{name} reached", "text": "{time} at {meet} (the limit is {limit})."},
+   "rank": {"icon": "list-ordered", "title": "{rank_word} on the season list", "text": "{year}: {rank} of {of} in your age class with {time}."},
+   "record_near": {"icon": "trending-up", "title": "Within 3 % of the Finnish record ({class})", "text": "{time} at {meet}; the record is {record}."},
+   "record_under": {"icon": "zap", "title": "Faster than the Finnish record ({class})", "text": "{time} at {meet}; the record is {record}."},
+   "goal": {"icon": "check", "title": "Goal met: {goal}", "text": "{opened}"},
+   "coach": {"icon": "user-round", "title": "New coach: {coach}", "text": "{was}"},
+   "coach_first": {"icon": "user-round", "title": "Your coach: {coach}", "text": "{was}"},
+   "school": {"icon": "graduation-cap", "title": "{path} begins", "text": "{school}."},
+   "moved": {"icon": "house", "title": "You moved to {town}", "text": ""},
+   "injury": {"icon": "bandage", "title": "Out for {weeks} weeks: {injury}", "text": "{back}"},
+   "comeback": {"icon": "footprints", "title": "Back on the track", "text": "{meet}: {result}, your first race after the {injury}."},
+   "reputation": {"icon": "sparkles", "title": "{step}", "text": "{short}"}
+  },
+  "rank_steps": [10, 5, 3, 1],
+  "rank_words": {"10": "In the top 10", "5": "In the top 5", "3": "In the top 3", "1": "Number 1"},
+  "injury_min_days": 21,
+  "national_levels": ["national", "international", "elite"],
+  "championship_ids": ["sm_hallit_14_15", "sm_14_15", "sm_16_17", "sm_hallit_17_22", "sm_19_22", "sm_hallit_aikuiset", "kalevan_kisat"]
+ },
+ "path": {
+  "_note": "The long path (the coach's 2-3-year view, from what the game has): the application to the urheilulukio, the real limits of your ages (standards.json) for the next three seasons, and the school years. `gain` = how many seconds a runner of that age typically gains in a year (market.json offers.yearly_gain): a rough pace, not a promise.",
+  "seasons": 3,
+  "reach": {"within": "within a year at your pace", "two": "about two years at your pace", "far": "further than three years at your pace", "have": "you have it"},
+  "application": "Application to the upper secondary school (urheilulukio, lukio or vocational): {dates}.",
+  "application_sport": "Sport points {points} of {max}; the next anchor is {time}.",
+  "school_start": "{path} begins in {school_year}.",
+  "limit": "{time} in {year} ({age_text}).",
+  "limit_gap": "You need {gap} s more than your best.",
+  "none": "Nothing on the long path yet: it fills when you have a race time and the limits of your age are known.",
+  "reach_note": "A rough pace: runners of your age typically gain about {gain} s a year; it is not a promise."
+ },
+ "ui": {
+  "tabs": {"now": "Now", "results": "Results", "timeline": "Timeline", "profile": "Profile", "seasons": "Seasons"},
+  "next_big": {
+   "title": "THE NEXT BIG THING",
+   "strap": "{days} · {meet} · {need}",
+   "days_one": "tomorrow",
+   "days_today": "today",
+   "days_many": "in {n} days",
+   "none": "No target race yet. Set one in the Season plan.",
+   "need_std": "limit {limit}",
+   "need_have": "you have the limit",
+   "need_pb": "your best {pb}",
+   "need_none": "no time yet",
+   "lines": {
+    "std": "Qualifying time for {class}: {limit}. {have}",
+    "std_have": "You have it (best {pb}).",
+    "std_gap": "Your best is {pb}: {gap} s to go.",
+    "std_nobest": "You have no race time yet.",
+    "goal": "Your goal: {goal}.",
+    "season_best": "Season best {sb}.",
+    "peak": "The plan peaks for this meet."
+   }
+  },
+  "results": {
+   "title": "EVERY RACE",
+   "all": "All",
+   "no_races": "No races yet. Enter some in the Calendar.",
+   "count": "{n} races · {pbs} personal bests",
+   "card": "Tap to see what this race did.",
+   "nocard": "No card kept for this race.",
+   "level_all": "Every meet",
+   "levels": {"local": "Local", "district": "District", "national": "National", "international": "International", "elite": "Elite"}
+  },
+  "timeline": {
+   "title": "YOUR CAREER SO FAR",
+   "empty": "Nothing yet. The first race comes first.",
+   "recorded_from": "Recorded from {date}: what happened before is rebuilt from your results only.",
+   "start": "Your career begins."
+  },
+  "now": {
+   "pb_title": "PERSONAL BEST OVER TIME",
+   "pb_none": "The chart appears with your second personal best.",
+   "rank_title": "THE SEASON LIST",
+   "rank_none": "Your place on the season list is recorded at the end of every month.",
+   "rank_line": "{label}: {rank} of {of} · season best {time}",
+   "rep_title": "YOUR NAME",
+   "goals_title": "SEASON GOALS"
+  }
+ }
+}

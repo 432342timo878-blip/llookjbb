@@ -93,6 +93,17 @@ func _run() -> void:
 					await _frames(4)
 					await _shot("%s_report_days_open" % tag)
 					_check_overflow(hub, "%s report_days_open" % tag)
+		# (session K1a: the Career tab's four pages, the name's numbers open on Now)
+		var career_view = load("res://scripts/ui/career_view.gd")
+		for pg in ["now", "results", "timeline", "profile"]:
+			career_view.page = pg
+			career_view.rep_open = pg == "now"
+			hub._show("career")
+			await _frames(4)
+			await _shot("%s_career_%s" % [tag, pg])
+			_check_overflow(hub, "%s career_%s" % [tag, pg])
+		career_view.page = "now"
+		career_view.rep_open = false
 		# The day editor: an editable day with changes (Thu: Hard + a second session), the "add session" row,
 		# and a played day (Mon). Side panel on PC, bottom sheet on a phone.
 		hub._show("overview")

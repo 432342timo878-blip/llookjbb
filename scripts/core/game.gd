@@ -82,6 +82,7 @@ func start_career(new_athlete: Athlete, mode := SeasonPlan.PHASES, variant := ""
 	_week = null
 	systems = _make_systems()
 	(get_system("coach") as CoachSystem).ensure_head(athlete, date)   # the career's club coach (GDD 4.9.1)
+	(get_system("career") as CareerSystem).begin()   # (K1a: the first line of the timeline)
 	(get_system("moments") as StoryletSystem).ensure_cast(athlete)   # the people around them (session P1; only with the people on)
 	var rng := RandomNumberGenerator.new()
 	GameConfig.randomize_dice(rng, "rivals")
@@ -111,7 +112,8 @@ func _make_systems() -> Array:
 	# (School (S1) before the mind: the day's tests and the life load are in the day log before the mind reads the day.)
 	# (The habits (L1b, the free-time slots) beside the school: no dice; each evening they remember the slot for the next day.)
 	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), SchoolSystem.new(), HabitSystem.new(),
-			MindSystem.new(), StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new()]
+			MindSystem.new(), StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new(),
+			CareerSystem.new()]   # (K1a: the career's history last: it only reads what the others did the same day)
 	if OS.is_debug_build():
 		list.append(DevEvents.new())
 	return list
@@ -200,6 +202,8 @@ func from_dict(d: Dictionary) -> void:
 		_week.set_plan(season.week_for(_week.monday))
 	# Saves before version 7 (session L3b2): a goals offer waiting as a stop becomes the planner card with the new menu.
 	(get_system("goals") as SeasonGoals).after_load()
+	# Saves before version 8 (session K1a): the timeline and the reputation are rebuilt from the results, the healed injuries and the goals met.
+	(get_system("career") as CareerSystem).after_load()
 
 
 ## JSON turns every number into a float; dates must be ints again.

@@ -26,12 +26,17 @@
   },
   "career": {
    "title": "Career",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "Season goals", "text": "At the top: the goals you and your coach set for the season, with how you stand and what met or missed means. ✓ met (with what it opened), ✗ missed, – dropped. With none yet, ask your coach: {his} card comes on This week.", "see": ["goals", "standards"]},
-    {"heading": "You", "text": "Your height, weight, how early or late you develop, your personal best and your last races. On a phone the Rankings button is at the top of this tab."},
-    {"heading": "Attributes", "text": "Your abilities on a scale of 1 to 20. Training changes them on Sunday nights; growing up helps for a few years around your growth spurt. Yearly gains shrink from about 16 (girls 15) as you near your limit. Arrows show recent rises and falls; tap one to see what it does."},
-    {"heading": "Progress by month", "text": "Opens a record of your attributes and best time at the end of every month, so you can see how fast you are really improving."}
+    {"heading": "Four pages", "text": "Now: the next big thing, the long path, your name, the season goals, your best over time and the season list. Results: every race. Timeline: the milestones. Profile: you, your attributes and your last races. On a phone the Rankings button is on Profile."},
+    {"heading": "The next big thing", "text": "The target race that comes next, how long to it and what you need for it: the entry time of its age class against your best. The same line sits at the top of This week; tap it to come here."},
+    {"heading": "The long path", "text": "The application to upper secondary school and the real limits of your coming ages, with how soon your best could reach them at a typical pace. A rough pace, not a promise."},
+    {"heading": "Your name", "text": "How well known you are, from Unknown to an international name. Every race adds points (the meet's level, your place in the field, your age, a personal best); they fade over two years. Tap for the numbers. A name makes coaches write to you, your coach suggest bigger meets and the commentators know you.", "see": ["reputation"]},
+    {"heading": "Results", "text": "Every race of your career, newest first. Filter by season, by level or by the meet's name. A race with a ›  opens its card: what the race did to you. Races before a kept card (the last 40) show only the result."},
+    {"heading": "Timeline", "text": "The firsts and the changes of your career: your first win, a time under a round number, a real limit reached, the Finnish record, a goal met, a new coach, a new school, a long injury and the comeback. An older save shows what the results can prove, and says from when the rest is recorded."},
+    {"heading": "Season goals", "text": "The goals you and your coach set for the season, with how you stand and what met or missed means. ✓ met (with what it opened), ✗ missed, – dropped. With none yet, ask your coach: {his} card comes on This week.", "see": ["goals", "standards"]},
+    {"heading": "Attributes", "text": "On Profile: your abilities on a scale of 1 to 20. Training changes them on Sunday nights; growing up helps for a few years around your growth spurt. Yearly gains shrink from about 16 (girls 15) as you near your limit. Arrows show recent rises and falls; tap one to see what it does."},
+    {"heading": "Progress by month", "text": "On Profile: a record of your attributes and best time at the end of every month, so you can see how fast you are really improving."}
    ]
   },
   "training_season": {
@@ -323,6 +328,16 @@
   }
  },
  "topics": {
+  "reputation": {
+   "title": "Your name",
+   "version": 1,
+   "sections": [
+    {"heading": "The steps", "text": "Unknown, known at the club, one to watch, a local name, a national name, an international name. The step is the highest one your score has reached."},
+    {"heading": "Where points come from", "text": "Each race: the weight of the meet (a national meet counts four times a club meet) times how you finished in the field (a win most, a medal next) times your age (young and good counts more), plus a quarter of the meet's weight for a personal best. A real limit reached and a Finnish record add points once."},
+    {"heading": "Fading", "text": "A race counts fully on the day and fades to nothing over two years. Keep racing well to keep your name; stop and it slowly goes."},
+    {"heading": "What it does", "text": "Coaches write to you more often and coaches far from your town notice you; your coach needs less to suggest a bigger meet; the commentators may mention you. It does not give camps, selections or sponsors: the game does not have those yet."}
+   ]
+  },
   "causes": {
    "title": "Why things change",
    "version": 1,

@@ -959,6 +959,13 @@ func _build_facts(ctx: Dictionary) -> void:
 			if int(r.date.year) == season:
 				n += 1
 		f.p_race_no = _ordinal_word(n)
+		# Session K1a: the broadcast may know the player's name (read-only; only with the reputation's effects on).
+		var rstep := CareerSystem.effect_step()
+		if rstep >= int(Data.reputation.effects.commentary_from):
+			var words: Dictionary = Data.reputation.commentary_lines.step_text
+			var sid := str(Data.reputation.steps[rstep].id)
+			if words.has(sid) and (sid != "club" or str(f.get("pclub", "")) != ""):
+				f.p_rep_text = str(words[sid]).format({"pclub": str(f.get("pclub", ""))})
 	elif p != null:
 		f.pclub = p.club
 		_base_c.p_has_mark = false

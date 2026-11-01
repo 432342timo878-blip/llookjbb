@@ -84,12 +84,23 @@ func _best(coach: Dictionary) -> Dictionary:
 		if reasons.is_empty():
 			continue
 		var j := CoachVerdict.judge(CoachVerdict.meet_change(m), coach)
-		if j.verdict == CoachVerdict.GOOD and float(j.seen.total) >= float(c.propose_min_w) \
+		var bar := _bar(float(c.propose_min_w)) if str(m.level) in c.target.levels else float(c.propose_min_w)
+		if j.verdict == CoachVerdict.GOOD and float(j.seen.total) >= bar \
 				and (best.is_empty() or float(j.seen.total) > float(best.j.seen.total)):
 			best = {"kind": "meet", "meet": m, "reasons": reasons, "j": j}
 	if Game.season.mode == SeasonPlan.PHASES and best.is_empty():
 		best = _best_target(coach)
 	return best
+
+
+## His bar for suggesting a bigger meet (the verdict's weight he needs to see): a name makes it lower (session K1a, data/reputation.json
+## effects.suggests; the lab and a tool with the effects off: the data's bar).
+static func _bar(base: float) -> float:
+	var step := CareerSystem.effect_step()
+	if step <= 0:
+		return base
+	var e: Dictionary = Data.reputation.effects.suggests
+	return minf(base, maxf(float(e.floor), base - float(e.min_w_per_step) * step))
 
 
 ## A national / international meet that could become a target: judged with the plan built round it.
@@ -106,7 +117,7 @@ func _best_target(coach: Dictionary) -> Dictionary:
 					or not Calendar.can_enter(a, m, Game.date).ok or _open_for(str(m.key), "target"):
 				continue
 			var j := CoachVerdict.judge(CoachVerdict.target_change(m), coach)
-			if j.verdict == CoachVerdict.GOOD and float(j.seen.total) >= float(t.propose_min_w) \
+			if j.verdict == CoachVerdict.GOOD and float(j.seen.total) >= _bar(float(t.propose_min_w)) \
 					and (best.is_empty() or float(j.seen.total) > float(best.j.seen.total)):
 				best = {"kind": "target", "meet": m, "reasons": ["target"], "j": j}
 	return best

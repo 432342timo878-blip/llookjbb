@@ -25,6 +25,7 @@ signal card_pressed(id: String)      # a race strap: open its "what this race di
 signal moment_answered(e: Dictionary)   # a waiting moment was answered: the hub shows what it changed (MomentEventPanel.result)
 signal messages_pressed         # session L3a: the quiet line "3 new messages · Mum, Eino" opens the People tab
 signal school_pressed           # session L3b1: the report card's "See every grade" opens the School tab
+signal career_pressed           # session K1a: the next-big-thing strap opens the Career tab
 
 const PC_LEFT := 268.0
 const PC_RIGHT := 290.0
@@ -88,10 +89,37 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	var strap := _next_big_strap()
+	if strap != null:
+		add_child(strap)
 	if Layout.compact:
 		_build_phone()
 	else:
 		_build_pc()
+
+
+## Session K1a: "the next big thing" as a slim strap above the planner (one line: the meet, the countdown, what you need); a tap opens the
+## Career tab, where the full block and the long path are. null without a target (a career on the repeating week with no race entered).
+func _next_big_strap() -> Control:
+	var t := NextBig.target()
+	if t.is_empty():
+		return null
+	var u: Dictionary = Data.career.ui.next_big
+	var row := UIKit.hbox(10)
+	row.custom_minimum_size.y = 36
+	row.add_child(Icons.rect("flag", 16.0, Palette.TEXT_MUTED))
+	var text := UIKit.label(str(u.strap).format({"meet": str(t.meet.name), "days": str(t.days_text), "need": str(t.need)}), "ItemLabel")
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	text.clip_text = true
+	text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	row.add_child(text)
+	var arrow := UIKit.label("›", "ItemLabel")
+	arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(arrow)
+	var p := _panel(row)
+	p.custom_minimum_size.y = 44
+	return CareerView.tappable(p, func(): career_pressed.emit())
 
 
 # --- What waits for an answer -------------------------------------------------------------------------------------------

@@ -887,7 +887,7 @@ func _weekly_offers() -> void:
 		for k in reasons:
 			score += float(reasons[k])
 		var p := minf(float(o.chance_max), (score - float(o.threshold)) * float(o.chance_per_point)) \
-				* float(o.attention.get(section(c), 0.3))
+				* float(o.attention.get(section(c), 0.3)) * _attention_boost(section(c))
 		if p <= 0.0 or rng.randf() >= p:
 			continue
 		if score > best_score:
@@ -941,6 +941,9 @@ func reasons_of(c: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
 		out.crossed = float(r.crossed)
 	if seen_tf and today - seen_day <= int(o.crossed_days) and section(c) in cfg().seen.opens:
 		out.seen = float(r.seen)
+	var name_pts := _name_points()   # (K1a: "he has heard of you": the player's reputation, only with its effects on)
+	if name_pts > 0.0:
+		out.name = name_pts
 	if not bool(c.get("real", false)) and int(chain.get("weeks", 0)) >= int(o.strained_weeks):
 		out.strained = float(r.strained)
 	var head := _cs().head()
@@ -958,6 +961,21 @@ func reasons_of(c: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
 		if k != "fit" and k != "better" and float(out[k]) <= 0.0:
 			out.erase(k)
 	return out
+
+
+## The points of the reason "name" at the player's reputation step (data/reputation.json effects.market.name; 0 with the effects off).
+static func _name_points() -> float:
+	var step := CareerSystem.effect_step()
+	var table: Array = Data.reputation.effects.market.name
+	return float(table[mini(step, table.size() - 1)]) if step > 0 else 0.0
+
+
+## How much more of the athlete the coaches who do NOT see them at the track see: a name travels (reputation effects).
+static func _attention_boost(sec: String) -> float:
+	var step := CareerSystem.effect_step()
+	if step <= 0 or not sec in Data.reputation.effects.attention_sections:
+		return 1.0
+	return 1.0 + float(Data.reputation.effects.attention_per_step) * step
 
 
 ## Recent races clearly slower than the best, and no best for a while (data offers.slump).

@@ -636,6 +636,10 @@
  "fillers": [
   {"id": "fav", "voice": "tv", "weight": 5, "when": {"fav_club": true}, "t": "The favourite today is {fav_full} of {fav_club}, who comes in with {fav_mark_text}.",
    "reply": "{fav} is the one everyone will be watching. The question is whether they have to carry the race."},
+  {"id": "rep_tv", "voice": "tv", "weight": 3, "t": "{pname} is {p_rep_text}.", "needs": ["p_rep_text"]},
+  {"id": "rep_tv2", "voice": "tv", "weight": 3, "t": "Among the names in this field, {pfull}: {p_rep_text}.", "needs": ["p_rep_text"]},
+  {"id": "rep_expert", "voice": "expert", "weight": 3, "t": "A name to keep an eye on: {pname} is {p_rep_text}.", "needs": ["p_rep_text"]},
+  {"id": "rep_announcer", "voice": "announcer", "weight": 3, "t": "{pfull}, {p_rep_text}.", "needs": ["p_rep_text"]},
   {"id": "fav_style", "voice": "expert", "weight": 4, "when": {"after_mark_min": 200}, "t": "{fav} likes {fav_style_text}. Keep an eye on that.", "needs": ["fav_style_text"]},
   {"id": "fav_noclub", "voice": "tv", "weight": 5, "when": {"fav_club": false}, "t": "The one to beat today is {fav_full}, who comes in with {fav_mark_text}.", "needs": ["fav_full"]},
   {"id": "tagged", "voice": "tv", "weight": 5, "t": "{pname} has raced {tagged} {tagged_met} now. {tagged} is known as a {tagged_tag}.", "needs": ["tagged"]},

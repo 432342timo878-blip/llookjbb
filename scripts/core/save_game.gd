@@ -15,7 +15,7 @@ class_name SaveGame
 ## Where saves go. Dev tools point this elsewhere so they never touch the player's saves.
 static var DIR := "user://saves/"
 const AUTOSAVE := "autosave"
-const VERSION := 7
+const VERSION := 8
 
 
 static func save(slot: String) -> void:
