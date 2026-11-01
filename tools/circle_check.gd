@@ -47,6 +47,7 @@ func _run() -> void:
 	_lose_a_friend()
 	_family()
 	_skips()
+	_acquaintance_invites()
 	_group()
 	_save_load()
 	MS.people_enabled = false
@@ -318,6 +319,30 @@ func _skips() -> void:
 	cs2.skips[pid] = {"n": 2, "quiet_until": 0}
 	cs2.on_invite_settled({"from": pid}, true)
 	_ok("going clears the count", int(cs2.skips[pid].n) == 0)
+
+
+# --- 7b. An acquaintance asks you out ------------------------------------------------------------------------------------------------
+
+func _acquaintance_invites() -> void:
+	print("-- 7b. an acquaintance's invitation, gone to, is shared time with them")
+	var cs = _fresh(8)
+	var ms = _ms()
+	_play_to(_d("2026-11-03"))
+	var who: Dictionary = ms.people_for("circle")[0]
+	var rel0 := float(who.relation)
+	var m := _post_invite("cl_walk_home", 3)   # Thursday 5 Nov
+	_ok("the invitation comes from an acquaintance of the class (%s)" % who.first_name, not m.is_empty() and str(m.from) == str(who.id) and m.has("invite"))
+	ms.answer(str(m.id), "yes")
+	_play_to(_d("2026-11-06"))   # Thursday evening played
+	var named: Dictionary = cs.tally.named
+	_ok("going counted as one free evening with %s (%s) and the answer warmed it (%.1f -> %.1f)" % [who.first_name, named.get(str(who.id), 0), rel0, float(who.relation)],
+			float(named.get(str(who.id), 0.0)) >= 1.0 and float(who.relation) > rel0)
+	var m2 := _post_invite("cl_library", 4)   # Friday: a study evening with them
+	ms.answer(str(m2.id), "yes")
+	_play_to(_d("2026-11-07"))
+	_ok("a study evening together counts too (%s)" % cs.tally.named.get(str(who.id), 0), float(cs.tally.named.get(str(who.id), 0.0)) >= 2.0 or float(cs.met.get(str(who.id), {}).get("slots", 0)) >= 2)
+	_play_to(_d("2026-11-10"))
+	_ok("on Sunday night the two evenings became closeness and %d slots in the record" % int(cs.met[str(who.id)].slots), int(cs.met[str(who.id)].slots) >= 2 and float(who.relation) > rel0 + 4.0)
 
 
 # --- 8. The training group ---------------------------------------------------------------------------------------------------------

@@ -52,7 +52,7 @@ const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "tea
 ## Session P1: the senders of the cast (StoryletSystem.people_for) and their sub-selectors.
 const SENDERS := {"coach": [], "teammate": ["roles"], "partner": ["roles"], "family": [], "parent": ["mum", "dad", "athlete"],
 		"sibling": [], "best_friend": [], "friend": [], "friends": [], "school": ["class_teacher", "pe_teacher", "counsellor"],
-		"rival": []}
+		"rival": [], "circle": []}   # (circle: session P2a, an acquaintance)
 const TOPICS := ["", "week", "race", "ack", "mood", "card", "app", "rival"]
 
 

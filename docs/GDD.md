@@ -4991,6 +4991,87 @@ top of the page its questions are about and goes with Done.
 4. **Check:** `tools/playtest_check.gd` (in `run_all_checks`): the data, answering, the file, the text, the page, the cards (the right questions
    on the right pages, answered / skipped / off).
 
+#### P2's questions (user, 2026-11-01; each the recommended option)
+
+What the code showed first: the cast of P1 is made once (family, 2-3 friends, the training partners, teachers, rivals) and nothing ever adds
+or loses a person; the only things that move a person's closeness are a reply and, since L3a, "staying home from an invitation"; the training
+group is flavour (names, a few messages, the coach's `fit`) with no effect and no way out; Find a coach is a list of cards.
+
+1. **How people are made and fade:** new people come from places (a new class at the start and at the path's school after grade 9; the group
+   and the rivals already make people), each a face you notice; closeness grows with free evenings spent with them and fades about one point
+   a week without them (slow); an acquaintance is a friend at 50 after three evenings together, a friend below 32 for three weeks drifts back;
+   the third skip in a row and they stop asking for a while. (Alternatives refused: a fixed circle, a fast fade.)
+2. **The person page:** how close (a bar, a word; the numbers and recorded causes behind a tap), what they give, what they cost, last week,
+   and the standing evenings with them. (Refused: closeness only; a full dossier.)
+3. **The relationship (from ~15, the player chooses who)** is **P2b**: crush -> dating -> can end; texting and time together, mood and sleep,
+   nothing more. Recorded here so P2b reads it.
+4. **The group's effect:** modest and honest: a pull of at most +4 % / -3 % on the group days' hard sessions by its level against yours, fixed
+   days (you cannot move them; an injury can), leaving = train alone (no pull, free days, the teammates drift, the coach's judgements
+   noisier). (Refused: small and mostly social; a strong pull.)
+5. **Find a coach:** your coach pinned as the yardstick; search, a sort menu (where he is, name, level, cost, group size, each of the 11 skills),
+   filters (kind, has a group, within the budget, could take me), and a **comparison** of up to two coaches next to your own. **The talk** =
+   a short interview: three of six questions, answers from the coach's real record in his voice, each narrowing his ranges; no stop and no
+   trust effect.
+6. **Split:** P2a = 1, 2, 4, 5 (and the invitations' skip rule); P2b = 3 + the ~25 moments for ages 16-17 (ROADMAP).
+
+#### Built (step P2a, 2026-11-01): people as state, the training group, Find a coach; save version 9
+
+1. **Research** (`data/circle.json research`, read 2026-11-01): a web search found only secondary sources (municipal minutes, news, club
+   pages), so **every fact is marked unverified** and only sets an order of magnitude: about 40 % of teenagers sleep under 8 hours (a late
+   night is normal); about 17 % of 8th-9th graders, 26 % of lukio and 35 % of vocational students have a boyfriend or girlfriend (P2b); a club
+   lists 14-17-year-olds' groups as 3-6 sessions a week (two group days); about 10 hours a week for 15-year-olds. To check before release: THL
+   Kouluterveyskysely 2023 tables, SUL / club group pages. **Group sizes were not found**: the group stays the existing 4-9 (an estimate).
+2. **`CircleSystem`** (GameSystem `circle`, `GameConfig` "circle", off in `lab`): a person's closeness is their `relation`. Each Sunday night
+   (`on_week_end`) the week's shared time becomes closeness: a slot WITH them (the slot's companion, or an invitation of theirs you went to) =
+   a slot; a friends slot with nobody named is shared among your friends, a family slot among the family; a teammate gets the group's days.
+   gain = slots x 5 x (1 - closeness/100) (family 2); fade = 1 x (1 - slots/need) a week when there are fewer slots than the person needs
+   (a friend 1, the best friend 0.7 and half the fade, a teammate 0.5; family 0). Every change is a `time` / `fade` cause in the person's log.
+   The numbers are Claude's first guesses (B1 tunes them after playtest 4).
+3. **New people:** `arrive_class(key)` brings 4-6 acquaintances (thread `circle`, "People you know"; fictional, from the career's own dice, the
+   names unused) when a class starts ("comp" at the start; the path's school after grade 9). An acquaintance at 50 closeness and 3 slots
+   becomes a friend (thread friends, role friend: the existing friend storylets now pick them too); a friend below 32 for 3 weeks drifts back
+   (one quiet message); an acquaintance below 12 is gone; the best friend never falls below 25. Six storylets (`data/storylets/circle.json`,
+   sender `circle`): 2 feed messages and 4 invitations (walk home, study together, a lake walk, board games: going = a slot with them).
+4. **Who a slot is spent with:** a friends / family slot can name a person (`HabitSystem.habit_with` standing, `week_with` this week;
+   saved only when set). On This week the evening's picker has WITH (My friends / the family / each person: this week only); the person's
+   page has the standing evenings (a toggle per slot; on a day that is not a friends slot it makes it one).
+5. **The third skip:** `on_invite_settled` counts an invitation you did not go to (stay home or unanswered) per sender; the third in a row
+   sets `quiet_until` (35 days) and their message says so; going clears the count; `StoryletSystem._senders` skips a quiet sender for invitations.
+6. **The training group:** `WeekSim._apply_group` puts the group's two sessions (Tue "Club group session", Thu "Tempo run", both hard) into the
+   plan on its days unless it is a race day or the day before or after one; a day the season plan made easy (a taper) stays easy.
+   `is_group_day`, `can_change(d, by)`: nobody moves it but an injury (the coach's notes skip it; the day editor says "Group day, fixed";
+   the planner's day shows "Group · fixed"). The pull = (group level - your level) x 0.012, kept in -3 % .. +4 %, x a size factor (6 teammates =
+   1), on the hard sessions of a group day (`mods.group` per attribute + `mods.group_pull` in the week report; `WeekCauses.group_rows` shows
+   "The group's pull +0.19" with the attributes on a tap); the group's level grows 0.015 a week. **Leaving:** train alone: the days are free, no
+   pull, the teammates drift, `CoachVerdict.noise_sd` x 1.35; **rejoin** any time; a new head coach has a new group (you are in it); a real
+   coach has no known group (no card, no days). The card: People -> Training group (level, pull, fixed days, Leave with one confirm, Rejoin).
+7. **Find a coach:** `CoachMarketView` with search, sort, filters, Compare (two coaches next to your own: the 11 skills as ranges with
+   green / red, group, cost, "better / weaker") and a level range and group line on every card; **the talk**: `CoachMarket.talk(c, qid)`,
+   six questions (`market.json talk`), three a coach, an answer from his attributes in three tiers + his group / cost in his voice (nine
+   openers), narrowing the ranges the question is about, kept with the scouting (`CoachProfile._talk_box`, `talk_log`).
+8. **Save version 9:** `systems.circle` and the habits' `with` / `week_with` / `with_history`, all saved only when something is set. An
+   older save has none: it starts in its group (fixed days from its next week), no acquaintances until the next class, nobody named.
+9. **Checks and tools:** new `tools/circle_check.gd` (in `run_all_checks`: the data and its research, lab changes nothing, a class arrives
+   once and is the same for the same career, **a friend is made through slots and lost without them**, family does not fade, the third skip,
+   an acquaintance's invitation is shared time, the group's fixed days / pull both ways / the report's record / leaving and rejoining /
+   the coach's noise, save / load and an older save). Changed: `f1_check` (it picks non-group days), `race_card_check` (circle off: it tests the
+   card), `storylet_check` (the sender `circle`), `help_check` (the `person` and `group` entries), `layout_check` `_circle_views` (the
+   circle thread, two person pages, the group card in / alone / leaving, a group day, Find a coach compared and with no match, a talk).
+   Help: new `person` v1 and `group` v1, `people` v11, `market` v4, `day_editor` v9. Playtest questions for the new pages
+   (`people:*`, 12 questions) are in `data/playtest.json` (the same run as playtest 3: only the new ones are asked).
+10. **Proven:** fingerprints identical (`training_balance -- 0` coach row 206.798298350 / 14.102831594 / 1226.006524079 and every "identical
+    to part 1: YES", races 73182f4eb6c4..., school 42fd3635... / 01dd20d7... / 55076d77...); the full `run_all_checks` **31 / 31 PASS** (stderr
+    read too); `help_check` 1091 checks (phone) / 1108 (PC); `layout_check` at the five sizes with no OVERFLOW / SQUEEZED / WRONG (the new
+    views included); the screenshot tour (PC + phone) and the new screens looked at; `saves_check -- <the user's 3 save copies, versions 5
+    and 8 and the autosave> 7 real` loads, builds the planner, plays 7 days and races. **`season_playtest`** (the whole 2026-27 season through
+    the real hub, the circle on) against the last numbers: phone 390x844 seed 2 careful **0.23 mid-week stops a week (0.25), 41 of 52 weeks
+    straight through (39), 2.04 clicks a week (2.06), median 2**; PC 1280x720 seed 1 player **0.31 (0.35), 37 of 52 (35), 4.25 clicks (4.29)**;
+    40 / 52 invitations in the slots, 6 / 15 of them from the new classmates. The circle adds no stop and no question.
+11. **Not in P2a / for later:** the relationship and the moments for 16-17 (P2b); camps and a summer job as places (G3 / M4); a teammate
+    really quitting or joining; who comes to watch a race (L2a decision 4: still waits); the group's sessions are two fixed ones, not a
+    schedule that follows the season's phase; the Season tab's week list does not show the group's overlay; sizes (closeness, the pull) wait
+    for the user's playtest and B1.
+
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 
 No new popups, nothing of the 4.10 redesign itself (that is L1–L3); every fix is checked by `tools/f1_check.gd` (in `run_all_checks`),

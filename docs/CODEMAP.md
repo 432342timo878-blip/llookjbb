@@ -294,6 +294,40 @@ Read the paragraphs below with these in mind; they win where they disagree.
   `SeasonReviewView`), `PlaytestView` (the menu's page; `question_box()` is shared with the card), questions in `data/playtest.json`
   (`where` / `min_weeks` / `needs`), the hub view `playtest` (`_playtest_back`), `tools/playtest_check.gd`. A tester's tool: off with one
   button, never a stop.
+- **Session P2a (people as state: shared time, new people, the training group, Find a coach; save version 9; GDD 4.10 "P2's questions" and
+  "Built (step P2a)"; `docs/ROADMAP.md` P2a / P2b):**
+  - **`CircleSystem`** (`scripts/core/circle_system.gd`, GameSystem id `circle`, `Game._make_systems` before `CareerSystem`; `GameConfig`
+    option `circle`, off in `lab`; every number in `data/circle.json`, with its research and sources): a person's closeness is the `relation`
+    of `StoryletSystem.people`. `on_day_end` tallies the played day (a friends / family slot with a companion = a slot with them, an invitation
+    you went to = a slot with the sender, a friends / family slot with nobody = shared among the friends / the family, a group day trained);
+    `on_week_end` turns the tally into closeness (`add_relation` with the cause kinds `time` / `fade`, shown by `WeekCauses.why_text`) and runs
+    `_statuses` (an acquaintance of thread `circle` becomes a friend at 50 and 3 slots; a friend below 32 for 3 weeks drifts back; an
+    acquaintance below 12 is `gone`). `arrive_class(key)` (`on_week_start`: "comp" for grades 8-9, else the path's school) makes 4-6
+    acquaintances from the career's own dice (no state: the people are saved with `StoryletSystem.people`, the record `met` here).
+    `on_invite_settled(m, went)` (called by `StoryletSystem._resolve`) counts skips: the third in a row sets `skips[pid].quiet_until`;
+    `is_quiet(pid)` is read by `StoryletSystem._senders` for invitations. `kind_of(p)`, `meetable()`, `page_of(p)` (the person page's data).
+    **The group:** `has_group()` (the head coach's `group`; real coaches have none), `group_day(wd)`, `group_level()`, `pull()` (gap x
+    per_point, capped, x size factor), `pull_mult()` / `fixed_day(wd)` / `overlay(days, intensity, races)` (static: what `WeekSim` asks),
+    `leave_group()` / `join_group()`, `alone_factor()` (read by `CoachVerdict.noise_sd`), `group_info()`. Saved only when something is set.
+  - **WeekSim:** `_apply_group()` (in `_init` / `set_plan`: the group's sessions replace the plan's on its days, races keep theirs),
+    `is_group_day(d)`, `can_change(d, by)` (a group day only by "injury" / "mental"; `HealthSystem` passes "injury"), the pull on a group day's
+    sessions tagged `hard` (recorded in the report's `mods.group` per attribute and `mods.group_pull`; `WeekCauses.group_rows`). `DayInfo`
+    adds `group`; `DayEditor._build_group`; the planner's day item shows "Group · fixed".
+  - **HabitSystem:** a friends / family slot can have a **companion**: `habit_with` (standing), `week_with` (this week), `with_history`;
+    `companion(i)`, `companion_on(date)`, `set_companion(i, pid, standing)`; saved as `with` / `week_with` / `with_history` only when set.
+  - **UI:** `PersonPage` (how close + causes behind a tap, last week, gives, costs, MEET: a toggle per slot = a standing evening),
+    `GroupCard.build(on_change, on_find)` (People → Training group: level, pull, fixed days, Leave / Rejoin with one confirm),
+    `PeopleView` pages `person:<id>` and thread `circle` ("People you know"), an "Open" button on every roster row (`PeopleUI.roster(..., on_open)`),
+    `HabitsUI._with_row` (WITH: My friends / the family / each person, in the planner's picker and the day editor's free time),
+    **Find a coach**: `CoachMarketView` (search, SORT menu = section / name / level / cost / group size / each of the 11 skills, a kind menu,
+    filters Has a group / Within my budget / Could take me, a card per coach with its level range and group, **Compare** on two coaches ->
+    a table next to your own with ranges, group, cost and "better / weaker"), **the talk** (`CoachMarket.talk(c, qid)` / `talked` /
+    `talks_left` / `talk_log`, six questions in `market.json talk`, three a coach, answers from his real attributes in his voice,
+    narrowing his ranges; `CoachProfile._talk_box`). Playtest cards on the new pages (`people:person` ...).
+  - **Content:** `data/storylets/circle.json` (sender `circle` = an acquaintance: 2 feed messages and 4 invitations); thread `circle` in
+    `moments.json`; `cast.json relation_start.acquaintance`.
+  - **Tools:** `tools/circle_check.gd` (in `run_all_checks`), `layout_check` `_circle_views`, `help_check` (the `person` / `group` entries).
+    `f1_check` and `race_card_check` pick days / config that leave the group out (they test other things).
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

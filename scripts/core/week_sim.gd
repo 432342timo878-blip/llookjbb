@@ -281,7 +281,7 @@ func _apply_group() -> void:
 
 ## Session P2a: weekday `d` is one of the training group's fixed days (a race day is not: the race keeps it).
 func is_group_day(d: int) -> bool:
-	return not races.has(d) and CircleSystem.fixed_day(d)
+	return CircleSystem.fixed_day(d, races)
 
 
 ## Only days not yet played can be changed, and not race days (races are fixed). Session P2a: not the group's fixed days either,

@@ -6,7 +6,7 @@
 			"touches": [],
 			"when": {"age": [14, 19], "weeks_in_career": [0, 8]},
 			"text": [
-				"Hi, you're the runner, right? Our PE teacher said you're properly good. I'm new around here too.",
+				"Hi, you're the runner. Our PE teacher said you're properly good. I'm new around here too.",
 				"Hey. I saw your name on the results at the school sports day. Fast."
 			]
 		},
@@ -16,7 +16,7 @@
 			"when": {"age": [14, 19], "relation": [20, 100]},
 			"text": [
 				"I wrote up the notes from the lesson you missed. I'll put them on the shared drive.",
-				"The teacher gave us the homework for Thursday. I've sent you the page numbers."
+				"The teacher gave us the homework for Thursday. I've sent you the exercise numbers."
 			]
 		},
 		{
@@ -26,7 +26,7 @@
 			"when": {"age": [14, 19], "relation": [20, 100]},
 			"text": [
 				"I go past your street after the last lesson on {weekday}. Want to walk together?",
-				"Want to get a hot chocolate after school on {weekday}? My treat, you can tell me about running."
+				"Want to get a hot chocolate after school on {weekday}? My treat, and you can talk about running if you like."
 			],
 			"replies": [
 				{"id": "yes", "label": "Sure", "hint": "a free evening with {from}", "effects": {"relation": 2}, "result": "It was easy to talk. You walked the long way round."},

@@ -410,12 +410,13 @@ static func pull_mult() -> float:
 	return 1.0 + s.pull()
 
 
-## True when the plan holds the group's fixed session on weekday `wd` (WeekSim.is_group_day).
-static func fixed_day(wd: int) -> bool:
+## True when the plan holds the group's fixed session on weekday `wd` (WeekSim.is_group_day): you are in the group, it trains that day
+## and the day is not a race day or the day before / after one (the race calendar wins over the group).
+static func fixed_day(wd: int, races := {}) -> bool:
 	if not active():
 		return false
 	var s := sys()
-	return s.in_group and not s.group_day(wd).is_empty()
+	return s.in_group and not s.group_day(wd).is_empty() and not races.has(wd) and not races.has(wd + 1) and not races.has(wd - 1)
 
 
 ## WeekSim: puts the group's fixed sessions into a week's plan (copies the arrays first; races keep their day).
@@ -430,14 +431,15 @@ static func overlay(days: Array, intensity: Array, races: Dictionary) -> Array:
 	var copied := false
 	for g in cfg().group.days:
 		var d := int(g.day)
-		if races.has(d):
+		if not fixed_day(d, races):
 			continue
 		if not copied:
 			out_days = days.duplicate(true)
 			out_int = intensity.duplicate()
 			copied = true
 		out_days[d] = [str(g.session)]
-		out_int[d] = str(g.intensity)
+		# (a day the season plan made easy, e.g. in a taper, stays easy: the group's session is done lightly)
+		out_int[d] = "easy" if str(intensity[d]) == "easy" else str(g.intensity)
 	return [out_days, out_int]
 
 

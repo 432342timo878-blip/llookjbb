@@ -40,9 +40,12 @@ older saves rebuilt from the results), the Career tab (Now / Results / Timeline 
 week + a block on Career, the long path, records (senior + boys 14 only: the official class tables could not be read, no names below
 senior), save v8; K1b = the season review chapter (a snapshot on 31 Oct, a strap on the first planner, one reading page, kept under Career →
 Seasons); **K1c** = an in-game playtest (a menu page + cards with the right questions on the right pages, `data/playtest.json`,
-`PlaytestNotes`; never a stop; the notes copy out as text). Next, in `docs/ROADMAP.md` order: the user's playtest 3 (their turn: notes into `docs/PLAYTESTS.md`) → P2 →
-R6–R7 (races) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth opponents stay fictional (minors); real athletes
-only at senior level.
+`PlaytestNotes`; never a stop; the notes copy out as text). Playtest 3 done (the loop feels right). **P2 is split (user, 2026-11-01, GDD 4.10 "P2's
+questions"): P2a done** (`CircleSystem`: closeness from shared free evenings with who a slot is spent with, new classmates who become friends or
+drift, the third skipped invitation, the person page, the training group's fixed days + pull + leaving it, Find a coach with search / sort /
+compare and a talk with a candidate; save v9; GDD "Built (step P2a)"); **P2b** = a first relationship from ~15 + the moments for 16–17. Next, in
+`docs/ROADMAP.md` order: P2b, the race revamp (GDD 4.11) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth
+opponents stay fictional (minors); real athletes only at senior level.
 
 ## How to run and check (Windows PC of the user)
 
@@ -144,7 +147,8 @@ them with a tap for the numbers (meta `cause_row`). Never state a cause the game
   `answer_event`; `Game.systems` order: Health, Season, Form, Coach, School, Mind, Moments (StoryletSystem), Goals, Suggests, Proposals,
   Market (see `_make_systems`).
 - `HealthSystem` (soreness, injuries, illness, adaptation; `data/health.json`, `data/injuries.json`), UI in `HealthUI` / `HealthEventPanel`.
-- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 8** (K1: `systems.career`: the timeline, the
+- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 9** (P2a: `systems.circle` + the habits' `with` companions; an older save has none and
+  starts in its group; v8 K1: `systems.career`: the timeline, the
   reputation events, the season-list log, the season reviews; a save without it is rebuilt from the results, `CareerSystem.after_load`;
   v7 L3b2: the goals card, reviews and news; an older save's waiting goals stop becomes the card, `SeasonGoals.after_load`; v6 L3b1: mental sessions; v5 L1b: the
   habits); older saves load (each system's state is `{}` until it first runs; a v4 save's study effort / free time become habits; an
@@ -182,6 +186,12 @@ the cards kept in `Game.race_cards` (the planner's race strap opens one), the sc
   week's changes; they move grades, the life load and the moods where the old study effort / free time did; the default habit = the
   neutral one; `data/habits.json`; **call `HabitSystem.touch()` after changing anything a slot reads**) + invitations (storylets with
   `invite`, posted on Sunday into a slot, planned on the planner, happening on their evening; never a Play-week ask) + `HabitsUI`.
+- `CircleSystem` (P2a, `GameConfig` "circle", off in lab; `data/circle.json` with its research): a person's closeness (their `relation`) grows
+  with the free evenings spent WITH them (a friends / family slot's companion in `HabitSystem`, an invitation you went to, a teammate's group
+  days) and fades without; acquaintances of the thread `circle` (a new class) become friends, friends drift; the third skipped invitation and
+  they stop asking; **the training group**: its two days are FIXED in `WeekSim` (`is_group_day`, `can_change(d, by)`: only an injury moves
+  them), a pull on its hard sessions by its level against yours (recorded in the report's `mods.group`), leaving it = train alone (the coach's
+  judgements noisier). UI: `PersonPage`, `GroupCard`, Find a coach's search / sort / compare / talk (`CoachMarketView`, `CoachMarket.talk`).
 - `SchoolSystem` (stages, 17 subjects, tests, report cards, life load, the meet-and-tests decision; `data/school_life.json`; L3b1:
   the report card and the meet-and-tests clash are planner cards with a named default, only a matriculation exam clash stops) +
   `SchoolCalendar` (real 2026–27 dates, rules after) + `SchoolApplication` (the joint application, points, the path, moving; a rejection

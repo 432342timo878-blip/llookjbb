@@ -545,14 +545,20 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
         season's goals end is already a planner section, `SeasonGoals.end_card` with what each goal opened in `g.opened` and the
         `news`; the chapter wraps it. The stakes that wait for K1 / G3: reputation, selections, the TF-juniorit letter, camps.)
         Done: every result in one list, the milestones timeline, the Overview's countdown and long path, a season ends as a chapter.
-  - [ ] **Season playtest 3 by the user** (6–8 weeks of the new loop is enough): does a week feel like plan → play → see? Notes into
-        `docs/PLAYTESTS.md`; the sizes of things are tuned after it (memory: feel it before tuning).
-  - [ ] **P2. People as state** (decision 6, replaces the old "moments part 2"): new people from places, person pages, friendship by
-        shared time and fading, invitations from the calendar and the state, a first relationship from ~15, the training group's card
-        (level, fixed days, pull, leaving it), Find a coach's comparison **with sort, filter and search, and a talk with a
-        candidate (user's notes 2026-10-25)**, moments for ages 16–17 in the new form. Research first: Finnish
-        teens' time use, sleep and dating age; training group sizes and schedules. *(Opus, high)*
-        Done: a friend can be made and lost through slots; the group's pull shows in the week report; `storylet_check` covers the new kinds.
+  - [x] **Season playtest 3 by the user** (done 2026-11-01: the loop feels right; notes in `docs/PLAYTESTS.md` "Playtest 3 result").
+  - [ ] **P2. People as state** (decision 6, replaces the old "moments part 2"; **split into P2a / P2b by the user's picks 2026-11-01**,
+        GDD 4.10 "P2's questions"). Research first: Finnish teens' time use, sleep and dating age; training group sizes and schedules
+        (done in P2a: `data/circle.json research`, secondary sources only, every fact marked unverified). *(Opus, high)*
+    - [x] **P2a: people as state, the group, Find a coach** (done 2026-11-01, GDD 4.10 "Built (step P2a)", save version 9): new classmates
+          who become friends through free evenings and drift away without them, the person page, who a slot is spent with, "the third
+          skip and they stop asking", the training group's card (level, fixed days, pull, leaving it), Find a coach with search, sort, filters
+          and a comparison, a talk with a candidate. Done: a friend can be made and lost through slots (`circle_check`); the group's pull
+          shows in the week report; `storylet_check` covers the circle's storylets.
+    - [ ] **P2b: a first relationship from ~15 and the moments for ages 16–17** (the user's picks: crush -> dating -> can end; texting and
+          time together, mood and sleep, nothing more; the player chooses who their character is interested in; a breakup = a dip for a
+          couple of weeks; ~25 new feed / invitation / beat storylets for 16–17: the driving licence, a summer job, a teammate quitting or
+          joining, the upper-secondary school's people; a relationship as a slot activity "partner" with its own invitations). Reads
+          `data/circle.json research.dating_age`. *(Opus, high)*
   - **The race revamp (user, 2026-11-01, after playtest 3: "the gameplay inside the event itself is incredibly boring"; designed in
     GDD 4.11 "R-revamp"; replaces the old R6 / R7 below, which are now six sessions).** The race becomes "riding the effort": a
     continuous effort slider in real time, live alerts instead of cards, a race plan with the coach, a viewpoint you are in (chosen by
