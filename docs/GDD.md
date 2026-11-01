@@ -5040,6 +5040,112 @@ Fingerprints identical (`training_balance -- 0` coach row 206.798298350 / 14.102
 - Doping / anti-doping
 - World simulation (other athletes, records, rankings)
 
+### 4.11 R-revamp: the race as a game (designed 2026-11-01, after season playtest 3; design only, nothing built)
+
+**Trigger (user, 2026-11-01):** "the gameplay inside the event itself is incredibly boring and needs a complete revamp." The loop around
+the races (the Sunday planner, goals, Career tab) tested well (`docs/PLAYTESTS.md` "Playtest 3 result"); the race screen did not. Earlier
+race notes say the same (playtest 1: last in 12 of 18 races, fixed by the rivals' growth; season playtest 2: "boring, non-immersive
+racing", "ditch the selection cards and … control the whole race (via buttons, slider, or something)", "2D blobs on a horrible-looking
+track", "everything slows down when everyone kicks").
+
+**What a watched race is today** (Claude watched one with a scratch tool: outdoor M15 local meet, ability 8, 4x, first option on every
+card; notes in the shared notes folder): 157 s of race time = 60 s on screen. **5 cards**: break from the lanes (116 m), "losing contact"
+(200 m), a rival's move (391 m), the bell (400 m), "232 m to go" (569 m). Each card is a menu of 2–3 labels; between cards the player does
+nothing (the bar's Push / Hold / Ease / Move out / Kick now has no reason to be pressed). The player sees small dots on a top-down track
+(a third of the screen), a clock, one word for the reserve (Working / Hurting / Empty), a list of gaps in metres and three places of
+commentary. The commentary itself said "That choice hasn't made much difference yet." The race pauses on every card ("SLOWED TO 1x"),
+so the rhythm is: wait, stop, read, click, wait.
+
+**Diagnosis (user ticked every reason when asked, 2026-11-01):** "There is no immersion, no feeling. The 2D setup feels really boring.
+I can't get invested." + *just watching* + *choices feel pointless* + *can't read the race* + *nothing at stake*. Claude's reading: four
+separate causes that need four separate fixes:
+1. **No control between the cards** (the player is a spectator who is asked a question now and then) → effort you ride (decision 1).
+2. **Nothing to read** (a word and a list of metres; the others are blobs) → information to react to (decision 3).
+3. **No immersion** (top-down dots) → a viewpoint you are *in* (decision 2), and sound (decision 6).
+4. **Nothing at stake / a choice has no visible worth** → a plan you made, a record of who you meet, what you carry in (decision 5), and a
+   verdict on the execution after (the "what this race did" card already exists, L2a).
+
+**The feeling asked for (user, 2026-11-01): "Riding the effort"**, chosen over a tactical-chess game, a broadcast with a few big calls
+and "something else": you control how hard you push moment by moment and react to what you see and what the coach says. (The user's
+earlier note was the same: "based on what I see and what the coach says to me".)
+
+**Decisions (user, 2026-11-01, the R-revamp design talk):**
+1. **A continuous effort slider** is the main control (the user's pick over a notched lever, hold-to-push and "cards, tuned"). It runs
+   the whole race; the race never waits for it. **Real time with a speed button** (1x default = about 2 minutes for a 2-minute race, 2x
+   for races you do not care about; Quick result stays for the rest); **nothing freezes for a menu**; key moments slow down for a
+   second or two by themselves (the existing slow-motion rule, now the only pause-like thing).
+2. **The viewpoint is the most immersive one that works, and the user chooses by seeing them** ("I can't quite imagine these in my head
+   and I'd like to see working versions of everything so I could decide"). Candidates: (a) **a chase camera behind and above your runner in
+   3D** (the backs of the pack, the rail, the straight ahead, the stands; a small track map in a corner) = Claude's bet for immersion;
+   (b) **a TV broadcast side camera** (figures with moving legs, a follow camera, a high angle on the home straight); (c) **the top-down
+   view made rich** (a zoomed pack, figures instead of dots, effort glows). A switchable view is possible once one is built.
+3. **What you see during the race** (all four wanted): **your reserve as a meter** (the felt reserve with its small error, wider with
+   weak race tactics; replaces the word); **the pace target and splits** (the plan line, ahead / behind it, lap splits as you pass the
+   marks); **reading the others** (cues on the runners close to you: breathing, a heavy stride, "about to go", a kicker sitting back;
+   only the near ones, clearer with more race tactics); **gaps in seconds** and the time you need (medal / qualifying: already decision 34).
+4. **Incidents are live alerts, never a freeze:** boxed in, a rival's move, a contact or fall near you appear as a short alert while the
+   race runs (a second or two of slow-motion), with a way out on screen (ease and step out / wait / push through); the old R3 / R5 rules
+   for each way out stay. A **lane control** (Move out, and the new **Move in**: back to the inside line) stays on screen. The cards are
+   retired (the break, the bell and the kick are now simply the plan and the slider).
+5. **What connects a race to the career (all four wanted):**
+   - **A race plan with the coach.** Before the race the coach proposes a plan (a pace curve with a few anchors: the break, 400 m, the
+     move point, where to kick); you follow it, change it or ignore it. With no touch on the slider the runner **holds the plan you
+     confirmed** (the player sets the tactic; the game does not decide: GDD rule "the player decides"), so the slider is an override, not
+     a chore. **Quick result runs the same plan** (the old kick plan grows into this), so watched and quick races stay consistent.
+     Afterwards he grades the execution (record-based, like the season review's lines): trust moves and race tactics trains by racing well,
+     both through the "what this race did" card.
+   - **Rivals who matter:** the ones you keep meeting (style once known, the head-to-head record) before the start and on the result.
+   - **Moods and form carry in:** confidence, stress, sleep, soreness, Form change what the slider can give (how much "flat out" there is,
+     how steady the meter reads) and are shown before the start with their causes.
+   - **Real goals at risk:** the season goals card / standards / the time to qualify shown before the start and judged on the result
+     (built in L3b2 and K1; here only made prominent).
+6. **Sound is part of the presentation build** (crowd, your breathing and footsteps, the bell, the coach's shout), not now: it needs a
+   research session for free assets first and the user's OK for every download.
+7. **The race-day timeline** (arrive, warm-up, call room, start; the cool-down after) comes **after the new race works** and plugs in as a
+   step before and after it.
+8. **Order:** prototypes of the viewpoints **right after P2** (the user's pick). Everything else below in "Build plan".
+
+**Claude's design (proposals for the build sessions to confirm; none of this is built or agreed beyond decisions 1–8):**
+- **Slider → engine.** The slider sets the player's wish: from "sit in the pack" through "own even pace" to "flat out" (the speed the
+  runner can hold only for a few seconds). The cost is the existing R2 law (the reserve drains by (speed − cs) × (speed / own even)³; drafting
+  and bends as now), so mistakes cost 0.5–1 % of time as before (decisions 17, 21): nothing arcade. The pack still rules: a wish is
+  capped when boxed in or when running in a lane; the alert says why. Rivals keep the current engine (moves, covering, kick chain,
+  personalities): only the player's side changes (`Runner` gets a continuous `effort` in place of `pace_factor` / `kick_hold` /
+  Push-Hold-Ease; kick = the slider near the top when the reserve allows). Competitiveness (4.9.4) joins here: a little extra dig side by
+  side with a rival you know.
+- **What "good" is.** An 800 m race is decided by *when* the reserve is spent: a start that is too fast is paid for in the last 200 m
+  (decision 13), a move you cover costs now and pays at the finish only if you have the reserve, a position in the pack saves energy (the
+  draft) and risks the box. The slider makes every one of those a *continuous* decision the player feels in the meter. No dexterity: nothing
+  needs fast taps; keyboard nudge keys (up / down) beside the slider on PC, a large slider on a phone (44 px+).
+- **Feedback loop.** The meter, the plan line and the cues give the *cause* of what happens in the final 200 m; the race ends on the
+  existing recap card with the coach's grade; the commentary reads the slider ("goes early", "sits and waits") so a choice is named.
+- **The hash rule.** Presentation sessions (prototypes, the look build, sound) keep the races hash 73182f4e… and `quick_fingerprint`.
+  Engine sessions (the effort slider, Move in, competitiveness, quick = the plan) change it **on purpose** and record the new hash
+  (`quick_fingerprint`, `race_shape`, `race_rounds`, `race_check`); the neutral lab setting must keep the other fingerprints
+  (`training_balance`, `school_fingerprint`) identical.
+- **Risks (said plainly).** (1) A 3D chase camera in Godot's Compatibility renderer on a phone is possible (low-poly figures, few
+  lights), but needs figures: built in code from simple shapes, or CC0 models downloaded with the user's OK; the prototype will show how
+  it looks. (2) A slider is fiddly on a phone and ~2 minutes of attention is long: the 2x button and the hands-off plan are the safety
+  valves; a playtest decides (user's turn). (3) The prototypes replay a recorded race, so they prove the *look*, not the *feel of
+  control*; the control is first felt in R7a on the old look. (4) Commentary (R4) and the race story only READ the race and stay.
+
+**Build plan (sessions; the roadmap order P2 → R6–R7 → G1 … is kept, R6 / R7 are re-scoped and split):**
+| # | Session | What | Hash | Model |
+|---|---|---|---|---|
+| 1 | **R6a Viewpoint prototypes** | Three viewpoints (chase 3D, broadcast side, rich top-down) replay ONE recorded race (the engine's per-step positions recorded read-only), switch with a key, entered from the Dev menu; no game files change. The user plays with them and picks (their turn). Research first: athletics TV graphics, track specs, Godot 3D / 2D-in-3D on Compatibility, free runner models. | identical | Opus, high |
+| 2 | **R7a The effort engine** | Starts with the **race-logic audit** (the user's "check that everything works 100 % and is logical", 2026-10-25: every move, box, kick, fall, heat rule against its rules; odd cases fixed or listed) of what *stays*; then the slider on the existing screen (so it is felt before the look is chosen), live alerts instead of cards, Move in, competitiveness, the plan as the hands-off line, Quick result = the plan, the commentary reads the slider. | **new, recorded** | Opus, high |
+| 3 | **R7b The race plan and the stakes** | The pre-race plan screen (the coach proposes, you edit), the coach's grade after, trust + race tactics training, rivals who matter (head-to-head, style), the carry-in strip (moods, form, goals). | identical to R7a | Opus, high |
+| 4 | **R6b The look** | The chosen viewpoint built properly: the stadium from World Athletics specs (outdoor + indoor), figures, the camera, the meter / pace line / cues / gaps as TV graphics, the slow-motion, plain labels; layout_check + tour + help_check; the phone. | identical to R7a/b | Opus, high |
+| 5 | **R6c Sound** | Research session for assets (free, credited, the user's OK per download), then the crowd, breathing, steps, the bell, the coach. | identical | Sonnet / Opus |
+| 6 | **R7c The race-day timeline** | Arrive, warm-up, call room, start; the cool-down and its effect on tomorrow's soreness. | identical | Opus, high |
+| – | **Playtest 4 (the user)** | Races only: is the slider fun, what is still boring. May change the order of 4–6. | | |
+Sessions 1 and 2 touch different files (a prototype folder vs `race.gd` / data / the race screen) and could run side by side; the user chose
+1 first (right after P2). The whole set replaces R6 and R7 in `docs/ROADMAP.md` (a proposal until the user says OK).
+
+**Left open for the sessions (to ask the user when they come up):** notches shown on the slider or smooth; how the meter's fuzz shows;
+whether the chase camera is only for the player's race (rivals' races stay quick-run: yes unless told otherwise); what the camera does at
+the kick (slow motion setting Off / Short / Full from decision 8 stays); the phone layout of the slider and the lane control.
+
 ## 5. Presentation
 
 ### The look (V1, decided 2026-10-18): "Stadium Night" with broadcast numbers
