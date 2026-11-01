@@ -14,9 +14,10 @@
   "study": {"name": "Study", "icon": "book-open", "does": "Homework and revision. More study evenings than usual lift your grades; a lot of study makes school days heavier."},
   "rest": {"name": "Rest", "icon": "bed", "does": "Home early, to bed early. Before a school day, that day is lighter."},
   "friends": {"name": "Friends", "icon": "users", "does": "Time with friends lifts motivation. On a school night it is a late night: the next day weighs more."},
-  "family": {"name": "Family", "icon": "house", "does": "Time at home with the family: stress eases a little."}
+  "family": {"name": "Family", "icon": "house", "does": "Time at home with the family: stress eases a little."},
+  "partner": {"name": "Partner", "icon": "heart", "does": "A day with the person you are together with. It lifts motivation and confidence, and a week without one wears the relationship down."}
  },
- "order": ["study", "rest", "friends", "family"],
+ "order": ["study", "rest", "friends", "family", "partner"],
  "default": ["study", "study", "study", "study", "friends", "friends", "family"],
  "neutral": {"study": 4, "friends": 2, "family": 1},
  "effects": {

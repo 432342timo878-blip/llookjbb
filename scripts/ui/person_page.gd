@@ -11,6 +11,7 @@ signal changed
 
 var _pid := ""
 var _back_text := ""
+var _ending := false   # "End it" was pressed and its confirm is showing (session P2b)
 
 
 func _init(person_id: String, back_text := "") -> void:
@@ -52,6 +53,10 @@ func _build() -> void:
 	head.add_child(titles)
 	add_child(head)
 
+	var together := _together_box(p)   # (session P2b: a crush, the relationship, an ex)
+	if together != null:
+		add_child(together)
+
 	# How close: the bar, its word, the numbers behind a tap.
 	var close := VBoxContainer.new()
 	close.add_theme_constant_override("separation", 6)
@@ -84,6 +89,97 @@ func _build() -> void:
 	# Meet: the standing free evenings.
 	if str(page.kind) in ["best_friend", "friend", "acquaintance", "teammate", "former"]:
 		add_child(_meet_box(p))
+
+
+## TOGETHER (session P2b): a crush waiting for its answer, the relationship (how long, last week's partner slots, how neglected they
+## feel, the texting setting, End it with one confirm), or an ex. Null for everyone else.
+func _together_box(p: Dictionary) -> Control:
+	if not RomanceSystem.active():
+		return null
+	var rs := RomanceSystem.sys()
+	var info := rs.box_of(_pid)
+	if info.is_empty():
+		return null
+	var u: Dictionary = Data.romance.ui
+	var name := StoryletSystem.short_name(p)
+	var box := UIKit.vbox(8)
+	box.add_child(UIKit.label(str(u.box_head), "SectionLabel"))
+	match str(info.mode):
+		"crush":
+			box.add_child(UIKit.wrapped(str(u.box_crush).format({"name": name}), "BodyLabel"))
+		"ex":
+			var ex: Dictionary = StoryletSystem._date_of(int(info.ex_day))
+			box.add_child(UIKit.wrapped(str(u.ex_note).format({"date": DayInfo.short_day(ex)}), "BodyLabel"))
+		"dating":
+			var weeks := int(info.weeks)
+			box.add_child(UIKit.wrapped(str(u.box_week_one if weeks == 1 else u.box_weeks).format({"n": weeks}), "BodyLabel"))
+			var last := ""
+			if int(info.slots_last) > 0:
+				last = str(u.box_slots_last_one if int(info.slots_last) == 1 else u.box_slots_last).format({"n": int(info.slots_last)})
+			else:
+				var neglect := ""
+				if int(info.neglect) >= 2:
+					neglect = str(u.box_neglect_2).format({"name": name})
+				elif int(info.neglect) == 1:
+					neglect = str(u.box_neglect_1).format({"name": name})
+				last = str(u.box_slots_none).format({"neglect": neglect}).strip_edges()
+			box.add_child(UIKit.wrapped(last, "WhyLabel"))
+			if int(rs.dip.get("weeks", 0)) > 0:
+				box.add_child(UIKit.wrapped(str(u.dip_note).format({"n": int(rs.dip.weeks)}), "WhyLabel"))
+			box.add_child(UIKit.label(str(u.box_texting), "CaptionLabel"))
+			var flow := HFlowContainer.new()
+			flow.add_theme_constant_override("h_separation", 6)
+			flow.add_theme_constant_override("v_separation", 6)
+			var group := ButtonGroup.new()
+			var opts: Dictionary = Data.romance.texting.options
+			for key in opts:
+				var b := UIKit.toggle(str(opts[key].name), group)
+				b.custom_minimum_size = Vector2(150, 44)
+				b.button_pressed = rs.texting == str(key)
+				b.set_meta("texting", str(key))
+				var option := str(key)
+				b.pressed.connect(func():
+					rs.set_texting(option)
+					_build()
+					changed.emit())
+				flow.add_child(b)
+			box.add_child(flow)
+			box.add_child(UIKit.wrapped(str(opts[rs.texting].does), "WhyLabel"))
+			box.add_child(_end_row(name, rs))
+	return UIKit.panel(box, 14)
+
+
+## End it: one button, then one confirm (it is your call; the next weeks weigh on the mood).
+func _end_row(name: String, rs: RomanceSystem) -> Control:
+	var u: Dictionary = Data.romance.ui
+	var col := UIKit.vbox(6)
+	if not _ending:
+		var b := UIKit.button(str(u.box_end), false, 140)
+		b.set_meta("end_it", true)
+		b.pressed.connect(func():
+			_ending = true
+			_build())
+		col.add_child(b)
+		return col
+	col.add_child(UIKit.wrapped(str(u.box_end_note), "WhyLabel"))
+	var row := UIKit.flex(8)
+	var sure := UIKit.button(str(u.box_end_sure).format({"name": name}), true, 0.0)
+	sure.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sure.set_meta("end_confirm", true)
+	sure.pressed.connect(func():
+		_ending = false
+		rs.end_it()
+		_build()
+		changed.emit())
+	row.add_child(sure)
+	var keep := UIKit.button(str(u.box_end_cancel), false, 0.0)
+	keep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	keep.pressed.connect(func():
+		_ending = false
+		_build())
+	row.add_child(keep)
+	col.add_child(row)
+	return col
 
 
 func _close_why(page: Dictionary) -> String:

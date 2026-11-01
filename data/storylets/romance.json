@@ -1,0 +1,133 @@
+{
+	"_note": "TOGETHER (session P2b, GDD 4.10 decision 6 'P2b's questions'; format in README.md). Sender: dating = the person you are together with (RomanceSystem; thread together), ex = someone you were together with. Everything is texting, time together, a day out: nothing more. Every storylet is guarded by the `romance` condition (and says nothing about a partner when there is none). The invitations land in a WEEKEND slot with the activity partner (Saturday or Sunday): going is time together (closeness, the moods, no neglect), staying home costs a little. The two beats are the rare real choices (a dinner, meeting the parents). Texts are written for a day ahead ('on {weekday}') and use {they} / {them} / {their} for the sender (she/her/her, he/him/his). Fictional minors.",
+	"storylets": [
+		{
+			"id": "rm_morning", "feed": true, "thread": "together", "from": "dating", "slot": "morning", "cooldown_days": 9,
+			"touches": ["romance"],
+			"when": {"age": [15, 19], "romance": ["dating"]},
+			"text": [
+				"Good morning. I dreamed we were at the lake and you were running with a hat on. Have a good day.",
+				"Morning. I have a double lesson first and no coffee. Think of me.",
+				"Good morning, runner. The bus is late again and it is raining. See you soon."
+			]
+		},
+		{
+			"id": "rm_proud", "feed": true, "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 14,
+			"touches": ["romance", "race"],
+			"when": {"age": [15, 19], "romance": ["dating"], "raced_days_ago": [0, 2]},
+			"text": [
+				"I saw your result. I am proud of you, whatever the number says.",
+				"I looked up your result as soon as I could. You did the thing you train for. I am glad I know you."
+			]
+		},
+		{
+			"id": "rm_exam_luck", "feed": true, "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 14,
+			"touches": ["romance", "test"],
+			"when": {"age": [15, 19], "romance": ["dating"], "test_tomorrow": true},
+			"text": [
+				"Good luck with the test tomorrow. You know more than you think you do.",
+				"You have a test tomorrow. Sleep, eat something, and it will be fine."
+			]
+		},
+		{
+			"id": "rm_ex_hello", "feed": true, "thread": "together", "from": "ex", "slot": "evening", "cooldown_days": 90,
+			"touches": ["romance", "race"],
+			"when": {"age": [15, 19], "romance": ["single", "ended"], "raced_days_ago": [0, 2], "relation": [10, 100]},
+			"text": [
+				"I saw your result. Congratulations. I hope you are doing well.",
+				"Good race. I still follow the results, you know. Take care."
+			]
+		},
+		{
+			"id": "rm_film", "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 21,
+			"touches": ["romance", "evening"],
+			"invite": {"days": [5, 6], "activity": "partner", "go": ["yes"], "title": "A film with {from} on {weekday}?", "chip": "Film?"},
+			"when": {"age": [15, 19], "romance": ["dating"]},
+			"text": [
+				"There is a film I have wanted to see at the cinema, on {weekday} afternoon. Come with me?",
+				"Film on {weekday}? I will buy the popcorn, you pick the seats."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, let's go", "hint": "a day with {from}", "effects": {"relation": 2, "motivation": 1}, "result": "You sat in the back row and neither of you remembers the plot."},
+				{"id": "no", "label": "Not this time", "hint": "{from} will be a little sad", "effects": {"relation": -2}, "result": "Okay. Another weekend, then."}
+			]
+		},
+		{
+			"id": "rm_walk", "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 18,
+			"touches": ["romance", "evening"],
+			"invite": {"days": [5, 6], "activity": "partner", "go": ["yes"], "title": "A walk with {from} on {weekday}?", "chip": "Walk?"},
+			"when": {"age": [15, 19], "romance": ["dating"]},
+			"text": [
+				"A long walk by the water on {weekday} morning? I will bring a flask of coffee.",
+				"The leaves are doing their thing. Walk in the forest on {weekday}? No watch, no pace."
+			],
+			"replies": [
+				{"id": "yes", "label": "I would love that", "hint": "a day with {from}", "effects": {"relation": 3, "confidence": 1}, "result": "No watch, no pace. It was the best easy day of the month."},
+				{"id": "no", "label": "I need the day to rest", "hint": "{from} will be a little sad", "effects": {"relation": -2}, "result": "Rest well. I mean it."}
+			]
+		},
+		{
+			"id": "rm_homework", "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 28,
+			"touches": ["romance", "evening"],
+			"invite": {"days": [6], "activity": "partner", "go": ["yes"], "title": "Homework with {from} on {weekday}?", "chip": "Homework?"},
+			"when": {"age": [15, 19], "romance": ["dating"]},
+			"text": [
+				"We both have a pile of homework. Let's do it together at mine on {weekday}, and eat afterwards.",
+				"Sunday homework at my place on {weekday}? It always goes faster with someone next to you."
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, bring the books", "hint": "a day with {from}; grades ▲ a little", "effects": {"relation": 2, "grades": 1}, "result": "You studied for two hours and ate for one."},
+				{"id": "no", "label": "I will do it alone", "hint": "", "effects": {"relation": -1}, "result": "Fine. I will survive, I think."}
+			]
+		},
+		{
+			"id": "rm_meet_friends", "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 45,
+			"touches": ["romance", "evening"],
+			"invite": {"days": [5], "activity": "partner", "go": ["yes", "short"], "title": "Meeting {from}'s friends on {weekday}?", "chip": "Friends?"},
+			"when": {"age": [15, 19], "romance": ["dating"], "dating_weeks": [3, null]},
+			"text": [
+				"My friends are meeting at the park on {weekday} and they keep asking about you. Come and meet them.",
+				"Come to the park on {weekday}. My friends want to see the runner I keep talking about."
+			],
+			"replies": [
+				{"id": "yes", "label": "I will come", "hint": "a late night; a day with {from}", "effects": {"relation": 4, "sleep": -1, "motivation": 1}, "result": "Everyone was nice. You got home late, with a smile you could not take off."},
+				{"id": "short", "label": "I will come for a while", "hint": "a day with {from}", "effects": {"relation": 2}, "result": "An hour was enough to be liked."},
+				{"id": "no", "label": "Not this time", "hint": "{from} will be a little sad", "effects": {"relation": -3}, "result": "They will ask again. I will tell them you are shy."}
+			]
+		},
+		{
+			"id": "rm_dinner", "thread": "together", "from": "dating", "slot": "evening", "cooldown_days": 120,
+			"touches": ["romance", "evening"],
+			"beat": {"title": "A proper dinner with {from}", "chip": "Dinner", "default": "home"},
+			"when": {"age": [15, 19], "romance": ["dating"], "dating_weeks": [8, null]},
+			"text": [
+				"We have been together for two months. I want to make it a proper Saturday: dinner, just us. Or if you would rather, a quiet day at home with a film. You decide.",
+				"Two months! Do you want to celebrate on Saturday? A restaurant, or pizza at my place, whichever you prefer."
+			],
+			"replies": [
+				{"id": "dinner", "label": "A proper dinner", "hint": "Saturday is a day with {from}", "effects": {"relation": 4, "confidence": 1}, "slots": {"days": [5], "activity": "partner"},
+					"result": "You both dressed up and felt silly about it, which was the best part.", "result_from": "sender"},
+				{"id": "home", "label": "A quiet day at home", "hint": "Saturday is a day with {from}", "effects": {"relation": 2}, "slots": {"days": [5], "activity": "partner"},
+					"result": "Pizza and a film. Honestly, perfect.", "result_from": "sender"},
+				{"id": "pass", "label": "Not this weekend", "hint": "", "effects": {"relation": -3},
+					"result": "Okay. I understand. Another time.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "rm_parents", "thread": "together", "from": "dating", "slot": "evening", "once": true,
+			"touches": ["romance", "evening"],
+			"beat": {"title": "Dinner at {from}'s family", "chip": "{from}'s family", "default": "later"},
+			"when": {"age": [15, 19], "romance": ["dating"], "dating_weeks": [4, null]},
+			"text": [
+				"My parents asked if you would come to Sunday dinner. They would like to meet you. They are nicer than they sound, I promise.",
+				"Mum has been asking about you for weeks. Sunday dinner at ours? There will be a lot of food and one embarrassing photo."
+			],
+			"replies": [
+				{"id": "yes", "label": "I will come", "hint": "Sunday is a day with {from}", "effects": {"relation": 4, "stress": 1}, "slots": {"days": [6], "activity": "partner"},
+					"result": "They were kind, and the photo was worse than promised.", "result_from": "sender"},
+				{"id": "later", "label": "Not yet, but soon", "hint": "", "effects": {"relation": -1},
+					"result": "Okay. I will tell them you are busy training.", "result_from": "sender"}
+			]
+		}
+	]
+}

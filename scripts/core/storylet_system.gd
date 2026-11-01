@@ -366,6 +366,12 @@ func people_for(selector: String) -> Array:
 				ok = p.thread == "friends"
 			"circle":   # (session P2a: the people you are getting to know)
 				ok = p.thread == "circle"
+			"dating":   # (session P2b: the person you are together with)
+				ok = bool(p.get("dating", false))
+			"together":   # (the thread's roster: the person you are together with, or like)
+				ok = bool(p.get("dating", false)) or (RomanceSystem.active() and RomanceSystem.sys().stage == "crush" and str(p.id) == RomanceSystem.sys().partner)
+			"ex":
+				ok = int(p.get("ex", 0)) > 0 and not bool(p.get("dating", false))
 			"school":
 				ok = p.thread == "school" and (sub == "" or p.role == sub)
 			"rival":
@@ -966,6 +972,10 @@ func _apply(effects: Dictionary, p: Dictionary, cause: String) -> void:
 				if not p.is_empty() and p.has("memory"):
 					for name in (v if v is Array else [v]):
 						p.memory.erase(str(name))
+			"team":   # (session P2b: "quit" = the sender leaves the training group for real, "join" = a new teammate arrives)
+				var circle := CircleSystem.sys()
+				if circle != null and CircleSystem.active():
+					circle.team_change(str(v), p)
 			"relation_thread":   # (session P1: {thread: points} for everyone else in that thread, e.g. the friends)
 				for t in v:
 					for q in people.values():
@@ -1657,6 +1667,13 @@ func check_when(when: Dictionary, ctx: Dictionary, p: Dictionary) -> bool:
 			"evening":   # the activity of the day's free-time slot (["family"]): what the player planned for it
 				var hs := HabitSystem.sys()
 				ok = hs != null and hs.activity_on(date) in v
+			# Session P2b (a first relationship):
+			"romance":   # ["single", "crush", "dating", "ended"]: where the relationship is (RomanceSystem.state_now)
+				ok = (RomanceSystem.sys().state_now() if RomanceSystem.active() else "single") in v
+			"dating_weeks":   # [min, max] whole weeks together (0 when not together)
+				ok = RomanceSystem.active() and _in_range(RomanceSystem.sys().weeks_together(), v)
+			"team_size":   # [min, max] teammates in the head coach's group (the effect `team` quit / join needs room)
+				ok = CircleSystem.active() and _in_range(CircleSystem.sys().group_size(), v)
 			"memory", "memory_days", "rival_race", "rival_streak", "rival_wins", "trait":
 				ok = p.is_empty() or _sender_key(key, v, ctx, p)   # (who sends it: checked per sender, _sender_ok)
 			_:
@@ -1889,6 +1906,11 @@ func _fill(ctx: Dictionary, p: Dictionary) -> Dictionary:
 ## report card's academic average), {old_sport}, {family_word}.
 func _fill_people(fill: Dictionary, ctx: Dictionary, p: Dictionary) -> void:
 	fill.from = short_name(p)
+	var fem := str(p.get("gender", "")) == "female"   # (session P2b: {they} {them} {their} for the sender: she / her / her, he / him / his)
+	fill.they = "she" if fem else "he"
+	fill.them = "her" if fem else "him"
+	fill.their = "her" if fem else "his"
+	fill.dating = short_name(RomanceSystem.sys().partner_person()) if RomanceSystem.active() else ""
 	var pid := str(p.get("id", ""))
 	fill.mum = _first_of("parent:mum")
 	fill.dad = _first_of("parent:dad")

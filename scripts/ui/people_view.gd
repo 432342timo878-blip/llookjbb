@@ -73,6 +73,8 @@ func _list(with_selection: bool) -> Control:
 			continue   # (session P1: shown once a rival has become a person)
 		if t == "circle" and (not CircleSystem.active() or (_ms.people_for("circle").is_empty() and _ms.thread("circle").is_empty())):
 			continue   # (session P2a: shown once a class has arrived)
+		if t == "together" and (not RomanceSystem.active() or (_ms.thread("together").is_empty() and RomanceSystem.sys().stage == "")):
+			continue   # (session P2b: shown once you like someone or something has been said)
 		col.add_child(_thread_row(str(t), with_selection and (current == t or (current == "profile" and t == "coach"))))
 	if CoachMarket.enabled:   # Find a coach (session C6)
 		col.add_child(_find_row(with_selection and (current == "market" or current == "profile:market" or current.begins_with("coach:"))))
@@ -260,7 +262,7 @@ func _thread(thread_id: String) -> Control:
 		if card != null:
 			col.add_child(card)
 		col.add_child(_members())
-	elif thread_id in ["family", "friends", "rivals", "circle"] and not _ms.people_for(thread_id if thread_id != "rivals" else "rival").is_empty():
+	elif thread_id in ["family", "friends", "rivals", "circle", "together"] and not _ms.people_for(thread_id if thread_id != "rivals" else "rival").is_empty():
 		col.add_child(PeopleUI.roster(_ms, thread_id, func(pid: String): _go("person:" + pid)))   # (session P1: who they are, the relationship; P2a: open a person's page)
 	_messages_into(col, thread_id)
 	return col

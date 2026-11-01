@@ -43,8 +43,11 @@ Seasons); **K1c** = an in-game playtest (a menu page + cards with the right ques
 `PlaytestNotes`; never a stop; the notes copy out as text). Playtest 3 done (the loop feels right). **P2 is split (user, 2026-11-01, GDD 4.10 "P2's
 questions"): P2a done** (`CircleSystem`: closeness from shared free evenings with who a slot is spent with, new classmates who become friends or
 drift, the third skipped invitation, the person page, the training group's fixed days + pull + leaving it, Find a coach with search / sort /
-compare and a talk with a candidate; save v9; GDD "Built (step P2a)"); **P2b** = a first relationship from ~15 + the moments for 16–17. Next, in
-`docs/ROADMAP.md` order: P2b, the race revamp (GDD 4.11) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth
+compare and a talk with a candidate; save v9; GDD "Built (step P2a)"); **P2b done** (2026-11-01, GDD 4.10 "P2b's questions" / "Built (step P2b)"):
+`RomanceSystem` (a crush card on the Sunday planner from 15 where the PLAYER picks who, the answer from the career's own dice, a weekend slot
+"partner", late texting as a setting (sleep cost), neglect, a breakup by you or them with a two-week dip), the confirmation camp's faces,
+a teammate really quitting / joining (effect `team`), 26 new storylets (relationship + ages 16–17), save v10. Next, in
+`docs/ROADMAP.md` order: the race revamp (GDD 4.11) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth
 opponents stay fictional (minors); real athletes only at senior level.
 
 ## How to run and check (Windows PC of the user)
@@ -147,7 +150,8 @@ them with a tap for the numbers (meta `cause_row`). Never state a cause the game
   `answer_event`; `Game.systems` order: Health, Season, Form, Coach, School, Mind, Moments (StoryletSystem), Goals, Suggests, Proposals,
   Market (see `_make_systems`).
 - `HealthSystem` (soreness, injuries, illness, adaptation; `data/health.json`, `data/injuries.json`), UI in `HealthUI` / `HealthEventPanel`.
-- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 9** (P2a: `systems.circle` + the habits' `with` companions; an older save has none and
+- `SaveGame`: JSON slots in `user://saves/`, autosave after every played day, **version 10** (P2b: `systems.romance`, the habits' activity `partner`, a person's `dating` / `ex`; an
+  older save is single; v9 P2a: `systems.circle` + the habits' `with` companions; an older save has none and
   starts in its group; v8 K1: `systems.career`: the timeline, the
   reputation events, the season-list log, the season reviews; a save without it is rebuilt from the results, `CareerSystem.after_load`;
   v7 L3b2: the goals card, reviews and news; an older save's waiting goals stop becomes the card, `SeasonGoals.after_load`; v6 L3b1: mental sessions; v5 L1b: the
@@ -192,6 +196,13 @@ the cards kept in `Game.race_cards` (the planner's race strap opens one), the sc
   they stop asking; **the training group**: its two days are FIXED in `WeekSim` (`is_group_day`, `can_change(d, by)`: only an injury moves
   them), a pull on its hard sessions by its level against yours (recorded in the report's `mods.group`), leaving it = train alone (the coach's
   judgements noisier). UI: `PersonPage`, `GroupCard`, Find a coach's search / sort / compare / talk (`CoachMarketView`, `CoachMarket.talk`).
+- `RomanceSystem` (P2b, `GameConfig` "romance", off in lab; `data/romance.json` with its research): from 15 a `RomanceCard` on the planner (never a
+  stop) where the PLAYER picks who they like; the answer comes on Sunday from the career's own dice by closeness; together = the weekend
+  activity `partner` in `HabitSystem` (motivation / confidence pulls through `MindSystem.pulls`, time together for `CircleSystem`), **late
+  texting** is a setting on the person's page (the life-load part `texting`), a week without a partner slot is neglect (a warning, then they end
+  it), you or they can end it: a dip in the moods for two weeks (pulls + causes). `CircleSystem.arrive_camp` (the confirmation camp's faces),
+  `team_change` (the storylet effect `team`: a teammate really quits / joins). Conditions `romance` / `dating_weeks` / `team_size`, senders
+  `dating` / `ex`, thread `together`. A person who is "partner" in the cast is a TRAINING partner; the sweetheart is `dating` in code.
 - `SchoolSystem` (stages, 17 subjects, tests, report cards, life load, the meet-and-tests decision; `data/school_life.json`; L3b1:
   the report card and the meet-and-tests clash are planner cards with a named default, only a matriculation exam clash stops) +
   `SchoolCalendar` (real 2026–27 dates, rules after) + `SchoolApplication` (the joint application, points, the path, moving; a rejection

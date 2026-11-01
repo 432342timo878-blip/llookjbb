@@ -67,6 +67,8 @@ func _reset_tally() -> void:
 func kind_of(p: Dictionary) -> String:
 	if not bool(p.get("active", false)):
 		return ""
+	if bool(p.get("dating", false)):   # (session P2b: together with them; RomanceSystem)
+		return "dating"
 	match str(p.get("role", "")):
 		"best_friend", "friend", "acquaintance":
 			return str(p.role)
@@ -127,8 +129,39 @@ func arrive_class(key: String) -> Array:
 	if ms == null or key == "" or arrivals.has("class." + key):
 		return []
 	var c: Dictionary = cfg().places.classmates
-	var rng := _rng("class|" + key)
-	var n := rng.randi_range(int(c.count[0]), int(c.count[1]))
+	var out := _faces(ms, _rng("class|" + key), "cl." + key, "class." + key, c.count, str(c.met), c.traits)
+	var names: Array = out.map(func(q): return str(q.first_name))
+	var text := str(c.arrival if key == "comp" else cfg().places.class_secondary).format({"names": ", ".join(names)})
+	ms.say("circle", "system", text)
+	return out
+
+
+## The confirmation camp (session P2b): in the week it starts a few new faces join as acquaintances, once. Only when a camp was chosen.
+func arrive_camp() -> Array:
+	var ms := _ms()
+	if ms == null or Game.athlete == null:
+		return []
+	var camp: Dictionary = Data.cast.away.rippileiri
+	if not ms._camp_flag() in camp.get("flags", []):
+		return []
+	var start := Cast.occurrence("rippileiri", int(Game.date.year), ms.flags)
+	if start.is_empty():
+		return []
+	var n := Calendar.days_between(start, Game.date)
+	var key := "camp.%d" % int(start.year)
+	if n < 0 or n >= 7 or arrivals.has(key):
+		return []
+	var c: Dictionary = Data.romance.camp
+	var out := _faces(ms, _rng("camp|" + key), "cp.%d" % int(start.year), key, c.count, str(c.met), c.traits)
+	var names: Array = out.map(func(q): return str(q.first_name))
+	ms.say("circle", "system", str(c.arrival).format({"names": ", ".join(names)}))
+	return out
+
+
+## New acquaintances of one place (a class, the camp): made from `rng` (the count first, then each face), added to the people and
+## to `met`, the place marked arrived. Returns them.
+func _faces(ms: StoryletSystem, rng: RandomNumberGenerator, id_prefix: String, place: String, count: Array, met_word: String, traits: Dictionary) -> Array:
+	var n := rng.randi_range(int(count[0]), int(count[1]))
 	var a := Game.athlete
 	var used := {}
 	for p in ms.people.values():
@@ -136,8 +169,8 @@ func arrive_class(key: String) -> Array:
 	var out := []
 	for i in n:
 		var g := a.gender if rng.randf() < 0.5 else ("female" if a.gender == "male" else "male")
-		var p := {"id": "cl.%s.%d" % [key, i + 1], "thread": "circle", "role": "acquaintance", "first_name": "", "last_name": "", "gender": g,
-				"birth_year": int(a.birth_date.get("year", 2012)), "word": str(c.met), "relation": float(cfg().status.acquaintance_start),
+		var p := {"id": "%s.%d" % [id_prefix, i + 1], "thread": "circle", "role": "acquaintance", "first_name": "", "last_name": "", "gender": g,
+				"birth_year": int(a.birth_date.get("year", 2012)), "word": met_word, "relation": float(cfg().status.acquaintance_start),
 				"active": true, "memory": {}}
 		for _try in 40:
 			var first := str(Data.names[g][rng.randi_range(0, Data.names[g].size() - 1)])
@@ -148,14 +181,11 @@ func arrive_class(key: String) -> Array:
 		if str(p.first_name) == "":
 			p.first_name = str(Data.names[g][rng.randi_range(0, Data.names[g].size() - 1)])
 		p.last_name = str(Data.names.surnames[rng.randi_range(0, Data.names.surnames.size() - 1)])
-		p.trait = Cast._weighted(rng, c.traits)
+		p.trait = Cast._weighted(rng, traits)
 		ms.people[p.id] = p
-		met[p.id] = {"at": "class." + key, "since": StoryletSystem.day_no(Game.date), "slots": 0, "low": 0}
+		met[p.id] = {"at": place, "since": StoryletSystem.day_no(Game.date), "slots": 0, "low": 0}
 		out.append(p)
-	arrivals["class." + key] = StoryletSystem.day_no(Game.date)
-	var names: Array = out.map(func(q): return str(q.first_name))
-	var text := str(c.arrival if key == "comp" else cfg().places.class_secondary).format({"names": ", ".join(names)})
-	ms.say("circle", "system", text)
+	arrivals[place] = StoryletSystem.day_no(Game.date)
 	return out
 
 
@@ -165,6 +195,7 @@ func on_week_start(_w: WeekSim) -> void:
 	if not active():
 		return
 	arrive_class(_class_key())
+	arrive_camp()
 	_follow_group()
 
 
@@ -204,6 +235,9 @@ func on_day_end(ctx: Dictionary) -> void:
 			named[with] = float(named.get(with, 0.0)) + 1.0
 		else:
 			tally.crowd_family = int(tally.crowd_family) + 1
+	elif act == "partner" and RomanceSystem.dating():   # (session P2b: a partner slot is time with them)
+		var who := RomanceSystem.sys().partner
+		named[who] = float(named.get(who, 0.0)) + 1.0
 	var g := group_day(Calendar.weekday(ctx.date))
 	if in_group and has_group() and not g.is_empty():
 		var rec: Dictionary = ctx.get("record", {})
@@ -245,6 +279,10 @@ func on_week_end(_ctx: Dictionary) -> void:
 				gain = slots * float(t.gain_per_slot) * (1.0 - rel / 100.0)
 				gain += group_days * float(t.group_gain_per_day) * (1.0 - rel / 100.0) * (1.5 if bool(p.get("close", false)) else 1.0)
 				slots += group_days * 0.5
+			"dating":   # (session P2b: partner slots count more, and the texting's weekly gain)
+				var dc: Dictionary = Data.romance.dating
+				var texting := RomanceSystem.sys().texting
+				gain = (slots * float(dc.gain_per_slot) + float(dc.texting_gain.get(texting, 0.0))) * (1.0 - rel / 100.0)
 		var need := float(t.need.get(k, 0.0))
 		if need > 0.0 and slots < need:
 			fade = float(t.fade_per_week) * float(t.fade_factor.get(k, 1.0)) * (1.0 - slots / need)
@@ -268,7 +306,7 @@ func _statuses(ms: StoryletSystem) -> void:
 	var ui: Dictionary = cfg().ui
 	for pid in ms.people.keys():
 		var p: Dictionary = ms.people[pid]
-		if not bool(p.get("active", false)):
+		if not bool(p.get("active", false)) or bool(p.get("dating", false)):   # (together with them: RomanceSystem keeps their status)
 			continue
 		var rel := float(p.get("relation", 0.0))
 		var role := str(p.get("role", ""))
@@ -345,6 +383,11 @@ func _head() -> Dictionary:
 ## The head coach has a group you know of (real coaches' groups are not known: empty).
 func has_group() -> bool:
 	return not (_head().get("group", []) as Array).is_empty()
+
+
+## How many teammates the head coach's group has (0 = no group you know of).
+func group_size() -> int:
+	return (_head().get("group", []) as Array).size()
 
 
 ## The group's fixed session for weekday `wd`: {session, intensity} or {} (no group, you left it, or not a group day).
@@ -443,6 +486,47 @@ static func overlay(days: Array, intensity: Array, races: Dictionary) -> Array:
 	return [out_days, out_int]
 
 
+## A teammate really leaves or joins the head coach's group (session P2b, the storylet effect `team`): "quit" removes the sender `p`
+## (never below 4 teammates), "join" adds a new one around the group's level (never above 10). The group's level and size, the pull and
+## the People list follow. False when nothing changed.
+func team_change(kind: String, p: Dictionary) -> bool:
+	var ms := _ms()
+	var head := _head()
+	var group: Array = head.get("group", [])
+	if ms == null or group.is_empty():
+		return false
+	if kind == "quit":
+		if group.size() <= 4:
+			return false
+		for i in group.size():
+			if "%s.%s" % [head.id, group[i].id] == str(p.get("id", "")):
+				group.remove_at(i)
+				var rs := RomanceSystem.sys()
+				if rs != null and str(p.id) == rs.partner and rs.stage != "":   # (the one you like or are together with stays in your life: a friend now)
+					p.thread = "friends"
+					p.role = "friend"
+					p.active = true
+				else:
+					p.active = false
+				p.left = true
+				return true
+		return false
+	if kind == "join" and group.size() < 10:
+		var made := CoachSystem._make_group(Game.athlete, _rng("join|%d|%d" % [StoryletSystem.day_no(Game.date), group.size()]), [1, 1], group_level())
+		if made.is_empty():
+			return false
+		var top := 0
+		for t in group:
+			top = maxi(top, int(str(t.id).trim_prefix("t")))
+		var t: Dictionary = made[0]
+		t.id = "t%d" % (top + 1)
+		t.role = "newcomer"
+		group.append(t)
+		ms._sync_people()
+		return true
+	return false
+
+
 ## Leave the group (train alone).
 func leave_group() -> bool:
 	if not in_group or not has_group():
@@ -502,7 +586,14 @@ func page_of(p: Dictionary) -> Dictionary:
 				gives.append(str(line).format(fill))
 	var costs: Array = []
 	var need := float(c.time.need.get(k, 0.0))
-	if k == "family":
+	if k == "dating":   # (session P2b)
+		var ru: Dictionary = Data.romance.ui
+		gives = [str(ru.slot_gives).format(fill)]
+		costs = [str(ru.slot_costs).format({"n": int(Data.romance.dating.end_weeks)})]
+		if RomanceSystem.sys().texting == "whenever":
+			costs.append(str(ru.texting_gives))
+		need = 0.0
+	elif k == "family":
 		costs.append(str(c.gives.costs.time_family).format(fill))
 	elif need > 0.0:
 		fill.need = str(c.gives.costs.need_1 if need >= 1.0 else (c.gives.costs.need_half if need <= 0.5 else c.gives.costs.need_most))

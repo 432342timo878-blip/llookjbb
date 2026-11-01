@@ -852,6 +852,9 @@ func _cards(w: WeekSim, skip_notes: bool) -> Container:
 ## The season goals' cards of this week: the offer, a review, the season's end (GoalsCard).
 static func _goal_cards() -> Array:
 	var out := []
+	var crush := RomanceCard.build()   # (session P2b: "Someone on your mind": a card, never a stop; first of the full-width cards)
+	if crush != null:
+		out.append(crush)
 	if not GoalsUI.available():
 		return out
 	var gs := SeasonGoals.sys()

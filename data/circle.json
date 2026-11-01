@@ -23,8 +23,8 @@
   "family_gain_per_slot": 2.0,
   "group_gain_per_day": 0.8,
   "fade_per_week": 1.0,
-  "need": {"best_friend": 0.7, "friend": 1.0, "acquaintance": 1.0, "teammate": 0.5, "former": 1.0},
-  "fade_factor": {"best_friend": 0.5, "friend": 1.0, "acquaintance": 0.5, "teammate": 1.0, "former": 1.0},
+  "need": {"best_friend": 0.7, "friend": 1.0, "acquaintance": 1.0, "teammate": 0.5, "former": 1.0, "dating": 1.0},
+  "fade_factor": {"best_friend": 0.5, "friend": 1.0, "acquaintance": 0.5, "teammate": 1.0, "former": 1.0, "dating": 1.5},
   "crowd_cap": 4
  },
  "status": {

@@ -114,6 +114,7 @@ func _make_systems() -> Array:
 	var list: Array = [HealthSystem.new(), FormSystem.new(), SeasonSystem.new(), CoachSystem.new(), SchoolSystem.new(), HabitSystem.new(),
 			MindSystem.new(), StoryletSystem.new(), SeasonGoals.new(), CoachProposals.new(), CoachSuggests.new(), CoachMarket.new(),
 			CircleSystem.new(),   # (P2a: shared time, new people and the training group, after the moments and the market)
+			RomanceSystem.new(),  # (P2b: a first relationship: after the circle (it reads the week's shared time) and after the mind (Sunday's drift uses its pulls first))
 			CareerSystem.new()]   # (K1a: the career's history last: it only reads what the others did the same day)
 	if OS.is_debug_build():
 		list.append(DevEvents.new())

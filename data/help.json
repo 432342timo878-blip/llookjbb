@@ -3,7 +3,7 @@
  "screens": {
   "week": {
    "title": "This week",
-   "version": 7,
+   "version": 8,
    "sections": [
     {"heading": "Plan, then play", "text": "Every Sunday evening the week stops here. Look at the days, change any you like, answer what waits for you, then press Play week. A normal week is two taps. Next day plays one day at a time."},
     {"heading": "Last week", "text": "On the left (at the top on a phone): the sessions you did, your race, what changed and why, and your coach's line about it. Tap the race to see what it did again; a race you scratched says why. Last week in full shows every change and every day."},
@@ -16,6 +16,7 @@
     {"heading": "Waiting for you", "text": "A rare real choice waits here, like a week at the cottage or a friend who feels left out: each answer with its price, the evenings it takes and the friendship. Left open, it takes the answer it names when the week starts. A meet your coach suggests waits here too."},
     {"heading": "School cards", "text": "A race in a week of tests: race and risk the grades, study and scratch, or race and study on the bus. Left open, you race and the tests cost a little. A report card: keep your evenings, or one study evening more or fewer. Left open, nothing changes.", "see": ["habits"]},
     {"heading": "Season goals", "text": "Your coach's goals card, the two goals checks of the season and the season's end come here, above the other cards. Each says what met and missed mean and what leaving it does. The card asks Play week only in the week its date falls in.", "see": ["goals"]},
+    {"heading": "Someone on your mind", "text": "From about 15, a card may ask who you are interested in. It is yours to answer, or to leave: it never stops the week. Once you are together, Saturday and Sunday can be a partner day.", "see": ["together"]},
     {"heading": "Messages", "text": "Most messages ask nothing: your people's news and how they see your races. They are in People. A quiet line under your coach's line says how many are new and from whom; tap it to read them. They never stop the week."},
     {"heading": "Body", "text": "Tiredness and your most strained body areas as bars. The white tick is the warning line: green is fine, yellow near the line, red at or over it. At the line for a body area it starts to feel sore. Tap a bar for what raised it, day by day, and what helps.", "see": ["fatigue", "soreness"]},
     {"heading": "Form and mind", "text": "Race form says how you would race today, with how sharp and how fresh you are. Your confidence, motivation and stress are words with what they do now. Tap one for its number, the news that moved it and where last Sunday pulled it.", "see": ["form", "moods"]},
@@ -144,8 +145,9 @@
   },
   "people": {
    "title": "People",
-   "version": 11,
+   "version": 12,
    "sections": [
+    {"heading": "Together", "text": "Once you have told someone you like them, a thread called Together appears: their messages, the answer and, if you are together, their invitations. It stays when something has been said. Open them for the texting setting and End it.", "see": ["together"]},
     {"heading": "People you know", "text": "New classmates and others you are getting to know are in their own thread. Spend free evenings with someone and they become a friend; a friend you stop seeing drifts away slowly. Open anyone to see how close you are and what that gives and costs.", "see": ["habits"]},
     {"heading": "The people around you", "text": "Your coach, your training group, your family, your friends from school and, once you have raced someone a few times, your rivals. A number or a dot means something new. Tap a row to open the conversation."},
     {"heading": "Who they are", "text": "At the top of a thread: who the people are and how you get on with each (Close, Good, Fine, Cool, Strained). Your family's attitude comes from your story: some are proud, some think grades come first. Your choices and your results slowly change both."},
@@ -181,14 +183,26 @@
     {"heading": "Moving", "text": "A school in another town means moving there on 1 August. You keep racing for your club, but your old coach is far away and you may want a coach near the new school. The coaches there appear in Find a coach."}
    ]
   },
+  "romance": {
+   "title": "Someone on your mind",
+   "version": 1,
+   "sections": [
+    {"heading": "The card", "text": "From about 15, now and then a card on This week asks who you are interested in: up to three people you know well. You choose, or say nobody right now. It never stops the week and Play week never asks about it. It stays a few weeks, then goes."},
+    {"heading": "The answer", "text": "The answer comes on Sunday evening. The closer you are, the better the chance. If the answer is no, you stay friends; it stings for a while and the card stays away for months. If it is yes, you are together."},
+    {"heading": "Together", "text": "Saturday and Sunday get a new kind of free time, Partner: a day with them. It lifts your motivation and confidence a little and keeps you close. They also invite you to a film, a walk or to meet their friends. Everything stays about texting and time together.", "see": ["habits"]},
+    {"heading": "Texting", "text": "On their page: Texting whenever means two school evenings a week turn into late nights, and you grow closer faster. Phone off at ten means no late nights from texting and a slightly slower closeness. A rest or friends evening, or a partner day, never gets the late text.", "see": ["causes"]},
+    {"heading": "A week without", "text": "If a week has no partner day, they notice. After two such weeks they say so; after three they may end it. You can end it yourself on their page. Either way the next two weeks weigh on your motivation and confidence, and you go back to being the people you were."}
+   ]
+  },
   "person": {
    "title": "A person's page",
-   "version": 1,
+   "version": 2,
    "sections": [
     {"heading": "How close", "text": "The bar and the word show how close you are, out of 100. Tap it for the numbers and what changed it: free evenings together, a week without, or an answer you gave.", "see": ["causes"]},
     {"heading": "What they give and cost", "text": "Friends' time lifts your motivation, family time eases stress, a teammate is part of your group's pull. Most people also want a free evening about every week, or you slowly drift apart. Family does not drift, but time keeps it warm."},
     {"heading": "Meet them", "text": "Choose the evenings you spend with them every week. A slot with nobody named is shared among all your friends. On This week you can pick who a slot is with for one week only. An acquaintance becomes a friend after a few evenings together.", "see": ["habits"]},
-    {"heading": "Asking you out", "text": "Say no to someone's invitations three times in a row and they stop asking for a while. Going again, or asking them yourself by meeting them, brings it back."}
+    {"heading": "Asking you out", "text": "Say no to someone's invitations three times in a row and they stop asking for a while. Going again, or asking them yourself by meeting them, brings it back."},
+    {"heading": "Together", "text": "If you are together with this person, or have told them you like them, the page has a TOGETHER box: how long, the partner days of last week, the texting setting and End it. An ex is shown there too, with the date.", "see": ["together"]}
    ]
   },
   "group": {
@@ -394,14 +408,23 @@
   },
   "habits": {
    "title": "Free time and habits",
-   "version": 2,
+   "version": 3,
    "sections": [
-    {"heading": "Nine slots a week", "text": "Every school evening, and Saturday and Sunday after training, is a slot: study, rest, friends or family. Your habits in the Season tab fill them, so a week you don't touch plays as you set it once. This week's slots change on This week."},
+    {"heading": "Nine slots a week", "text": "Every school evening, and Saturday and Sunday after training, is a slot: study, rest, friends or family (and a partner day at the weekend, once you are together with someone). Your habits in the Season tab fill them, so a week you don't touch plays as you set it once. This week's slots change on This week."},
     {"heading": "What each does", "text": "Study: more than four study slots a week lift your grades, fewer let them slide; a lot makes school days heavier. Rest: the next school day is lighter. Friends: more than two lift motivation, fewer let it sag. Family: eases stress."},
     {"heading": "Late nights", "text": "Friends on a school night means a late night: the next day weighs more, so you end it a bit more tired, with a little more risk of a cold. Before Saturday or Sunday it costs nothing. A party you say yes to is a late night whatever the day."},
     {"heading": "Invitations", "text": "Now and then someone asks you to something on a coming evening, up to two a week. It shows in that slot with its price. Say Go or Stay home; you can change your mind until that evening. Left open, you simply don't go."},
     {"heading": "Days away", "text": "A bigger choice on This week, like a week at the cottage or midsummer with the family, can take several slots at once. Its card lists the slots and what they were; say yes and they show its name. A confirmation camp you chose in February takes its week in summer."},
     {"heading": "Your call", "text": "The game never changes your evenings by itself. An amber evening is a warning, not a rule: a late night before a race is allowed."}
+   ]
+  },
+  "together": {
+   "title": "Together with someone",
+   "version": 1,
+   "sections": [
+    {"heading": "What it is", "text": "A first relationship is texting and time together, nothing more. You choose who you like when a card asks; they answer on Sunday. If it is yes, Saturday and Sunday can be a partner day."},
+    {"heading": "What it gives", "text": "A partner day lifts your motivation and confidence a little and keeps you close. Texting whenever turns two school evenings a week into late nights; phone off at ten keeps them clean and grows closeness a little slower."},
+    {"heading": "What it costs", "text": "A week with no partner day wears it down: after two weeks they say so, after three they may end it. You can end it too. Either way the next two weeks weigh on your motivation and confidence."}
    ]
   },
   "coach_distance": {

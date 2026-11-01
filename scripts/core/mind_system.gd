@@ -524,6 +524,10 @@ func pulls(mood: String, week = null) -> Array:
 			var hs_s := HabitSystem.sys()
 			if hs_s != null:
 				out.append_array(hs_s.stress_pulls(_ahead if not _ahead.is_empty() else Game.week_monday()))
+	# A first relationship (session P2b): time together lifts motivation and confidence; a breakup weighs on all three for two weeks.
+	var romance := RomanceSystem.sys()
+	if romance != null:
+		out.append_array(romance.mood_pulls(mood, _ahead if not _ahead.is_empty() else Game.week_monday()))
 	return out
 
 

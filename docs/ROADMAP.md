@@ -554,7 +554,7 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
           skip and they stop asking", the training group's card (level, fixed days, pull, leaving it), Find a coach with search, sort, filters
           and a comparison, a talk with a candidate. Done: a friend can be made and lost through slots (`circle_check`); the group's pull
           shows in the week report; `storylet_check` covers the circle's storylets.
-    - [ ] **P2b: a first relationship from ~15 and the moments for ages 16–17** (the user's picks: crush -> dating -> can end; texting and
+    - [x] **P2b: a first relationship from ~15 and the moments for ages 16–17** *(done 2026-11-01: GDD 4.10 "P2b's questions" and "Built (step P2b)", save version 10, `romance_check`; 26 new storylets, the confirmation camp's faces, a teammate really quitting / joining)* (the user's picks: crush -> dating -> can end; texting and
           time together, mood and sleep, nothing more; the player chooses who their character is interested in; a breakup = a dip for a
           couple of weeks; ~25 new feed / invitation / beat storylets for 16–17: the driving licence, a summer job, a teammate quitting or
           joining, the upper-secondary school's people; a relationship as a slot activity "partner" with its own invitations). Reads

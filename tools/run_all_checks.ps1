@@ -72,6 +72,7 @@ $checks = @(
 	@{ name = "school_check"; args = "--headless -s res://tools/school_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "habits_check (the free-time slots, habits, invitations)"; args = "--headless -s res://tools/habits_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "circle_check (shared time, new people, the training group)"; args = "--headless -s res://tools/circle_check.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
+	@{ name = "romance_check (a first relationship: the choice, the slot, late texting, the breakup's dip)"; args = "--headless -s res://tools/romance_check.gd"; marker = "ALL CHECKS PASSED"; limit = 900 },
 	@{ name = "race_card_check (what this race did, the scratch card)"; args = "--headless -s res://tools/race_card_check.gd"; marker = "ALL CHECKS PASSED"; limit = 500 },
 	@{ name = "causes_check (causes everywhere: the records add up, recording only)"; args = "--headless -s res://tools/causes_check.gd"; marker = "ALL CHECKS PASSED"; limit = 600 },
 	@{ name = "load_check (every script loads)"; args = "--headless -s res://tools/load_check.gd"; marker = "LOAD OK"; limit = 180 },

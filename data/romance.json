@@ -1,0 +1,149 @@
+{
+ "_note": "A first relationship (GDD 4.10 decision 6, session P2b; scripts/core/romance_system.gd, GameConfig 'romance', off in `lab`). Age-appropriate: texting, time together, what it does to time, mood and sleep, nothing more. Everyone is a fictional minor. The player chooses who their character is interested in (a card on the Sunday planner, never a stop); the other person's answer comes the next Sunday night from the career's own dice; together they have a weekend slot activity 'partner' (Sat / Sun), late texting is a setting on their page, a week with no partner slot is neglect, and it can end (you, or them after three neglected weeks) with a dip in confidence and motivation for about two weeks. Every size is Claude's first guess (estimated), tuned in B1 after the user's playtest 4. The word 'partner' is the SLOT (the user's pick); the person is the sweetheart in code and 'together' in the thread, because a 'partner' in the cast is a training partner.",
+ "version": 1,
+ "research": {
+  "_note": "Read 2026-11-01 for session P2b. Secondary sources only: every fact is `verified: false` and only sets an order of magnitude or keeps the 16-17 storylets from stating a rule the game does not know. To check before release: THL Kouluterveyskysely tables ('seurustelu'), Traficom's driving licence page, tyosuojelu.fi on young workers.",
+  "facts": [
+   {"id": "dating_age", "fact": "About 17 % of 8th-9th graders, 26 % of lukio students and 35 % of vocational students have a boyfriend or girlfriend (see circle.json research.dating_age).", "use": "The crush card comes from 15 with a small weekly chance (offer.chance); it is an offer the player can decline, so a relationship stays a minority experience at 15 and becomes common by 17-18.", "sources": [
+     {"url": "https://www.verkkouutiset.fi/a/digitaalinen-vakivalta-on-yleista-nuorten-parisuhteissa/", "read": "2026-11-01"}], "verified": false},
+   {"id": "work_age", "fact": "A person who has turned 15 and finished basic education can make an employment contract themselves; night work is banned under 18; a 15-year-old's regular working time is at most as long as that of an adult in the same job.", "use": "The summer job (ages 16-17) is a day job with no night shifts; the contract text is not spelled out.", "sources": [
+     {"url": "https://www.minilex.fi/node/103432", "read": "2026-11-01"},
+     {"url": "https://www.minilex.fi/node/18105", "read": "2026-11-01"},
+     {"url": "https://www.verkkouutiset.fi/a/tyosuojeluviranomainen-kesatyontekijoille-tehkaa-kirjallinen-sopimus-19895/", "read": "2026-11-01"}], "verified": false},
+   {"id": "licence_age", "fact": "The age limit for the car licence (B) is 18; a 17-year-old can drive on an age exemption. Whether and when practising may begin earlier was not found in the sources read.", "use": "The driving school storylet says 'before you turn 18' and nothing else: no age for practice, no rule for the exemption.", "sources": [
+     {"url": "https://moottori.fi/uutinen/yli-puolella-18-vuotiaista-on-b-luokan-ajokortti/", "read": "2026-11-01"},
+     {"url": "https://www.eduskunta.fi/valtiopaivaasiakirjat/EDK-2022-AK-27807", "read": "2026-11-01"}], "verified": false}
+  ]
+ },
+ "offer": {
+  "_note": "The crush card. From `age_min` a card may come on Sunday night when nothing is going on (no crush, no relationship), the card is not already there, nobody has said no / you did not decline lately, and at least one person is `min_closeness` close (kinds: who counts). `chance` = the chance per week by age (the last entry holds for older). The card stays `weeks_open` weeks. 'Nobody right now' quiets it `decline_quiet_weeks` weeks; a 'no' from the one you picked quiets it `no_quiet_days` days; after a breakup `after_breakup_days` days.",
+  "age_min": 15,
+  "chance": {"15": 0.03, "16": 0.04, "17": 0.045},
+  "min_closeness": 35,
+  "max_candidates": 3,
+  "kinds": ["best_friend", "friend", "acquaintance", "teammate"],
+  "weeks_open": 4,
+  "decline_quiet_weeks": 6,
+  "no_quiet_days": 120,
+  "after_breakup_days": 28
+ },
+ "answer": {
+  "_note": "Whether the one you picked likes you back: base at `at` closeness, plus per_point for each point above (below), kept between min and max. The dice are the career's own (name + birth date + the person).",
+  "base": 0.3,
+  "at": 35.0,
+  "per_point": 0.012,
+  "min": 0.2,
+  "max": 0.9,
+  "no": {"relation": -3.0, "confidence": -2.0, "motivation": -3.0}
+ },
+ "dating": {
+  "_note": "Together. `slot_days` = the weekdays (Sat, Sun) the activity 'partner' can fill. A week with at least one partner slot (or an invitation of theirs you went to) is time together: closeness grows gain_per_slot x slots x (1 - closeness/100) plus the texting's weekly gain; a week with none is neglect: closeness fades `fade` and after `warn_weeks` weeks in a row they say so, after `end_weeks` they end it. Together starts at closeness at least `start_min`.",
+  "slot_days": [5, 6],
+  "start_min": 55.0,
+  "gain_per_slot": 6.0,
+  "texting_gain": {"whenever": 1.5, "off": 0.5},
+  "fade": 1.5,
+  "warn_weeks": 2,
+  "end_weeks": 3
+ },
+ "texting": {
+  "_note": "Late texting: with 'whenever' (the default) `nights` of the five school-night evenings (Sun-Thu, `evenings` = the weekday numbers whose next day is a school day) each week are late: the next school day carries `load` (the same as an evening out with friends, habits.json effects.late_friends). No late text on an evening that is a rest, friends or partner slot or an invitation you go to. 'off' = phone off at ten. Which evenings is a fixed hash of the career and the week: no dice to save.",
+  "default": "whenever",
+  "nights": 2,
+  "evenings": [6, 0, 1, 2, 3],
+  "load": 0.75,
+  "options": {
+   "whenever": {"name": "Texting: whenever", "does": "Two school evenings a week turn into late nights. You grow closer faster."},
+   "off": {"name": "Phone off at ten", "does": "No late nights from texting. You grow closer a little slower."}
+  }
+ },
+ "effects": {
+  "_note": "What being together does to the moods (MindSystem.pulls, targets of the Sunday drift): motivation +motivation_per_slot for each partner slot in the week (at most max_slots), confidence +confidence when the week has at least one.",
+  "motivation_per_slot": 3.0,
+  "max_slots": 2,
+  "confidence": 2.0
+ },
+ "breakup": {
+  "_note": "A breakup: the moods drop at once (`now`) and the Sunday drift's target is lowered by `pull` for `weeks` Sunday nights. `them` = they ended it (the bigger dip), `you` = you did. Closeness drops by `relation` and the person goes back to who they were; the crush card is quiet offer.after_breakup_days.",
+  "weeks": 2,
+  "them": {"now": {"confidence": -8.0, "motivation": -12.0, "stress": 8.0}, "pull": {"confidence": -10.0, "motivation": -14.0, "stress": 8.0}, "relation": -20.0},
+  "you": {"now": {"confidence": -4.0, "motivation": -6.0, "stress": 4.0}, "pull": {"confidence": -5.0, "motivation": -7.0, "stress": 4.0}, "relation": -12.0}
+ },
+ "camp": {
+  "_note": "The confirmation camp (cast.json away.rippileiri): in its week 2-3 new faces join as acquaintances ('From the confirmation camp', thread circle). Only when a camp was chosen (the flag), once.",
+  "count": [2, 3],
+  "met": "From the confirmation camp",
+  "traits": {"gamer": 1, "musician": 1, "artist": 1, "joker": 2, "scout": 1, "partygoer": 1},
+  "arrival": "At the confirmation camp you are put in a group with {names}. It is only a week, so spend the free time with someone and you will keep in touch."
+ },
+ "words": {
+  "together": "Together",
+  "crush": "You like {them}",
+  "ex": "Your ex"
+ },
+ "texts": {
+  "_note": "The game's lines. {name} = the person's first name, {n} = a count. Messages in the thread 'together' from the person say nothing that is not so: they never ask the player a question that waits.",
+  "asked": "You told {name} how you feel. Now you wait for the answer.",
+  "yes": [
+   "I've been hoping you'd say that. Yes.",
+   "I like you too. A lot. I did not know how to say it first."
+  ],
+  "no": [
+   "I like you as a friend. I'm sorry. I hope that is okay.",
+   "You are great, but I do not feel that way. I would like us to stay friends."
+  ],
+  "no_note": "{name} does not feel the same. You stay friends. It stings for a while.",
+  "warn": [
+   "I feel like I only see you at the track. We need a weekend soon, just us.",
+   "It has been a while since we had a day together. I miss it."
+  ],
+  "ended_them": [
+   "I don't think this is working. We hardly see each other. I'd rather we stop before it gets worse. I'm sorry."
+  ],
+  "ended_you": "You ended it with {name}. It is the right call, and it still hurts.",
+  "ended_you_reply": "Okay. I understand. Take care.",
+  "start_note": "You are together with {name}. Saturday and Sunday can be a partner slot now.",
+  "start_relation": "Together with {name}",
+  "ended_relation": "The breakup with {name}",
+  "no_relation": "{name} said no",
+  "mood_now_them": "{name} ended it",
+  "mood_now_you": "You ended it with {name}",
+  "mood_no": "{name} said no",
+  "pull_slots": "Time with {name} ({n} weekend days a week)",
+  "pull_together": "Together with {name}",
+  "pull_dip_them": "After the breakup",
+  "pull_dip_you": "After ending it",
+  "texting_part": "Texting late last night",
+  "cause_texting": "texting {name}"
+ },
+ "ui": {
+  "_note": "Every text the crush card and the person page's TOGETHER box show.",
+  "card_title": "Someone on your mind",
+  "card_text": "There is a person you keep noticing. Who are you interested in? You will hear back by next Sunday evening. It is fine to say nobody: the card will not bother you for a while.",
+  "card_line": "{name} · {word} · {close}",
+  "card_none": "Nobody right now",
+  "card_picked": "You like {name}. You will hear by Sunday.",
+  "card_hint": "Closeness matters: the closer you are, the better the chance.",
+  "box_head": "TOGETHER",
+  "box_crush": "You like {name}. The answer comes on Sunday evening.",
+  "box_weeks": "Together for {n} weeks. Partner days: Saturday or Sunday.",
+  "box_week_one": "Together for a week. Partner days: Saturday or Sunday.",
+  "box_slots_last": "Last week: {n} partner days.",
+  "box_slots_last_one": "Last week: one partner day.",
+  "box_slots_none": "Last week: no partner day. {neglect}",
+  "box_neglect_1": "{name} noticed.",
+  "box_neglect_2": "{name} is getting impatient.",
+  "box_texting": "TEXTING",
+  "box_end": "End it",
+  "box_end_sure": "End it with {name}",
+  "box_end_note": "It is your call. You will both be sad, and the next two weeks will weigh on your mood.",
+  "box_end_cancel": "Keep going",
+  "ex_note": "You were together until {date}.",
+  "week_row": "Partner days",
+  "page_word_crush": "You like {them}",
+  "slot_gives": "A weekend day with {name}: lifts motivation and confidence, and is time together.",
+  "slot_costs": "Wants a weekend day together most weeks: after {n} weeks without one, the relationship may end.",
+  "texting_gives": "Texting whenever: two school evenings a week turn into late nights.",
+  "dip_note": "The breakup weighs on your mood for about {n} more weeks."
+ }
+}

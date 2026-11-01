@@ -328,6 +328,31 @@ Read the paragraphs below with these in mind; they win where they disagree.
     `moments.json`; `cast.json relation_start.acquaintance`.
   - **Tools:** `tools/circle_check.gd` (in `run_all_checks`), `layout_check` `_circle_views`, `help_check` (the `person` / `group` entries).
     `f1_check` and `race_card_check` pick days / config that leave the group out (they test other things).
+- **Session P2b (a first relationship + the moments for 16-17; save version 10; GDD 4.10 "P2b's questions" and "Built (step P2b)"):**
+  - **`RomanceSystem`** (`scripts/core/romance_system.gd`, GameSystem id `romance`, after `CircleSystem` in `Game._make_systems`; `GameConfig`
+    option `romance`, off in `lab`; every number and text in `data/romance.json`, with its research): `stage` ("" / "crush" / "dating"),
+    `partner` (person id), `texting` ("whenever" / "off"), `neglect`, `slots_week` / `slots_last`, `offer` (the card), `quiet_until`, `asked`
+    (who said no), `dip` (the breakup's weeks left and mode), `history`. `on_day_end` tallies partner slots; `on_week_end` (Sunday night, after
+    the mind's drift): the dip's weeks, the crush's answer (`_answer`: the career's own dice by closeness, `chance_for`), together
+    (`_together`: neglect, the warning, `breakup("them")`), a new card (`_roll_card`: age >= 15, nothing going on, not quiet, candidates
+    with closeness >= 35). The player's calls: `choose(pid)`, `decline()`, `set_texting(opt)`, `end_it()`. `candidates()`, `card()`,
+    `mood_pulls(mood, monday)` (read by `MindSystem.pulls`: partner slots -> motivation, together -> confidence, the dip -> all three),
+    `text_late(monday, idx)` (static: a hash of the career and the week picks two of the five school-night evenings; read by
+    `HabitSystem.load_parts` as the part `texting`), `allows_partner(i)`, `state_now()`, `weeks_together()`, `box_of(pid)`.
+  - **HabitSystem:** the activity `partner` (`PARTNER`, `choices(i)` = the four + partner on Sat / Sun while together, `drop_partner()` on a
+    breakup, `_saved_ok` so a saved partner slot loads before the romance state). **CircleSystem:** `kind_of` returns `dating` (flag
+    `p.dating`), `on_week_end` gives it partner-slot gain and texting gain, `_statuses` skips it, `arrive_camp()` (the confirmation camp's
+    faces, `_faces` shared with `arrive_class`), `team_change("quit"|"join", p)` (a teammate really leaves / arrives; `group_size()`).
+    **StoryletSystem:** conditions `romance`, `dating_weeks`, `team_size`; senders `dating` / `ex` / `together`; placeholders `{they}` `{them}`
+    `{their}` `{dating}`; the effect `team`; thread `together`; touches `romance` and `team` in `moments.json`.
+  - **UI:** `RomanceCard.build()` (the crush card, first of the planner's full-width cards via `WeekPlanner._goal_cards`; never in
+    `open_choices`), `PersonPage._together_box` (crush / dating / ex: weeks, partner days, the texting toggles, End it with a confirm), the
+    Together thread in `PeopleView` (listed only once something is said), `HabitsUI` pickers use `hs.choices(i)`. `WeekCauses`: the
+    log kind `romance` (note in the entry) and the life-load part `texting` ("texting late the evening before").
+  - **Content:** `data/storylets/romance.json` (10: feed / 4 weekend invitations / 2 beats; sender `dating` or `ex`) and `teen.json`
+    (17 for ages 16-17: driving school, a summer job, a teammate quitting / joining, the upper-secondary school's people, festival, cabin).
+  - **Tools:** `tools/romance_check.gd` (in `run_all_checks`), `storylet_check` (new conditions / senders / placeholders),
+    `layout_check` `_romance_views`, `data/playtest.json` (`romance` section, needs `crush_card` / `romance` / `dating` / `breakup`).
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)

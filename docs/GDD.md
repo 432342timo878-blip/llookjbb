@@ -5014,6 +5014,33 @@ group is flavour (names, a few messages, the coach's `fit`) with no effect and n
    trust effect.
 6. **Split:** P2a = 1, 2, 4, 5 (and the invitations' skip rule); P2b = 3 + the ~25 moments for ages 16-17 (ROADMAP).
 
+#### P2b's questions (user, 2026-11-01; each the recommended option)
+
+What the code showed first: the free-time slots have four activities (study / rest / friends / family) and a person's closeness
+(`CircleSystem`) grows only from friends / family slots and invitations; "partner" in the cast is a training partner, so the new
+person in this step is called the **sweetheart** in code (`RomanceSystem`, role flag `dating`) and "partner" only in the slot.
+
+1. **How a crush comes up:** from age 15 a **card on the Sunday planner** (never a stop, never a choice waiting for Play week) shows up
+   to three people you know well enough (closeness ≥ 35: classmates, teammates, the camp's faces) and "Nobody right now"; the PLAYER
+   picks who the character is interested in. The other person's answer comes the next Sunday night from the career's own dice, by
+   closeness (about 30 % at 35 up to 90 % at the top). A "no" keeps the friendship, costs a small dip and you cannot ask again for a
+   season; "Nobody right now" only quiets the card for six weeks. (Refused: always mutual; an "Ask out" button only.)
+2. **Late texting is a setting, not a surprise:** on the person page **Texting: whenever** (default: two school evenings a week are late
+   nights, closeness grows faster) or **Phone off at ten** (no late nights, a little slower). A standing state, recorded as a cause
+   (`texting` in the day's life load parts). (Refused: automatic with no choice.)
+3. **How it ends:** you can end it on their page (one confirm; the smaller dip) or they end it after three weeks with no partner slot
+   (a message in week two warns; the bigger dip). A breakup = an immediate drop in confidence and motivation plus a lowered target for
+   two weeks (recorded as pulls and causes); the person goes back to who they were (friend / acquaintance / teammate) with lower
+   closeness and a four-week quiet before the next crush card. (Refused: only the player can end it.)
+4. **Where the people come from:** the class (P2a), the training group, and **the confirmation camp** (the camp week of the year you turn
+   15 brings 2-3 new faces as acquaintances: a new place, `CircleSystem.arrive_camp`). Fictional minors only.
+5. **The weekend slot "partner"** (the user's pick): a fifth activity on Saturday and Sunday only, available while you are together;
+   it lifts motivation (+3 per slot, up to two) and confidence a little, is time WITH them for closeness, and a week with none
+   counts as neglect. Its own invitations (a film, a walk, meeting friends together) land in these slots.
+6. **The ~25 moments for 16-17** (feed / invitation / beat, with `touches` and guards; `storylet_check` covers them): the relationship's
+   own messages and invitations; the driving school, a summer job, a teammate really quitting or joining (a new effect `team`), the
+   upper-secondary school's people. Real-world facts: `data/romance.json research`.
+
 #### Built (step P2a, 2026-11-01): people as state, the training group, Find a coach; save version 9
 
 1. **Research** (`data/circle.json research`, read 2026-11-01): a web search found only secondary sources (municipal minutes, news, club
@@ -5071,6 +5098,67 @@ group is flavour (names, a few messages, the coach's `fit`) with no effect and n
     really quitting or joining; who comes to watch a race (L2a decision 4: still waits); the group's sessions are two fixed ones, not a
     schedule that follows the season's phase; the Season tab's week list does not show the group's overlay; sizes (closeness, the pull) wait
     for the user's playtest and B1.
+
+#### Built (step P2b, 2026-11-01): a first relationship, the confirmation camp, the moments for 16-17; save version 10
+
+1. **Research** (`data/romance.json research`, read 2026-11-01): secondary sources only, so every fact is `verified: false`: the dating
+   share by school stage (circle.json `dating_age`), that a person of 15 can sign a work contract and night work is banned under 18, and
+   that the car licence age is 18 (the practice rules were not found, so no storylet states them). To check before release: THL
+   Kouluterveyskysely, Traficom, tyosuojelu.fi.
+2. **`RomanceSystem`** (GameSystem `romance`, `GameConfig` "romance", off in `lab`; state `stage` / `partner` / `texting` / `neglect` /
+   `offer` / `quiet_until` / `asked` / `dip` / `history`, saved only when set): **the card** (Sunday night, age >= 15, nothing going on, not
+   quiet, someone at closeness >= 35 of the kinds best friend / friend / acquaintance / teammate; chance a week 3 % at 15, 4 % at 16, 4.5 % at
+   17+; up to three people; stays four weeks; `RomanceCard` on the planner, first of the full-width cards, never a stop and not in "N
+   choices waiting"); the player's calls `choose(pid)` / `decline()` ("Nobody right now": six quiet weeks); **the answer** on the next
+   Sunday night from the career's own dice (chance 0.3 at closeness 35, +0.012 a point, kept in 0.2..0.9; a yes = together, closeness at
+   least 55, a message from them; a no = -3 closeness, -2 confidence, -3 motivation, a message, 120 quiet days and the person cannot be asked
+   again for 120 days); **together** (`stage dating`, the person's flag `dating`, word "Together", thread `together`): the activity
+   `partner` in `HabitSystem` on Saturday / Sunday only (`choices(i)`, `allows_partner(i)`), motivation +3 per partner slot (at most two)
+   and confidence +2 when the week has one (`mood_pulls`, read by `MindSystem.pulls`, so the mood rows show "Time with X"), closeness
+   from partner slots and the texting's weekly gain (`CircleSystem` kind `dating`); **late texting** (`text_late`): "whenever" (default)
+   makes two of the five school-night evenings (a hash of the career and the week, nothing saved) late: the life-load part `texting`
+   (0.75 x the stage's scale, like an evening out with friends) on the next school day, not on a rest / friends / partner / invitation
+   evening; "off" has none and closeness grows a little slower; **neglect**: a week with no partner slot -> closeness fades, after 2 weeks they
+   say so, after 3 they end it; **ending**: `end_it()` (the person's page, one confirm) or them: closeness -12 / -20, the person goes back to
+   who they were (word "Your ex"), the partner habits become friends, the moods drop at once (you: confidence -4, motivation -6, stress +4;
+   them: -8, -12, +8) and the Sunday targets are lowered for two Sundays (`dip`), all recorded as mood causes / pulls; no new card for 28
+   days.
+3. **The confirmation camp:** `CircleSystem.arrive_camp()` (in `on_week_start`): in the camp week of the year you turn 15, when a camp was
+   chosen, 2-3 acquaintances ("From the confirmation camp"), from the career's own dice, once (`_faces` is shared with `arrive_class`).
+4. **A teammate quits or joins for real:** the storylet effect `team` ("quit": the sender leaves the head coach's group, never below 4; "join":
+   a new teammate arrives, never above 10; `CircleSystem.team_change`, the condition `team_size`); the group's level, size and pull follow.
+   A teammate you like or are together with who quits stays in your life as a friend.
+5. **Content (26 storylets):** `data/storylets/romance.json` (10: 4 feed messages, 4 weekend invitations with the activity `partner` and 2
+   story beats: a proper dinner, meeting the parents; senders `dating` / `ex`; every one guarded by the `romance` condition) and
+   `teen.json` (16 for ages 16-17: the driving school (a beat taking two evenings, then a lesson message), a week's summer job (a beat taking
+   the weekday evenings as rest, then pay and "asked back"), a teammate quitting / a new runner (effect `team`), the upper-secondary school's
+   people (the lukio group supervisor and counsellor, a classmate's group work invitation and notes, a vocational workshop), a festival day
+   and a cabin weekend as invitations, a parent's trust). New conditions `romance` / `dating_weeks` / `team_size`, selectors `dating` /
+   `ex` / `together`, placeholders `{they}` `{them}` `{their}` `{dating}`, touches `romance` and `team`; `storylet_check` covers all.
+6. **UI:** the crush card; the person page's TOGETHER box (crush: the answer comes on Sunday; together: weeks, last week's partner days and
+   how neglected they feel, the texting toggles with their effect, End it with a confirm; ex: the date); the Together thread (listed
+   once something has been said); the Partner slot in the planner's picker, the day editor and the Season tab's habit rows; the week's causes
+   say "texting late the evening before" and the person's log says "Together with X" / "X said no" / "The breakup with X". Help:
+   new screen `romance`, `person` v2, `week` v8, `habits` v3, `people` v12. Playtest questions (`romance` section, 8, needs `crush_card` /
+   `romance` / `dating` / `breakup`).
+7. **Checks:** new `tools/romance_check.gd` (in `run_all_checks`: the data and research, lab changes nothing, **nobody is chosen for the
+   player**, **a relationship starts on the player's choice** (a rigged yes and a rigged no), the partner slot lifts the mood and is time
+   together, **late texting costs sleep** (and not with the phone off or on a rest evening), neglect -> warning -> they end it, **it ends
+   with a dip** (both ways), the camp, a teammate quits / joins, the relationship's invitation, save / load and an older save);
+   changed `storylet_check` (conditions, senders, placeholders), `help_check` (the crush card's "?"), `layout_check` `_romance_views`.
+8. **Proven (2026-11-01):** `romance_check` all green (it also sends every one of the 26 new storylets from its sender, answers the first reply
+   and finds no placeholder left); the full `run_all_checks` **32 / 32 PASS** (stderr read too); fingerprints identical (`training_balance -- 0`
+   coach row 206.798298350 / 14.102831594 / 1226.006524079 and every "identical to part 1: YES", races 73182f4e..., school 42fd3635... /
+   01dd20d7... / 55076d77...); `help_check` 1135 checks (the crush card's "?" included); `layout_check` at the five sizes with no OVERFLOW / SQUEEZED
+   / WRONG (1094 views, the 7 new relationship views at each size; the PC and phone ones looked at); the screenshot tour (PC + phone, 207 shots each) clean;
+   `saves_check` on copies of the user's 3 saves (versions 5 and 8 and the autosave) loads, builds the planner and plays 7 days and a race;
+   **`season_playtest`** against P2a: phone 390x844 seed 2 careful **0.23 mid-week stops a week (0.23), 41 of 52 weeks with none (41), 2.13 clicks
+   (2.04), median 2**; PC 1280x720 seed 1 player **0.35 (0.31), 35 of 52 (37), 4.58 clicks (4.25)** (the earlier P2a run of the same seed gave
+   0.35 / 35 / 4.29: this is run-to-run luck in the health dice, not the relationship; the athlete is 14-15 in that season and the card is no
+   stop). The relationship adds no stop and no click.
+9. **Not in P2b / for later:** a camp or a summer job as a place that brings people (G3 / M4); who comes to watch a race; jealousy, a
+   second relationship at once, other kinds of closeness (all on purpose: texting and time only); the sizes (card chance, answer chance,
+   the texting load, the dip) wait for the user's playtest and B1.
 
 #### Built (step F1, 2026-10-18): the 11 bugs of season playtest 2
 

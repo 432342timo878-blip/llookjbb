@@ -157,7 +157,7 @@ func _data() -> void:
 		var ids: Array = s.replies.map(func(r): return str(r.id))
 		if (iv.get("days", []) as Array).is_empty() or (iv.days as Array).any(func(d): return int(d) < 0 or int(d) > 6):
 			bad.append("%s: days" % s.id)
-		if not str(iv.get("activity", "")) in acts:
+		if not str(iv.get("activity", "")) in acts and str(iv.get("activity", "")) != "partner":   # (session P2b: the partner weekend slot)
 			bad.append("%s: activity" % s.id)
 		if (iv.get("go", []) as Array).is_empty() or (iv.go as Array).any(func(g): return not str(g) in ids) or ids.all(func(x): return x in iv.go):
 			bad.append("%s: go replies (and one to stay home)" % s.id)

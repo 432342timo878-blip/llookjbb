@@ -18,7 +18,7 @@ A storylet with replies and none of these (the old `important` moments that wait
 
 **Content never contradicts the player.** Every real storylet lists what it touches in `touches` (ids in `moments.json touches`:
 race, big_meet, test, card, application, injury, illness, session, tired, evening, away, rippi, family_attitude, rival, season,
-school), and has a condition that guards each one (the touch's `needs`, `topics`, `kinds` or `flag_prefix`). A word in a text or a
+school; session P2b: romance, team), and has a condition that guards each one (the touch's `needs`, `topics`, `kinds` or `flag_prefix`). A word in a text or a
 result that means a touch (the touch's `words`) must be listed. No text, hint or result may promise what the player cannot do or name
 the game's screens (`moments.json never`); a reply's result that narrates a late night or studying needs that reply's `sleep` /
 `grades` effect. `tools/storylet_check.gd` checks all of this.
@@ -104,6 +104,13 @@ Session L3a (never contradict): `next_level` [meet levels: local, district, nati
 race) · `card_grade` {"pe": [min, max]} (a subject's grade on the latest report card) · `evening` [activities] (the free-time
 slot of that day as planned: study / rest / friends / family) · `break_week` [break ids] (a day of that Mon-Sun week is in the
 break).
+Session P2b (a first relationship, the group): `romance` ["single", "crush", "dating", "ended"] (where the relationship is; "ended" =
+within 56 days of a breakup; with the system off it is always "single") · `dating_weeks` [min, max] (whole weeks together) ·
+`team_size` [min, max] (teammates in the head coach's group). Senders `dating` (the person you are together with; thread
+`together`) and `ex`; placeholders `{they}` `{them}` `{their}` (the sender: she/her/her or he/him/his; write texts so a verb never
+follows `{they}`) and `{dating}` (the partner's first name). A feed message may carry the effect `team`: "quit" (the sender leaves the
+head coach's group for good, never below 4) or "join" (a new teammate arrives, never above 10); guard it with `has` + `team_size`
+and the touch `team`. The partner activity: an invitation with `"activity": "partner"` on days 5 / 6 (Saturday / Sunday).
 **About the sender** (checked per person): `relation`, `memory` ["name", "!name"], `memory_days` {"name": [min, max]},
 `trait` [friend traits], `rival_race` ["beat", "lost"] (the race that just ended), `rival_streak` / `rival_wins` [min,
 max] (their / your wins in a row).

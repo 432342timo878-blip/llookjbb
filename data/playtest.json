@@ -55,6 +55,16 @@
    {"id": "p2_market", "text": "Find a coach: search, sort and filters:", "kind": "pick", "where": "people:market", "options": ["Useful", "Too much", "Something is missing"], "note": "What is missing?"},
    {"id": "p2_compare", "text": "Comparing your coach with another (the Compare button):", "kind": "pick", "where": "people:market", "options": ["Clear", "Hard to read", "I did not find it"], "note": "What would make it clearer?"},
    {"id": "p2_talk", "text": "Talking to a coach (three questions on their page):", "kind": "pick", "where": "people:coach", "options": ["Useful", "Pointless", "I did not find it"], "note": "Which question did you miss?"}
+  ]},
+  {"id": "romance", "title": "A FIRST RELATIONSHIP (P2b)", "questions": [
+   {"id": "p2b_card", "text": "The 'Someone on your mind' card: was it clear who you were choosing and what happens next?", "kind": "pick", "where": "week", "needs": "crush_card", "options": ["Clear", "Unclear", "It felt out of place"], "note": "What was unclear or out of place?"},
+   {"id": "p2b_timing", "text": "How often did a crush come up for you?", "kind": "pick", "where": "week", "needs": "romance", "min_weeks": 20, "options": ["About right", "Too often", "Too rarely"], "note": "When would you have liked it?"},
+   {"id": "p2b_box", "text": "The TOGETHER box on their page (weeks together, partner days, texting, End it):", "kind": "pick", "where": "people:person", "needs": "dating", "options": ["Clear", "Too much", "Something is missing"], "note": "What is missing?"},
+   {"id": "p2b_slot", "text": "The Partner weekend slot:", "kind": "pick", "where": "week", "needs": "dating", "min_weeks": 3, "options": ["Useful", "Costs too much time", "Too little effect", "I did not use it"], "note": "What would you change?"},
+   {"id": "p2b_texting", "text": "Texting whenever / Phone off at ten:", "kind": "pick", "where": "week", "needs": "dating", "min_weeks": 3, "options": ["A good trade-off", "The late nights cost too much", "No difference to notice", "I did not find it"], "note": "What did you choose, and why?"},
+   {"id": "p2b_mood", "text": "What being together did to your mood:", "kind": "pick", "where": "week", "needs": "dating", "min_weeks": 4, "options": ["About right", "Too little", "Too much"], "note": "What did you see?"},
+   {"id": "p2b_end", "text": "How the relationship ended (you or them, the dip afterwards):", "kind": "pick", "where": "week", "needs": "breakup", "options": ["Believable", "Too harsh", "Too mild", "Out of the blue"], "note": "What would have felt right?"},
+   {"id": "p2b_16", "text": "The new moments for 16-17 (driving school, a summer job, teammates leaving or joining, the new school's people):", "kind": "text", "where": "week", "min_weeks": 100}
   ]}
  ],
  "pages": {

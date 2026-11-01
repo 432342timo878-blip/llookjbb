@@ -564,6 +564,8 @@ static func why_text(ms: StoryletSystem, p: Dictionary, x: Dictionary) -> String
 	var c: Dictionary = cfg().people
 	if str(x.get("kind", "")) == "farewell":
 		return str(c.why_farewell)
+	if str(x.get("kind", "")) == "romance":   # (session P2b: the relationship's own moves: the answer, the breakup; the note says which)
+		return str(x.get("note", ""))
 	if str(x.get("kind", "")) in ["time", "fade"]:   # (session P2a: shared time and the lack of it)
 		var slots := float(x.get("slots", 0.0))
 		var n := ("%.1f" % slots).trim_suffix(".0")
@@ -795,6 +797,8 @@ static func slot_rows(r: Dictionary) -> Array:
 			late.append({"day": i, "what": str(c.late_friends), "v": float(parts.slot_friends)})
 		if parts.has("late_night"):
 			late.append({"day": i, "what": str(c.late_moment), "v": float(parts.late_night)})
+		if parts.has("texting"):   # (session P2b: late texting, the setting on the person's page)
+			late.append({"day": i, "what": str(c.late_texting), "v": float(parts.texting)})
 		if parts.has("slot_rest"):
 			early.append({"day": i, "v": float(parts.slot_rest)})
 		if parts.has("slot_study"):

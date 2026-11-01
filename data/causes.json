@@ -150,6 +150,7 @@
     "late_item": "{day} {what} +{n}",
     "late_friends": "friends the evening before",
     "late_moment": "a late night",
+    "late_texting": "texting late the evening before",
     "study_title": "Study evenings",
     "study_cause": "{grades}",
     "study_cause_load": "{grades} · school days heavier",

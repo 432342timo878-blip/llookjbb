@@ -41,18 +41,22 @@ const CONDITIONS := ["age", "month", "weekday", "day_type", "weeks_in_career", "
 		"tests_week", "cards", "card_days_ago", "card_avg", "card_change", "app", "app_result", "origin", "old_sport",
 		"memory", "memory_days", "trait", "rival_race", "rival_streak", "rival_wins",
 		# session L3a (never contradict):
-		"next_level", "card_grade", "evening", "break_week"]
+		"next_level", "card_grade", "evening", "break_week",
+		# session P2b (a first relationship, the group's size):
+		"romance", "dating_weeks", "team_size"]
 const PLACEHOLDERS := ["name", "full_name", "from", "coach", "coach_first", "teammate", "club", "meet", "race_days", "pb",
 		"weekday", "tomorrow",
 		# session P1:
 		"mum", "dad", "parent", "sibling", "best", "friend", "partner", "rival", "class_teacher", "pe_teacher", "counsellor",
 		"town", "test_subject", "avg", "old_sport", "family_word",
+		# session P2b: the partner's name and the sender's pronouns
+		"dating", "they", "them", "their",
 		# session F1: the coach's pronouns (CoachSystem.words; {He} and {v:a|b} are not lower-case names and pass the pattern)
 		"he", "him", "his", "himself"]
 ## Session P1: the senders of the cast (StoryletSystem.people_for) and their sub-selectors.
 const SENDERS := {"coach": [], "teammate": ["roles"], "partner": ["roles"], "family": [], "parent": ["mum", "dad", "athlete"],
 		"sibling": [], "best_friend": [], "friend": [], "friends": [], "school": ["class_teacher", "pe_teacher", "counsellor"],
-		"rival": [], "circle": []}   # (circle: session P2a, an acquaintance)
+		"rival": [], "circle": [], "dating": [], "ex": []}   # (circle: session P2a, an acquaintance; dating / ex: session P2b)
 const TOPICS := ["", "week", "race", "ack", "mood", "card", "app", "rival"]
 
 

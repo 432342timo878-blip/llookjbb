@@ -87,6 +87,32 @@ func _run() -> void:
 		await _frames(2)
 		await _press_help(card, "goals card", "season_goals", false)
 		_close_overlays(hub)
+	# Session P2b: the crush card on This week has its own "?" (a card, never a stop; the real config has the relationship on).
+	var rs = game.get_system("romance")
+	if rs != null and load("res://scripts/core/romance_system.gd").enabled:
+		var ms_script = load("res://scripts/core/storylet_system.gd")
+		ms_script.people_enabled = true   # (briefly: the card needs the cast; the weeks below must not get the people's moments)
+		game.get_system("moments").ensure_cast(game.athlete)
+		game.get_system("moments")._sync_people()
+		var mates = game.get_system("moments").people_for("friends")
+		_check(not mates.is_empty(), "there are friends to put on the crush card")
+		if not mates.is_empty():
+			rs.offer = {"cands": mates.slice(0, 2).map(func(q): return str(q.id)), "day": 0}
+			hub._show("calendar")
+			await _frames(2)
+			hub._show("week")
+			await _frames(4)
+			var rc = _find_script_node(hub, "res://scripts/ui/romance_card.gd")
+			_check(rc != null, "the crush card is on This week")
+			_check(game.pending_event().is_empty(), "the crush card is no stop")
+			if rc != null:
+				hub._scroll.ensure_control_visible(rc)
+				await _frames(2)
+				await _press_help(rc, "crush card", "romance", false)
+				_close_overlays(hub)
+			rs.offer = {}
+			hub._refresh_week_ui()
+		ms_script.people_enabled = false
 	game.get_system("goals").apply(game.get_system("goals").current_year(), {})
 	game.advance_day()
 	hub._refresh_week_ui()
@@ -398,6 +424,16 @@ func _find_card(node: Node):
 		return node
 	for c in node.get_children():
 		var f = _find_card(c)
+		if f != null:
+			return f
+	return null
+
+
+func _find_script_node(node: Node, path: String):
+	if node.get_script() == load(path):
+		return node
+	for c in node.get_children():
+		var f = _find_script_node(c, path)
 		if f != null:
 			return f
 	return null

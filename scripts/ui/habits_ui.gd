@@ -171,7 +171,7 @@ static func _activity_buttons(hs: HabitSystem, d: int, info: Dictionary, on_chan
 	grid.add_theme_constant_override("v_separation", 6)
 	var current := hs.week_slot(d)
 	var group := ButtonGroup.new()
-	for act in HabitSystem.ACTIVITIES:
+	for act in hs.choices(d):
 		var b := _activity_toggle(str(act), group, current == act)
 		b.pressed.connect(func():
 			hs.set_slot(d, str(act))
@@ -536,7 +536,7 @@ static func _habit_row(hs: HabitSystem, i: int, refresh: Callable) -> Control:
 		name.custom_minimum_size.x = 150
 		row.add_child(name)
 		var group := ButtonGroup.new()
-		for act in HabitSystem.ACTIVITIES:
+		for act in hs.choices(i):
 			var b := _activity_toggle(str(act), group, current == act)
 			b.pressed.connect(func():
 				hs.set_habit(i, str(act))
@@ -564,7 +564,7 @@ static func _habit_row(hs: HabitSystem, i: int, refresh: Callable) -> Control:
 		grid.add_theme_constant_override("h_separation", 6)
 		grid.add_theme_constant_override("v_separation", 6)
 		var group := ButtonGroup.new()
-		for act in HabitSystem.ACTIVITIES:
+		for act in hs.choices(i):
 			var b := _activity_toggle(str(act), group, current == act)
 			b.pressed.connect(func():
 				hs.set_habit(i, str(act))

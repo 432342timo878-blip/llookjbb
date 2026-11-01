@@ -19,6 +19,7 @@ extends GameSystem
 
 const ACTIVITIES := ["study", "rest", "friends", "family"]
 const WITH_ACTIVITIES := ["friends", "family"]   # (session P2a: the activities that can be spent with someone in particular)
+const PARTNER := "partner"   # (session P2b: a weekend slot spent with the person you are together with; RomanceSystem.allows_partner)
 const KEEP_HISTORY := 9
 
 var habits: Array = []        # 7 activity ids, Monday .. Sunday
@@ -94,8 +95,31 @@ func habit(i: int) -> String:
 	return str(habits[i]) if i >= 0 and i < habits.size() else str(cfg().default[i])
 
 
+## The activities slot `i` can have now: the four, and "partner" on a weekend slot while you are together (session P2b).
+func choices(i: int) -> Array:
+	var out := ACTIVITIES.duplicate()
+	if RomanceSystem.allows_partner(i):
+		out.append(PARTNER)
+	return out
+
+
+## A saved activity is valid for slot `i` (the partner one only on a slot day; whether you are still together is the romance state's).
+static func _saved_ok(act: String, i: int) -> bool:
+	return act in ACTIVITIES or (act == PARTNER and i in [5, 6])
+
+
+## The breakup: a partner slot (habit or this week's) becomes a friends slot.
+func drop_partner() -> void:
+	for i in 7:
+		if habits[i] == PARTNER:
+			habits[i] = "friends"
+		if week_slots.get(i, "") == PARTNER:
+			week_slots.erase(i)
+	touch()
+
+
 func set_habit(i: int, act: String) -> bool:
-	if i < 0 or i > 6 or not act in ACTIVITIES:
+	if i < 0 or i > 6 or not (act in ACTIVITIES or (act == PARTNER and RomanceSystem.allows_partner(i))):
 		return false
 	habits[i] = act
 	if week_slots.get(i, "") == act:   # (a one-week change that the habit now matches is no change any more)
@@ -165,7 +189,7 @@ func can_change(i: int) -> bool:
 
 ## This week only: day `i`'s slot becomes `act` (the habit's own activity = back to the habit). False when not allowed.
 func set_slot(i: int, act: String) -> bool:
-	if not act in ACTIVITIES or not can_change(i):
+	if not (act in ACTIVITIES or (act == PARTNER and RomanceSystem.allows_partner(i))) or not can_change(i):
 		return false
 	_sync_week()
 	if act == habit(i):
@@ -336,7 +360,7 @@ func week_activities(monday: Dictionary) -> Array:
 
 
 static func counts(list: Array) -> Dictionary:
-	var out := {"study": 0, "rest": 0, "friends": 0, "family": 0}
+	var out := {"study": 0, "rest": 0, "friends": 0, "family": 0, "partner": 0}
 	for act in list:
 		out[str(act)] = int(out.get(str(act), 0)) + 1
 	return out
@@ -373,7 +397,8 @@ func load_parts(d: Dictionary, scale: float, school_day := false) -> Array:
 	var extra := study - int(cfg().neutral.study)
 	if extra > 0:
 		out.append({"id": "slot_study", "value": extra * float(e.study_load_per_slot) * scale, "n": study})
-	var be := _week_entry(di[1] if wd > 0 else di[2])   # (the evening before: Monday's is last Sunday)
+	var eve_monday: Dictionary = di[1] if wd > 0 else di[2]
+	var be := _week_entry(eve_monday)   # (the evening before: Monday's is last Sunday)
 	var bi := wd - 1 if wd > 0 else 6
 	if bool(be.went[bi]):
 		return out
@@ -382,6 +407,9 @@ func load_parts(d: Dictionary, scale: float, school_day := false) -> Array:
 			out.append({"id": "slot_friends", "value": float(e.late_friends) * scale})
 		"rest":
 			out.append({"id": "slot_rest", "value": float(e.early_rest)})
+		"study", "family":   # (session P2b: late texting with the person you are together with, on the evenings the setting makes late)
+			if RomanceSystem.text_late(eve_monday, bi):
+				out.append({"id": "texting", "value": float(RomanceSystem.cfg().texting.load) * scale})
 	return out
 
 
@@ -628,10 +656,13 @@ func from_dict(d: Dictionary) -> void:
 		week_with[int(k)] = str(d["week_with"][k])
 	for k in d.get("with_history", {}):
 		with_history[str(int(float(k)))] = str(d["with_history"][k])
-	set_habits(d.get("habits", []))
+	var saved: Array = d.get("habits", [])
+	for i in 7:
+		if i < saved.size() and _saved_ok(str(saved[i]), i):   # (written directly: the partner activity needs the romance state, which loads later)
+			habits[i] = str(saved[i])
 	week_key = int(d.get("week", 0))
 	for k in d.get("slots", {}):
-		if str(d.slots[k]) in ACTIVITIES:
+		if _saved_ok(str(d.slots[k]), int(k)):
 			week_slots[int(k)] = str(d.slots[k])
 	for k in d.get("history", {}):
 		history[str(int(float(k)))] = str(d.history[k])

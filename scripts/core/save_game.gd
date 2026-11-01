@@ -13,11 +13,13 @@ class_name SaveGame
 ## (SeasonGoals.after_load). Version 9 (session P2a) adds the "circle" system state (shared time with the people you know, the
 ## classmates who arrived, the training group you are in or left) and who a free-time slot is spent with (the habits' `with`);
 ## an older save has none and starts with its group (the fixed group days) and no acquaintances until their class arrives.
+## Version 10 (session P2b) adds the "romance" system state (the crush, the person you are together with, the texting setting, the
+## breakup's dip), the activity "partner" in the habits and a person's `dating` / `ex` marks; an older save has none (single).
 
 ## Where saves go. Dev tools point this elsewhere so they never touch the player's saves.
 static var DIR := "user://saves/"
 const AUTOSAVE := "autosave"
-const VERSION := 9
+const VERSION := 10
 
 
 static func save(slot: String) -> void:

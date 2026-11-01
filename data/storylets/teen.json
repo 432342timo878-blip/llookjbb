@@ -1,0 +1,183 @@
+{
+	"_note": "AGES 16-17 (session P2b, GDD 4.10 decision 6 'P2b's questions'; format in README.md): the driving school, a summer job, a teammate really quitting or joining (the effect `team`: the group, its level and its pull change for real), the upper-secondary school's people (a lukio group supervisor and counsellor, classmates, a vocational workshop) and the social life of 16-17. Real-world facts only as far as data/romance.json research reads them: the car licence at 18 (no practice rules stated), a person of 15 can sign a work contract, no night work under 18. The driving school and the summer job are story beats (a real choice that takes slots of the coming week); the school's people and friends are feed messages and invitations; everything is guarded by age / stage / flag conditions so it never contradicts the player.",
+	"storylets": [
+		{
+			"id": "t16_driving_school", "thread": "family", "from": "parent", "slot": "evening", "once": true,
+			"touches": ["evening"],
+			"beat": {"title": "Driving school", "chip": "Driving school", "default": "later"},
+			"when": {"turns": [17, 17]},
+			"text": [
+				"Half of your friends have signed up for driving school before they turn 18. The theory course is two evenings a week. Should we put your name down this week, or wait until the training allows?",
+				"The driving school sent the autumn course dates. You would be on the road with your own licence at 18 if you start now. It takes two evenings this week."
+			],
+			"replies": [
+				{"id": "start", "label": "Start the theory course", "hint": "Tuesday and Thursday evenings are the course", "effects": {"relation": 2, "flag": "driving_school", "grades": 1}, "slots": {"days": [1, 3], "activity": "study"},
+					"result": "Put down. You will be driving us to the lake by next year.", "result_from": "sender"},
+				{"id": "later", "label": "Not now", "hint": "", "effects": {"relation": 0},
+					"result": "Fine. The licence will wait; the track will not.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "t16_driving_lesson", "feed": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 50,
+			"touches": [],
+			"when": {"flags": ["driving_school"], "flag_days": {"driving_school": [10, 150]}},
+			"text": [
+				"The driving school called. Your next lesson is on the calendar next to your training plan. I will drive you there.",
+				"I found the driving school's bill in the post. Worth every cent, as long as you also learn to park.",
+				"Dad asked who is nervous about your driving lessons. The answer was Dad."
+			]
+		},
+		{
+			"id": "t16_licence_friend", "feed": true, "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 120,
+			"touches": [],
+			"when": {"age": [17, 18]},
+			"text": [
+				"I passed the theory exam today. Seventeen out of twenty. Next the lessons, then I drive us to the lake. You are coming.",
+				"Everyone is talking about driving school. I am scared of the driving part. Parallel parking is witchcraft."
+			]
+		},
+		{
+			"id": "t16_summer_job", "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"touches": ["evening", "season"],
+			"beat": {"title": "A week's job", "chip": "Job", "default": "no"},
+			"when": {"age": [16, 17], "break": ["summer"], "days_after": {"school_end": [1, 25]}},
+			"text": [
+				"The sports shop in town needs a hand for a week: weekdays, daytime only, since you are under 18. It pays real money. Your training stays the same; the evenings would be for resting.",
+				"A neighbour runs a garden centre and needs help for a week. Weekday days, home by five. Do you want it? It would be your own money."
+			],
+			"replies": [
+				{"id": "yes", "label": "Take the week", "hint": "weekday evenings are early nights after work", "effects": {"relation": 2, "motivation": 1, "flag": "summer_job"}, "slots": {"days": [0, 1, 2, 3, 4], "activity": "rest"},
+					"result": "I will ring them. Your first own money!", "result_from": "sender"},
+				{"id": "no", "label": "Not this time", "hint": "", "effects": {"relation": 0},
+					"result": "Okay. There is always next year.", "result_from": "sender"}
+			]
+		},
+		{
+			"id": "t16_job_pay", "feed": true, "thread": "family", "from": "parent", "slot": "evening", "cooldown_days": 300,
+			"touches": [],
+			"when": {"flags": ["summer_job"], "flag_days": {"summer_job": [6, 30]}},
+			"text": [
+				"Your pay arrived. Own money feels different, doesn't it. Dad says save half. Mum says buy new spikes.",
+				"I saw your pay come in. Proud of you. Working and training in the same week is not nothing."
+			]
+		},
+		{
+			"id": "t16_job_asked_back", "feed": true, "thread": "family", "from": "parent", "slot": "evening", "once": true,
+			"touches": [],
+			"when": {"flags": ["summer_job"], "flag_days": {"summer_job": [9, 60]}},
+			"text": [
+				"The owner rang to say you worked well and that you are welcome back next year.",
+				"The shop said you were on time every day and never complained. That is the best reference there is."
+			]
+		},
+		{
+			"id": "t16_mate_quits", "feed": true, "thread": "group", "from": "teammate", "slot": "evening", "cooldown_days": 240,
+			"touches": ["team"],
+			"effects": {"team": "quit"},
+			"when": {"age": [15, 19], "has": ["teammate"], "team_size": [5, null], "weeks_in_career": [30, null]},
+			"text": [
+				"I am stopping athletics at the end of this week. School and the band take all my time, and I would rather do two things well. I wanted you to hear it from me.",
+				"I have decided to quit the group. My knee never really got better and I miss my weekends. It was fun running with you."
+			]
+		},
+		{
+			"id": "t16_new_runner", "feed": true, "thread": "group", "from": "coach", "slot": "evening", "cooldown_days": 200,
+			"touches": ["team"],
+			"effects": {"team": "join"},
+			"when": {"age": [15, 19], "has": ["teammate"], "team_size": [3, 8], "weeks_in_career": [20, null]},
+			"text": [
+				"A new runner joined the group this week. Show them the warm-up route and be kind: everyone remembers their first week.",
+				"We have a new runner in the group from this week. They are nervous. You were once too."
+			]
+		},
+		{
+			"id": "t16_lukio_first", "feed": true, "thread": "school", "from": "school:class_teacher", "slot": "evening", "once": true,
+			"touches": ["application", "school"],
+			"when": {"stage": ["lukio"], "days_after": {"school_start": [0, 20]}},
+			"text": [
+				"Welcome to lukio. I am your group supervisor. Here you plan your own courses with the study counsellor, so the timetable is yours; my door is open.",
+				"First weeks in lukio are always a bit chaotic. Everyone is new to everyone. If something is unclear, come and find me."
+			]
+		},
+		{
+			"id": "t16_lukio_counsellor", "feed": true, "thread": "school", "from": "school:counsellor", "slot": "evening", "once": true,
+			"touches": ["application", "school"],
+			"when": {"stage": ["lukio"], "days_after": {"school_start": [20, 120]}},
+			"text": [
+				"A timetable for an athlete is a puzzle, and I like puzzles. My door is open if your courses and your training start to fight.",
+				"Many of my students train twice a day and still pass everything. It takes planning, not luck."
+			]
+		},
+		{
+			"id": "t16_lukio_group_work", "thread": "circle", "from": "circle", "slot": "evening", "cooldown_days": 40,
+			"touches": ["evening", "application", "school"],
+			"invite": {"days": [0, 1, 2, 3, 6], "activity": "study", "go": ["yes"], "title": "Group work with {from} on {weekday}?", "chip": "Group work?"},
+			"when": {"stage": ["lukio"], "relation": [20, 100]},
+			"text": [
+				"We have to hand in a group work for the biology course. Can we do it at mine on {weekday}? It is easier than doing it on the bus.",
+				"Group work on {weekday} at the library: three people, one project, one sad PowerPoint. Join us?"
+			],
+			"replies": [
+				{"id": "yes", "label": "Yes, I will be there", "hint": "your study evening, with {from}; grades ▲ a little", "effects": {"relation": 2, "grades": 1}, "result": "You divided the slides fairly and finished before nine."},
+				{"id": "no", "label": "I will do my part alone", "hint": "", "effects": {"relation": -1}, "result": "Okay. Send me your slides by Thursday."}
+			]
+		},
+		{
+			"id": "t16_lukio_notes", "feed": true, "thread": "circle", "from": "circle", "slot": "evening", "cooldown_days": 60,
+			"touches": ["application", "school"],
+			"when": {"stage": ["lukio"], "relation": [30, 100]},
+			"text": [
+				"Everyone is stressing about their courses. Sit next to me tomorrow, I will share my notes. You have enough on your plate.",
+				"I wrote a summary of the whole period for the course you missed. It is on the shared drive. You are welcome."
+			]
+		},
+		{
+			"id": "t16_voc_workshop", "feed": true, "thread": "circle", "from": "circle", "slot": "evening", "cooldown_days": 90,
+			"touches": ["school"],
+			"when": {"stage": ["vocational"], "relation": [20, 100], "school_day": true},
+			"text": [
+				"Our workshop teacher said our class is the first to finish the project on time. Next we do one for a real customer. It smells like sawdust and success.",
+				"My hands are black from the workshop and I have never been so tired of something so good. See you tomorrow."
+			]
+		},
+		{
+			"id": "t16_festival", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 90,
+			"touches": ["evening", "season"],
+			"invite": {"days": [5], "activity": "friends", "go": ["yes", "short"], "title": "A festival day with {from} on {weekday}?", "chip": "Festival?"},
+			"when": {"age": [16, 18], "month": [6, 7, 8]},
+			"text": [
+				"We got tickets for the festival on {weekday}. The whole afternoon and the evening, five bands, one muddy field. Come with us.",
+				"A festival day on {weekday}. We will take the early bus and be back whenever. You have to come."
+			],
+			"replies": [
+				{"id": "yes", "label": "I am in", "hint": "a very late night", "effects": {"relation": 4, "sleep": -2, "motivation": 2}, "result": "Three bands, one lost shoe, and a very late bus home."},
+				{"id": "short", "label": "I will come for the afternoon", "hint": "", "effects": {"relation": 2}, "result": "The afternoon bands were the better ones anyway."},
+				{"id": "no", "label": "I will skip it", "hint": "{from} will be a bit hurt", "effects": {"relation": -2}, "result": "Next year, then."}
+			]
+		},
+		{
+			"id": "t16_cabin", "thread": "friends", "from": "friends", "slot": "evening", "cooldown_days": 60,
+			"touches": ["evening"],
+			"invite": {"days": [5], "activity": "friends", "go": ["yes", "early"], "title": "A cabin weekend with {from}?", "chip": "Cabin?"},
+			"when": {"age": [16, 18]},
+			"text": [
+				"Someone's parents are lending us their cabin on {weekday}. Sauna, a fire, cards and no one to say bedtime. Come.",
+				"Cabin on {weekday}. Eight of us, one fireplace, a big pot of pasta. Say you are coming."
+			],
+			"replies": [
+				{"id": "yes", "label": "I am in", "hint": "a late night", "effects": {"relation": 4, "sleep": -1, "motivation": 1}, "result": "You talked by the fire until the sky went light."},
+				{"id": "early", "label": "I will come, but go to bed early", "hint": "", "effects": {"relation": 2}, "result": "You were the first to sleep and the first to wake up."},
+				{"id": "no", "label": "Not this weekend", "hint": "{from} will be a bit hurt", "effects": {"relation": -2}, "result": "We will take lots of photos for you."}
+			]
+		},
+		{
+			"id": "t16_trust", "feed": true, "thread": "family", "from": "parent", "slot": "evening", "once": true,
+			"touches": [],
+			"when": {"age": [16, 17], "weeks_in_career": [60, null]},
+			"text": [
+				"You have been sensible about your evenings lately, and we have noticed. You have the house key from now on, and we trust you with it.",
+				"We have been thinking: you are older now, and you handle both school and training. We will ask less. We still worry a little, it is our job."
+			]
+		}
+	]
+}

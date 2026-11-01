@@ -174,6 +174,8 @@ func _run() -> void:
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _circle_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
+		await _romance_views(main, game, tag)
+		hub = main.get_node("ScreenHost").get_child(-1)
 		await _school_views(main, game, tag)
 		hub = main.get_node("ScreenHost").get_child(-1)
 		await _slot_views(main, game, tag)
@@ -1123,6 +1125,108 @@ func _market_views(main: Node, game, tag: String) -> void:
 	hub._people_page = ""
 	hub._show("overview")
 	M.enabled = was
+	await _frames(3)
+
+
+## A first relationship (session P2b): the crush card on This week, the crush's page, the relationship's page (partner days, the
+## texting setting, End it with its confirm open), the Saturday partner slot in the picker, and the ex's page. Nothing chosen here is kept.
+func _romance_views(main: Node, game, tag: String) -> void:
+	var hub: Control = main.get_node("ScreenHost").get_child(-1)
+	var MS = load("res://scripts/core/storylet_system.gd")
+	var GC = load("res://scripts/core/game_config.gd")
+	var ms = game.get_system("moments")
+	var hs = game.get_system("habits")
+	var rs = game.get_system("romance")
+	var circle = game.get_system("circle")
+	var was: bool = GC.get_option("romance")
+	var circle_was: bool = GC.get_option("circle")
+	GC.set_option("circle", true)
+	GC.set_option("romance", true)
+	MS.people_enabled = true
+	ms.ensure_cast(game.athlete)
+	ms._sync_people()
+	var friends: Array = ms.people_for("friends")
+	if friends.size() < 2 or rs == null:
+		GC.set_option("romance", was)
+		GC.set_option("circle", circle_was)
+		return
+	var notes = load("res://scripts/core/playtest_notes.gd").open()   # (the playtest cards would sit on top of what is shown here: off while looking)
+	notes.set_on(false)
+	rs.offer = {"cands": friends.slice(0, 3).map(func(q): return str(q.id)), "day": MS.day_no(game.date)}
+	hub._people_page = ""
+	hub._show("week")
+	hub._refresh_week_ui()
+	await _frames(6)
+	var card = _find_script(hub, load("res://scripts/ui/romance_card.gd"))
+	if card != null:
+		hub._scroll.ensure_control_visible(card)
+		await _frames(3)
+	await _shot("%s_romance_card" % tag)
+	_check_overflow(hub, "%s romance card" % tag)
+	var pick = _find_meta(hub, "crush_pick")
+	var none = _find_meta(hub, "crush_none")
+	if pick == null or none == null:
+		print("WRONG: the crush card has no buttons at %s" % tag)
+	var pid := str(friends[0].id)
+	rs.choose(pid)
+	hub._people_page = "person:" + pid
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_romance_crush" % tag)
+	_check_overflow(hub, "%s romance crush page" % tag)
+	# Together (set directly: the answer is the dice's).
+	var p: Dictionary = friends[0]
+	var word_was := str(p.get("word", ""))
+	rs.stage = "dating"
+	rs.since = MS.day_no(game.date) - 21
+	p.dating = true
+	p.word = "Together"
+	rs.slots_last = 1
+	hs.set_habit(5, "partner")
+	hub._people_page = "person:" + pid
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_romance_together" % tag)
+	_check_overflow(hub, "%s romance together" % tag)
+	var end = _find_meta(hub, "end_it")
+	if end == null:
+		print("WRONG: no End it button at %s" % tag)
+	else:
+		end.pressed.emit()
+		await _frames(4)
+		await _shot("%s_romance_end_confirm" % tag)
+		_check_overflow(hub, "%s romance end confirm" % tag)
+		hub._scroll.scroll_vertical = 100000
+		await _frames(3)
+		_check_overflow(hub, "%s romance end confirm end" % tag)
+	hub._people_page = ""
+	hub._show("week")
+	await _frames(6)
+	await _shot("%s_romance_week_partner" % tag)
+	_check_overflow(hub, "%s romance week with a partner slot" % tag)
+	rs.end_it()
+	hub._people_page = "person:" + pid
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_romance_ex" % tag)
+	_check_overflow(hub, "%s romance ex page" % tag)
+	hub._people_page = "together"
+	hub._show("people")
+	await _frames(6)
+	await _shot("%s_romance_thread" % tag)
+	_check_overflow(hub, "%s romance thread" % tag)
+	# Put it all back.
+	rs.from_dict({})
+	p.dating = false
+	p.erase("ex")
+	p.word = word_was
+	hs.set_habit(5, "friends")
+	hs.set_habit(5, hs.default_habit()[5])
+	notes.set_on(true)
+	hub._people_page = ""
+	hub._show("week")
+	GC.set_option("romance", was)
+	GC.set_option("circle", circle_was)
 	await _frames(3)
 
 

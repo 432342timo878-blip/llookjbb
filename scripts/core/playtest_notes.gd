@@ -50,6 +50,15 @@ static func weeks_played() -> int:
 static func _needs(need: String) -> bool:
 	if need == "":
 		return true
+	match need:   # (session P2b: the relationship's questions; true once it has come up)
+		"crush_card":
+			return RomanceSystem.active() and not RomanceSystem.sys().card().is_empty()
+		"romance":
+			return RomanceSystem.active() and (RomanceSystem.sys().stage != "" or not RomanceSystem.sys().history.is_empty())
+		"dating":
+			return RomanceSystem.dating()
+		"breakup":
+			return RomanceSystem.active() and not RomanceSystem.sys().history.is_empty()
 	var sg := SeasonGoals.sys()
 	if sg == null or not SeasonGoals.enabled:
 		return false

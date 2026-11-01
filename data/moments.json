@@ -30,7 +30,8 @@
 		"group": {"name": "Training group", "empty": "Your training partners will write here as you get to know them."},
 		"school": {"name": "School", "empty": "Your teachers and the study counsellor write here."},
 		"rivals": {"name": "Rivals", "empty": "Runners you race again and again write to you here."},
-		"circle": {"name": "People you know", "empty": "New classmates and teammates show up here. Spend a free evening with someone to get to know them."}
+		"circle": {"name": "People you know", "empty": "New classmates and teammates show up here. Spend a free evening with someone to get to know them."},
+		"together": {"name": "Together", "empty": "The person you like writes here, once there is someone. Nothing happens until you say who you are interested in."}
 	},
 	"ui": {
 		"tab": "People",
@@ -104,9 +105,9 @@
 		"max": 100
 	},
 	"effects": {
-		"known": ["trust", "relation", "flag", "unflag", "count", "proposal", "confidence", "motivation", "stress", "sleep", "grades", "attitude", "memory", "forget", "relation_thread"],
+		"known": ["trust", "relation", "flag", "unflag", "count", "proposal", "confidence", "motivation", "stress", "sleep", "grades", "attitude", "memory", "forget", "relation_thread", "team"],
 		"prepared": ["life_load", "budget"],
-		"story": ["flag", "unflag", "memory", "forget", "attitude", "count"]
+		"story": ["flag", "unflag", "memory", "forget", "attitude", "count", "team"]
 	},
 	"beat": {
 		"defaulted": "You didn't answer: \"{label}\"."
@@ -136,6 +137,8 @@
 		"family_attitude": {"needs": ["family"], "words": []},
 		"rival": {"needs": ["memory", "rival_race", "rival_streak", "rival_wins"], "topics": ["rival"], "words": ["\\bnemesis\\b"]},
 		"season": {"needs": ["month", "phase", "days_to", "days_after", "break", "break_week"], "words": ["indoor season", "base training", "\\bsummer!", "this summer", "this winter", "winter break", "autumn break", "\\bsnow(ed)?\\b"]},
-		"school": {"needs": ["stage", "school_day", "break", "break_week", "days_to", "days_after"], "words": ["\\bin class\\b", "\\bat school today\\b"]}
+		"school": {"needs": ["stage", "school_day", "break", "break_week", "days_to", "days_after"], "words": ["\\bin class\\b", "\\bat school today\\b"]},
+		"romance": {"needs": ["romance", "dating_weeks"], "words": ["\\bgirlfriend\\b", "\\bboyfriend\\b", "\\bsweetheart\\b", "\\bour date\\b", "\\bkiss", "\\bdating\\b", "\\bwe('re| are) together\\b"]},
+		"team": {"needs": ["has"], "words": ["quit the (group|club|team)", "leave the group", "joins? (the|our) group", "new runner"]}
 	}
 }
