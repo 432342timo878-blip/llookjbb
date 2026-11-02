@@ -170,6 +170,8 @@ function FindingRow({ finding }: { finding: Finding }) {
           {finding.percent !== undefined ? ` (${String(finding.percent).replace('.', ',')} %)` : ''}
         </Text>
         <Text style={styles.findingReason}>{finding.reason}</Text>
+        {/* Näytetään luettelon oma sana: "Inuliini" voi tarkoittaa esim. oligofruktoosia. */}
+        {finding.matchedText ? <Text style={styles.matched}>Luettelossa: "{finding.matchedText}"</Text> : null}
         {finding.entry.groups.length > 0 && (
           <Text style={styles.small}>{finding.entry.groups.map((g) => GROUP_LABELS[g]).join(' · ')}</Text>
         )}
@@ -180,6 +182,7 @@ function FindingRow({ finding }: { finding: Finding }) {
 }
 
 const styles = StyleSheet.create({
+  matched: { fontSize: 13, color: colors.text, fontStyle: 'italic', marginTop: 2 },
   container: { padding: 16, gap: 14, paddingBottom: 40 },
   productRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   image: { width: 64, height: 64, borderRadius: 8, backgroundColor: colors.surface },
