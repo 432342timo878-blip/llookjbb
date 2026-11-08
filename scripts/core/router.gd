@@ -14,6 +14,7 @@ const SCREENS := {
 	"load_game": "res://scenes/screens/load_game.tscn",
 	"race": "res://scenes/screens/race.tscn",
 	"dev_menu": "res://scenes/screens/dev_menu.tscn",   # debug builds only (the main menu offers it there)
+	"viewpoint_proto": "res://scenes/screens/viewpoint_proto.tscn",   # R6a: the three viewpoint prototypes (opened from the Dev menu)
 }
 
 

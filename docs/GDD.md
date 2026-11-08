@@ -5315,6 +5315,46 @@ Sessions 1 and 2 touch different files (a prototype folder vs `race.gd` / data /
 whether the chase camera is only for the player's race (rivals' races stay quick-run: yes unless told otherwise); what the camera does at
 the kick (slow motion setting Off / Short / Full from decision 8 stays); the phone layout of the slider and the lane control.
 
+**Built (step R6a, 2026-11-08): the viewpoint prototypes. THE USER'S PICK IS STILL OPEN** (record it here: "Pick: …"). Design questions asked
+(all answered with Claude's recommendation): figures built in code (no download), the replayed race = one outdoor 8-runner tight race with a
+key to an indoor 200 m hall, a full mock-up of the race graphics, tuned for a PC window with the phone checked. Research: `docs/R6A_RESEARCH.md`
+(track specs, TV, Godot compat, models: what is verified and what is not). **What it is:** Dev menu → "Viewpoint prototypes (R6a)" opens
+`scenes/screens/viewpoint_proto.tscn` (Router id `viewpoint_proto`; no career needed, saves never touched).
+- `RaceRecording` (`scripts/proto/race_recording.gd`) builds ITS OWN `Race` (own field, own dice), steps it and READS every runner after each
+  step (d, lateral, speed, reserve share, flags: kicking / boxed / down / drafting / dropped / surging / done), plus the engine's events and
+  marks; after a runner finishes it adds a made-up jog-out (picture only). It searches 60 seeds for a tight race (the player 2nd–4th, the first
+  four inside ~1.2 s, lead changes) and keeps the best; deterministic. `race.gd` is untouched: **`quick_fingerprint` = 73182f4e… identical.**
+  `point()` / `stadium_point()` are the race screen's own track geometry (`RaceRunnersView._position`) in 3D (x, 0, y), so positions are exactly
+  the engine's.
+- One 3D world shared by the three views: `ProtoStadium` (outdoor: World Athletics 400 m geometry from the engine, eight lanes with lines, the
+  finish line, the start staggers, boards, six-tier stand + ~4 000-box MultiMesh crowd, roof, floodlights; indoor: hall, mat, balcony, ceiling),
+  `ProtoFigure` (a runner of 17 boxes, stride phase = distance / cycle length, knee lift and lean with speed, a lying pose after a fall, an effort
+  glow on the ground that goes blue → white → orange → red with speed against the runner's even pace and red when kicking), `ProtoHud` (all the
+  graphics, drawn in one `_draw`), `ViewpointProto` (playback, cameras, controls).
+- **The three views** (keys 1 / 2 / 3, V cycles, or the buttons): **1 Chase** = behind your runner along the path (6 m back, 2.6 m up, looking 14 m
+  ahead; wider field of view while you kick; rivals near you carry cues); **2 TV side** = a rail camera on the infield side following the pack's
+  centre, telephoto, cutting to a **head-on shot at the finish line** for the home straight; **3 Top-down** = a camera above the pack that zooms
+  to fit it (north-up, slightly tilted), figures, effort glows, name flags on everyone, the roof hidden.
+- **The race information (mock, read from the recording, nothing decides):** the position board with gaps in seconds (the winner's time then +gaps),
+  the clock + metres to go, the **reserve meter with its fuzz** (what the runner feels = true share + the runner's own misjudgement `err`, the grey
+  band is wider with weak race tactics), the **plan line** (a glowing bar across the track at where an even split to just under your finish time
+  would be, and "x s ahead / behind plan" under the meter), an effort bar (the replay of your speed against your even pace), a track map,
+  **split flashes** at 200 / 400 / 600 m and the finish, **cues** over runners near you (KICKING, MOVING, BREATHING HARD, ABOUT TO GO for a
+  kicker with reserve, LOSING CONTACT, BOXED IN, DOWN), **alerts** (a rival's move, a kick, you boxed / kicking / down) with **slow motion for
+  1.8 s** at those moments (M or the button turns it off).
+- **Controls:** 1 2 3 / V view, Space play / pause, R restart, ← → ±5 s (Shift ±1 s), ↑ ↓ speed 0.5 / 1 / 2 / 4x, I indoor ↔ outdoor, N another
+  race, H hide the graphics, M slow motion, Esc back; all as 44 px buttons, a time slider, the bar wraps on a phone.
+- **What it does NOT prove** (said plainly): the *feel of control* (it is a replay: the slider comes in R7a on the old look), the phone's frame
+  rate (only the layout was checked at 390x844), the indoor lanes and bank (see the research note), real runner models (figures are boxes by choice).
+- **Tools:** `tools/proto_view_check.gd` (headless: the recording is deterministic and equals the engine's finish times, every frame is there,
+  distances never go backwards, the race is tight, the screen opens in all three views, outdoors and indoors) and, windowed, `-- shots <dir>
+  [indoor]` saves screenshots of every view (`--resolution 390x844` for the phone). Not in `run_all_checks` (windowed, ~3 min for the shots).
+- **Files:** `scripts/proto/` (4 scripts), `scenes/screens/viewpoint_proto.tscn`, `docs/R6A_RESEARCH.md`; the only edits to existing files are
+  the Router id and a Dev menu panel (`DevMenu._viewpoint_panel`). Prototype code: after the pick, R6b rebuilds the chosen view properly and the
+  rest is deleted.
+- **The user's turn:** open the Dev menu, press "Open the viewpoints", watch the whole race in each view (and indoors with I), then tell Claude
+  which one (or which mix, e.g. chase for your race with the TV cut-in at the finish) and what to change. R7a (the effort engine) is next either way.
+
 ## 5. Presentation
 
 ### The look (V1, decided 2026-10-18): "Stadium Night" with broadcast numbers

@@ -564,7 +564,8 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
     continuous effort slider in real time, live alerts instead of cards, a race plan with the coach, a viewpoint you are in (chosen by
     seeing prototypes), sound, then the race-day timeline. Presentation sessions keep the races hash; engine sessions change it on
     purpose. Order: R6a → (the user picks) → R7a → R7b → R6b → R6c → R7c → the user's playtest 4 (races only; may reorder the rest).
-    - [ ] **R6a. Viewpoint prototypes** (starts right after P2): three viewpoints (3D chase camera behind the runner, TV broadcast side
+    - [~] **R6a. Viewpoint prototypes: BUILT 2026-11-08, waiting for the user's pick** (Dev menu → "Viewpoint prototypes"; GDD 4.11 "Built (step
+          R6a)"; research `docs/R6A_RESEARCH.md`; races hash identical). Original brief: (starts right after P2): three viewpoints (3D chase camera behind the runner, TV broadcast side
           camera, the top-down view made rich) all replaying ONE recorded race (the engine's per-step positions recorded read-only),
           switchable with a key, entered from the Dev menu; no game files change. Research first: athletics TV graphics, World
           Athletics track specs outdoor + indoor, Godot 3D / 2.5D on the Compatibility renderer, CC0 runner models (downloads need the

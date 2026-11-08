@@ -74,9 +74,30 @@ func _build() -> void:
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(body)
 	column.add_child(scroll)
+	body.add_child(_viewpoint_panel())
 	body.add_child(_moments_panel())
 	body.add_child(_race_panel())
 	body.add_child(_jump_panel())
+
+
+# --- Viewpoint prototypes (R6a) -------------------------------------------------------------------------------
+
+## Three ways to see a race (a chase camera, a TV side camera, a rich top-down view) replaying one recorded race: to look at and
+## choose from (GDD 4.11). Needs no career and changes nothing.
+func _viewpoint_panel() -> Control:
+	var col := UIKit.vbox(10)
+	col.add_child(UIKit.label("VIEWPOINT PROTOTYPES (R6a)", "CaptionLabel"))
+	col.add_child(UIKit.wrapped("Replays one recorded 800 m race in three views: 1 behind your runner, 2 TV side camera, 3 top-down. "
+			+ "Keys 1 2 3 switch the view, Space pauses, I = indoor / outdoor, N = another race. It needs no career and your saves "
+			+ "are never touched; it only looks, it is not the new race game."))
+	var go := UIKit.button("Open the viewpoints", true, 220)
+	go.custom_minimum_size.y = 48
+	go.size_flags_horizontal = Control.SIZE_FILL if Layout.compact else Control.SIZE_SHRINK_BEGIN
+	go.pressed.connect(Router.go.bind("viewpoint_proto"))
+	col.add_child(go)
+	var p := UIKit.panel(col, 16)
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return p
 
 
 # --- Watch a test race ---------------------------------------------------------------------------------------

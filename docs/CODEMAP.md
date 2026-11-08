@@ -353,6 +353,13 @@ Read the paragraphs below with these in mind; they win where they disagree.
     (17 for ages 16-17: driving school, a summer job, a teammate quitting / joining, the upper-secondary school's people, festival, cabin).
   - **Tools:** `tools/romance_check.gd` (in `run_all_checks`), `storylet_check` (new conditions / senders / placeholders),
     `layout_check` `_romance_views`, `data/playtest.json` (`romance` section, needs `crush_card` / `romance` / `dating` / `breakup`).
+- **Session R6a (the viewpoint prototypes, GDD 4.11 "Built (step R6a)"; prototype code, to be replaced by R6b):** `scripts/proto/`:
+  `RaceRecording` (own `Race` stepped and READ, frames at `Race.DT`; `make(indoor, first_seed, tries)` finds a tight race; `point()` /
+  `stadium_point()` = the race screen's geometry; `order_at(t)`, `*_at(i, t)` readers; flags `F_KICK` … `F_DONE`), `ProtoStadium` (the 3D
+  stadium from the recording's geometry; `roof` node hidden in the top view), `ProtoFigure` (a runner of boxes, `pose(phase, amp, lean, down)`,
+  `glow`, `tag`, `cue`), `ProtoHud` (the graphics, one `_draw`, the viewer fills `s`), `ViewpointProto` (playback, key moments → alerts + slow
+  motion, the three cameras, controls). Router id `viewpoint_proto`; Dev menu panel `_viewpoint_panel`. Tool `tools/proto_view_check.gd`
+  (`-- shots <dir> [indoor]` windowed). No engine file changed.
 - **Checks:** `run_all_checks.bat -Quick` (~6 min: no `race_rounds`, `commentary_check`, `playtest_fix_check`, the PC-layout help check,
   the races fingerprint; `storylet_check -- quick`); the full list ~15 min. `tools/storylet_check.gd -- quick` skips the long season runs.
 ## Systems and tools (one paragraph each)
