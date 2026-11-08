@@ -9,13 +9,17 @@ const APRON := 4.0
 const ARC_STEPS := 28
 
 var rec: RaceRecording
+## "club" = a local ground in daylight (a small main stand with a roof along the home straight, a grass bank opposite, trees); "arena" = the big
+## floodlit ring with the six-tier stand all round. (The meet level picks one in the real game, GDD 4.11 decision 13.)
+var style := "club"
 var r_out := 0.0
 ## Roof, ceiling and light strips: hidden in the top-down view, which looks down through them.
 var roof := Node3D.new()
 
 
-func _init(recording: RaceRecording) -> void:
+func _init(recording: RaceRecording, style_name := "club") -> void:
 	rec = recording
+	style = style_name
 	add_child(roof)
 	r_out = rec.r_in + Race.LANE_W * rec.lanes
 	if rec.indoor:
@@ -121,8 +125,116 @@ func _build_outdoor() -> void:
 	_ring(board_r, board_r + 3.0, 0.0, 0.0, _std(Palette.CONCOURSE.lightened(0.05), 1.0))
 	var palette := [Color("#1f4fa8"), Color("#0e1117"), Color("#e8e8ee"), Color("#0e1117"), Color("#d83a2a"), Color("#0e1117")]
 	_ring(board_r, board_r, 0.0, 1.0, _vc_mat(0.6), func(i): return palette[(i / 2) % palette.size()])
-	_stands(board_r + 3.0)
-	_floodlights(board_r + 28.0)
+	if style == "club":
+		_club_surroundings(board_r + 2.5)
+	else:
+		_stands(board_r + 3.0)
+		_floodlights(board_r + 28.0)
+
+
+## The local ground: one stand with a roof along the home straight, a grass bank on the far straight with standing spectators, light poles, and
+## pines all round (a Finnish ground).
+func _club_surroundings(edge: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 91
+	var length := rec.straight + 46.0
+	var depth := 0.9
+	var rise := 0.45
+	var tiers := 7
+	var seat := _std(Palette.STAND.lightened(0.22), 1.0)
+	var shirts := [Color("#a8392d"), Color("#b4b6c0"), Color("#25528c"), Color("#c0952a"), Color("#3a3f4b"), Color("#507f3c"), Color("#6f4a80"), Color("#8f909a"), Color("#e8e8ee"), Color("#d6a23a")]
+	var spots: Array = []
+	for t in tiers:
+		var h := 0.3 + rise * (t + 1)
+		var zc := edge + depth * (t + 0.5)
+		_flat_box(Vector3(0, h / 2.0, zc), Vector3(length, h, depth), seat)
+		for k in int(length / 0.62):
+			if rng.randf() < 0.5:
+				spots.append([Vector3(-length / 2.0 + k * 0.62 + rng.randf_range(-0.08, 0.08), h + 0.42, zc), shirts[rng.randi() % shirts.size()]])
+	var back_z := edge + depth * tiers + 0.2
+	_flat_box(Vector3(0, 4.0, back_z), Vector3(length, 8.0, 0.4), _std(Color("#8f96a6"), 0.9))
+	_to_roof(_flat_box(Vector3(0, 7.4, edge + depth * tiers / 2.0 + 0.9), Vector3(length + 2.0, 0.3, depth * tiers + 3.6), _std(Palette.ROOF.lightened(0.35), 0.7)))
+	var steel := _std(Color("#6a7184"), 0.6)
+	for k in 9:
+		_to_roof(_flat_box(Vector3(-length / 2.0 + k * length / 8.0, 3.7, edge - 0.9), Vector3(0.3, 7.4, 0.3), steel))
+	# a banner on the front of the roof
+	_to_roof(_flat_box(Vector3(0, 6.9, edge - 0.9), Vector3(length * 0.4, 0.9, 0.08), _std(Color("#1f4fa8"), 0.6)))
+	# the grass bank opposite, with spectators standing along its upper rows
+	var bank_len := length * 0.8
+	for t in 4:
+		var h2 := 0.25 + 0.38 * (t + 1)
+		var zc2 := -(edge + 0.9 * (t + 0.5))
+		_flat_box(Vector3(0, h2 / 2.0, zc2), Vector3(bank_len, h2, 0.9), _std(Color("#2f6240"), 1.0))
+		for k in int(bank_len / 1.1):
+			if rng.randf() < 0.22:
+				spots.append([Vector3(-bank_len / 2.0 + k * 1.1 + rng.randf_range(-0.2, 0.2), h2 + 0.43, zc2), shirts[rng.randi() % shirts.size()]])
+	# spectators standing behind the boards along the home straight, a thin row
+	for k in int(length / 1.3):
+		if rng.randf() < 0.3:
+			spots.append([Vector3(-length / 2.0 + k * 1.3 + rng.randf_range(-0.3, 0.3), 0.43, edge - 1.8), shirts[rng.randi() % shirts.size()]])
+	_crowd_from_spots(spots, rng)
+	for sgn in [-1.0, 1.0]:
+		for x in [-rec.straight * 0.55, rec.straight * 0.55]:
+			_flat_box(Vector3(x, 10.0, sgn * (edge + 14.0)), Vector3(0.4, 20.0, 0.4), steel)   # slim light poles
+	_trees()
+
+
+func _crowd_from_spots(spots: Array, rng: RandomNumberGenerator) -> void:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	var box := BoxMesh.new()
+	box.size = Vector3(0.45, 0.85, 0.35)
+	mm.mesh = box
+	mm.instance_count = spots.size()
+	for i in spots.size():
+		mm.set_instance_transform(i, Transform3D(Basis(Vector3.UP, rng.randf_range(-0.3, 0.3)), spots[i][0]))
+		mm.set_instance_color(i, spots[i][1])
+	var inst := MultiMeshInstance3D.new()
+	inst.multimesh = mm
+	var m := _std(Color.WHITE, 0.95)
+	m.vertex_color_use_as_albedo = true
+	inst.material_override = m
+	inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(inst)
+
+
+## Pines scattered outside the ground.
+func _trees() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 55
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 2.0
+	cone.height = 9.0
+	cone.radial_segments = 7
+	cone.rings = 1
+	mm.mesh = cone
+	var spots: Array = []
+	var half := rec.straight / 2.0
+	var tries := 0
+	while spots.size() < 300 and tries < 4000:
+		tries += 1
+		var x := rng.randf_range(-175.0, 175.0)
+		var z := rng.randf_range(-150.0, 150.0)
+		var d := Vector2(maxf(absf(x) - half, 0.0), z).length()
+		if d > r_out + APRON + 34.0:
+			spots.append([Vector3(x, 0.0, z), rng.randf_range(0.7, 1.5)])
+	mm.instance_count = spots.size()
+	for i in spots.size():
+		var sc: float = spots[i][1]
+		var p: Vector3 = spots[i][0]
+		mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3(sc, sc, sc)), Vector3(p.x, 4.5 * sc, p.z)))
+		mm.set_instance_color(i, Color("#1f4a2b").lerp(Color("#2c6a3a"), rng.randf()))
+	var inst := MultiMeshInstance3D.new()
+	inst.multimesh = mm
+	var m := _std(Color.WHITE, 1.0)
+	m.vertex_color_use_as_albedo = true
+	inst.material_override = m
+	add_child(inst)
 
 
 ## The grandstand: stepped tiers all round with a crowd of coloured boxes on them, a roof above.
@@ -228,19 +340,23 @@ func _build_indoor() -> void:
 
 ## The finish line and the start stagger lines (one per lane) on the track.
 func _marks() -> void:
+	# the start staggers: one short painted line across each lane, square to the lane (the finish line is the venue's)
 	var half := rec.straight / 2.0
 	var white := _std(Color.WHITE, 0.6)
-	_flat_box(Vector3(half, 0.02, (rec.r_in + r_out) / 2.0), Vector3(0.45, 0.02, r_out - rec.r_in), white)
-	# a chequered look: two thin dark bands
-	var dark := _std(Color("#12141a"), 0.6)
-	for k in 4:
-		_flat_box(Vector3(half, 0.025, rec.r_in + (r_out - rec.r_in) * (k + 0.5) / 4.0), Vector3(0.45, 0.02, (r_out - rec.r_in) / 8.0), dark if k % 2 == 0 else white)
 	for lane in range(1, rec.lanes + 1):
-		var ra := rec.r_in + Race.LANE_W * (lane - 1)
-		var rb := rec.r_in + Race.LANE_W * lane
-		var a := rec.stadium_point(ra, rec.straight + rec.break_bends * PI * (ra - rec.r1))
-		var b := rec.stadium_point(rb, rec.straight + rec.break_bends * PI * (rb - rec.r1))
-		_line3(Vector3(a.x, 0.02, a.y), Vector3(b.x, 0.02, b.y), 0.12, white)
+		var rc := rec.r_in + Race.LANE_W * (lane - 0.5)
+		var c := rec.stadium_point(rc, rec.straight + rec.break_bends * PI * (rc - rec.r1))
+		var centre := Vector2(0.0, 0.0)
+		var radial := Vector2(0.0, signf(c.y))
+		if c.x > half:
+			centre = Vector2(half, 0.0)
+			radial = (c - centre).normalized()
+		elif c.x < -half:
+			centre = Vector2(-half, 0.0)
+			radial = (c - centre).normalized()
+		var a := c - radial * Race.LANE_W / 2.0
+		var b := c + radial * Race.LANE_W / 2.0
+		_line3(Vector3(a.x, 0.02, a.y), Vector3(b.x, 0.02, b.y), 0.05, white)
 
 
 func _to_roof(mi: Node3D) -> Node3D:

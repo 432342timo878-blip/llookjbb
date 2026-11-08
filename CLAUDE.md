@@ -46,8 +46,10 @@ drift, the third skipped invitation, the person page, the training group's fixed
 compare and a talk with a candidate; save v9; GDD "Built (step P2a)"); **P2b done** (2026-11-01, GDD 4.10 "P2b's questions" / "Built (step P2b)"):
 `RomanceSystem` (a crush card on the Sunday planner from 15 where the PLAYER picks who, the answer from the career's own dice, a weekend slot
 "partner", late texting as a setting (sleep cost), neglect, a breakup by you or them with a two-week dip), the confirmation camp's faces,
-a teammate really quitting / joining (effect `team`), 26 new storylets (relationship + ages 16–17), save v10. **R6a built** (2026-11-08, GDD 4.11 "Built (step R6a)", `docs/R6A_RESEARCH.md`): three viewpoint prototypes (chase / TV side / rich top-down) replaying
-one recorded race, opened from the Dev menu (`scripts/proto/`, `tools/proto_view_check.gd`); **the user's pick is still open**. Next, in
+a teammate really quitting / joining (effect `team`), 26 new storylets (relationship + ages 16–17), save v10. **R6a done** (2026-11-08, two rounds, GDD 4.11 "Built (step R6a)" + "round 2", `docs/R6A_RESEARCH.md`): three viewpoint prototypes (chase / TV
+director / calm top-down) replaying one recorded race with a real finish (line, clock, lap board, bell), a club ground or arena and field events
+from a meet program, opened from the Dev menu (`scripts/proto/`, `tools/proto_view_check.gd`); **the user picked all three views, built for
+realism** (R6b: real models, stadium by meet level, a meet-timetable system for the field). Next, in
 `docs/ROADMAP.md` order: the race revamp (GDD 4.11) → G1 / G3 / T1 / G2 → D2 → restyle → B1, then the check-in at the end of M2. Youth
 opponents stay fictional (minors); real athletes only at senior level.
 

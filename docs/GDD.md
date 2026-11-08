@@ -5315,7 +5315,22 @@ Sessions 1 and 2 touch different files (a prototype folder vs `race.gd` / data /
 whether the chase camera is only for the player's race (rivals' races stay quick-run: yes unless told otherwise); what the camera does at
 the kick (slow motion setting Off / Short / Full from decision 8 stays); the phone layout of the slider and the lane control.
 
-**Built (step R6a, 2026-11-08): the viewpoint prototypes. THE USER'S PICK IS STILL OPEN** (record it here: "Pick: …"). Design questions asked
+**Pick (user, 2026-11-08, after playing round 1): ALL THREE views, built for realism** (decisions 9–13 below). **9.** The chase camera is the default
+view (the one liked most); **TV broadcast and the overhead map are one key away** (2 / 3). **10.** Round-1 verdicts: the TV camera was too zoomed in
+and so looked unrealistic (→ a wider, director-style broadcast: a high wide, a rail tracking shot, a finish shot, cuts); the overhead was
+cluttered with text (→ calm: a bib number over a head, names only for you and the leader); **the running looked "funky"** (cause: the legs swung
+a fixed angle while the body moved faster than the feet, so the feet slid; → foot-planted run cycle: each foot is placed on the track and moves back
+at running speed during its short contact, 2-bone IK for the leg); the finish was "god awful" (→ a thin white painted line like the real
+5 cm one, finish posts, a photo-finish tower with a clock) and **there was no clock in the field, nobody ringing the bell, no lap count** (→ a
+lap board at the line, an official who rings the bell as the leader starts the last lap, big clock and video board). **11.** It must look like a
+proper broadcast at a proper stadium with proper athletes, a crowd and officials; code-built figures now, real models in R6b. **12. Other events are
+visible in the infield and they come from the MEET'S REAL PROGRAM, never faked:** if the meet holds high jump, pole vault, javelin and shot put at
+the same time as the 800 m, those are what play out in the field (user: "I want the events to be very detailed with time schedules and everything"):
+a meet timetable (which event, when, who) is a future system (see the roadmap note under G / meet schedule); the prototype reads a small
+fictional program (`ProtoField.PROGRAM`) so the picture is already driven by data. **13.** Stadium size follows the meet level (a local ground with a
+small stand and banks vs a big arena ring), to be shown in the prototype with a key.
+
+**Built (step R6a, 2026-11-08): the viewpoint prototypes (round 1; round 2 below).** Design questions asked
 (all answered with Claude's recommendation): figures built in code (no download), the replayed race = one outdoor 8-runner tight race with a
 key to an indoor 200 m hall, a full mock-up of the race graphics, tuned for a PC window with the phone checked. Research: `docs/R6A_RESEARCH.md`
 (track specs, TV, Godot compat, models: what is verified and what is not). **What it is:** Dev menu → "Viewpoint prototypes (R6a)" opens
@@ -5354,6 +5369,42 @@ key to an indoor 200 m hall, a full mock-up of the race graphics, tuned for a PC
   rest is deleted.
 - **The user's turn:** open the Dev menu, press "Open the viewpoints", watch the whole race in each view (and indoors with I), then tell Claude
   which one (or which mix, e.g. chase for your race with the TV cut-in at the finish) and what to change. R7a (the effort engine) is next either way.
+
+**Built (step R6a round 2, 2026-11-08): all three views, built for realism (decisions 9–13 above).** Same recording, same rules (`race.gd`
+untouched, **`quick_fingerprint` = 73182f4e… identical**), prototype code only.
+- **Runners (`ProtoFigure` v2):** a foot-planted run cycle. The cycle's phase is the SUM of distance / `cycle_for(speed)` over the recorded frames
+  (the viewer precomputes it, `_make_phases`), so strides keep their rhythm through every speed change and every seek; in the contact part of
+  each stride the foot moves back at running speed (no sliding), the swing lifts it, a 2-bone IK (law of cosines) sets hip / knee / foot; hip
+  bob, torso twist, arm swing and elbow bend grow with speed; rounded limbs, shorts, bib numbers front and back, skin / hair by name. Built in
+  code now, real models later (R6b).
+- **The finish (`ProtoVenue`):** a 5 cm painted line across the lanes, white finish posts with an orange band, a timing tower with a **race
+  clock** (stops on the winner's time), a **lap board** ("LAPS TO GO", an official holding it up on the infield side), an official who **rings
+  the bell** (6 s from the moment the leader starts the last lap; a "LAST LAP" alert, no slow motion), judges and two photographers at the
+  line, the break line with orange cones, a photo-finish camera above the clock, an infield scoreboard (clock, lap n / N, first three, YOU,
+  and what is on in the field). A floodlit arena adds a gantry with a FINISH banner. Boards are blank from behind.
+- **The stadium follows the meet level (`ProtoStadium(rec, style)`, key S):** **club** = a local ground in daylight (sky, a 7-tier main stand with
+  a roof and a back wall along the home straight, a grass bank with standing spectators opposite, light poles, trees); **arena** = the floodlit
+  ring with a stand all round; the 200 m hall stays the hall. In the real game the meet's level picks the style (decision 13).
+- **Other events in the field (`ProtoField`, key F):** high jump, pole vault, javelin and shot put (long jump already finished: its pit only) with
+  their equipment, bibbed athletes who take turns (walk to the mark, wait, the attempt with a run-up / spin / flight, the result, walk back);
+  everything is animated from the time alone (deterministic). **WHAT is on comes from `ProtoField.PROGRAM`** (a fictional timetable: event,
+  start / end in seconds from the 800 m start, athletes, bar height): an event is shown only when its window overlaps the race, and the
+  scoreboard lists it. The real meet-schedule system is still to be designed (see below).
+- **Cameras:** **Chase** (default) as before. **TV** = a director: a wide infield camera (height 4.8 m, ~30 m off the track on the bends and
+  straights) whose lens widens to hold the whole pack, never tighter than 26°; at the final straight a head-on shot from beyond the line (looking
+  back, panning to the leader until 5 m before the line); 1.4 s after the leader finishes, a static side-on shot at the line (clock, officials,
+  finishers); a shot is held 2.5 s before it may change, cuts dip to black for a moment. **Top-down** = calm: a bib number over each runner, a name
+  only for you and the leader, cues only for you (DOWN / KICKING / BOXED IN), softer glows.
+- **Controls added:** S = stadium style (club ↔ arena), F = field events on / off (buttons "Club / Arena", "Field on / off"). Other keys as before.
+- **Checks:** `tools/proto_view_check.gd` (headless as before; windowed `-- shots <dir> [arena] [indoor]` also saves fixed looks at the field
+  sites and the finish area and contact sheets of the field events in action). Windowed run: no script errors; Godot reports leaked RIDs at
+  exit (the unused Label3Ds of the field athletes and the venue's people, never freed in the prototype: harmless, to be cleaned in R6b).
+- **What round 2 does NOT prove:** that the real models look right (code-built figures: the heads and limbs are simple shapes), the frame rate
+  on a phone (not measured), that the javelin / pole vault / shot put motions look like their real technique (they are plausible shapes, not
+  motion-captured), the indoor hall's field events (none).
+- **Future systems named by the user (not built, for the roadmap):** (1) **the meet timetable**: every meet has detailed events with a time
+  schedule (event, round, start time, who is in it, results); the field in the picture, the commentary and the day's pacing read it. (2) **Real
+  athlete models** (R6b, CC0 / licensed, the user's OK per download). (3) Stadium size by meet level (club ground ↔ regional ↔ arena).
 
 ## 5. Presentation
 

@@ -564,8 +564,12 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
     continuous effort slider in real time, live alerts instead of cards, a race plan with the coach, a viewpoint you are in (chosen by
     seeing prototypes), sound, then the race-day timeline. Presentation sessions keep the races hash; engine sessions change it on
     purpose. Order: R6a → (the user picks) → R7a → R7b → R6b → R6c → R7c → the user's playtest 4 (races only; may reorder the rest).
-    - [~] **R6a. Viewpoint prototypes: BUILT 2026-11-08, waiting for the user's pick** (Dev menu → "Viewpoint prototypes"; GDD 4.11 "Built (step
-          R6a)"; research `docs/R6A_RESEARCH.md`; races hash identical). Original brief: (starts right after P2): three viewpoints (3D chase camera behind the runner, TV broadcast side
+    - [x] **R6a. Viewpoint prototypes: DONE 2026-11-08 in two rounds; the user picked ALL THREE views built for realism** (chase default, TV +
+          overhead one key away; Dev menu → "Viewpoint prototypes"; GDD 4.11 "Built (step R6a)" + "round 2"; research `docs/R6A_RESEARCH.md`;
+          races hash identical). Round 2: foot-planted runners, a real finish (5 cm line, clock, lap board, bell), a club ground / arena,
+          a TV director, a calm overhead, field events from a meet program. **R6b is therefore bigger:** real athlete models, the stadium by
+          meet level, and the field events driven by a real meet timetable (a new system: detailed events with time schedules, to be
+          designed; the user's wish 2026-11-08). Original brief: (starts right after P2): three viewpoints (3D chase camera behind the runner, TV broadcast side
           camera, the top-down view made rich) all replaying ONE recorded race (the engine's per-step positions recorded read-only),
           switchable with a key, entered from the Dev menu; no game files change. Research first: athletics TV graphics, World
           Athletics track specs outdoor + indoor, Godot 3D / 2.5D on the Compatibility renderer, CC0 runner models (downloads need the
@@ -579,8 +583,9 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
     - [ ] **R7b. The race plan and the stakes**: the pre-race plan screen (the coach proposes a pace curve, you edit it), the coach's
           grade after (trust + race tactics through the "what this race did" card), rivals who matter (head-to-head, style), the carry-in
           strip (moods, form, goals). *(Opus, high)* Done: races hash identical to R7a.
-    - [ ] **R6b. The look**: the chosen viewpoint built properly (the stadium from specs, figures, the camera, the meter / pace line /
-          cues / gaps as TV graphics, slow-motion setting Off / Short / Full, plain labels; phone layout). *(Opus, high)* Done:
+    - [ ] **R6b. The look**: ALL THREE views built properly (the stadium from specs by meet level, real athlete models, the TV director, the
+          camera, the meter / pace line / cues / gaps as TV graphics, slow-motion setting Off / Short / Full, plain labels; phone layout; the
+          finish area, clock, lap board and bell from R6a; other events in the field read from a meet timetable system, designed first). *(Opus, high)* Done:
           `race_check`, `layout_check`, the tour, `help_check`; races hash identical.
     - [ ] **R6c. Sound** (crowd, breathing and footsteps, the bell, the coach): a research session for free assets first, the user's OK
           per download, credits in the Credits screen. *(Sonnet / Opus)*

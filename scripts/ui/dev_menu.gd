@@ -87,8 +87,9 @@ func _build() -> void:
 func _viewpoint_panel() -> Control:
 	var col := UIKit.vbox(10)
 	col.add_child(UIKit.label("VIEWPOINT PROTOTYPES (R6a)", "CaptionLabel"))
-	col.add_child(UIKit.wrapped("Replays one recorded 800 m race in three views: 1 behind your runner, 2 TV side camera, 3 top-down. "
-			+ "Keys 1 2 3 switch the view, Space pauses, I = indoor / outdoor, N = another race. It needs no career and your saves "
+	col.add_child(UIKit.wrapped("Replays one recorded 800 m race in three views: 1 behind your runner, 2 TV broadcast, 3 top-down. "
+			+ "Keys 1 2 3 switch the view, Space pauses, I = indoor / outdoor, S = club ground / arena, F = field events on / off, "
+			+ "N = another race. It needs no career and your saves "
 			+ "are never touched; it only looks, it is not the new race game."))
 	var go := UIKit.button("Open the viewpoints", true, 220)
 	go.custom_minimum_size.y = 48

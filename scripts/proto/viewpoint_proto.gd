@@ -1,14 +1,18 @@
 class_name ViewpointProto
 extends Control
 ## R6a prototype screen (Dev menu -> "Viewpoint prototypes"): ONE recorded race (RaceRecording) replayed through three viewpoints that
-## share one 3D stadium and one set of figures:  1 chase camera behind your runner,  2 TV side camera (a rail camera on the infield with
-## a head-on shot for the finish),  3 the top-down view made rich (zoomed on the pack, figures, effort glows).  A prototype to look
-## at and choose from (GDD 4.11): nothing here is a game system, no game state is touched and no engine file changed.
+## share one 3D stadium and one set of figures:  1 chase camera behind your runner (the default),  2 TV broadcast (a director: a wide
+## infield camera that frames the pack, a head-on shot down the home straight, then a side-on shot at the line),  3 the top-down view,
+## calm (bib numbers, a name only for you and the leader).  Round 2 (GDD 4.11 decisions 9-13): foot-planted runners, a real finish (5 cm
+## line, posts, race clock, lap board, the bell), a stadium that follows the meet level (S: local ground in daylight / floodlit arena),
+## and the other events of the meet playing out in the field from the meet's program (F).  A prototype to look at and choose from: nothing
+## here is a game system, no game state is touched and no engine file changed.
 ## Keys: 1 2 3 or V = viewpoint, Space = play / pause, R = restart, Left / Right = back / forward 5 s (Shift: 1 s), Up / Down = speed,
-## I = indoor / outdoor track, N = another race, H = hide / show the graphics, M = slow motion at key moments on / off, Esc = back.
+## I = indoor / outdoor track, S = stadium style, F = field events on / off, N = another race, H = hide / show the graphics,
+## M = slow motion at key moments on / off, Esc = back.
 
 enum View { CHASE, BROADCAST, TOP }
-const VIEW_NAMES := ["Chase", "TV side", "Top-down"]
+const VIEW_NAMES := ["Chase", "TV", "Top-down"]
 const CLUB_COLORS := [Color("#2f6db5"), Color("#e8e8ee"), Color("#6aa84f"), Color("#f2b632"), Color("#8e5ea2"), Color("#2fb5a5"), Color("#d94a8a"), Color("#c9c9d3")]
 const SPEEDS := [0.5, 1.0, 2.0, 4.0]
 const SLOW_FACTOR := 0.35
@@ -30,6 +34,18 @@ var _world: Node3D
 var _cam: Camera3D
 var _figs: Array = []
 var _stadium: ProtoStadium
+var _venue: ProtoVenue
+var _field: ProtoField
+var _style := "club"        # "club" (local ground, daylight) or "arena" (floodlit); a hall is always the hall
+var _field_on := true
+var _hud_on := true
+var _phase: Array = []      # per runner: the run cycle's phase at every frame (distance / the cycle length of that moment)
+var _fade_rect: ColorRect
+var _style_button: Button
+var _field_button: Button
+var debug_cam := {}         # {pos, look, fov}: a fixed camera for the check tool
+var _bell_was := false
+var _shot_t := 0.0
 var _plan_bar: MeshInstance3D
 var _hud: ProtoHud
 var _bar: PanelContainer
@@ -84,6 +100,7 @@ func _load(indoor_track: bool, new_race := false) -> void:
 		_recs[_indoor] = RaceRecording.make(_indoor, _seed_base + (1000 if _indoor else 0))
 	rec = _recs[_indoor]
 	_moments = _find_moments()
+	_make_phases()
 	_build_all()
 	t = 0.0
 	_last_t = 0.0
@@ -117,26 +134,45 @@ func _build_all() -> void:
 	_cam.near = 0.1
 	_cam.far = 700.0
 	_world.add_child(_cam)
+	var daylight := not _indoor and _style == "club"
 	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("#080b14")
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("#8a97b8")
-	env.ambient_light_energy = 0.85
+	if daylight:
+		var sky_mat := ProceduralSkyMaterial.new()
+		sky_mat.sky_top_color = Color("#4f87c9")
+		sky_mat.sky_horizon_color = Color("#b9d3ea")
+		sky_mat.ground_horizon_color = Color("#b9d3ea")
+		sky_mat.ground_bottom_color = Color("#6d7f63")
+		var sky := Sky.new()
+		sky.sky_material = sky_mat
+		env.background_mode = Environment.BG_SKY
+		env.sky = sky
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+		env.ambient_light_energy = 0.9
+	else:
+		env.background_mode = Environment.BG_COLOR
+		env.background_color = Color("#080b14")
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		env.ambient_light_color = Color("#8a97b8")
+		env.ambient_light_energy = 0.85
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	var we := WorldEnvironment.new()
 	we.environment = env
 	_world.add_child(we)
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-58.0, 35.0, 0.0)
-	sun.light_color = Color("#fff1da")
-	sun.light_energy = 1.05
+	sun.rotation_degrees = Vector3(-48.0, 40.0, 0.0) if daylight else Vector3(-58.0, 35.0, 0.0)
+	sun.light_color = Color("#fff4e0") if daylight else Color("#fff1da")
+	sun.light_energy = 1.25 if daylight else 1.05
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 80.0
+	sun.directional_shadow_max_distance = 110.0 if daylight else 80.0
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	_world.add_child(sun)
-	_stadium = ProtoStadium.new(rec)
+	_stadium = ProtoStadium.new(rec, _style)
 	_world.add_child(_stadium)
+	_venue = ProtoVenue.new(rec, "arena" if (_indoor or _style == "arena") else "club")
+	_world.add_child(_venue)
+	_field = ProtoField.new(rec)
+	_field.enabled = _field_on
+	_world.add_child(_field)
 	# the runners
 	for i in rec.n:
 		var is_p := i == rec.player
@@ -176,12 +212,55 @@ func _build_all() -> void:
 	_plan_bar.material_override = m
 	_plan_bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_world.add_child(_plan_bar)
+	# a black fade for the cuts of the TV director
+	_fade_rect = ColorRect.new()
+	_fade_rect.color = Color(0, 0, 0, 0)
+	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fade_rect)
 	# the graphics and the controls
 	_hud = ProtoHud.new()
 	_hud.rec = rec
+	_hud.visible_hud = _hud_on
 	_hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_hud)
 	_build_controls()
+
+
+## The run cycle's phase of every runner at every frame, summed from the distance covered over the cycle length of that moment, so the
+## feet keep their rhythm through any speed change and any seek (a stride never slips against the ground).
+func _make_phases() -> void:
+	_phase.clear()
+	for i in rec.n:
+		var ph := PackedFloat32Array()
+		ph.resize(rec.count)
+		var acc := float(i) * 0.37
+		ph[0] = acc
+		for f in range(1, rec.count):
+			var dd: float = float(rec.d[i][f]) - float(rec.d[i][f - 1])
+			var vv: float = rec.v[i][f]
+			if vv > 0.5:
+				acc += dd / ProtoFigure.cycle_for(vv)
+			ph[f] = acc
+		_phase.append(ph)
+
+
+func _phase_at(i: int, tt: float) -> float:
+	var fa := rec.frame_at(tt)
+	return lerpf(_phase[i][fa.x], _phase[i][fa.x + 1], fa.y / 1000.0)
+
+
+## Rebuild the world (a new stadium style) and carry on where the replay was.
+func _rebuild() -> void:
+	var keep := t
+	var was_playing := playing
+	_build_all()
+	t = keep
+	_last_t = keep
+	playing = was_playing
+	_snap = true
+	_shot = ""
+	_refresh_buttons()
 
 
 # --- controls ---------------------------------------------------------------------------------------------------------
@@ -246,6 +325,14 @@ func _build_controls() -> void:
 	_track_button.custom_minimum_size.y = 44
 	_track_button.pressed.connect(func(): _load(not _indoor))
 	flow.add_child(_track_button)
+	_style_button = UIKit.button("Stadium", false, 90)
+	_style_button.custom_minimum_size.y = 44
+	_style_button.pressed.connect(toggle_style)
+	flow.add_child(_style_button)
+	_field_button = UIKit.button("Field on", false, 90)
+	_field_button.custom_minimum_size.y = 44
+	_field_button.pressed.connect(toggle_field)
+	flow.add_child(_field_button)
 	var nr := UIKit.button("New race", false, 90)
 	nr.custom_minimum_size.y = 44
 	nr.pressed.connect(func(): _load(_indoor, true))
@@ -274,6 +361,12 @@ func _refresh_buttons() -> void:
 		_speed_button.text = "%sx" % str(SPEEDS[speed_i])
 	if _slow_button:
 		_slow_button.text = "Slow-mo on" if slow_on else "Slow-mo off"
+	if _style_button:
+		_style_button.text = "Hall" if _indoor else ("Club" if _style == "club" else "Arena")
+		_style_button.disabled = _indoor
+	if _field_button:
+		_field_button.text = "Field on" if _field_on else "Field off"
+		_field_button.disabled = _indoor
 	for k in _view_buttons.size():
 		_view_buttons[k].set_pressed_no_signal(k == view)
 
@@ -284,6 +377,7 @@ func set_view(v: int) -> void:
 	view = v as View
 	_snap = true
 	_shot = ""
+	_shot_t = 0.0
 	_fade = 1.0
 	_refresh_buttons()
 
@@ -313,8 +407,22 @@ func toggle_slow() -> void:
 
 
 func toggle_hud() -> void:
-	_hud.visible_hud = not _hud.visible_hud
+	_hud_on = not _hud_on
+	_hud.visible_hud = _hud_on
 	_hud.queue_redraw()
+
+
+func toggle_style() -> void:
+	if _indoor or _busy:
+		return
+	_style = "arena" if _style == "club" else "club"
+	_rebuild()
+
+
+func toggle_field() -> void:
+	_field_on = not _field_on
+	_field.enabled = _field_on
+	_refresh_buttons()
 
 
 func seek(to: float) -> void:
@@ -345,6 +453,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			speed_i = maxi(speed_i - 1, 0)
 			_refresh_buttons()
 		KEY_I: _load(not _indoor)
+		KEY_S: toggle_style()
+		KEY_F: toggle_field()
 		KEY_N: _load(_indoor, true)
 		KEY_H: toggle_hud()
 		KEY_M: toggle_slow()
@@ -418,6 +528,17 @@ func _process(delta: float) -> void:
 	_update_runners()
 	_update_camera(delta)
 	_stadium.roof.visible = view != View.TOP
+	# the finish area, the bell (no slow motion for it: it is the venue's own event) and the other events of the meet
+	var ordr := rec.order_at(t)
+	_venue.field_lines = _field.lines()
+	_venue.update(t, ordr)
+	_field.update(t)
+	var ringing := _venue.bell_ringing(t)
+	if ringing and not _bell_was and playing:
+		_alert = "LAST LAP"
+		_alert_t = 0.0
+	_bell_was = ringing
+	_fade_rect.color.a = clampf(_fade, 0.0, 1.0) * 0.85
 	_update_hud(factor)
 	if _slider:
 		_slider.set_value_no_signal(t)
@@ -455,14 +576,16 @@ func _update_runners() -> void:
 		var h2 := rec.heading_at(i, t)
 		fig.position = Vector3(p2.x, 0.0, p2.y)
 		fig.rotation.y = atan2(-h2.x, -h2.y)
-		var dd := rec.d_at(i, t)
 		var vv := rec.v_at(i, t)
 		var fl := rec.flags_at(i, t)
 		var down := (fl & RaceRecording.F_DOWN) != 0
-		var cyc := ProtoFigure.CYCLE_M * (0.72 + 0.28 * clampf(vv / 7.0, 0.0, 1.4))
-		var amp := 0.0 if vv < 0.4 else clampf(vv / 6.8, 0.15, 1.25)
 		var lean := 0.07 + 0.12 * clampf(vv / 7.0, 0.0, 1.3) + (0.07 if (fl & RaceRecording.F_KICK) else 0.0)
-		fig.pose(dd / cyc * TAU + i * 0.9, amp, lean, down)
+		if down:
+			fig.pose_down()
+		elif vv < 0.5:
+			fig.pose_stand()
+		else:
+			fig.pose_run(_phase_at(i, t), vv, lean, ProtoFigure.cycle_for(vv))
 		# the effort glow: cool when easy, hot when giving everything
 		var ratio := vv / maxf(rec.even_v[i], 0.1)
 		var e := clampf((ratio - 0.85) / 0.4, 0.0, 1.0)
@@ -470,12 +593,14 @@ func _update_runners() -> void:
 		if fl & RaceRecording.F_KICK:
 			col = Color(1.0, 0.25, 0.1)
 		var size_m := 1.5 + 1.4 * e + (0.5 if i == P else 0.0)
-		if view == View.TOP:
-			size_m *= 1.35
 		var a := (0.35 + 0.5 * e) * (0.0 if (fl & RaceRecording.F_DONE) else 1.0)
+		if view != View.TOP:
+			a *= 0.55           # (a runner is not a glowing ball: a soft hint of effort at the feet only)
+		else:
+			a *= 0.5
 		if i == P:
 			col = col.lerp(Palette.ACCENT, 0.55)
-			a = maxf(a, 0.5)
+			a = maxf(a, 0.4 if view == View.CHASE else 0.5)
 		fig.glow.scale = Vector3(size_m, size_m, 1.0)
 		fig.glow_mat.albedo_color = Color(col, a)
 		# floating labels
@@ -485,17 +610,26 @@ func _update_runners() -> void:
 		fig.tag.pixel_size = 0.0021 * scale_
 		fig.cue.pixel_size = 0.0019 * scale_
 		var cue := ""
-		if near_player or (view == View.TOP and i != P and p2.distance_to(pp) < 25.0):
+		if (view == View.CHASE and near_player) or i == P:
 			cue = _cue(i)
+		if view == View.TOP and cue != "DOWN" and cue != "KICKING" and cue != "BOXED IN":
+			cue = ""
 		fig.cue.text = cue
-		fig.cue.visible = cue != "" and _hud.visible_hud
+		fig.cue.visible = cue != "" and _hud_on
 		var lift := 2.25 if view != View.TOP else 0.3
-		var north := -1.1 * scale_ if view == View.TOP else 0.0
+		var north := -0.7 * scale_ if view == View.TOP else 0.0
 		fig.tag.position = fig.position + Vector3(0, lift, north)
 		fig.cue.position = fig.position + Vector3(0, lift + 0.42 * scale_ * (1.0 if view != View.TOP else 0.6), north - (0.9 * scale_ if view == View.TOP else 0.0))
 		var rank: int = _rank.get(i, 9)
 		var ahead_of_cam := (fig.position - cam_pos).dot(-_cam.global_transform.basis.z) > 3.0
-		fig.tag.visible = _hud.visible_hud and ((view == View.CHASE and near_player and ahead_of_cam) or (view == View.BROADCAST and (i == P or rank < 3)) or view == View.TOP)
+		# the top-down view stays calm: a bib number on everyone, a name only for you and the leader
+		if view == View.TOP:
+			fig.tag.text = "YOU" if i == P else (str(rec.names[i]) if rank == 0 else str(i + 1))
+			fig.tag.font_size = 72 if (i == P or rank == 0) else 56
+		else:
+			fig.tag.text = "YOU" if i == P else str(rec.names[i])
+			fig.tag.font_size = 72 if i == P else 56
+		fig.tag.visible = _hud_on and ((view == View.CHASE and near_player and ahead_of_cam) or (view == View.BROADCAST and (i == P or rank == 0)) or view == View.TOP)
 	# the plan line
 	var target_d := Race.DISTANCE * clampf(t / rec.plan_time, 0.0, 1.0)
 	var a := rec.point_free(target_d, -0.3)
@@ -566,32 +700,65 @@ func _update_camera(delta: float) -> void:
 			var order := rec.order_at(t)
 			var leader: int = order[0]
 			var ld := rec.d_at(leader, t)
+			# the director: a wide infield camera that frames the pack; the head-on shot down the home straight for the finish; then a side-on
+			# shot at the line (the clock, the officials, the finishers coming in). A shot is held a few seconds before the next cut.
+			var lead_fin: float = rec.finish_t[leader]
 			var finish_zone := Race.DISTANCE - rec.straight - 6.0
-			var shot := "finish" if ld >= finish_zone else "rail"
+			var shot := "wide"
+			if lead_fin >= 0.0 and t >= lead_fin + 1.4:
+				shot = "after"
+			elif ld >= finish_zone:
+				shot = "head"
+			_shot_t += delta
 			if shot != _shot:
-				if _shot != "":
-					_fade = 1.0
-					_snap = true
-				_shot = shot
+				if _shot != "" and not _snap and _shot_t < 2.5 and shot != "after":
+					shot = _shot
+				else:
+					if _shot != "" and not _snap:
+						_fade = 0.55
+						_snap = true
+					_shot = shot
+					_shot_t = 0.0
+			shot = _shot
 			var half := rec.straight / 2.0
-			var rm := rec.r_in + Race.LANE_W * rec.lanes / 2.0
-			if shot == "finish":
-				var r_out := rec.r_in + Race.LANE_W * rec.lanes
-				pos = Vector3(half + (6.0 if not rec.indoor else 4.0), 2.2, r_out + (2.0 if not rec.indoor else 1.2))
-				look = Vector3(half - 30.0, 1.1, rm - 3.0)
-				fov = 30.0
+			var r_out := rec.r_in + Race.LANE_W * rec.lanes
+			var rm := (rec.r_in + r_out) / 2.0
+			if shot == "head":
+				var lp := rec.position_at(leader, t)
+				pos = Vector3(half + (15.0 if not rec.indoor else 6.5), 3.0, r_out + (3.5 if not rec.indoor else 1.4))
+				look = Vector3(minf(lp.x, half - 5.0), 1.1, lp.y)
+				fov = 34.0
+				pos_rate = 20.0
+				look_rate = 7.0
+			elif shot == "after":
+				var inset := clampf(rec.r_in * 0.66, 7.0, 24.0)
+				pos = Vector3(half - inset * 0.7, 3.2, rec.r_in - inset)
+				look = Vector3(half + 2.0, 1.3, rm - 1.0)
+				fov = 42.0
 				pos_rate = 20.0
 				look_rate = 20.0
 			else:
 				var c := _pack_center()
 				var h := rec.heading_at(P, t)
 				var inward := Vector2(h.y, -h.x)
-				var dist := 17.0 if not rec.indoor else 9.0
-				pos = _v3(c + inward * dist, 1.9)
+				var dist := clampf(rec.r_in * 0.85, 9.0, 30.0)
+				# the lens follows the spread of the pack: wide enough for all of it, never tighter than a real broadcast lens
+				var lo := 1.0e9
+				var hi := -1.0e9
+				for i in rec.n:
+					var p2 := rec.position_at(i, t)
+					if p2.distance_to(c) < 30.0:
+						var s := (p2 - c).dot(h)
+						lo = minf(lo, s)
+						hi = maxf(hi, s)
+				var half_ext := (hi - lo) / 2.0 + 8.0
+				var asp_ref := maxf(size.x / maxf(size.y, 1.0), 1.0) if size.x >= size.y else 1.6
+				var fov_v := rad_to_deg(2.0 * atan(half_ext / (dist * asp_ref)))
+				pos = _v3(c + inward * dist, 4.8 if not rec.indoor else 2.8)
 				look = _v3(c + h * 2.0, 1.0)
-				fov = 36.0 if not rec.indoor else 46.0
-				pos_rate = 3.2
-				look_rate = 5.0
+				fov = clampf(fov_v, 26.0 if not rec.indoor else 34.0, 54.0)
+				pos_rate = 2.4
+				look_rate = 4.0
 		View.TOP:
 			var lo := Vector2(1.0e9, 1.0e9)
 			var hi := Vector2(-1.0e9, -1.0e9)
@@ -617,6 +784,11 @@ func _update_camera(delta: float) -> void:
 			fov = 42.0
 			pos_rate = 5.0
 			look_rate = 6.0
+	if not debug_cam.is_empty():   # (the check tool looks at the stadium from places no director would)
+		pos = debug_cam.pos
+		look = debug_cam.look
+		fov = debug_cam.fov
+		_snap = true
 	_cam_pos = _sm(_cam_pos, pos, pos_rate, delta)
 	_cam_look = _sm(_cam_look, look, look_rate, delta)
 	_cam_fov = _smf(_cam_fov, fov, 4.0, delta)
