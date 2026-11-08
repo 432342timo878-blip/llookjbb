@@ -583,10 +583,22 @@ Part 2 (design later, plugs into the step-1 hooks; periodization (step 6) prepar
     - [ ] **R7b. The race plan and the stakes**: the pre-race plan screen (the coach proposes a pace curve, you edit it), the coach's
           grade after (trust + race tactics through the "what this race did" card), rivals who matter (head-to-head, style), the carry-in
           strip (moods, form, goals). *(Opus, high)* Done: races hash identical to R7a.
-    - [ ] **R6b. The look**: ALL THREE views built properly (the stadium from specs by meet level, real athlete models, the TV director, the
-          camera, the meter / pace line / cues / gaps as TV graphics, slow-motion setting Off / Short / Full, plain labels; phone layout; the
-          finish area, clock, lap board and bell from R6a; other events in the field read from a meet timetable system, designed first). *(Opus, high)* Done:
-          `race_check`, `layout_check`, the tour, `help_check`; races hash identical.
+    - [ ] **R6b. The look**, split in four (user's picks 2026-11-08): ALL THREE views built properly (chase default, TV director, calm top-down),
+          the finish area / clock / lap board / bell from R6a kept. **R6b-0 starts beside R7a** (independent of the race engine); R6b1-3 come
+          after R7b, in this order, each *(Opus, high)*; races hash identical in all four:
+          - [ ] **R6b-0. The meet timetable** (a new system, designed first): every meet gets a program (events, rounds, start times, who is in
+                each) researched from real Finnish meets with sources in `data/`; the infield events in the picture, the commentary, the
+                calendar's meet page and R7c's race-day timeline read it. Replaces `ProtoField.PROGRAM`. Done: a meet's program is data with
+                sources; `json_check` + a new check; the prototype's field reads it.
+          - [ ] **R6b1. Stadium and world**: the prototype code becomes game code (`scripts/race3d/`), the ground by meet level (club /
+                regional / arena), the hall with its banked bends (verify the indoor manual first: lane width, bank), crowd by level,
+                officials, the finish area; **measure the frame rate on a phone**, a quality setting if needed.
+          - [ ] **R6b2. Athletes**: a research step finds free rigged runner models with a run animation and a licence that allows a game
+                (CC0 etc.), sources listed; **no download without the user's OK per file**; the code-built figures stay the fallback; kit by
+                club, a different look per athlete, falls and field-event motions properly animated, credits in the Credits screen.
+          - [ ] **R6b3. Broadcast and wiring**: the three views in the real race screen (replacing the old top-down), the meter / pace line / cues /
+                gaps as TV graphics, slow-motion setting Off / Short / Full, plain labels, the phone layout; the prototype deleted. Done:
+                `race_check`, `layout_check`, the tour, `help_check`.
     - [ ] **R6c. Sound** (crowd, breathing and footsteps, the bell, the coach): a research session for free assets first, the user's OK
           per download, credits in the Credits screen. *(Sonnet / Opus)*
     - [ ] **R7c. The race-day timeline** (arrive, warm-up, call room, start; the cool-down and its effect on tomorrow's soreness; the
