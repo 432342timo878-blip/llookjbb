@@ -3,7 +3,8 @@ import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
 import { Button } from '../components/Button';
 import { FodmapGroup, GROUP_DESCRIPTIONS, GROUP_LABELS } from '../data/ingredients';
 import { clearHistory, Settings } from '../storage';
-import { colors } from '../theme';
+import { colors, space, type } from '../theme';
+import { Card, ScreenTitle, SectionLabel } from '../ui';
 
 interface Props {
   settings: Settings;
@@ -28,48 +29,59 @@ export function SettingsScreen({ settings, onChange }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Omat sietorajat</Text>
-      <Text style={styles.body}>
-        Kaikki eivät reagoi kaikkiin FODMAP-ryhmiin. Jos olet testannut (esim. eliminaatiodieetin palautusvaiheessa),
-        että siedät jonkin ryhmän, merkitse se – sen ainesosat eivät silloin vaikuta tulokseen.
-      </Text>
-      {GROUPS.map((g) => {
-        const tolerated = settings.tolerated.includes(g);
-        return (
-          <View key={g} style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.groupName}>{GROUP_LABELS[g]}</Text>
-              <Text style={styles.groupDesc}>{GROUP_DESCRIPTIONS[g]}</Text>
-              <Text style={[styles.state, { color: tolerated ? colors.green : colors.muted }]}>
-                {tolerated ? 'Siedän tämän' : 'Herkkä'}
-              </Text>
-            </View>
-            <Switch value={tolerated} onValueChange={(v) => toggle(g, v)} trackColor={{ true: colors.green }} />
-          </View>
-        );
-      })}
+      <ScreenTitle title="Asetukset" />
 
-      <Button label="Tyhjennä historia" variant="secondary" onPress={confirmClear} />
+      <View>
+        <SectionLabel>Omat sietorajat</SectionLabel>
+        <Text style={[type.body, { marginBottom: space.md }]}>
+          Jos olet testannut (esim. eliminaatiodieetin palautusvaiheessa), että siedät jonkin FODMAP-ryhmän, kytke se päälle. Sen
+          ainesosat eivät silloin vaikuta tulokseen.
+        </Text>
+        <Card style={{ paddingVertical: space.xs }}>
+          {GROUPS.map((g, i) => {
+            const tolerated = settings.tolerated.includes(g);
+            return (
+              <View key={g} style={[styles.row, i < GROUPS.length - 1 && styles.divider]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={type.bodyStrong}>{GROUP_LABELS[g]}</Text>
+                  <Text style={[type.small, { marginTop: 2 }]}>{GROUP_DESCRIPTIONS[g]}</Text>
+                  <Text style={[styles.state, { color: tolerated ? colors.green : colors.muted }]}>{tolerated ? 'Siedän' : 'Herkkä'}</Text>
+                </View>
+                <Switch
+                  value={tolerated}
+                  onValueChange={(v) => toggle(g, v)}
+                  trackColor={{ true: colors.primary, false: colors.border }}
+                  thumbColor={colors.surface}
+                />
+              </View>
+            );
+          })}
+        </Card>
+      </View>
 
-      <Text style={styles.title}>Tietoa</Text>
-      <Text style={styles.body}>
-        Tuotetiedot haetaan avoimesta Open Food Facts -tietokannasta. Arvio perustuu ainesosaluetteloon:
-        määrää ei tiedetä, joten pääainesosat painavat enemmän kuin luettelon loppupään ainesosat.
-        Sipuli, valkosipuli, inuliini ja polyolit merkitään aina, koska ne aiheuttavat oireita jo pieninä määrinä.
-      </Text>
-      <Text style={styles.body}>
-        Tulos on suuntaa-antava eikä korvaa ravitsemusterapeutin ohjeita.
-      </Text>
+      <View>
+        <SectionLabel>Tiedot</SectionLabel>
+        <Button label="Tyhjennä skannaushistoria" icon="trash-outline" variant="secondary" onPress={confirmClear} />
+      </View>
+
+      <View>
+        <SectionLabel>Miten arvio tehdään</SectionLabel>
+        <Card style={{ gap: space.md }}>
+          <Text style={type.body}>
+            Tuotetiedot haetaan Open Food Factsista ja kauppojen verkkopalveluista (S-kaupat, K-Ruoka, Tokmanni). Arvio perustuu
+            ainesosaluetteloon: määriä ei tiedetä, joten luettelon alkupään ainesosat painavat enemmän.
+          </Text>
+          <Text style={type.body}>Sipuli, valkosipuli, inuliini ja polyolit merkitään aina, koska ne aiheuttavat oireita jo pieninä määrinä.</Text>
+          <Text style={type.small}>Tulos on suuntaa-antava eikä korvaa ravitsemusterapeutin ohjeita.</Text>
+        </Card>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, paddingBottom: 40 },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text, marginTop: 8 },
-  body: { fontSize: 14, color: colors.muted, lineHeight: 20 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, padding: 14, borderRadius: 12 },
-  groupName: { fontSize: 16, fontWeight: '600', color: colors.text },
-  groupDesc: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  state: { fontSize: 13, fontWeight: '600', marginTop: 4 },
+  container: { paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.xl },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
+  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  state: { fontSize: 12, fontWeight: '700', marginTop: 4 },
 });

@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { HeartAssessment, RuleStatus } from '../analysis/heartCriteria';
-import { colors } from '../theme';
+import { colors, IconName, radius, space, type } from '../theme';
+import { Card, Icon, IconCircle, SectionLabel } from '../ui';
 import { Button } from './Button';
 
 interface Props {
@@ -14,87 +15,94 @@ interface Props {
   onPhotographNutrition?: () => void;
 }
 
-const STATUS = {
-  eligible: { icon: '❤️', text: 'Täyttää Sydänmerkin kriteerit', color: colors.green },
-  notEligible: { icon: '✕', text: 'Ei täytä Sydänmerkin kriteerejä', color: colors.red },
-  unknown: { icon: '?', text: 'Ei voida arvioida kokonaan', color: colors.yellow },
-  excluded: { icon: '–', text: 'Tuoteryhmä ei voi saada Sydänmerkkiä', color: colors.grey },
+const STATUS: Record<HeartAssessment['status'], { icon: IconName; text: string; color: string; bg: string }> = {
+  eligible: { icon: 'heart', text: 'Täyttää Sydänmerkin kriteerit', color: colors.heart, bg: colors.redBg },
+  notEligible: { icon: 'close', text: 'Ei täytä Sydänmerkin kriteerejä', color: colors.textSoft, bg: colors.surfaceAlt },
+  unknown: { icon: 'help', text: 'Ei voida arvioida kokonaan', color: colors.yellow, bg: colors.yellowBg },
+  excluded: { icon: 'remove', text: 'Tuoteryhmä ei voi saada Sydänmerkkiä', color: colors.grey, bg: colors.greyBg },
 };
 
-const RULE_ICON: Record<RuleStatus, { icon: string; color: string }> = {
-  pass: { icon: '✓', color: colors.green },
-  fail: { icon: '✕', color: colors.red },
-  unknown: { icon: '?', color: colors.yellow },
+const RULE_ICON: Record<RuleStatus, { icon: IconName; color: string }> = {
+  pass: { icon: 'checkmark-circle', color: colors.green },
+  fail: { icon: 'close-circle', color: colors.red },
+  unknown: { icon: 'help-circle', color: colors.yellow },
 };
 
 export function HeartSection({ officialSource, assessment, groupChosenByUser, onChangeGroup, onPhotographNutrition }: Props) {
   const missingValues = assessment?.results.some((r) => r.status === 'unknown' && r.detail.includes('puuttuu') && !r.label.startsWith('Ei lisättyä'));
+  const status = assessment ? STATUS[assessment.status] : undefined;
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.title}>Sydänmerkki</Text>
-
-      {officialSource && (
-        <View style={styles.official}>
-          <Text style={styles.officialText}>❤️ Tuotteella on Sydänmerkki</Text>
-          <Text style={styles.small}>{officialSource}</Text>
-        </View>
-      )}
-
-      {assessment ? (
-        <>
-          <View style={styles.statusRow}>
-            <Text style={[styles.statusIcon, { color: STATUS[assessment.status].color }]}>{STATUS[assessment.status].icon}</Text>
+    <View>
+      <SectionLabel>Sydänmerkki</SectionLabel>
+      <Card style={{ gap: space.md }}>
+        {officialSource && (
+          <View style={styles.official}>
+            <Icon name="heart" size={18} color={colors.heart} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.statusText, { color: STATUS[assessment.status].color }]}>{STATUS[assessment.status].text}</Text>
-              <Pressable onPress={onChangeGroup} disabled={!onChangeGroup}>
-                <Text style={styles.small}>
-                  Tuoteryhmä: {assessment.group.name}
-                  {groupChosenByUser ? '' : ' (arvio)'}
-                  {onChangeGroup ? '  · Vaihda' : ''}
-                </Text>
-              </Pressable>
+              <Text style={[type.bodyStrong, { color: colors.heart }]}>Tuotteella on Sydänmerkki</Text>
+              <Text style={type.small}>{officialSource}</Text>
             </View>
           </View>
+        )}
 
-          {assessment.group.excluded && <Text style={styles.small}>{assessment.group.excluded}</Text>}
-
-          {assessment.results.map((r, i) => (
-            <View key={i} style={styles.rule}>
-              <Text style={[styles.ruleIcon, { color: RULE_ICON[r.status].color }]}>{RULE_ICON[r.status].icon}</Text>
-              <Text style={styles.ruleText}>
-                <Text style={{ fontWeight: '600' }}>{r.label}</Text>: {r.detail}
-              </Text>
+        {assessment && status ? (
+          <>
+            <View style={styles.statusRow}>
+              <IconCircle name={status.icon} color={status.color} bg={status.bg} size={40} />
+              <View style={{ flex: 1 }}>
+                <Text style={[type.heading, { color: status.color === colors.textSoft ? colors.text : status.color }]}>{status.text}</Text>
+                <Text style={type.small}>
+                  {assessment.group.name}
+                  {groupChosenByUser ? '' : ' (arvio)'}
+                </Text>
+              </View>
             </View>
-          ))}
-          {assessment.group.note && <Text style={styles.small}>{assessment.group.note}</Text>}
-        </>
-      ) : (
-        <View style={{ gap: 8 }}>
-          <Text style={styles.body}>Tuoteryhmää ei tunnistettu.</Text>
-          {onChangeGroup && <Button label="Valitse tuoteryhmä" variant="secondary" onPress={onChangeGroup} />}
-        </View>
-      )}
+            {onChangeGroup && (
+              <Pressable onPress={onChangeGroup} style={styles.change} hitSlop={8}>
+                <Icon name="swap-horizontal" size={16} color={colors.primary} />
+                <Text style={styles.changeText}>Vaihda tuoteryhmä</Text>
+              </Pressable>
+            )}
 
-      {missingValues && onPhotographNutrition && (
-        <Button label="📷 Kuvaa ravintoarvotaulukko" variant="secondary" onPress={onPhotographNutrition} />
-      )}
-      <Text style={styles.small}>Arvio perustuu Sydänmerkin julkisiin tuoteryhmäkriteereihin (per 100 g). Se ei ole virallinen merkki.</Text>
+            {assessment.group.excluded && <Text style={type.small}>{assessment.group.excluded}</Text>}
+
+            {assessment.results.length > 0 && (
+              <View style={styles.rules}>
+                {assessment.results.map((r, i) => (
+                  <View key={i} style={styles.rule}>
+                    <Icon name={RULE_ICON[r.status].icon} size={18} color={RULE_ICON[r.status].color} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={type.bodyStrong}>{r.label}</Text>
+                      <Text style={type.small}>{r.detail}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+            {assessment.group.note && <Text style={type.small}>{assessment.group.note}</Text>}
+          </>
+        ) : (
+          <View style={{ gap: space.sm }}>
+            <Text style={type.body}>Tuoteryhmää ei tunnistettu.</Text>
+            {onChangeGroup && <Button label="Valitse tuoteryhmä" icon="list" variant="secondary" onPress={onChangeGroup} />}
+          </View>
+        )}
+
+        {missingValues && onPhotographNutrition && (
+          <Button label="Kuvaa ravintoarvotaulukko" icon="camera-outline" variant="secondary" onPress={onPhotographNutrition} />
+        )}
+        <Text style={type.small}>Arvio perustuu Sydänmerkin julkisiin tuoteryhmäkriteereihin (per 100 g). Se ei ole virallinen merkki.</Text>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, gap: 10 },
-  title: { fontSize: 16, fontWeight: '700', color: colors.text },
-  official: { backgroundColor: colors.redBg, borderRadius: 10, padding: 10 },
-  officialText: { fontSize: 16, fontWeight: '700', color: colors.red },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  statusIcon: { fontSize: 26, fontWeight: '800', width: 30, textAlign: 'center' },
-  statusText: { fontSize: 17, fontWeight: '700' },
-  rule: { flexDirection: 'row', gap: 8 },
-  ruleIcon: { fontSize: 15, fontWeight: '800', width: 16, textAlign: 'center' },
-  ruleText: { flex: 1, fontSize: 14, color: colors.text },
-  body: { fontSize: 15, color: colors.text },
-  small: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  official: { flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: colors.redBg, borderRadius: radius.md, padding: space.md },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  change: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  changeText: { fontSize: 14, fontWeight: '700', color: colors.primary },
+  rules: { gap: space.md, backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: space.md },
+  rule: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' },
 });

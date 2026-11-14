@@ -46,7 +46,8 @@ import {
   setOverride,
   Settings,
 } from './src/storage';
-import { colors } from './src/theme';
+import { colors, IconName } from './src/theme';
+import { Icon } from './src/ui';
 import { useKeyboardHeight } from './src/useKeyboardHeight';
 import heartSymbolData from './src/data/sydanmerkki.json';
 
@@ -81,12 +82,12 @@ function heartSymbolSource(product?: Product): string | null {
   return null;
 }
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'scan', label: 'Skannaa', icon: '📷' },
-  { id: 'supplements', label: 'Lisäravinteet', icon: '💊' },
-  { id: 'history', label: 'Historia', icon: '🕘' },
-  { id: 'check', label: 'Tarkista', icon: '✍️' },
-  { id: 'settings', label: 'Asetukset', icon: '⚙️' },
+const TABS: { id: Tab; label: string; icon: IconName; activeIcon: IconName }[] = [
+  { id: 'scan', label: 'Skannaa', icon: 'scan-outline', activeIcon: 'scan' },
+  { id: 'supplements', label: 'Ravinteet', icon: 'flask-outline', activeIcon: 'flask' },
+  { id: 'history', label: 'Historia', icon: 'time-outline', activeIcon: 'time' },
+  { id: 'check', label: 'Tarkista', icon: 'document-text-outline', activeIcon: 'document-text' },
+  { id: 'settings', label: 'Asetukset', icon: 'options-outline', activeIcon: 'options' },
 ];
 
 export default function App() {
@@ -453,6 +454,7 @@ function Main() {
       : undefined;
     content = (
       <ResultView
+        onBack={closeOverlay}
         product={product}
         ingredientsText={overlay.text}
         analysis={analysis}
@@ -535,7 +537,9 @@ function Main() {
   } else if (overlay?.kind === 'reading') {
     content = (
       <View style={styles.reading}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.readingIcon}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
         <Text style={styles.readingText}>{overlay.url ? 'Luetaan jaettua sivua…' : 'Luetaan jaettua kuvaa…'}</Text>
         {overlay.subject ? <Text style={styles.readingSmall}>{overlay.subject}</Text> : null}
         <Pressable onPress={closeOverlay}>
@@ -570,7 +574,7 @@ function Main() {
       />
     );
   } else if (tab === 'scan') {
-    content = <ScanScreen busy={busy} onBarcode={handleBarcode} launchRequest={launchRequest} />;
+    content = <ScanScreen busy={busy} onBarcode={handleBarcode} launchRequest={launchRequest} onOpenRecent={openHistoryItem} />;
   } else if (tab === 'history') {
     content = <HistoryScreen overrides={overrides} onOpen={openHistoryItem} />;
   } else if (tab === 'check') {
@@ -582,11 +586,8 @@ function Main() {
   const keyboardOpen = keyboardHeight > 0;
   return (
     // Näppäimistön korkeus ei sisällä navigointipalkkia, joten alareunan tila lisätään aina.
-    <View style={[styles.root, { paddingBottom: insets.bottom + keyboardHeight }]}>
-      <StatusBar style="light" />
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={styles.headerTitle}>FODMAP-tutka</Text>
-      </View>
+    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom + keyboardHeight }]}>
+      <StatusBar style="dark" />
       <View style={styles.content}>{content}</View>
       {overlay?.kind === 'reading' && overlay.url && (
         <SharedPageReader key={overlay.url} url={overlay.url} onResult={(m) => finishSharedPage(m, overlay.subject)} />
@@ -596,14 +597,19 @@ function Main() {
       )}
       {!overlay && !keyboardOpen && (
         <View style={styles.tabBar}>
-          {TABS.map((t) => (
-            <Pressable key={t.id} style={styles.tab} onPress={() => setTab(t.id)}>
-              <Text style={styles.tabIcon}>{t.icon}</Text>
-              <Text style={[styles.tabLabel, tab === t.id && styles.tabLabelActive]} numberOfLines={1} adjustsFontSizeToFit>
-                {t.label}
-              </Text>
-            </Pressable>
-          ))}
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            return (
+              <Pressable key={t.id} style={styles.tab} onPress={() => setTab(t.id)}>
+                <View style={[styles.tabIcon, active && styles.tabIconActive]}>
+                  <Icon name={active ? t.activeIcon : t.icon} size={21} color={active ? colors.primary : colors.muted} />
+                </View>
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]} numberOfLines={1}>
+                  {t.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </View>
@@ -611,17 +617,18 @@ function Main() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.primary },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: colors.primaryText },
-  tabBar: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  tabIcon: { fontSize: 20 },
-  tabLabel: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  reading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24 },
-  readingText: { fontSize: 18, fontWeight: '600', color: colors.text },
-  readingSmall: { fontSize: 14, color: colors.muted, textAlign: 'center' },
-  readingCancel: { fontSize: 16, color: colors.primary, fontWeight: '600', padding: 8 },
+  tabBar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.surface, paddingTop: 6, paddingBottom: 4 },
+  tab: { flex: 1, alignItems: 'center', gap: 2 },
+  // Aktiivisen välilehden ikonin takana pyöreä korostus (Material 3 -tyyli).
+  tabIcon: { width: 56, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  tabIconActive: { backgroundColor: colors.primarySoft },
+  tabLabel: { fontSize: 11, color: colors.muted, fontWeight: '600' },
+  reading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
+  readingIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  readingText: { fontSize: 19, fontWeight: '700', color: colors.text },
+  readingSmall: { fontSize: 14, color: colors.textSoft, textAlign: 'center' },
+  readingCancel: { fontSize: 16, color: colors.primary, fontWeight: '700', padding: 12, marginTop: 8 },
   tabLabelActive: { color: colors.primary, fontWeight: '700' },
 });

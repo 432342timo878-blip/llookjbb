@@ -1,36 +1,41 @@
-import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { colors } from '../theme';
+import { colors, IconName, radius } from '../theme';
+import { Icon } from '../ui';
 
 interface Props {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  /** primary: täytetty pääväri. secondary: valkoinen reunuksella. ghost: pelkkä teksti. */
+  variant?: 'primary' | 'secondary' | 'ghost';
+  icon?: IconName;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
-export function Button({ label, onPress, variant = 'primary', disabled, style }: Props) {
-  const primary = variant === 'primary';
+export function Button({ label, onPress, variant = 'primary', icon, disabled, style }: Props) {
+  const fg = variant === 'primary' ? colors.primaryText : colors.primary;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.button,
-        primary ? styles.primary : styles.secondary,
-        (pressed || disabled) && { opacity: 0.6 },
-        style,
-      ]}
+      style={({ pressed }) => [styles.button, styles[variant], (pressed || disabled) && { opacity: 0.55 }, style]}
     >
-      <Text style={[styles.label, { color: primary ? colors.primaryText : colors.primary }]}>{label}</Text>
+      <View style={styles.inner}>
+        {icon && <Icon name={icon} size={19} color={fg} />}
+        <Text style={[styles.label, { color: fg }]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  button: { minHeight: 52, paddingHorizontal: 18, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  inner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   primary: { backgroundColor: colors.primary },
-  secondary: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.primary },
+  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  ghost: { backgroundColor: 'transparent', minHeight: 44 },
   label: { fontSize: 16, fontWeight: '700' },
 });

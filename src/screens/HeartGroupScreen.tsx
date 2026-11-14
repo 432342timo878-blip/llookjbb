@@ -1,8 +1,9 @@
-import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { HEART_GROUPS } from '../analysis/heartCriteria';
 import { Button } from '../components/Button';
-import { colors } from '../theme';
+import { colors, radius, space, type } from '../theme';
+import { Icon, ListRow, ScreenTitle } from '../ui';
 
 interface Props {
   selected?: string;
@@ -18,35 +19,43 @@ const SECTIONS = [...new Set(HEART_GROUPS.map((g) => g.category))].map((category
 /** Sydänmerkki-tuoteryhmän valinta, kun arvio osui väärin. */
 export function HeartGroupScreen({ selected, onSelect, onCancel }: Props) {
   return (
-    <View style={{ flex: 1 }}>
-      <SectionList
-        sections={SECTIONS}
-        keyExtractor={(g) => g.id}
-        contentContainerStyle={{ padding: 12, gap: 6 }}
-        ListHeaderComponent={<Text style={styles.help}>Valitse tuotteelle oikea Sydänmerkki-tuoteryhmä.</Text>}
-        renderSectionHeader={({ section }) => <Text style={styles.header}>{section.title}</Text>}
-        renderItem={({ item }) => (
-          <Pressable style={[styles.row, item.id === selected && styles.rowSelected]} onPress={() => onSelect(item.id)}>
-            <Text style={styles.name}>{item.name}</Text>
-            {item.excluded && <Text style={styles.small}>Ei voi saada Sydänmerkkiä</Text>}
-          </Pressable>
-        )}
-        ListFooterComponent={
-          <View style={{ gap: 10, marginTop: 12 }}>
-            {selected && <Button label="Palauta automaattinen arvio" variant="secondary" onPress={() => onSelect(null)} />}
-            <Button label="Peruuta" variant="secondary" onPress={onCancel} />
+    <SectionList
+      sections={SECTIONS}
+      keyExtractor={(g) => g.id}
+      contentContainerStyle={styles.container}
+      stickySectionHeadersEnabled={false}
+      ListHeaderComponent={
+        <View style={{ gap: space.md }}>
+          <ScreenTitle title="Tuoteryhmä" subtitle="Valitse tuotteelle oikea Sydänmerkki-tuoteryhmä." onBack={onCancel} />
+          {selected && <Button label="Palauta automaattinen arvio" icon="refresh" variant="secondary" onPress={() => onSelect(null)} />}
+        </View>
+      }
+      renderSectionHeader={({ section }) => <Text style={[type.label, styles.header]}>{section.title}</Text>}
+      renderItem={({ item, index, section }) => {
+        const first = index === 0;
+        const last = index === section.data.length - 1;
+        const isSelected = item.id === selected;
+        return (
+          <View style={[styles.rowWrap, first && styles.rowFirst, last && styles.rowLast]}>
+            <ListRow
+              title={item.name}
+              subtitle={item.excluded ? 'Ei voi saada Sydänmerkkiä' : undefined}
+              trailing={isSelected ? <Icon name="checkmark-circle" size={22} color={colors.primary} /> : <View style={styles.radio} />}
+              onPress={() => onSelect(item.id)}
+              last={last}
+            />
           </View>
-        }
-      />
-    </View>
+        );
+      }}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  help: { fontSize: 15, color: colors.text, marginBottom: 6 },
-  header: { fontSize: 14, fontWeight: '700', color: colors.muted, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  row: { backgroundColor: colors.surface, padding: 12, borderRadius: 10 },
-  rowSelected: { borderWidth: 2, borderColor: colors.primary },
-  name: { fontSize: 15, color: colors.text },
-  small: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  container: { paddingHorizontal: space.xl, paddingBottom: space.xxl },
+  header: { marginTop: space.xl, marginBottom: space.sm },
+  rowWrap: { backgroundColor: colors.surface, paddingHorizontal: space.lg, borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border },
+  rowFirst: { borderTopWidth: 1, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  rowLast: { borderBottomWidth: 1, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border },
 });

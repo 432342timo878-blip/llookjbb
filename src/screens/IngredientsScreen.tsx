@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '../components/Button';
 import { photographIngredients } from '../ocr';
-import { colors } from '../theme';
+import { colors, radius, space, type } from '../theme';
+import { Card, Notice, ScreenTitle, SectionLabel } from '../ui';
 
 interface Props {
   /** Kun viivakoodi on annettu, luettelo tallennetaan tuotteelle seuraavia skannauksia varten. */
@@ -22,17 +23,19 @@ export function IngredientsScreen({ barcode, initialName = '', initialText = '',
   const [name, setName] = useState(initialName);
   const [text, setText] = useState(initialText);
   const [recognizing, setRecognizing] = useState(false);
+  const [recognized, setRecognized] = useState(false);
 
   const photograph = async () => {
     setRecognizing(true);
     try {
-      const recognized = await photographIngredients();
-      if (recognized === null) return;
-      if (recognized.length < 5) {
+      const result = await photographIngredients();
+      if (result === null) return;
+      if (result.length < 5) {
         Alert.alert('Tekstiä ei tunnistettu', 'Kuvaa ainesosaluettelo läheltä ja hyvässä valossa, ja rajaa vain luettelo.');
         return;
       }
-      setText(recognized);
+      setText(result);
+      setRecognized(true);
     } catch (e) {
       Alert.alert('Kuvaus epäonnistui', e instanceof Error ? e.message : String(e));
     } finally {
@@ -42,54 +45,70 @@ export function IngredientsScreen({ barcode, initialName = '', initialText = '',
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>{barcode ? 'Tuotetta ei löytynyt' : 'Tarkista ainesosaluettelo'}</Text>
-      <Text style={styles.body}>
-        {barcode
-          ? `Viivakoodi ${barcode}. Kuvaa ainesosaluettelo pakkauksesta tai etsi tuote verkkokaupoista (S-kaupat, K-Ruoka, Tokmanni). Tiedot tallennetaan, joten seuraavalla kerralla tulos tulee heti.`
-          : 'Kuvaa ainesosaluettelo pakkauksesta, tai kirjoita tai liitä se alle.'}
-      </Text>
-
-      {lookupInfo && <Text style={styles.small}>{lookupInfo}</Text>}
-
-      <Button label={recognizing ? 'Tunnistetaan tekstiä…' : '📷 Kuvaa ainesosaluettelo'} onPress={photograph} disabled={recognizing} />
-      {recognizing && <ActivityIndicator />}
-      {barcode && onSearchStores && (
-        <Button label="🔎 Etsi verkkokaupoista" variant="secondary" onPress={() => onSearchStores(barcode)} />
-      )}
-
-      {barcode && (
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Tuotteen nimi"
-          style={styles.input}
-          placeholderTextColor={colors.muted}
-        />
-      )}
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="Ainesosat…"
-        multiline
-        textAlignVertical="top"
-        autoCapitalize="none"
-        style={[styles.input, styles.textArea]}
-        placeholderTextColor={colors.muted}
+      <ScreenTitle
+        title={barcode ? 'Tuotetta ei löytynyt' : 'Tarkista'}
+        subtitle={
+          barcode
+            ? `Viivakoodi ${barcode}. Kuvaa ainesosaluettelo tai etsi tuote verkkokaupoista. Tiedot tallentuvat, joten ensi kerralla tulos tulee heti.`
+            : 'Kuvaa pakkauksen ainesosaluettelo tai liitä se tekstinä, niin näet sopiiko tuote.'
+        }
+        onBack={onCancel}
       />
-      {text.length > 0 && <Text style={styles.small}>Tarkista tunnistettu teksti ja korjaa tarvittaessa.</Text>}
-      <View style={{ gap: 10 }}>
-        <Button label="Tarkista" onPress={() => onSubmit(name, text)} disabled={text.trim().length === 0} />
-        {onCancel && <Button label="Peruuta" variant="secondary" onPress={onCancel} />}
+
+      {lookupInfo && (
+        <Notice icon="information-circle-outline" color={colors.textSoft} bg={colors.surfaceAlt}>
+          {lookupInfo}
+        </Notice>
+      )}
+
+      <View style={{ gap: space.sm }}>
+        <Button
+          label={recognizing ? 'Tunnistetaan tekstiä…' : 'Kuvaa ainesosaluettelo'}
+          icon="camera-outline"
+          onPress={photograph}
+          disabled={recognizing}
+        />
+        {barcode && onSearchStores && (
+          <Button label="Etsi verkkokaupoista" icon="globe-outline" variant="secondary" onPress={() => onSearchStores(barcode)} />
+        )}
       </View>
+
+      <View>
+        <SectionLabel>{barcode ? 'Tai kirjoita itse' : 'Ainesosaluettelo'}</SectionLabel>
+        <Card style={{ gap: space.md }}>
+          {barcode && (
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Tuotteen nimi"
+              style={styles.input}
+              placeholderTextColor={colors.muted}
+            />
+          )}
+          <TextInput
+            value={text}
+            onChangeText={(t) => {
+              setText(t);
+              setRecognized(false);
+            }}
+            placeholder="Esim. vehnäjauho, sokeri, kasvirasva, suola…"
+            multiline
+            textAlignVertical="top"
+            autoCapitalize="none"
+            style={[styles.input, styles.textArea]}
+            placeholderTextColor={colors.muted}
+          />
+          {recognized && <Text style={type.small}>Tunnistettu kuvasta. Tarkista teksti ja korjaa tarvittaessa.</Text>}
+        </Card>
+      </View>
+
+      <Button label="Tarkista" icon="checkmark" onPress={() => onSubmit(name, text)} disabled={text.trim().length === 0} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12 },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  body: { fontSize: 15, color: colors.muted },
-  small: { fontSize: 13, color: colors.muted },
-  input: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, fontSize: 16, color: colors.text },
-  textArea: { minHeight: 160 },
+  container: { paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.lg },
+  input: { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: 12, fontSize: 16, color: colors.text },
+  textArea: { minHeight: 150 },
 });
