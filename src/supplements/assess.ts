@@ -2,7 +2,7 @@
 // aineet ja pakkauksen loppuminen. Kaikki säännöt ovat kiinteitä – ei tekoälyä.
 
 import { analyzeIngredients } from '../analysis/analyze';
-import { formatAmount, NUTRIENT_BY_ID, NutrientAmounts, NutrientId, NUTRIENTS } from './nutrients';
+import { CustomAmount, formatAmount, NUTRIENT_BY_ID, NutrientAmounts, NutrientId, NUTRIENTS, Unit } from './nutrients';
 
 export interface Supplement {
   id: string;
@@ -11,6 +11,8 @@ export interface Supplement {
   brand?: string;
   /** Etiketin arvot `doseUnits` kappaleesta. */
   amounts: NutrientAmounts;
+  /** Omat ainesosat, samoin `doseUnits` kappaleesta. */
+  custom?: CustomAmount[];
   doseUnits: number;
   /** Montako kappaletta käyttäjä ottaa päivässä. */
   unitsPerDay: number;
@@ -35,12 +37,22 @@ export interface NutrientTotal {
   status: 'over' | 'ok' | 'low' | 'none';
 }
 
+export interface CustomTotal {
+  name: string;
+  unit: Unit;
+  total: number;
+  sources: string[];
+}
+
 export interface StackAssessment {
   totals: NutrientTotal[];
+  /** Omat ainesosat laskettuna yhteen nimen ja yksikön mukaan. */
+  customTotals: CustomTotal[];
   warnings: Warning[];
 }
 
 export const dailyAmount = (s: Supplement, id: NutrientId) => ((s.amounts[id] ?? 0) * s.unitsPerDay) / Math.max(s.doseUnits, 1);
+export const dailyCustom = (s: Supplement, c: CustomAmount) => (c.amount * s.unitsPerDay) / Math.max(s.doseUnits, 1);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -65,8 +77,25 @@ export function assessStack(stack: Supplement[], now = Date.now()): StackAssessm
     totals.push({ id: def.id, total, sources: sources.map((s) => s.name), status });
   }
 
+  // Omat ainesosat: sama nimi (kirjainkoosta riippumatta) ja yksikkö lasketaan yhteen.
+  const custom = new Map<string, CustomTotal>();
+  for (const s of stack) {
+    for (const c of s.custom ?? []) {
+      if (!c.name.trim() || !(c.amount > 0)) continue;
+      const key = `${c.name.trim().toLowerCase()}|${c.unit}`;
+      const t = custom.get(key) ?? { name: c.name.trim(), unit: c.unit, total: 0, sources: [] };
+      t.total += dailyCustom(s, c);
+      if (!t.sources.includes(s.name)) t.sources.push(s.name);
+      custom.set(key, t);
+    }
+  }
+  const customTotals = [...custom.values()];
+
   const warnings: Warning[] = [];
   const total = (id: NutrientId) => totals.find((t) => t.id === id)?.total ?? 0;
+  for (const t of customTotals) {
+    if (t.sources.length >= 2) warnings.push({ level: 'info', text: `${t.name} tulee ${t.sources.length} valmisteesta: ${t.sources.join(', ')}.` });
+  }
 
   for (const t of totals) {
     const def = NUTRIENT_BY_ID[t.id];
@@ -115,5 +144,5 @@ export function assessStack(stack: Supplement[], now = Date.now()): StackAssessm
 
   const order: Record<Level, number> = { bad: 0, caution: 1, info: 2 };
   warnings.sort((a, b) => order[a.level] - order[b.level]);
-  return { totals, warnings };
+  return { totals, customTotals, warnings };
 }

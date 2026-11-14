@@ -3,8 +3,8 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, Text
 
 import { Button } from '../components/Button';
 import { photographText } from '../ocr';
-import { assessStack, dailyAmount, Supplement } from '../supplements/assess';
-import { formatAmount, NUTRIENT_BY_ID, NutrientAmounts, NutrientId, NUTRIENTS, parseSupplementText } from '../supplements/nutrients';
+import { assessStack, dailyAmount, dailyCustom, Supplement } from '../supplements/assess';
+import { formatAmount, NutrientAmounts, NutrientId, NUTRIENTS, parseSupplementText, Unit } from '../supplements/nutrients';
 import { colors } from '../theme';
 import { LEVEL_STYLE } from './SupplementsScreen';
 
@@ -22,6 +22,8 @@ interface Props {
   onCancel: () => void;
 }
 
+const NEXT_UNIT: Record<Unit, Unit> = { mg: 'g', g: 'µg', 'µg': 'mg' };
+
 const toText = (n: number | undefined) => (n === undefined ? '' : String(n).replace('.', ','));
 const toNumber = (t: string) => {
   const n = parseFloat(t.replace(',', '.'));
@@ -35,6 +37,9 @@ export function SupplementEditScreen({ draft, others, isNew, needsLabel, lookupI
   const [packSize, setPackSize] = useState(toText(draft.packSize));
   const [amounts, setAmounts] = useState<Record<string, string>>(
     Object.fromEntries(Object.entries(draft.amounts).map(([k, v]) => [k, toText(v)])),
+  );
+  const [custom, setCustom] = useState<{ name: string; amount: string; unit: Unit }[]>(
+    (draft.custom ?? []).map((c) => ({ name: c.name, amount: toText(c.amount), unit: c.unit })),
   );
   const [packStartedAt, setPackStartedAt] = useState(draft.packStartedAt);
   const [picking, setPicking] = useState(false);
@@ -51,6 +56,9 @@ export function SupplementEditScreen({ draft, others, isNew, needsLabel, lookupI
       ...draft,
       name: name.trim() || 'Nimetön lisäravinne',
       amounts: parsed,
+      custom: custom
+        .map((c) => ({ name: c.name.trim(), amount: toNumber(c.amount) ?? 0, unit: c.unit }))
+        .filter((c) => c.name && c.amount > 0),
       doseUnits: toNumber(doseUnits) ?? 1,
       unitsPerDay: toNumber(unitsPerDay) ?? 1,
       packSize: pack,
@@ -111,7 +119,7 @@ export function SupplementEditScreen({ draft, others, isNew, needsLabel, lookupI
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Sisältö ({doseUnits || '1'} kpl)</Text>
-        {shown.length === 0 && <Text style={styles.small}>Ei vielä ravintoaineita.</Text>}
+        {shown.length === 0 && custom.length === 0 && <Text style={styles.small}>Ei vielä ravintoaineita.</Text>}
         {shown.map((def) => (
           <View key={def.id} style={styles.nutrientRow}>
             <Text style={styles.nutrientName}>{def.name}</Text>
@@ -154,10 +162,43 @@ export function SupplementEditScreen({ draft, others, isNew, needsLabel, lookupI
             ))}
           </View>
         )}
+
+        {custom.map((c, i) => (
+          <View key={i} style={styles.nutrientRow}>
+            <TextInput
+              value={c.name}
+              onChangeText={(t) => setCustom((list) => list.map((x, j) => (j === i ? { ...x, name: t } : x)))}
+              placeholder="Ainesosa, esim. MSM"
+              style={[styles.amountInput, styles.customName]}
+              placeholderTextColor={colors.muted}
+            />
+            <TextInput
+              value={c.amount}
+              onChangeText={(t) => setCustom((list) => list.map((x, j) => (j === i ? { ...x, amount: t } : x)))}
+              keyboardType="decimal-pad"
+              style={styles.amountInput}
+            />
+            {/* Yksikkö vaihtuu napauttamalla: mg → g → µg. */}
+            <Pressable onPress={() => setCustom((list) => list.map((x, j) => (j === i ? { ...x, unit: NEXT_UNIT[x.unit] } : x)))}>
+              <Text style={[styles.unit, styles.unitToggle]}>{c.unit}</Text>
+            </Pressable>
+            <Pressable onPress={() => setCustom((list) => list.filter((_, j) => j !== i))}>
+              <Text style={styles.remove}>✕</Text>
+            </Pressable>
+          </View>
+        ))}
+        <Pressable onPress={() => setCustom((list) => [...list, { name: '', amount: '', unit: 'mg' }])}>
+          <Text style={styles.link}>+ Oma ainesosa (mikä tahansa, jota listalla ei ole)</Text>
+        </Pressable>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{isNew ? 'Jos lisäät tämän pinoosi' : 'Tämän vaikutus pinoosi'}</Text>
+        {(supplement.custom ?? []).map((c, i) => (
+          <Text key={`c${i}`} style={styles.small}>
+            {c.name}: {formatAmount(dailyCustom(supplement, c), c.unit)}/vrk tästä valmisteesta
+          </Text>
+        ))}
         {shown.map((def) => (
           <Text key={def.id} style={styles.small}>
             {def.name}: {formatAmount(dailyAmount(supplement, def.id), def.unit)}/vrk tästä valmisteesta
@@ -214,6 +255,8 @@ const styles = StyleSheet.create({
   nutrientName: { flex: 1, fontSize: 15, color: colors.text },
   amountInput: { width: 80, borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 6, fontSize: 15, textAlign: 'right', color: colors.text },
   unit: { width: 28, fontSize: 14, color: colors.muted },
+  customName: { flex: 1, width: undefined, textAlign: 'left' },
+  unitToggle: { color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
   remove: { fontSize: 16, color: colors.muted, padding: 4 },
   link: { fontSize: 15, color: colors.primary, fontWeight: '600', paddingVertical: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

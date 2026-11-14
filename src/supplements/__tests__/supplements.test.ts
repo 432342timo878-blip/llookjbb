@@ -25,7 +25,7 @@ describe('parseSupplementText', () => {
       'magnesium 125 mg (33% av daglig rekommenderad dos)',
       'L-tryptofaani 50 mg',
     ].join('\n');
-    expect(parseSupplementText(lines).amounts).toEqual({ magnesium: 125 });
+    expect(parseSupplementText(lines).amounts).toEqual({ magnesium: 125, tryptophan: 50 });
   });
 
   it('reads shop tables with dose ranges as the upper end', () => {
@@ -80,5 +80,29 @@ describe('isSupplementLabel', () => {
       isSupplementLabel('Valio rasvaton maito. Ravintosisältö 100 g: Energia 140 kJ, Rasva 0,1 g, Hiilihydraatit 4,9 g, Kalsium 120 mg, D-vitamiini 1 µg'),
     ).toBe(false);
     expect(isSupplementLabel('Ainesosat: vesi, vehnäjauho, suola')).toBe(false);
+  });
+});
+
+describe('non-vitamin ingredients and custom items', () => {
+  const base = (s: Partial<Supplement>): Supplement => ({ id: s.name ?? 'x', name: 'x', amounts: {}, doseUnits: 1, unitsPerDay: 1, ...s });
+
+  it('reads protein, fibre, caffeine and amino acids from labels', () => {
+    const label = 'Annos (30 g) sisältää: Proteiini 24 g, Ravintokuitu 2,5 g, Kofeiini 200 mg, L-teaniini 100 mg, Magnesium (magnesiumglysinaattina) 100 mg';
+    expect(parseSupplementText(label).amounts).toEqual({ protein: 24, fiber: 2.5, caffeine: 200, theanine: 100, magnesium: 100 });
+  });
+
+  it('flags caffeine over the EFSA safe level', () => {
+    const r = assessStack([base({ name: 'Pre-workout', amounts: { caffeine: 300 } }), base({ name: 'Kahvikapseli', amounts: { caffeine: 150 } })]);
+    expect(r.warnings[0]).toMatchObject({ level: 'bad' });
+    expect(r.warnings[0].text).toMatch(/Kofeiini: 450 mg/);
+  });
+
+  it('adds up custom ingredients by name and unit across products', () => {
+    const r = assessStack([
+      base({ name: 'Nivel', custom: [{ name: 'MSM', amount: 500, unit: 'mg' }], doseUnits: 1, unitsPerDay: 2 }),
+      base({ name: 'Liikkuvuus', custom: [{ name: 'msm', amount: 250, unit: 'mg' }] }),
+    ]);
+    expect(r.customTotals).toEqual([{ name: 'MSM', unit: 'mg', total: 1250, sources: ['Nivel', 'Liikkuvuus'] }]);
+    expect(r.warnings.some((w) => w.text.startsWith('MSM tulee 2 valmisteesta'))).toBe(true);
   });
 });

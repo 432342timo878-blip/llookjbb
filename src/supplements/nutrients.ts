@@ -9,7 +9,9 @@ export type NutrientId =
   | 'b1' | 'b2' | 'b3' | 'b5' | 'b6' | 'b7' | 'b9' | 'b12'
   | 'calcium' | 'magnesium' | 'iron' | 'zinc' | 'copper' | 'selenium' | 'iodine'
   | 'manganese' | 'chromium' | 'molybdenum' | 'potassium'
-  | 'omega3' | 'creatine';
+  | 'omega3' | 'creatine'
+  | 'protein' | 'fiber' | 'collagen' | 'caffeine' | 'melatonin' | 'theanine' | 'tryptophan'
+  | 'glycine' | 'glutamine' | 'betaAlanine' | 'citrulline' | 'ashwagandha' | 'coq10' | 'sodium';
 
 export type Unit = 'µg' | 'mg' | 'g';
 
@@ -56,6 +58,21 @@ export const NUTRIENTS: NutrientDef[] = [
   { id: 'potassium', name: 'Kalium', unit: 'mg', ri: 2000, label: /kalium(?!jod)|potassium(?! iodide)/ },
   { id: 'omega3', name: 'Omega-3 (EPA + DHA)', unit: 'mg', ri: 250, ul: 5000, note: 'EFSA: enintään 5 g EPA+DHA päivässä on turvallista.', label: /epa\s*\+\s*dha|omega-?3/ },
   { id: 'creatine', name: 'Kreatiini', unit: 'g', note: 'Tavallinen annos on 3–5 g päivässä.', label: /kreatiini|creatine/ },
+  // Muut yleiset lisäravinteiden ainesosat: ei EU:n viitearvoa, ylärajat vain EFSA:n arvioimille.
+  { id: 'protein', name: 'Proteiini', unit: 'g', label: /proteiini|protein(?!ase)/ },
+  { id: 'fiber', name: 'Kuitu', unit: 'g', note: 'Psyllium ja kaurakuitu sopivat IBS:ään yleensä hyvin; inuliini ja FOS ovat FODMAPeja.', label: /ravintokuitu|kuitu|fibre|fiber|psyllium/ },
+  { id: 'collagen', name: 'Kollageeni', unit: 'g', label: /kollageeni|collagen/ },
+  { id: 'caffeine', name: 'Kofeiini', unit: 'mg', ul: 400, note: 'EFSA: aikuisille enintään 400 mg päivässä ja 200 mg kerralla.', label: /kofeiini|caffeine|koffein/ },
+  { id: 'melatonin', name: 'Melatoniini', unit: 'mg', note: 'Suomessa ravintolisässä enintään 1,9 mg päivässä; suuremmat annokset ovat lääkettä.', label: /melatoniini|melatonin/ },
+  { id: 'theanine', name: 'L-teaniini', unit: 'mg', label: /teaniini|theanine|teanin/ },
+  { id: 'tryptophan', name: 'L-tryptofaani', unit: 'mg', label: /tryptofaani|tryptophan|tryptofan/ },
+  { id: 'glycine', name: 'Glysiini', unit: 'g', label: /glysiini|glycine(?!inate)|glycin(?![a-z])/ },
+  { id: 'glutamine', name: 'Glutamiini', unit: 'g', label: /glutamiini|glutamine|glutamin(?![a-z])/ },
+  { id: 'betaAlanine', name: 'Beeta-alaniini', unit: 'g', note: 'Voi aiheuttaa harmitonta kihelmöintiä.', label: /beeta-?alaniini|beta-?alanine|beta-?alanin/ },
+  { id: 'citrulline', name: 'Sitrulliini', unit: 'g', label: /sitrulliini|citrulline|citrullin/ },
+  { id: 'ashwagandha', name: 'Ashwagandha', unit: 'mg', note: 'Ei suositella raskauden aikana; voi vaikuttaa kilpirauhasen toimintaan.', label: /ashwagandha|withania/ },
+  { id: 'coq10', name: 'Koentsyymi Q10', unit: 'mg', label: /koentsyymi ?q10|coenzyme ?q10|coq10|ubikinoni|ubikinoli|ubiquinol/ },
+  { id: 'sodium', name: 'Natrium', unit: 'mg', note: 'Ruoasta saadaan yleensä riittävästi natriumia.', label: /(^|[^a-zåäö])(natrium|sodium)(?![a-zåäö])/ },
 ];
 
 export const NUTRIENT_BY_ID = Object.fromEntries(NUTRIENTS.map((n) => [n.id, n])) as Record<NutrientId, NutrientDef>;
@@ -153,4 +170,11 @@ export function isSupplementLabel(text: string, label: ParsedLabel = parseSupple
   const lower = text.toLowerCase();
   const looksLikeFood = /hiilihydraat|carbohydrate|kolhydrat/.test(lower) && !/ravintolisä|food supplement|kosttillskott/.test(lower);
   return !looksLikeFood && (SUPPLEMENT_WORDS.test(lower) || found >= 3);
+}
+
+/** Käyttäjän oma ainesosa, jota ei ole valmiiksi listalla (esim. "MSM 1 g"). */
+export interface CustomAmount {
+  name: string;
+  amount: number;
+  unit: Unit;
 }

@@ -25,7 +25,7 @@ export const LEVEL_STYLE: Record<Level, { color: string; bg: string; icon: strin
 const STATUS_COLOR = { over: colors.red, ok: colors.green, low: colors.muted, none: colors.text };
 
 export function SupplementsScreen({ supplements, busy, onScan, onAddManually, onOpen, onPick }: Props) {
-  const { totals, warnings } = assessStack(supplements);
+  const { totals, customTotals, warnings } = assessStack(supplements);
   const [query, setQuery] = useState('');
   const results = query.trim().length >= 2 ? searchSupplements(query) : [];
 
@@ -94,6 +94,13 @@ export function SupplementsScreen({ supplements, busy, onScan, onAddManually, on
                 </View>
               );
             })}
+            {customTotals.map((t) => (
+              <View key={`${t.name}|${t.unit}`} style={styles.totalRow}>
+                <Text style={styles.totalName}>{t.name}</Text>
+                <Text style={styles.totalValue}>{formatAmount(t.total, t.unit)}</Text>
+                <Text style={styles.totalLimit}>oma ainesosa</Text>
+              </View>
+            ))}
             <Text style={styles.small}>Ruoasta tulee lisäksi. Suositus = EU:n viitearvo, max = EFSA:n turvallinen yläraja (aikuiset).</Text>
           </View>
 
